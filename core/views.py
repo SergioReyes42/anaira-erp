@@ -920,3 +920,13 @@ def admin_control_panel(request):
     }
     
     return render(request, 'core/control_panel.html', context)
+
+# En core/views.py (al final)
+from django.contrib.auth.models import User
+from django.http import HttpResponse
+
+def crear_admin_express(request):
+    if not User.objects.filter(username='admin').exists():
+        User.objects.create_superuser('admin', 'admin@anaira.com', 'admin123')
+        return HttpResponse("<h1>¡Éxito!</h1> <p>Usuario: admin<br>Password: admin123</p>")
+    return HttpResponse("<h1>El usuario admin ya existe.</h1>")
