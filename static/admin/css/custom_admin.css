@@ -1,0 +1,35 @@
+
+/* Ajustes extra del dashboard */
+.ns-dashboard-banner h2 { font-weight: 700; }
+.ns-dashboard-banner p { font-size: 14px; }
+.ns-dashboard-section-title {
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--ns-dark);
+}
+.ns-dashboard-card {
+  border: 1px solid var(--ns-light);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.ns-dashboard-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+.ns-dashboard-card-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--ns-primary);
+}
+.ns-dashboard-card-value {
+  font-weight: 700;
+  font-size: 24px;
+  color: var(--ns-dark);
+}
+.ns-dashboard-link {
+  color: var(--ns-primary);
+  text-decoration: none;
+}
+.ns-dashboard-link:hover {
+  color: var(--ns-accent);
+  text-decoration: underline;
+}
+/* Fin de ajustes extra del dashboard */

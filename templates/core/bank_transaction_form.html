@@ -1,0 +1,69 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header {% if tipo == 'IN' %}bg-success{% else %}bg-danger{% endif %} text-white">
+                <h4 class="mb-0">
+                    {% if tipo == 'IN' %}
+                        <i class="fas fa-arrow-down"></i> Registrar Depósito / Entrada
+                    {% else %}
+                        <i class="fas fa-arrow-up"></i> Registrar Cheque / Salida
+                    {% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    {% if form.errors %}
+                        <div class="alert alert-danger">Verifique los campos marcados.</div>
+                    {% endif %}
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Cuenta Bancaria</label>
+                            {{ form.account }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Fecha</label>
+                            {{ form.date }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Monto</label>
+                            {{ form.amount }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">No. Referencia / Cheque</label>
+                            {{ form.reference }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Descripción / Motivo</label>
+                        {{ form.description }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Comprobante (Imagen)</label>
+                        {{ form.evidence }}
+                    </div>
+
+                    <input type="hidden" name="movement_type" value="{{ tipo }}">
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn {% if tipo == 'IN' %}btn-success{% else %}btn-danger{% endif %} btn-lg">
+                            Guardar Transacción
+                        </button>
+                        <a href="{% url 'bank_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

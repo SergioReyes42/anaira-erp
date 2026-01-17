@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-5" style="max-width: 600px;">
+    <div class="card shadow border-0">
+        <div class="card-header bg-primary text-white text-center py-3">
+            <h4 class="mb-0 fw-bold">🚀 Generar Nueva Planilla</h4>
+        </div>
+        <div class="card-body p-4">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Periodo de Pago</label>
+                    <select name="tipo" class="form-select form-select-lg">
+                        <option value="QUINCENA">Quincena (Día 15)</option>
+                        <option value="FIN_MES">Fin de Mes (Día 30/31)</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Mes y Año</label>
+                    <input type="text" name="mes_anio" class="form-control form-select-lg" value="Enero 2026" required>
+                </div>
+                <div class="alert alert-info small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    El sistema calculará automáticamente IGSS (4.83%), Bonificación Incentivo y descontará Préstamos activos.
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg rounded-pill">
+                        Calcular Nómina
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

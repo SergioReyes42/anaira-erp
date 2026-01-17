@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold"><i class="bi bi-list-columns-reverse me-2"></i>Catálogo de Cuentas</h3>
+            <p class="text-muted mb-0">{{ company.name }}</p>
+        </div>
+        <a href="{% url 'account_create' %}" class="btn btn-primary shadow-sm">
+            <i class="bi bi-plus-lg me-2"></i>Nueva Cuenta
+        </a>
+    </div>
+
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0 table-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Código</th>
+                        <th>Nombre de la Cuenta</th>
+                        <th>Tipo</th>
+                        <th>Descripción</th>
+                        <th class="text-end pe-4">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for acc in accounts %}
+                    <tr>
+                        <td class="ps-4 fw-bold font-monospace text-primary">{{ acc.code }}</td>
+                        <td class="fw-bold text-dark">{{ acc.name }}</td>
+                        <td>
+                            {% if acc.account_type == 'ASSET' %} <span class="badge bg-success bg-opacity-10 text-success">Activo</span>
+                            {% elif acc.account_type == 'LIABILITY' %} <span class="badge bg-danger bg-opacity-10 text-danger">Pasivo</span>
+                            {% elif acc.account_type == 'EQUITY' %} <span class="badge bg-warning bg-opacity-10 text-warning">Capital</span>
+                            {% elif acc.account_type == 'INCOME' %} <span class="badge bg-info bg-opacity-10 text-info">Ingresos</span>
+                            {% elif acc.account_type == 'EXPENSE' %} <span class="badge bg-secondary bg-opacity-10 text-secondary">Gastos</span>
+                            {% endif %}
+                        </td>
+                        <td class="small text-muted">{{ acc.description|default:"-" }}</td>
+                        <td class="text-end pe-4">
+                            <a href="{% url 'account_edit' acc.id %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4">No hay cuentas registradas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <i class="bi bi-camera fs-1 mb-2"></i>
+                    <h4 class="fw-bold mb-0">Captura de Ticket</h4>
+                    <p class="small mb-0 opacity-75">Sube una foto del ticket de combustible</p>
+                </div>
+                
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4 text-center">
+                            <label for="id_image" class="form-label d-block p-5 border-2 border-dashed rounded-4 bg-light cursor-pointer" id="drop-area">
+                                <i class="bi bi-cloud-arrow-up fs-2 text-primary"></i>
+                                <span class="d-block mt-2 fw-bold">Seleccionar Foto</span>
+                                <input type="file" name="image" id="id_image" class="d-none" accept="image/*" capture="camera" required onchange="previewImage(this)">
+                            </label>
+                            <img id="preview" class="img-fluid rounded-4 d-none mt-3 shadow-sm" alt="Vista previa">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">PLACA DEL VEHÍCULO</label>
+                            <input type="text" name="vehicle_plate" class="form-control form-control-lg" placeholder="Ej: P-123ABC" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill shadow">
+                            <i class="bi bi-magic me-2"></i> PROCESAR CON OCR
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewImage(input) {
+    const preview = document.getElementById('preview');
+    const dropArea = document.getElementById('drop-area');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.classList.remove('d-none');
+            dropArea.classList.add('d-none');
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %}

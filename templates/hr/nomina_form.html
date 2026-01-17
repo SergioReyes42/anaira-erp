@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-cash-coin me-2"></i> Generar Nómina Mensual</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Periodo (Mes/Año)</label>
+                                <input type="month" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha de Pago</label>
+                                <input type="date" class="form-control" value="{% now 'Y-m-d' %}">
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label">Seleccionar Empleados</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="scope" id="all" checked>
+                                    <label class="form-check-label" for="all">Todos los empleados activos</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="scope" id="dept">
+                                    <label class="form-check-label" for="dept">Por Departamento</label>
+                                </div>
+                            </div>
+
+                            <div class="col-12 mt-4">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i> El sistema calculará automáticamente IGSS (4.83%) e ISR sobre la base imponible.
+                                </div>
+                            </div>
+
+                            <div class="col-12 text-end">
+                                <button type="button" class="btn btn-secondary me-2">Cancelar</button>
+                                <button type="submit" class="btn btn-success"><i class="bi bi-calculator"></i> Calcular y Previsualizar</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

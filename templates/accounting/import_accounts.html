@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow border-0 mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-dark text-white text-center">
+            <h4 class="mb-0">Carga Masiva de Nomenclatura</h4>
+        </div>
+        <div class="card-body p-4">
+            <p class="text-muted small">Sube tu archivo CSV con el siguiente orden: <br> 
+            <strong>Código, Nombre de Cuenta, Tipo</strong> (Ej: 10101, Caja Chica, Activo)</p>
+            
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Seleccionar archivo .CSV</label>
+                    <input type="file" name="file" class="form-control" accept=".csv" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-cloud-arrow-up"></i> Procesar Nomenclatura
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="alert alert-info d-flex align-items-center mb-4">
+    <i class="bi bi-info-circle-fill me-2"></i>
+    <div>
+        ¿No tienes el formato? 
+        <a href="{% url 'download_template' %}" class="fw-bold text-decoration-none">Descargar plantilla .CSV aquí</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+# 1. Importamos el modelo de usuario correcto de tu proyecto
+from django.contrib.auth import get_user_model
+from core.models import Company
+
+# 2. Obtenemos el modelo de usuario que estás usando (el de accounts)
+User = get_user_model()
+
+# 3. Buscamos a tu usuario administrador
+me = User.objects.filter(is_superuser=True).first()
+
+# 4. Asignamos todas las empresas a tu usuario
+if me:
+    for c in Company.objects.all():
+        c.assigned_users.add(me)
+        print(f"✅ Empresa '{c.name}' asignada a {me.username}")
+else:
+    print("❌ No se encontró un usuario administrador.")
+
+# Para salir escribe:
+exit()

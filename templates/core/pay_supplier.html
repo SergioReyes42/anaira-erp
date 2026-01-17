@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Pago a Proveedor{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-send-check"></i> Transferencia a Terceros</h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow border-0">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Ejecutar Pago</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="row align-items-center mb-4 bg-light p-3 rounded mx-0">
+                        <div class="col-md-5">
+                            <label class="small text-muted fw-bold">SALDO SALE DE (MIS CUENTAS)</label>
+                            {{ form.my_account }}
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <i class="bi bi-arrow-right fs-2 text-muted"></i>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="small text-muted fw-bold">SE TRANSFIERE A (PROVEEDOR)</label>
+                            {{ form.provider }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="fw-bold">Monto (Q)</label>
+                            {{ form.amount }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="fw-bold">Fecha Ejecución</label>
+                            {{ form.date }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label>No. Referencia Bancaria</label>
+                            {{ form.reference }}
+                        </div>
+                        <div class="col-md-6">
+                            <label>Comprobante de Transferencia</label>
+                            {{ form.evidence }}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            Confirmar Pago
+                        </button>
+                        <a href="{% url 'supplier_list' %}" class="btn btn-link text-muted">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

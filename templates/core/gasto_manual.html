@@ -1,0 +1,206 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-9 col-lg-8">
+            
+            <div class="d-flex justify-content-between mb-3">
+                <h4 class="fw-bold text-primary">Registrar Gasto</h4>
+                <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary btn-sm shadow-sm">
+                    <i class="bi bi-list-ul me-1"></i> Ver Listado
+                </a>
+            </div>
+
+            <form method="POST" id="gastoForm" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="card shadow-lg border-0 rounded-4 mb-4">
+                    <div class="card-header bg-dark text-white py-3">
+                        <h5 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Detalle de la Factura</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">NIT Emisor</label>
+                                <input type="text" name="nit_emisor" id="id_nit" class="form-control" placeholder="Ej: 1234567-8" required>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Nombre del Proveedor</label>
+                                <input type="text" name="nombre_emisor" id="id_nombre" class="form-control bg-light" readonly placeholder="El nombre aparecerá aquí...">
+                                <div id="nit_status" class="form-text"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-primary">Concepto / Motivo del Gasto</label>
+                            <textarea name="concepto" class="form-control" rows="2" placeholder="Ej: Compra de repuestos para camión, Pago de luz, Viáticos..." required></textarea>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-muted">SERIE</label>
+                                <input type="text" name="serie" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-muted">NO. FACTURA</label>
+                                <input type="text" name="no_factura" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-muted">FECHA</label>
+                                <input type="date" name="fecha" class="form-control" required value="{{ today|date:'Y-m-d' }}">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-muted">ASIGNAR A VEHÍCULO (OPCIONAL)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-truck"></i></span>
+                                    <select name="vehicle_id" class="form-select">
+                                        <option value="">-- No aplica / Gasto General --</option>
+                                        {% for v in vehiculos %}
+                                            <option value="{{ v.id }}">{{ v.plate }} - {{ v.brand }} {{ v.model }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" name="es_combustible" id="id_es_combustible">
+                                    <label class="form-check-label fw-bold" for="id_es_combustible">¿Es una factura de combustible?</label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold text-primary">MONTO TOTAL (Q)</label>
+                                <input type="number" step="0.01" name="monto_total" id="id_monto_total" class="form-control form-control-lg border-primary" required>
+                            </div>
+                            
+                            <div id="section_combustible" class="col-md-8 d-none">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">GALONES</label>
+                                        <input type="number" step="0.001" name="galones" id="id_galones" class="form-control">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">VALOR IDP</label>
+                                        <input type="number" step="0.01" name="impuesto_idp" id="id_impuesto_idp" class="form-control bg-light" readonly>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mt-4">
+                                <div class="bg-light p-3 rounded-3 border-start border-4 border-info">
+                                    <small class="text-muted d-block fw-bold">BASE IMPONIBLE</small>
+                                    <h4 id="display_base" class="mb-0 text-dark">Q 0.00</h4>
+                                    <input type="hidden" name="base_imponible" id="id_base_imponible">
+                                </div>
+                            </div>
+                            <div class="col-md-6 mt-4">
+                                <div class="bg-light p-3 rounded-3 border-start border-4 border-success">
+                                    <small class="text-muted d-block fw-bold">IVA (12%)</small>
+                                    <h4 id="display_iva" class="text-success mb-0">Q 0.00</h4>
+                                    <input type="hidden" name="impuesto_iva" id="id_impuesto_iva">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-lg border-0 rounded-4 mb-4 border-start border-primary border-5">
+                    <div class="card-body p-4">
+                        <h5 class="card-title text-primary mb-3"><i class="bi bi-wallet2 me-2"></i>Forma de Pago</h5>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">¿De qué cuenta sale el dinero?</label>
+                                <select name="bank_id" class="form-select form-select-lg">
+                                    <option value="">-- Dejar pendiente (Cuenta por Pagar) --</option>
+                                    {% for b in bancos %}
+                                        <option value="{{ b.id }}">
+                                            {{ b.bank_name }} - {{ b.currency }} (Saldo: {{ b.current_balance }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Si selecciona un banco, el monto se descontará automáticamente.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Foto Factura</label>
+                                <input type="file" name="imagen_factura" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 pb-5">
+                    <button type="submit" class="btn btn-dark btn-lg rounded-pill shadow">
+                        <i class="bi bi-save me-2"></i>GUARDAR REGISTRO CONTABLE
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Lógica de Cálculos (Mantiene el IVA 12% e IDP)
+function calcularGasto() {
+    const total = parseFloat(document.getElementById('id_monto_total').value) || 0;
+    const esCombustible = document.getElementById('id_es_combustible').checked;
+    const galones = parseFloat(document.getElementById('id_galones').value) || 0;
+    
+    let idp = 0;
+    if (esCombustible) {
+        // Cálculo sugerido para Guatemala (4.60 por galón superior/regular promedio)
+        idp = galones * 4.60; 
+        document.getElementById('id_impuesto_idp').value = idp.toFixed(2);
+        document.getElementById('section_combustible').classList.remove('d-none');
+    } else {
+        document.getElementById('section_combustible').classList.add('d-none');
+        document.getElementById('id_impuesto_idp').value = 0;
+    }
+
+    // Base = (Total - IDP) / 1.12
+    const baseSinIva = (total - idp) / 1.12;
+    const iva12 = baseSinIva * 0.12;
+
+    document.getElementById('id_base_imponible').value = baseSinIva.toFixed(2);
+    document.getElementById('id_impuesto_iva').value = iva12.toFixed(2);
+    
+    document.getElementById('display_base').innerText = 'Q ' + baseSinIva.toLocaleString('en-US', {minimumFractionDigits: 2});
+    document.getElementById('display_iva').innerText = 'Q ' + iva12.toLocaleString('en-US', {minimumFractionDigits: 2});
+}
+
+// Eventos de entrada
+document.getElementById('id_monto_total').addEventListener('input', calcularGasto);
+document.getElementById('id_galones').addEventListener('input', calcularGasto);
+document.getElementById('id_es_combustible').addEventListener('change', calcularGasto);
+
+// Lógica Inteligente para NIT (Con opción de ingreso manual si falla)
+document.getElementById('id_nit').addEventListener('blur', function() {
+    const nit = this.value.trim();
+    const nombreField = document.getElementById('id_nombre');
+    const status = document.getElementById('nit_status');
+    
+    if (nit.length > 4) {
+        nombreField.value = "Consultando...";
+        status.innerHTML = '<span class="text-primary"><i class="bi bi-hourglass-split"></i> Buscando emisor...</span>';
+        
+        // Simulación temporal
+        setTimeout(() => {
+             nombreField.value = ""; 
+             nombreField.readOnly = false;
+             nombreField.classList.replace('bg-light', 'bg-white');
+             nombreField.placeholder = "Ingrese nombre manualmente";
+             status.innerHTML = "";
+             nombreField.focus();
+        }, 800);
+    }
+});
+</script>
+{% endblock %}

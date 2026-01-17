@@ -1,0 +1,99 @@
+<div class="container py-4">
+    <div class="card shadow-sm mb-4 border-0 rounded-4 overflow-hidden">
+        <div class="bg-primary p-3 text-white text-center">
+            <h5 class="mb-0">📸 Escáner Inteligente Anaira</h5>
+        </div>
+        <video id="video" width="100%" autoplay playsinline class="bg-dark"></video>
+        <div class="p-3">
+            <input type="text" id="placa_manual" class="form-control mb-2" placeholder="PLACA DEL VEHÍCULO: P-123ABC">
+            <button id="snap" class="btn btn-primary w-100 fw-bold py-3">
+                <i class="fas fa-magic"></i> PROCESAR CON OCR
+            </button>
+        </div>
+    </div>
+
+    <div id="ocr-results" class="card shadow-lg p-4 d-none animate__animated animate__fadeIn">
+        <h6 class="fw-bold mb-3 border-bottom pb-2">Verificación de Datos Detectados</h6>
+        
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="small fw-bold">NIT EMISOR</label>
+                <input type="text" id="res-nit" class="form-control bg-light" readonly>
+            </div>
+            <div class="col-md-6">
+                <label class="small fw-bold">NOMBRE DEL PROVEEDOR</label>
+                <input type="text" id="res-nombre" class="form-control bg-light" readonly>
+            </div>
+            
+            <div class="col-4">
+                <label class="small">SERIE</label>
+                <input type="text" id="res-serie" class="form-control">
+            </div>
+            <div class="col-4">
+                <label class="small">NO. FACTURA</label>
+                <input type="text" id="res-no" class="form-control">
+            </div>
+            <div class="col-4">
+                <label class="small">FECHA</label>
+                <input type="text" id="res-fecha" class="form-control">
+            </div>
+        </div>
+
+        <div class="mt-4 p-3 rounded" style="background: #f8f9fa; border-left: 5px solid #0d6efd;">
+            <div class="row text-center">
+                <div class="col-4">
+                    <small class="text-muted">BASE</small>
+                    <h5 class="fw-bold mb-0">Q <span id="res-base">0.00</span></h5>
+                </div>
+                <div class="col-4">
+                    <small class="text-muted">IVA (12%)</small>
+                    <h5 class="fw-bold mb-0 text-success">Q <span id="res-iva">0.00</span></h5>
+                </div>
+                <div class="col-4">
+                    <small class="text-muted text-danger">IDP</small>
+                    <h5 class="fw-bold mb-0 text-danger">Q <span id="res-idp">0.00</span></h5>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3 text-center">
+            <small class="text-muted">MONTO TOTAL</small>
+            <h2 class="fw-bold text-primary">Q <span id="res-total">0.00</span></h2>
+        </div>
+
+        <button id="btn-confirmar" class="btn btn-dark w-100 mt-3 py-3 shadow">
+            💾 GUARDAR REGISTRO CONTABLE
+        </button>
+    </div>
+</div>
+
+<script>
+    // Lógica para que los datos de la IA caigan en los campos de arriba
+    const snap = document.getElementById('snap');
+    
+    snap.addEventListener('click', () => {
+        // ... (Lógica de captura de foto que ya tienes) ...
+        
+        fetch('/expense/mobile/', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(res => {
+                if(res.status === 'success') {
+                    const d = res.data;
+                    // LLENADO AUTOMÁTICO DE LA INTERFAZ PROFESIONAL
+                    document.getElementById('res-nit').value = d.nit_emisor;
+                    document.getElementById('res-nombre').value = d.nombre_emisor;
+                    document.getElementById('res-serie').value = d.serie;
+                    document.getElementById('res-no').value = d.no_factura;
+                    document.getElementById('res-fecha').value = d.fecha;
+                    document.getElementById('res-base').innerText = d.base_imponible;
+                    document.getElementById('res-iva').innerText = d.impuesto_iva;
+                    document.getElementById('res-idp').innerText = d.impuesto_idp;
+                    document.getElementById('res-total').innerText = d.monto_total;
+
+                    // Mostrar el panel de resultados
+                    document.getElementById('ocr-results').classList.remove('d-none');
+                    window.scrollTo(0, document.body.scrollHeight);
+                }
+            });
+    });
+</script>

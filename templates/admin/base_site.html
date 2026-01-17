@@ -1,0 +1,33 @@
+
+{% extends "admin/base.html" %}
+{% load static i18n %}
+
+{% block title %} ANAIRA SYSTEMS{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <link rel="icon" type="image/x-icon" href="{% static 'admin/images/favicon.ico' %}">
+  {{ block.super }}
+  {% static 
+{% endblock %}
+
+{% block branding %}
+  <div class="ns-branding">
+    {% static 
+    <span class="ns-title">Administración ANAIRA SYSTEMS</span>
+  </div>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+{% block footer %}
+  <div class="text-center">
+    <span class="ns-footer">ANAIRA SYSTEMS &copy; {{ current_year }}</span>
+  </div>
+{% endblock %}
+
+{% block extrajs %}
+  {{ block.super }}
+  {% static </script>
+{% endblock %}
+
+

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container" style="max-width: 600px;">
+    <h3 class="fw-bold mb-4">
+        {% if account %}✏️ Editar Cuenta{% else %}➕ Nueva Cuenta Contable{% endif %}
+    </h3>
+    
+    <div class="card shadow border-0">
+        <div class="card-body p-4">
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Código</label>
+                        <input type="text" name="code" class="form-control" value="{{ account.code|default:'' }}" required placeholder="Ej: 1-1-05">
+                    </div>
+                    
+                    <div class="col-md-8">
+                        <label class="form-label fw-bold">Nombre de Cuenta</label>
+                        <input type="text" name="name" class="form-control" value="{{ account.name|default:'' }}" required>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Tipo de Cuenta</label>
+                        <select name="account_type" class="form-select" required>
+                            <option value="ASSET" {% if account.account_type == 'ASSET' %}selected{% endif %}>ACTIVO (Caja, Bancos, Inventario)</option>
+                            <option value="LIABILITY" {% if account.account_type == 'LIABILITY' %}selected{% endif %}>PASIVO (Deudas, Proveedores)</option>
+                            <option value="EQUITY" {% if account.account_type == 'EQUITY' %}selected{% endif %}>CAPITAL (Patrimonio)</option>
+                            <option value="INCOME" {% if account.account_type == 'INCOME' %}selected{% endif %}>INGRESOS (Ventas)</option>
+                            <option value="EXPENSE" {% if account.account_type == 'EXPENSE' %}selected{% endif %}>GASTOS (Compras, Sueldos)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Descripción / Notas</label>
+                        <textarea name="description" class="form-control" rows="2">{{ account.description|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary">Guardar Cuenta</button>
+                    <a href="{% url 'chart_of_accounts' %}" class="btn btn-link text-muted mt-2">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

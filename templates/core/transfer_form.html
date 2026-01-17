@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Nueva Transferencia{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-arrow-left-right"></i> Transferencia entre Cuentas</h1>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow border-0">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Detalles de la Transacción</h5>
+            </div>
+            <div class="card-body p-4">
+                
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            Por favor corrige los errores abajo indicados.
+                        </div>
+                    {% endif %}
+
+                    <div class="row align-items-center mb-4 bg-light p-3 rounded">
+                        <div class="col-md-5 text-center">
+                            <label class="form-label fw-bold text-danger">
+                                <i class="bi bi-dash-circle"></i> Sale de (Origen)
+                            </label>
+                            {{ form.from_account }}
+                            {% if form.from_account.errors %}
+                                <div class="text-danger small">{{ form.from_account.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-2 text-center py-2">
+                            <i class="bi bi-arrow-right-circle-fill display-5 text-primary"></i>
+                        </div>
+
+                        <div class="col-md-5 text-center">
+                            <label class="form-label fw-bold text-success">
+                                <i class="bi bi-plus-circle"></i> Entra a (Destino)
+                            </label>
+                            {{ form.to_account }}
+                            {% if form.to_account.errors %}
+                                <div class="text-danger small">{{ form.to_account.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Monto a Transferir (Q)</label>
+                            {{ form.amount }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Fecha</label>
+                            {{ form.date }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Referencia / No. Boleta</label>
+                            {{ form.reference }}
+                            <div class="form-text">Opcional: Número de autorización del banco.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Comprobante (Imagen/PDF)</label>
+                            {{ form.evidence }}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            Confirmar Transferencia
+                        </button>
+                        <a href="{% url 'bank_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

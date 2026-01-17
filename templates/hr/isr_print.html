@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Proyección ISR {{ anio }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @media print { .no-print { display: none; } }
+        body { font-family: Arial; font-size: 12px; }
+        .page-break { page-break-after: always; }
+    </style>
+</head>
+<body>
+    <div class="no-print p-3 text-center bg-light">
+        <button onclick="window.print()" class="btn btn-primary">🖨️ Imprimir Proyecciones</button>
+    </div>
+
+    <div class="container mt-4">
+        <h3 class="text-center mb-4">CÁLCULO DE PROYECCIÓN ISR ASALARIADOS - PERIODO {{ anio }}</h3>
+        <h5 class="text-center">{{ company.name }}</h5>
+        
+        <table class="table table-bordered table-sm mt-4">
+            <thead class="table-dark">
+                <tr>
+                    <th>Empleado</th>
+                    <th>Renta Bruta (Anual)</th>
+                    <th>(-) Deducciones Legales</th>
+                    <th>Renta Imponible</th>
+                    <th>Impuesto Anual</th>
+                    <th>Retención Mensual</th>
+                    <th>Firma de Enterado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in proyecciones %}
+                <tr>
+                    <td>{{ p.employee.full_name }}<br><small>NIT/DPI: {{ p.employee.dpi }}</small></td>
+                    <td class="text-end">Q {{ p.sueldo_anual_proyectado|add:p.boni_anual_proyectada|floatformat:2 }}</td>
+                    <td class="text-end">Q {{ p.gastos_personales|add:p.igss_proyectado|floatformat:2 }}</td>
+                    <td class="text-end fw-bold">Q {{ p.renta_imponible|floatformat:2 }}</td>
+                    <td class="text-end">Q {{ p.impuesto_anual|floatformat:2 }}</td>
+                    <td class="text-end fw-bold bg-light">Q {{ p.retencion_mensual|floatformat:2 }}</td>
+                    <td style="width: 150px;"></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="mt-5">
+            <p><strong>Base Legal:</strong> Decreto 10-2012 Ley de Actualización Tributaria.<br>
+            Deducción Única: Q48,000.00 | IGSS: 4.83% sobre sueldos.</p>
+        </div>
+    </div>
+</body>
+</html>

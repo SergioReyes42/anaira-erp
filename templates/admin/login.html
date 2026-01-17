@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Acceso - Anaira Systems</title>
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+</head>
+<body>
+    <div id="login-box">
+        <div class="logo-container">
+            <img src="{% static 'img/logo.png' %}" alt="Anaira Systems">
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <p class="errorlist">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Usuario</label>
+                <input type="text" name="username" required>
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" name="password" required>
+            </div>
+            <div class="form-group">
+                <label>Código 2FA (Opcional)</label>
+                <input type="text" name="2fa_code">
+            </div>
+            <button type="submit">Ingresar</button>
+        </form>
+
+        <div class="footer-text">
+            © Anaira Systems. Seguridad y Control Empresarial.
+        </div>
+    </div>
+</body>
+</html>

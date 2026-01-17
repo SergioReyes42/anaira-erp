@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Balance de Saldos{% endblock %}
+
+{% block content %}
+<h1 class="h2 mb-4">⚖️ Balance de Saldos</h1>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card border-primary mb-3 text-center h-100">
+            <div class="card-header bg-primary text-white fw-bold">ACTIVO (Bancos)</div>
+            <div class="card-body">
+                <h2 class="display-6 text-primary">Q {{ total_bancos|floatformat:2 }}</h2>
+                <p class="text-muted">Dinero disponible</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-success mb-3 text-center h-100">
+            <div class="card-header bg-success text-white fw-bold">INGRESOS (Ventas)</div>
+            <div class="card-body">
+                <h2 class="display-6 text-success">Q {{ total_ventas|floatformat:2 }}</h2>
+                <p class="text-muted">Total facturado/ingresado</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-danger mb-3 text-center h-100">
+            <div class="card-header bg-danger text-white fw-bold">PASIVO/GASTO</div>
+            <div class="card-body">
+                <h2 class="display-6 text-danger">Q {{ total_gastos|floatformat:2 }}</h2>
+                <p class="text-muted">Total gastos operativos</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info mt-4 text-center">
+    <h4>Utilidad / Patrimonio del Ejercicio: <strong>Q {{ patrimonio|floatformat:2 }}</strong></h4>
+    <small>Calculado como: Ingresos Totales - Gastos Totales</small>
+</div>
+{% endblock %}

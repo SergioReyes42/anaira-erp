@@ -1,0 +1,148 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0 text-dark">Control de Flota</h2>
+            <p class="text-muted">Análisis de consumo y gastos por vehículo</p>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-primary fs-6 shadow-sm">Empresa: {{ company.name }}</span>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-success border-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-success-subtle p-3 rounded-3 text-success me-3">
+                        <i class="bi bi-cash-stack fs-4"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted small fw-bold mb-0">TOTAL GASTADO</p>
+                        <h4 class="fw-bold mb-0">Q {{ total_spent|stringformat:".2f" }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-primary border-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-primary-subtle p-3 rounded-3 text-primary me-3">
+                        <i class="bi bi-fuel-pump fs-4"></i>
+                    </div>
+                    <div>
+                        <p class="text-muted small fw-bold mb-0">TOTAL GALONES</p>
+                        <h4 class="fw-bold mb-0">{{ total_gallons }} Gal.</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-bar-chart-line me-2"></i>Gasto por Placa de Vehículo</h5>
+                    <div class="dropdown">
+                        <button class="btn btn-light btn-sm border" type="button" onclick="window.print()">
+                            <i class="bi bi-printer"></i>
+                        </button>
+                    </div>
+                </div>
+                <div style="height: 350px;">
+                    <canvas id="fleetChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white py-3">
+            <h5 class="fw-bold mb-0">Detalle de Registros</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Fecha</th>
+                        <th>Placa</th>
+                        <th>Kilometraje</th>
+                        <th>Descripción</th>
+                        <th>Galones</th>
+                        <th class="text-end pe-4">Monto Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exp in expenses %}
+                    <tr>
+                        <td class="ps-4">{{ exp.date|date:"d/m/Y" }}</td>
+                        <td>
+                            <span class="badge bg-light text-dark border px-3 py-2">
+                                <i class="bi bi-truck me-1"></i>{{ exp.vehicle_plate }}
+                            </span>
+                        </td>
+                        <td>{{ exp.mileage|default:"N/A" }} km</td>
+                        <td class="text-muted">{{ exp.description }}</td>
+                        <td class="fw-bold text-primary">{{ exp.fuel_gallons|default:"0" }}</td>
+                        <td class="text-end fw-bold pe-4">Q {{ exp.total_amount|stringformat:".2f" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-info-circle fs-2 mb-2 d-block"></i>
+                            No se encontraron registros de combustible para esta empresa.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{ labels_js|json_script:"labels-data" }}
+{{ totals_js|json_script:"totals-data" }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    (function() {
+        // 2. Leemos los datos desde los contenedores seguros
+        const labels = JSON.parse(document.getElementById('labels-data').textContent);
+        const data = JSON.parse(document.getElementById('totals-data').textContent);
+
+        const ctx = document.getElementById('fleetChart');
+        
+        if (ctx && labels.length > 0) {
+            new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Gasto por Vehículo (Q)',
+                        data: data,
+                        backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                        borderColor: '#10b981',
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        } else {
+            console.log("No hay datos suficientes para el gráfico o no se encontró el canvas.");
+        }
+        
+    })();
+</script>
+{% endblock %}

@@ -1,0 +1,94 @@
+para ferificar y no perder este codigo
+from django.db import models
+from django.conf import settings
+from django.contrib.auth.models import User
+
+# --- ESTRUCTURA ---
+class Company(models.Model):
+    name = models.CharField(max_length=255)
+    tax_id = models.CharField(max_length=20, unique=True)
+    users = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='companies', blank=True)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    logo = models.ImageField(upload_to='company_logos/', null=True, blank=True)
+    address = models.TextField(null=True, blank=True, default='')
+    def __str__(self): return self.name
+
+class BusinessPartner(models.Model): 
+    class PartnerType(models.TextChoices):
+        CLIENTE = 'C', 'Cliente'
+        PROVEEDOR = 'V', 'Proveedor'
+        AMBOS = 'B', 'Ambos'
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    tax_id = models.CharField(max_length=20)
+    partner_type = models.CharField(max_length=1, choices=PartnerType.choices, default='C')
+    def __str__(self): return f"{self.tax_id} - {self.name}"
+
+# --- GASTOS OCR ---
+class Expense(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    partner = models.ForeignKey(BusinessPartner, on_delete=models.PROTECT, null=True, blank=True)
+    date = models.DateField()
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    
+    # CAMPOS QUE PIDE EL FORMULARIO:
+    receipt_image = models.ImageField(upload_to='receipts/', null=True, blank=True)
+    gallons = models.DecimalField(max_digits=12, decimal_places=3, default=0)
+    
+    # OTROS CAMPOS DE APOYO:
+    description = models.TextField(blank=True)
+    base_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    iva_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    idp_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    vehicle_plate = models.CharField(max_length=15, blank=True, null=True)
+    accounting_account = models.ForeignKey('accounting.Account', on_delete=models.PROTECT, null=True, blank=True)
+    is_posted = models.BooleanField(default=False)
+    
+    # Campos para Control de Flota
+    is_fleet_expense = models.BooleanField(default=False, verbose_name="¿Es gasto de vehículo?")
+    vehicle_plate = models.CharField(max_length=20, blank=True, null=True, verbose_name="Placa/Matrícula")
+    mileage = models.IntegerField(blank=True, null=True, verbose_name="Kilometraje")
+    fuel_gallons = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Galones")
+
+    invoice_number = models.CharField(max_length=50, blank=True, null=True)
+    invoice_series = models.CharField(max_length=50, blank=True, null=True)
+    issuer_nit = models.CharField(max_length=20, blank=True, null=True)
+    expense_type = models.CharField(max_length=20, choices=[('GAS', 'Gasolina'), ('GEN', 'General')], default='GEN')
+    
+    def __str__(self):
+        return f"{self.date} - {self.vehicle_plate if self.vehicle_plate else self.description}"
+
+# --- SEGURIDAD (Lo que pedía el error) ---
+class Role(models.Model):
+    name = models.CharField(max_length=80, unique=True)
+    def __str__(self): return self.name
+
+class UserRoleCompany(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    role = models.ForeignKey(Role, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    class Meta: 
+        unique_together = ("user", "role", "company")
+    def __str__(self): return f"{self.user.username} - {self.role.name}"
+
+from django.db import models
+
+class Gasto(models.Model):
+    nit_emisor = models.CharField(max_length=20, null=True, blank=True)
+    nombre_emisor = models.CharField(max_length=255, null=True, blank=True)
+    no_factura = models.CharField(max_length=50, null=True, blank=True)
+    serie = models.CharField(max_length=50, null=True, blank=True)
+    fecha = models.DateField(null=True, blank=True)
+    monto_total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    descripcion = models.TextField(null=True, blank=True)
+    tipo_gasto = models.CharField(max_length=50, choices=[('GASOLINE', 'Gasolina'), ('GENERAL', 'General')], default='GENERAL')
+    galones = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    archivo_adjunto = models.FileField(upload_to='facturas/', null=True, blank=True)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+    placa_vehiculo = models.CharField(max_length=20, null=True, blank=True)
+    impuesto_iva = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    impuesto_idp = models.DecimalField(max_digits=12, decimal_places=2, default=0.00) # Este es el que falta
+    base_imponible = models.DecimalField(max_digits=12, decimal_places=2, default=0.00) # Este es vital
+    
+    def __str__(self):
+        return f"{self.nombre_emisor} - {self.no_factura}"

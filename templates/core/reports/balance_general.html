@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-primary">⚖️ Balance General</h3>
+        <form method="get" class="d-flex gap-2">
+            <input type="date" name="fecha" value="{{ fecha|date:'Y-m-d' }}" class="form-control">
+            <button class="btn btn-primary">Filtrar</button>
+        </form>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <h5 class="text-center fw-bold">{{ empresa.name }}</h5>
+            <p class="text-center text-muted">Al {{ fecha }}</p>
+            <hr>
+            
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Código</th>
+                        <th>Cuenta</th>
+                        <th>Tipo</th>
+                        <th class="text-end">Saldo (Q)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in datos %}
+                    <tr>
+                        <td>{{ item.codigo }}</td>
+                        <td>{{ item.nombre }}</td>
+                        <td>
+                            {% if item.tipo == 'ASSET' %}Activo
+                            {% elif item.tipo == 'LIABILITY' %}Pasivo
+                            {% elif item.tipo == 'EQUITY' %}Capital
+                            {% elif item.tipo == 'INCOME' %}Ingreso
+                            {% elif item.tipo == 'EXPENSE' %}Gasto
+                            {% endif %}
+                        </td>
+                        <td class="text-end fw-bold">{{ item.saldo|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center">No hay datos contables a esta fecha.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

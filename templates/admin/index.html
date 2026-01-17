@@ -1,0 +1,31 @@
+
+{% extends "admin/index.html" %}
+{% load static i18n %}
+
+{% block content %}
+  <div class="ns-dashboard-banner" style="
+       background: linear-gradient(90deg, #0B5ED7 0%, #0A2342 100%);
+       color: #fff; padding: 16px; border-radius: 6px; margin-bottom: 16px;">
+    <h2 style="margin:0;">Bienvenido a ANAIRA SYSTEMS</h2>
+    <p style="margin:6px 0 0 0;">Panel de control y reportería</p>
+  </div>
+
+  {# Si quieres footer, inclúyelo aquí dentro del content: #}
+  <div class="text-center" style="margin-top: 8px;">
+    <span class="ns-footer">ANAIRA SYSTEMS &copy; {{ current_year|default:2026 }}</span>
+  </div>
+
+  {{ block.super }}
+{% endblock %}
+
+{# CSS adicional: usa UN solo bloque para estilos. Aquí uso extrahead #}
+{% block extrahead %}
+  {{ block.super }}
+  {% static 
+{% endblock %}
+
+{# JS adicional: usa UN solo bloque extrajs en toda la plantilla #}
+{% block extrajs %}
+  {{ block.super }}
+  {% static </script>
+{% endblock %}

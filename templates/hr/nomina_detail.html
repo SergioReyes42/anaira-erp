@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold">Planilla: {{ nomina.mes }} ({{ nomina.tipo }})</h3>
+            <span class="badge {% if nomina.is_posted %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                {% if nomina.is_posted %}CONTABILIZADA Y PAGADA{% else %}BORRADOR / PRELIMINAR{% endif %}
+            </span>
+        </div>
+        <div class="d-flex gap-2">
+            {% if nomina.is_posted %}
+            <a href="{% url 'boletas_print' nomina.id %}" target="_blank" class="btn btn-dark">
+                <i class="bi bi-printer me-2"></i>Imprimir Boletas
+            </a>
+            <a href="{% url 'libro_salarios' nomina.id %}" target="_blank" class="btn btn-outline-dark">
+    <i class="bi bi-journal-text me-2"></i>Libro de Salarios
+</a>
+            {% else %}
+            <form method="POST">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-lg" onclick="return confirm('¿Seguro? Esto descontará los préstamos y creará la partida contable.')">
+                    <i class="bi bi-check-circle me-2"></i>CONFIRMAR Y PAGAR
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-striped mb-0 text-center align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-start ps-4">Empleado</th>
+                        <th>Sueldo Base</th>
+                        <th>Boni.</th>
+                        <th class="text-danger">(-) IGSS</th>
+                        <th class="text-danger">(-) Préstamos</th>
+                        <th class="bg-primary text-white">LÍQUIDO A RECIBIR</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for det in detalles %}
+                    <tr>
+                        <td class="text-start ps-4 fw-bold">{{ det.employee.full_name }}</td>
+                        <td>Q {{ det.salario_base }}</td>
+                        <td>Q {{ det.bonificacion }}</td>
+                        <td class="text-danger text-opacity-75">Q {{ det.igss }}</td>
+                        <td class="text-danger fw-bold">
+                            {% if det.descuento_prestamo > 0 %}Q {{ det.descuento_prestamo }}{% else %}-{% endif %}
+                        </td>
+                        <td class="fw-bold fs-5 text-primary">Q {{ det.liquido_a_recibir }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td class="text-end" colspan="5">TOTAL PLANILLA:</td>
+                        <td class="fs-4 text-primary">Q {{ nomina.total_pagado }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

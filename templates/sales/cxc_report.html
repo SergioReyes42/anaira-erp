@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card shadow border-0 p-4">
+    <h2 class="fw-bold text-navy mb-4">Reporte de Cuentas por Cobrar</h2>
+    
+    <div class="row mb-4">
+        {% for customer in customers %}
+        <div class="col-md-4 mb-3">
+            <div class="card border-start border-primary border-4 shadow-sm p-3">
+                <small class="text-muted text-uppercase">Cliente</small>
+                <h5 class="fw-bold">{{ customer.name }}</h5>
+                <h4 class="text-primary">Q {{ customer.total_debt }}</h4>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Factura #</th>
+                <th>Cliente</th>
+                <th>Fecha Emisión</th>
+                <th>Vencimiento</th>
+                <th>Saldo Pendiente</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for inv in invoices %}
+            <tr class="{% if inv.due_date < today %}table-danger{% endif %}">
+                <td>{{ inv.number }}</td>
+                <td>{{ inv.customer.name }}</td>
+                <td>{{ inv.date }}</td>
+                <td>{{ inv.due_date }}</td>
+                <td class="fw-bold">Q {{ inv.pending_amount }}</td>
+                <td><span class="badge bg-warning text-dark">Pendiente</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

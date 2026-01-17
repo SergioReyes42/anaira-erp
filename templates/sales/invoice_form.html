@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold text-navy">Nueva Factura de Venta</h3>
+                <span class="text-muted">{{ company.name }}</span>
+            </div>
+            <hr>
+            <form method="post">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">Cliente</label>
+                        {{ form.customer }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Número de Factura</label>
+                        {{ form.number }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Total (Q)</label>
+                        {{ form.total }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Fecha de Emisión</label>
+                        {{ form.date }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Vencimiento</label>
+                        {{ form.due_date }}
+                    </div>
+                </div>
+                <div class="mt-5 d-flex justify-content-end">
+                    <a href="{% url 'workspace' %}" class="btn btn-light me-2">Cancelar</a>
+                    <button type="submit" class="btn btn-primary px-5">Guardar Factura</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

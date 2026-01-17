@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Anaira Systems | Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f0f2f5; height: 100vh; display: flex; align-items: center; }
+        .side-logo { max-width: 200px; opacity: 0.6; position: absolute; }
+        .logo-left { left: 50px; }
+        .logo-right { right: 50px; }
+        .card { border: none; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
+        .login-header { background: #1e3a8a; color: white; padding: 30px; text-align: center; }
+        .btn-primary { background: #1e3a8a; border: none; padding: 12px; }
+    </style>
+</head>
+<body>
+    <img src="/static/img/sermaworld_logo.png" class="side-logo logo-left" alt="SerMaWorld">
+    <img src="/static/img/sermaworld_logo.png" class="side-logo logo-right" alt="SerMaWorld">
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="card">
+                    <div class="login-header">
+                        <img src="/static/img/anaira_logo.png" style="height: 60px;" alt="Anaira Systems">
+                        <h4 class="mt-2">Seguridad Empresarial</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Usuario</label>
+                                <input type="text" name="username" class="form-control" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Contraseña</label>
+                                <input type="password" name="password" class="form-control" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 fw-bold">ENTRAR AL SISTEMA</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-dark">📉 Estado de Resultados</h3>
+        
+        <form method="get" class="d-flex gap-2 bg-white p-2 rounded shadow-sm">
+            <div>
+                <small class="text-muted d-block">Desde</small>
+                <input type="date" name="start_date" value="{{ start_date }}" class="form-control form-control-sm">
+            </div>
+            <div>
+                <small class="text-muted d-block">Hasta</small>
+                <input type="date" name="end_date" value="{{ end_date }}" class="form-control form-control-sm">
+            </div>
+            <button class="btn btn-primary btn-sm align-self-end"><i class="bi bi-search"></i></button>
+        </form>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <h5 class="text-muted text-uppercase mb-4">Utilidad Neta</h5>
+                    
+                    {% if data.utilidad_neta >= 0 %}
+                        <h1 class="display-4 fw-bold text-success">+ Q {{ data.utilidad_neta|floatformat:2 }}</h1>
+                        <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">Ganancia</span>
+                    {% else %}
+                        <h1 class="display-4 fw-bold text-danger">Q {{ data.utilidad_neta|floatformat:2 }}</h1>
+                        <span class="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill">Pérdida</span>
+                    {% endif %}
+
+                    <hr class="my-4">
+                    <div class="d-flex justify-content-between px-4">
+                        <span class="text-success fw-bold">Ingresos:</span>
+                        <span>Q {{ data.total_ingresos|floatformat:2 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between px-4 mt-2">
+                        <span class="text-danger fw-bold">Gastos:</span>
+                        <span>(Q {{ data.total_gastos|floatformat:2 }})</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 fw-bold">
+                    Detalle de Operaciones
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light small text-uppercase">
+                            <tr>
+                                <th class="ps-4">Cuenta</th>
+                                <th>Tipo</th>
+                                <th class="text-end pe-4">Saldo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="table-light"><td colspan="3" class="fw-bold ps-4 text-primary">INGRESOS</td></tr>
+                            {% for item in data.detalles %}
+                                {% if item.tipo == 'INCOME' %}
+                                <tr>
+                                    <td class="ps-4">{{ item.nombre }} <small class="text-muted ms-2">{{ item.codigo }}</small></td>
+                                    <td><span class="badge bg-primary-subtle text-primary">Ingreso</span></td>
+                                    <td class="text-end pe-4 fw-bold text-dark">Q {{ item.saldo|floatformat:2 }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+
+                            <tr class="table-light"><td colspan="3" class="fw-bold ps-4 text-danger mt-3">GASTOS OPERATIVOS</td></tr>
+                            {% for item in data.detalles %}
+                                {% if item.tipo == 'EXPENSE' %}
+                                <tr>
+                                    <td class="ps-4">{{ item.nombre }} <small class="text-muted ms-2">{{ item.codigo }}</small></td>
+                                    <td><span class="badge bg-danger-subtle text-danger">Gasto</span></td>
+                                    <td class="text-end pe-4 fw-bold text-dark">Q {{ item.saldo|floatformat:2 }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

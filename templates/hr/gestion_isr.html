@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+    /* Por defecto, la hoja de impresión está oculta en pantalla */
+    #hoja-impresion { display: none; }
+
+    @media print {
+        /* Ocultar TODO lo del ERP (Menú, Sidebar, Botones) */
+        body * { visibility: hidden; }
+        .sidebar, header, .btn, form, .card-header, .alert, footer { display: none !important; }
+        
+        /* Configuración de la hoja */
+        body { background-color: white !important; margin: 0; padding: 0; }
+        @page { size: letter; margin: 1.5cm; } /* Margen estándar de oficina */
+
+        /* Mostrar SOLO nuestra hoja profesional */
+        #hoja-impresion, #hoja-impresion * {
+            visibility: visible;
+            display: block;
+        }
+        
+        #hoja-impresion {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            font-family: 'Times New Roman', Times, serif; /* Fuente formal */
+            color: black;
+            padding: 20px;
+        }
+
+        /* Diseño de tabla formal */
+        .tabla-formal {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .tabla-formal th, .tabla-formal td {
+            border: 1px solid #000;
+            padding: 8px;
+            font-size: 14px;
+        }
+        
+        /* AQUÍ ESTABA LA LÍNEA SUBRAYADA (CORREGIDA) */
+        .tabla-formal th { 
+            background-color: #f0f0f0 !important; 
+            -webkit-print-color-adjust: exact; /* Para Chrome/Edge */
+            print-color-adjust: exact;         /* Estándar moderno */
+        }
+        
+        .firma-box {
+            margin-top: 100px;
+            border-top: 1px solid black;
+            width: 200px;
+            text-align: center;
+            padding-top: 10px;
+        }
+    }
+</style>
+
+<div class="container-fluid no-print">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="text-primary fw-bold"><i class="bi bi-calculator"></i> Gestión de ISR Asalariados</h3>
+            <p class="text-muted">Cumplimiento Decreto 10-2012</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">1. Tipo de Cálculo</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="tipo_calculo" id="inicial" value="inicial" checked onclick="toggleIVA(false)">
+                                <label class="btn btn-outline-primary" for="inicial">Proyección Inicial (Ene)</label>
+
+                                <input type="radio" class="btn-check" name="tipo_calculo" id="final" value="final" onclick="toggleIVA(true)">
+                                <label class="btn btn-outline-primary" for="final">Liquidación Final</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Colaborador</label>
+                            <input type="text" name="nombre_empleado" class="form-control" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label>Sueldo Base</label>
+                                <input type="number" step="0.01" name="sueldo" class="form-control" required>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label>Bono Incentivo</label>
+                                <input type="number" step="0.01" name="bono" class="form-control" value="250">
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="div-iva" style="display:none;">
+                            <label class="form-label fw-bold text-success">Crédito Planilla IVA</label>
+                            <input type="number" step="0.01" name="planilla_iva" class="form-control" placeholder="Monto validado SAT">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-cpu"></i> Calcular</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            {% if calculado %}
+            <div class="card border-0 shadow bg-light">
+                <div class="card-body text-center">
+                    <h5 class="text-muted">{{ titulo_reporte }}</h5>
+                    <h2 class="display-6 fw-bold text-dark">Retención: Q {{ retencion_mensual|floatformat:2 }}</h2>
+                    <p class="mb-4">Mensual</p>
+                    
+                    <button onclick="window.print()" class="btn btn-dark btn-lg">
+                        <i class="bi bi-printer"></i> Imprimir Formato Oficial
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                Seleccione el tipo de cálculo e ingrese los datos para generar la constancia.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div id="hoja-impresion">
+    <table style="width: 100%; margin-bottom: 20px; border-bottom: 2px solid #0f2d5c; padding-bottom: 10px;">
+        <tr>
+            <td style="width: 25%; vertical-align: middle;">
+                {% if company.logo %}
+                    <img src="{{ company.logo.url }}" style="max-height: 80px; max-width: 180px;" alt="Logo Empresa">
+                {% else %}
+                    <h2 style="margin:0; color: #ccc;">{{ company.name|slice:":2" }}</h2>
+                {% endif %}
+            </td>
+            
+            <td style="text-align: center; vertical-align: middle;">
+                <h3 style="margin: 0; text-transform: uppercase;">{{ company.name }}</h3>
+                <small>NIT: 123456-7 | Dirección: Ciudad de Guatemala</small><br>
+                <small>Departamento de Recursos Humanos</small>
+            </td>
+            
+            <td style="width: 25%; text-align: right; vertical-align: bottom;">
+                <small>Fecha: {% now "d/m/Y" %}</small>
+            </td>
+        </tr>
+    </table>
+
+    <h4 style="text-align: center; margin-top: 30px; text-transform: uppercase; text-decoration: underline;">
+        {{ titulo_reporte }}<br>
+        <span style="font-size: 12px; font-weight: normal; text-decoration: none;">Periodo Fiscal {% now "Y" %}</span>
+    </h4>
+
+    <div style="margin-top: 30px; margin-bottom: 20px;">
+        <table style="width: 100%;">
+            <tr>
+                <td><strong>Colaborador:</strong> {{ nombre }}</td>
+                <td style="text-align: right;"><strong>Puesto:</strong> _______________________</td>
+            </tr>
+        </table>
+    </div>
+
+    <table class="tabla-formal">
+        <thead>
+            <tr>
+                <th>CONCEPTO</th>
+                <th style="text-align: right; width: 150px;">MONTO (Q)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>(+) Total Ingresos Proyectados (Sueldo + Bono)</td>
+                <td style="text-align: right;">{{ ingreso_anual|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td>(-) Deducción IGSS (4.83%)</td>
+                <td style="text-align: right;">({{ igss_anual|floatformat:2 }})</td>
+            </tr>
+            <tr>
+                <td>(-) Deducción Legal (Gastos Personales)</td>
+                <td style="text-align: right;">({{ deduccion_fija|floatformat:2 }})</td>
+            </tr>
+            <tr>
+                <td style="font-weight: bold; background-color: #f9f9f9;">(=) RENTA IMPONIBLE ESTIMADA</td>
+                <td style="text-align: right; font-weight: bold;">{{ renta_imponible|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td>Impuesto Determinado s/Tabla (5% o 7%)</td>
+                <td style="text-align: right;">{{ impuesto_determinado|floatformat:2 }}</td>
+            </tr>
+            
+            {% if tipo_calculo == 'final' %}
+            <tr>
+                <td>(-) Crédito Fiscal por Planilla IVA (SAT)</td>
+                <td style="text-align: right;">({{ credito_iva|floatformat:2 }})</td>
+            </tr>
+            {% endif %}
+
+            <tr>
+                <td style="font-weight: bold; border-top: 2px solid black;">(=) IMPUESTO A PAGAR ANUAL</td>
+                <td style="text-align: right; font-weight: bold; border-top: 2px solid black;">{{ impuesto_final|floatformat:2 }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div style="margin-top: 20px; padding: 15px; border: 1px dashed black; text-align: center;">
+        <span style="font-size: 14pt; font-weight: bold;">RETENCIÓN MENSUAL A APLICAR: Q {{ retencion_mensual|floatformat:2 }}</span>
+    </div>
+
+    <table style="width: 100%; margin-top: 80px;">
+        <tr>
+            <td align="center">
+                <div class="firma-box">Firma del Patrono<br><small>(Contabilidad)</small></div>
+            </td>
+            <td align="center">
+                <div class="firma-box">Firma del Colaborador<br><small>(Aceptación)</small></div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<script>
+    function toggleIVA(show) {
+        const div = document.getElementById('div-iva');
+        if (show) {
+            div.style.display = 'block';
+            document.getElementsByName('planilla_iva')[0].required = true;
+        } else {
+            div.style.display = 'none';
+            document.getElementsByName('planilla_iva')[0].required = false;
+            document.getElementsByName('planilla_iva')[0].value = '';
+        }
+    }
+</script>
+
+{% endblock %}

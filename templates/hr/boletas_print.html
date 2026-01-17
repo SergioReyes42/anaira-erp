@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Boletas de Pago - {{ nomina.mes }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #555; margin: 0; padding: 0; }
+        
+        /* Contenedor Hoja Carta */
+        .page {
+            background: white;
+            width: 21.59cm; /* Ancho Carta */
+            margin: 0 auto;
+            margin-bottom: 0.5cm;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* Boleta Media Carta */
+        .boleta {
+            height: 13.9cm; /* Mitad de 27.9cm */
+            padding: 1.5cm;
+            position: relative;
+            box-sizing: border-box;
+            border-bottom: 1px dashed #ccc; /* Línea de corte */
+        }
+        
+        /* Ajustes para impresión */
+        @media print {
+            body { background: white; }
+            .page { box-shadow: none; margin: 0; width: 100%; }
+            .no-print { display: none !important; }
+            @page { margin: 0; size: letter; }
+        }
+
+        .table-xs td, .table-xs th { padding: 2px 5px; font-size: 12px; }
+        .firmas { margin-top: 30px; }
+        .linea-firma { border-top: 1px solid black; width: 80%; margin: 0 auto; }
+    </style>
+</head>
+<body>
+
+    <div class="no-print text-center py-3 bg-dark sticky-top">
+        <button onclick="window.print()" class="btn btn-warning fw-bold">🖨️ IMPRIMIR RECIBOS (MEDIA CARTA)</button>
+    </div>
+
+    <div class="page">
+        {% for det in nomina.detalles.all %}
+            <div class="boleta">
+                <div class="row border-bottom pb-2 mb-2">
+                    <div class="col-8">
+                        <h5 class="fw-bold m-0">{{ nomina.company.name }}</h5>
+                        <small>RECIBO DE PAGO DE NÓMINA - {{ nomina.tipo }}</small>
+                    </div>
+                    <div class="col-4 text-end">
+                        <h4 class="fw-bold m-0">Q {{ det.liquido_a_recibir|floatformat:2 }}</h4>
+                        <small class="text-muted">{{ nomina.mes }}</small>
+                    </div>
+                </div>
+
+                <div class="row mb-2 small">
+                    <div class="col-6">
+                        <strong>Empleado:</strong> {{ det.employee.full_name }}<br>
+                        <strong>Cargo:</strong> {{ det.employee.position }}
+                    </div>
+                    <div class="col-6 text-end">
+                        <strong>Fecha:</strong> {% now "d/m/Y" %}<br>
+                        <strong>Ref:</strong> NOM-{{ nomina.id }}
+                    </div>
+                </div>
+
+                <table class="table table-bordered table-xs mb-3">
+                    <thead class="table-light">
+                        <tr>
+                            <th>CONCEPTO</th>
+                            <th class="text-end">INGRESOS</th>
+                            <th class="text-end">DESCUENTOS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Sueldo Ordinario</td>
+                            <td class="text-end">Q {{ det.salario_base|floatformat:2 }}</td>
+                            <td></td>
+                        </tr>
+                        {% if det.bonificacion > 0 %}
+                        <tr>
+                            <td>Bonificación Incentivo</td>
+                            <td class="text-end">Q {{ det.bonificacion|floatformat:2 }}</td>
+                            <td></td>
+                        </tr>
+                        {% endif %}
+                        
+                        {% if det.igss > 0 %}
+                        <tr>
+                            <td>IGSS Laboral</td>
+                            <td></td>
+                            <td class="text-end">Q {{ det.igss|floatformat:2 }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if det.isr > 0 %}
+                        <tr>
+                            <td>Retención ISR Asalariados</td>
+                            <td></td>
+                            <td class="text-end">Q {{ det.isr|floatformat:2 }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if det.descuento_prestamo > 0 %}
+                        <tr>
+                            <td>Préstamos / Anticipos</td>
+                            <td></td>
+                            <td class="text-end">Q {{ det.descuento_prestamo|floatformat:2 }}</td>
+                        </tr>
+                        {% endif %}
+                        
+                        <tr class="fw-bold bg-light">
+                            <td class="text-end">TOTALES</td>
+                            <td class="text-end">Q {{ det.salario_base|add:det.bonificacion|floatformat:2 }}</td>
+                            <td class="text-end">Q {{ det.igss|add:det.isr|add:det.descuento_prestamo|floatformat:2 }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="firmas row text-center small">
+                    <div class="col-6">
+                        <div class="linea-firma"></div>
+                        <br>Recibí Conforme (Firma)
+                    </div>
+                    <div class="col-6">
+                        <div class="linea-firma"></div>
+                        <br>Autorizado Por Gerencia G.
+                    </div>
+                </div>
+            </div>
+            
+            {% if forloop.counter|divisibleby:2 and not forloop.last %}
+                </div><div class="page"> {% endif %}
+
+        {% endfor %}
+    </div>
+
+</body>
+</html>

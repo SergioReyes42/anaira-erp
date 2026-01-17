@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Proveedores y Cuentas{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-person-rolodex"></i> Directorio de Proveedores</h1>
+    <div>
+        <a href="{% url 'pay_supplier' %}" class="btn btn-outline-success me-2">
+            <i class="bi bi-currency-exchange"></i> Ir a Pagar
+        </a>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newPartnerModal">
+            + Nuevo Proveedor
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    {% for partner in partners %}
+    <div class="col-md-4 mb-3">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title fw-bold">{{ partner.name }}</h5>
+                <p class="card-text text-muted small mb-1">NIT: {{ partner.nit }}</p>
+                <hr>
+                <h6 class="text-primary"><i class="bi bi-bank2"></i> Datos Bancarios</h6>
+                {% if partner.bank_name %}
+                    <p class="mb-0 fw-bold">{{ partner.bank_name }}</p>
+                    <p class="text-muted font-monospace">{{ partner.bank_account }}</p>
+                {% else %}
+                    <p class="text-danger small">Sin cuenta registrada</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-4">
+        <p class="text-muted">No tienes proveedores registrados.</p>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="modal fade" id="newPartnerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Registrar Proveedor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label>Nombre / Razón Social</label>
+                        {{ form.name }}
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label>NIT</label>
+                            {{ form.nit }}
+                        </div>
+                        <div class="col-6">
+                            <label>Tipo</label>
+                            {{ form.partner_type }}
+                        </div>
+                    </div>
+                    <hr>
+                    <p class="small text-muted fw-bold">DATOS PARA TRANSFERENCIAS</p>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label>Banco</label>
+                            {{ form.bank_name }}
+                        </div>
+                        <div class="col-6">
+                            <label>No. Cuenta</label>
+                            {{ form.bank_account }}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

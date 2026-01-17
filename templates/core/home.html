@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Inicio - {{ company.name }}{% endblock %}
+
+{% block content %}
+<div class="row align-items-center justify-content-center" style="min-height: 60vh;">
+    <div class="col-md-8 text-center">
+        <div class="mb-4">
+            <i class="bi bi-building-check display-1 text-primary"></i>
+        </div>
+        
+        <h1 class="display-4 fw-bold text-dark">{{ company.name }}</h1>
+        <h3 class="text-muted mb-4">NIT: {{ company.nit|default:"Sin NIT Registrado" }}</h3>
+        
+        <div class="card shadow-sm border-0 d-inline-block p-4 mt-3">
+            <h5 class="text-muted text-uppercase small ls-1">Estado del Sistema</h5>
+            <p class="mb-0 text-success fw-bold"><i class="bi bi-circle-fill small"></i> En Línea / Operativo</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

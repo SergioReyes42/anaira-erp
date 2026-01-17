@@ -1,0 +1,124 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold text-dark mb-0">Resumen Contable de Gastos</h4>
+            <p class="text-muted small">Cálculos automáticos de IVA e IDP según legislación de Guatemala</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'gasto_manual' %}" class="btn btn-primary shadow-sm">
+                <i class="bi bi-pencil-square me-2"></i>Ingreso Manual
+            </a>
+            <a href="{% url 'mobile_expense' %}" class="btn btn-success shadow-sm">
+                <i class="bi bi-camera me-2"></i>Captura OCR
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card p-3 border-start border-primary border-4">
+                <h6 class="text-muted small fw-bold text-uppercase">Total Facturado</h6>
+                <h3 class="fw-bold mb-0 text-primary">Q {{ totales.total_general|default:"0.00" }}</h3>
+                <small class="text-muted">Total de documentos</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card p-3 border-start border-success border-4">
+                <h6 class="text-muted small fw-bold text-uppercase">IVA por Cobrar</h6>
+                <h3 class="fw-bold mb-0 text-success">Q {{ totales.total_iva|default:"0.00" }}</h3>
+                <small class="text-muted">Crédito Fiscal (12%)</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card p-3 border-start border-warning border-4">
+                <h6 class="text-muted small fw-bold text-uppercase">Total IDP</h6>
+                <h3 class="fw-bold mb-0 text-warning">Q {{ totales.total_idp|default:"0.00" }}</h3>
+                <small class="text-muted">Impuesto Combustibles</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card p-3 border-start border-info border-4">
+                <h6 class="text-muted small fw-bold text-uppercase">Gasto Neto</h6>
+                <h3 class="fw-bold mb-0 text-info">Q {{ totales.total_base|default:"0.00" }}</h3>
+                <small class="text-muted">Base Imponible Total</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white py-3">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-list-check me-2"></i>Últimas Facturas Procesadas</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Fecha</th>
+                            <th>Proveedor / NIT</th>
+                            <th>Documento</th>
+                            <th>Monto Total</th>
+                            <th>IVA (12%)</th>
+                            <th>IDP</th>
+                            <th>Importe Neto</th>
+                            <th class="text-center">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for gasto in gastos %}
+                        <tr>
+                            <td class="ps-4 text-muted">{{ gasto.fecha|date:"d/m/Y" }}</td>
+                            <td>
+                                <div class="fw-bold">{{ gasto.nombre_emisor }}</div>
+                                <div class="small text-muted">NIT: {{ gasto.nit_emisor }}</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary opacity-75">{{ gasto.serie }}-{{ gasto.no_factura }}</span>
+                            </td>
+                            <td class="fw-bold text-primary">Q {{ gasto.monto_total }}</td>
+                            <td class="text-success">Q {{ gasto.impuesto_iva }}</td>
+                            <td class="text-warning">Q {{ gasto.impuesto_idp }}</td>
+                            <td class="fw-bold">Q {{ gasto.base_imponible }}</td>
+                            <td class="text-center">
+                                <span class="badge rounded-pill bg-success-subtle text-success px-3">Procesado</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <i class="bi bi-inbox text-muted display-4 d-block mb-3"></i>
+                                <p class="text-muted">Aún no hay gastos registrados. Prueba la captura OCR o el ingreso manual.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Estilos específicos para que se vea moderno */
+    .stats-card {
+        background: white;
+        border: none;
+        border-radius: 12px;
+        transition: transform 0.2s;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    .table thead th {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        color: #6c757d;
+        border-bottom: 1px solid #edf2f7;
+    }
+</style>
+{% endblock %}

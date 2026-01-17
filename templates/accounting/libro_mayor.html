@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Libro Mayor - Anaira ERP{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom d-print-none">
+        <div>
+            <h2 class="fw-bold" style="color: #0f2d5c;"><i class="bi bi-book-half me-2"></i> Libro Mayor</h2>
+            <p class="text-muted mb-0">Anaira_ERP - Estructura Contable NIC/NIIF</p>
+        </div>
+        <button onclick="window.print()" class="btn btn-primary"><i class="bi bi-printer"></i></button>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header text-white" style="background-color: #0f2d5c;">
+                    <h6 class="mb-0 fw-bold small text-uppercase">Nomenclatura</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for cuenta in cuentas %}
+                            <div class="list-group-item border-0 py-2 ps-{{ cuenta.level|default:1 }} 
+                                {% if cuenta.level == 1 %}bg-light fw-bold text-dark border-start border-4 border-primary{% endif %}">
+                                
+                                <small class="text-primary fw-bold me-2">{{ cuenta.code }}</small> 
+                                <span>{{ cuenta.name }}</span>
+                            </div>
+                        {% empty %}
+                            <div class="p-4 text-center text-muted">Cargue el catálogo para comenzar.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-success text-white py-2">
+                    <h6 class="mb-0 fw-bold small">BANCOS (ACTIVO)</h6>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <tbody>
+                            {% for b in bancos %}
+                            <tr>
+                                <td class="ps-3">{{ b.bank_name }}</td>
+                                <td class="text-end pe-3 fw-bold text-success">Q {{ b.current_balance|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-danger text-white py-2">
+                    <h6 class="mb-0 fw-bold small">GASTOS MAYORIZADOS</h6>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Cuenta</th>
+                                <th class="text-end pe-3">Saldo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for g in resumen_gastos %}
+                            <tr>
+                                <td class="ps-3 text-uppercase">{{ g.categoria|default:"Gastos" }}</td>
+                                <td class="text-end pe-3 text-danger fw-bold">Q {{ g.total|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Ingresos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">💵 Ingresos y Ventas</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'income_create' %}" class="btn btn-sm btn-success">
+            <i class="bi bi-plus-lg"></i> Registrar Ingreso
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Fecha</th>
+                        <th>Descripción / Cliente</th>
+                        <th>Destino</th>
+                        <th>Documento</th>
+                        <th class="text-end pe-4">Monto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in incomes %}
+                    <tr>
+                        <td class="ps-4">{{ item.date|date:"d M Y" }}</td>
+                        <td>
+                            <span class="fw-bold text-dark">{{ item.description }}</span>
+                        </td>
+                        <td>
+                            {% if item.bank_account %}
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">
+                                    <i class="bi bi-bank"></i> {{ item.bank_account.bank_name }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">Caja / Otro</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.reference_doc|default:"--" }}</td>
+                        <td class="text-end pe-4 fw-bold text-success">
+                            + Q {{ item.amount|floatformat:2 }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            No hay ingresos registrados aún.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
