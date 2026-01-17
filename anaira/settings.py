@@ -1,4 +1,5 @@
 import os
+import dj_database_url # <--- AGREGUE ESTO
 import glob
 from pathlib import Path
 from datetime import timedelta
@@ -33,15 +34,16 @@ for db_file in db_files:
     # Extraemos el nombre (ej: empresa_1)
     db_id = os.path.basename(db_file).replace('db_', '').replace('.sqlite3', '')
     
-    DATABASES[db_id] = {
+    DATABASES = {
+    'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': Path(db_file),
-        'TIME_ZONE': 'America/Guatemala',
-        'ATOMIC_REQUESTS': False,
-        'AUTOCOMMIT': True,
-        'CONN_MAX_AGE': 0,
-        'ATOMIC_REQUESTS': True,  # <--- ESTA LÍNEA ES LA CLAVE (No la borres)
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
+}
+
+# Configuración para Railway (Sobreescribe la local si existe DATABASE_URL)
+db_from_env = dj_database_url.config(conn_max_age=500)
+DATABASES['default'].update(db_from_env)
 
 # 4. APLICACIONES
 INSTALLED_APPS = [
@@ -70,6 +72,7 @@ INSTALLED_APPS = [
 # 5. MIDDLEWARE
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # <--- AGREGUE ESTA LÍNEA EXACTA
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware', # Agregado para evitar bloqueos
     'django.middleware.common.CommonMiddleware',
@@ -116,6 +119,9 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
