@@ -145,3 +145,7 @@ REST_FRAMEWORK = {
 # CONFIGURACIÓN DE ARCHIVOS MULTIMEDIA (LOGOS, EVIDENCIAS)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://anaira-erp.up.railway.app'
+]
