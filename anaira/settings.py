@@ -25,11 +25,12 @@ db_from_env = dj_database_url.config(conn_max_age=600, conn_health_checks=True)
 DATABASES['default'].update(db_from_env)
 
 # FINALMENTE: Agregamos la configuración ATOMIC (Esto soluciona su error)
-DATABASES['default']['ATOMIC_REQUESTS'] = True
+DATABASES['default']
+['ATOMIC_REQUESTS'] = True
 
 
 # 4. APLICACIONES
-INSTALLED_APPS = [
+INSTALLED_APPS = ['ATOMIC_REQUESTS'
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
