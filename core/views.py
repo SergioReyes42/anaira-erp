@@ -926,15 +926,27 @@ def admin_control_panel(request):
 from django.contrib.auth import get_user_model # <--- ESTA ES LA CLAVE
 from django.http import HttpResponse
 
+# En core/views.py
+
+# ... (sus otros imports de arriba déjelos igual) ...
+from django.http import HttpResponse 
+from django.contrib.auth import get_user_model # Asegúrese de tener esto
+
+# ... (sus otras vistas: home, login, etc...) ...
+
+# PEGUE ESTO AL FINAL DEL ARCHIVO:
 def crear_admin_express(request):
-    User = get_user_model() # Obtiene su usuario personalizado (accounts.User)
+    # 1. Obtenemos el modelo de usuario REAL de su proyecto (Accounts)
+    UsuarioReal = get_user_model() 
     
-    # Verificamos si ya existe (buscando por username)
-    if not User.objects.filter(username='admin').exists():
-        try:
-            User.objects.create_superuser('admin', 'admin@anaira.com', 'admin123')
-            return HttpResponse("<h1>¡Éxito Total!</h1> <p>Usuario: admin<br>Password: admin123</p>")
-        except Exception as e:
-            return HttpResponse(f"<h1>Error creando usuario:</h1> <p>{e}</p>")
+    try:
+        # 2. Verificamos si existe
+        if not UsuarioReal.objects.filter(username='admin').exists():
+            # 3. Creamos el Superusuario
+            UsuarioReal.objects.create_superuser('admin', 'admin@anaira.com', 'admin123')
+            return HttpResponse("<h1>✅ ¡LISTO!</h1> <p>Usuario: <b>admin</b><br>Contraseña: <b>admin123</b></p><a href='/'>Ir al Login</a>")
+        else:
+            return HttpResponse("<h1>⚠️ El usuario ya existe</h1> <p>Intente entrar con admin / admin123</p><a href='/'>Ir al Login</a>")
             
-    return HttpResponse("<h1>El usuario admin ya existe.</h1> <p>Intente iniciar sesión.</p>")
+    except Exception as e:
+        return HttpResponse(f"<h1>❌ Error Técnico:</h1> <p>{str(e)}</p>")
