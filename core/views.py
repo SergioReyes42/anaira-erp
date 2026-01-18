@@ -934,22 +934,21 @@ from django.contrib.auth import get_user_model # Asegúrese de tener esto
 
 # ... (sus otras vistas: home, login, etc...) ...
 
-# PEGUE ESTO AL FINAL DEL ARCHIVO:
-def crear_admin_express(request):
-    # 1. Obtenemos el modelo de usuario REAL de su proyecto (Accounts)
-    UsuarioReal = get_user_model() 
-    
+# En core/views.py (al final del archivo)
+
+from django.http import HttpResponse
+from django.contrib.auth import get_user_model
+
+def activar_admin_automatico(request):
+    User = get_user_model()
     try:
-        # 2. Verificamos si existe
-        if not UsuarioReal.objects.filter(username='admin').exists():
-            # 3. Creamos el Superusuario
-            UsuarioReal.objects.create_superuser('admin', 'admin@anaira.com', 'admin123')
-            return HttpResponse("<h1>✅ ¡LISTO!</h1> <p>Usuario: <b>admin</b><br>Contraseña: <b>admin123</b></p><a href='/'>Ir al Login</a>")
+        if not User.objects.filter(username='admin').exists():
+            User.objects.create_superuser('admin', 'admin@anaira.com', 'admin123')
+            return HttpResponse("<h1>✅ ÉXITO</h1><p>Usuario: admin<br>Password: admin123</p><a href='/'>Ir al Login</a>")
         else:
-            return HttpResponse("<h1>⚠️ El usuario ya existe</h1> <p>Intente entrar con admin / admin123</p><a href='/'>Ir al Login</a>")
-            
+            return HttpResponse("<h1>⚠️ YA EXISTE</h1><p>El usuario admin ya existe.</p><a href='/'>Ir al Login</a>")
     except Exception as e:
-        return HttpResponse(f"<h1>❌ Error Técnico:</h1> <p>{str(e)}</p>")
+        return HttpResponse(f"<h1>❌ ERROR</h1><p>{e}</p>")
     
     CSRF_TRUSTED_ORIGINS = [
     'https://anaira-erp.railway.app'  # <--- Ponga aquí SU NOMBRE NUEVO 2
