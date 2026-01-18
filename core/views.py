@@ -950,3 +950,7 @@ def crear_admin_express(request):
             
     except Exception as e:
         return HttpResponse(f"<h1>❌ Error Técnico:</h1> <p>{str(e)}</p>")
+    
+    CSRF_TRUSTED_ORIGINS = [
+    'https://anaira-erp.railway.app'  # <--- Ponga aquí SU NOMBRE NUEVO
+]
