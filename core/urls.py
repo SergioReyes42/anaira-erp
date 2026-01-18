@@ -68,6 +68,5 @@ urlpatterns = [
     
     path('bancos/transferencia/', views.transfer_create, name='transfer_create'),
 
-    path('crear-super-admin/', views.crear_admin_express),
-    path('activar-llave-maestra/', views.activar_admin_automatico),
+   
 ]

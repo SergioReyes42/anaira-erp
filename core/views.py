@@ -137,55 +137,46 @@ def mobile_expense(request):
 
 @login_required
 def gasto_manual(request):
-    # 1. Obtener la empresa actual de forma segura
+    # Obtener empresa actual
     company_name = request.session.get('company_name')
-    if not company_name:
-        return redirect('select_company')
+    if request.method == 'POST':
+        if not company_name:
+            return redirect('select_company')
     
     # Usamos get_object_or_404 para evitar errores si no encuentra la empresa
     company_obj = get_object_or_404(Company, name=company_name)
-
-    if request.method == 'POST':
-        try:
-            # Recopilar datos
+    try:
+            # 1. Recopilar datos del formulario HTML
             gasto = Gasto()
             gasto.fecha = request.POST.get('fecha')
-            gasto.proveedor = request.POST.get('nombre_emisor')
+            gasto.proveedor = request.POST.get('nombre_emisor') # O nit_emisor
             gasto.descripcion = request.POST.get('concepto')
             gasto.total = request.POST.get('monto_total')
             
-            # Datos ocultos calculados
+            # Datos calculados por el JS (Hidden inputs)
             gasto.amount_untaxed = request.POST.get('base_imponible') or 0
             gasto.iva = request.POST.get('impuesto_iva') or 0
             gasto.categoria = "Combustible" if request.POST.get('es_combustible') else "General"
             
-            # Asignar Empresa (Importante para que no quede huérfano)
-            # gasto.company = company_obj # (Si su modelo Gasto tiene campo company, descomente esto)
-
-            # Asignar Vehículo
+            # 2. Asignar Vehículo (Si seleccionó uno)
             vehicle_id = request.POST.get('vehicle_id')
             if vehicle_id:
-                gasto.vehicle = get_object_or_404(Fleet, id=vehicle_id)
+                gasto.vehicle = Fleet.objects.get(id=vehicle_id)
 
-            # Asignar Banco y Descontar
+            # 3. Asignar Banco y Descontar Dinero
             bank_id = request.POST.get('bank_id')
             if bank_id:
-                cuenta = get_object_or_404(BankAccount, id=bank_id)
+                cuenta = BankAccount.objects.get(id=bank_id)
+                # Validación de fondos
                 if cuenta.current_balance >= float(gasto.total):
                     cuenta.current_balance -= float(gasto.total)
                     cuenta.save()
                     gasto.bank_account = cuenta
                 else:
                     messages.error(request, "Fondos insuficientes en el banco seleccionado.")
-                    # Volvemos a cargar las listas para que no de error al recargar la pagina
-                    vehiculos = Fleet.objects.filter(company_id=company_obj.id)
-                    bancos = BankAccount.objects.filter(company_id=company_obj.id)
-                    return render(request, 'core/gasto_manual.html', {
-                        'vehiculos': vehiculos,
-                        'bancos': bancos,
-                        'today': date.today()
-                    })
+                    return redirect('gasto_manual')
 
+            # Guardar imagen si hay
             if 'imagen_factura' in request.FILES:
                 gasto.imagen = request.FILES['imagen_factura']
 
@@ -193,19 +184,8 @@ def gasto_manual(request):
             messages.success(request, "Gasto registrado correctamente.")
             return redirect('expense_list')
 
-        except Exception as e:
+    except Exception as e:
             messages.error(request, f"Error al guardar: {e}")
-
-    # --- AQUÍ ESTABA EL ERROR (CORREGIDO) ---
-    # Filtramos usando explícitamente el ID (company_id) para evitar confusión de tipos
-    vehiculos = Fleet.objects.filter(company_id=company_obj.id)
-    bancos = BankAccount.objects.filter(company_id=company_obj.id)
-    
-    return render(request, 'core/gasto_manual.html', {
-        'vehiculos': vehiculos,
-        'bancos': bancos,
-        'today': date.today()
-    })
 
     # Enviar listas al HTML
     vehiculos = Fleet.objects.filter(company=Company)
@@ -920,36 +900,3 @@ def admin_control_panel(request):
     }
     
     return render(request, 'core/control_panel.html', context)
-
-# En core/views.py
-
-from django.contrib.auth import get_user_model # <--- ESTA ES LA CLAVE
-from django.http import HttpResponse
-
-# En core/views.py
-
-# ... (sus otros imports de arriba déjelos igual) ...
-from django.http import HttpResponse 
-from django.contrib.auth import get_user_model # Asegúrese de tener esto
-
-# ... (sus otras vistas: home, login, etc...) ...
-
-# En core/views.py (al final del archivo)
-
-from django.http import HttpResponse
-from django.contrib.auth import get_user_model
-
-def activar_admin_automatico(request):
-    User = get_user_model()
-    try:
-        if not User.objects.filter(username='admin').exists():
-            User.objects.create_superuser('admin', 'admin@anaira.com', 'admin123')
-            return HttpResponse("<h1>✅ ÉXITO</h1><p>Usuario: admin<br>Password: admin123</p><a href='/'>Ir al Login</a>")
-        else:
-            return HttpResponse("<h1>⚠️ YA EXISTE</h1><p>El usuario admin ya existe.</p><a href='/'>Ir al Login</a>")
-    except Exception as e:
-        return HttpResponse(f"<h1>❌ ERROR</h1><p>{e}</p>")
-    
-    CSRF_TRUSTED_ORIGINS = [
-    'https://anaira-erp.railway.app'  # <--- Ponga aquí SU NOMBRE NUEVO 2
-]
