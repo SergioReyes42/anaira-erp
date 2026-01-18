@@ -15,6 +15,17 @@ DEBUG = True
 # Permitir acceso desde cualquier lugar (PC, Celular, Ngrok)
 ALLOWED_HOSTS = ['*'] 
 
+DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+    )
+}
+
+# --- AGREGUE ESTO JUSTO DEBAJO ---
+DATABASES['default']['ATOMIC_REQUESTS'] = True
+
 CSRF_TRUSTED_ORIGINS = [
     'https://refreshful-asthmatically-mackenzie.ngrok-free.dev',
 ]
