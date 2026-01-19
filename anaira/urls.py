@@ -28,15 +28,16 @@ def crear_admin_express(request):
         User = get_user_model()
         if not User.objects.filter(username='admin').exists():
             User.objects.create_superuser('admin', 'admin@anaira.com', 'admin123')
-            return HttpResponse("<h1>✅ ÉXITO TOTAL</h1><p>Usuario: admin<br>Password: admin123</p><br><a href='/'>IR AL LOGIN</a>")
+            return HttpResponse("<h1>✅ ÉXITO TOTAL</h1><p>Usuario creado.<br>User: admin<br>Pass: admin123</p><br><a href='/'>IR AL LOGIN</a>")
         else:
-            return HttpResponse("<h1>⚠️ YA EXISTE</h1><p>El usuario admin ya existe.</p><br><a href='/'>IR AL LOGIN</a>")
+            # Si sale esto, el usuario YA EXISTE y el problema es el "parpadeo" (Paso 2)
+            return HttpResponse("<h1>⚠️ YA EXISTE</h1><p>El usuario ya existe. El problema es de configuración (Cookies).</p><br><a href='/'>IR AL LOGIN</a>")
     except Exception as e:
         return HttpResponse(f"<h1>❌ ERROR</h1><p>{e}</p>")
 # -----------------------------
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('core.urls')), # Sus rutas normales
-    path('crear-emergencia/', crear_admin_express), # <--- LA RUTA SECRETA
+    path('', include('core.urls')),
+    path('crear-emergencia/', crear_admin_express), # <--- RUTA SECRETA
 ]
