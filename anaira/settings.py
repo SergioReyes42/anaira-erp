@@ -148,3 +148,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 CSRF_TRUSTED_ORIGINS = [
     'https://anaira-erp.up.railway.app'
 ]
+# --- AGREGAR AL FINAL DE SETTINGS.PY ---
+
+# Configuración vital para que el Login funcione en Railway (HTTPS)
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
