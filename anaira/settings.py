@@ -18,14 +18,12 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # Apps del ERP
     "core.apps.CoreConfig",
     "accounts.apps.AccountsConfig",
     "accounting.apps.AccountingConfig",
     "inventory.apps.InventoryConfig",
     "sales.apps.SalesConfig",
     'hr',
-    # Terceros
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
@@ -41,35 +39,33 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    # 'core.middleware.CompanyRoutingMiddleware', # <-- DESACTIVADO TEMPORALMENTE
+    # 'core.middleware.CompanyRoutingMiddleware', # Router desactivado por seguridad
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# 5. CONFIGURACIÓN DE BASE DE DATOS (EL FIX PRINCIPAL)
+# 5. CONFIGURACIÓN DE BASE DE DATOS LIMPIA
+# Primero borramos cualquier rastro anterior
 DATABASES = {}
 
-# Si existe DATABASE_URL (Railway), úsala. Si no, usa SQLite local.
 if 'DATABASE_URL' in os.environ:
+    # Producción (Railway)
     DATABASES['default'] = dj_database_url.config(
         default=os.environ.get('DATABASE_URL'),
         conn_max_age=600,
         conn_health_checks=True,
     )
 else:
+    # Local
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 
-# --- PARCHE DE SEGURIDAD PARA EL ERROR KEYERROR ---
-# Esto inyecta la configuración A LA FUERZA en todas las bases de datos detectadas
-DATABASES['default']['ATOMIC_REQUESTS'] = True
+# 6. ROUTER (Vacío para evitar desvíos)
+DATABASE_ROUTERS = []
 
-# 6. ROUTER (DESACTIVADO PARA QUE NO MOLESTE AL CREAR EMPRESA)
-# DATABASE_ROUTERS = ['anaira.router.CompanyRouter']
-
-# 7. TEMPLATES
+# 7. OTRAS CONFIGURACIONES
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -86,35 +82,20 @@ TEMPLATES = [
     },
 ]
 
-# 8. LOGIN Y REDIRECCIONES
 AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/select-company/'
 LOGOUT_REDIRECT_URL = '/login/'
-
-# 9. IDIOMA Y ZONA
 LANGUAGE_CODE = 'es'
 TIME_ZONE = 'America/Guatemala'
 USE_I18N = True
 USE_TZ = True
-
-# 10. ARCHIVOS ESTÁTICOS
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
-# 11. AJUSTES DE SEGURIDAD (ANTI-PARPADEO)
-CSRF_TRUSTED_ORIGINS = ['https://anaira-erp.up.railway.app']
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-# Relajamos las cookies para asegurar que entre
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
-SECURE_SSL_REDIRECT = False
-
-# 12. OTROS
 ROOT_URLCONF = 'anaira.urls'
 WSGI_APPLICATION = 'anaira.wsgi.application'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -124,3 +105,21 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ],
 }
+
+# Seguridad SSL
+CSRF_TRUSTED_ORIGINS = ['https://anaira-erp.up.railway.app']
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SECURE_SSL_REDIRECT = False
+
+# ==============================================================================
+# 🛑 EL VACUNADOR: SOLUCIÓN FINAL AL KEYERROR
+# ==============================================================================
+# Este bloque revisa CADA base de datos que Django haya detectado (incluso las fantasmas
+# como company_1) y les inyecta la llave 'ATOMIC_REQUESTS' a la fuerza.
+# ==============================================================================
+if 'DATABASES' in locals():
+    for db_name in DATABASES:
+        DATABASES[db_name]['ATOMIC_REQUESTS'] = True
+# ==============================================================================
