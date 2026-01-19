@@ -41,7 +41,7 @@ for db_file in db_files:
         'ATOMIC_REQUESTS': False,
         'AUTOCOMMIT': True,
         'CONN_MAX_AGE': 0,
-        
+
         'ATOMIC_REQUESTS': True,  # <--- ESTA LÍNEA ES LA CLAVE (No la borres)
 
     }
@@ -147,13 +147,19 @@ REST_FRAMEWORK = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://anaira-erp.up.railway.app'
-]
-# --- AGREGAR AL FINAL DE SETTINGS.PY ---
+# --- AL FINAL DE SETTINGS.PY ---
 
-# Configuración vital para que el Login funcione en Railway (HTTPS)
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-SECURE_SSL_REDIRECT = True
+# 1. Confiar en que Railway maneja el HTTPS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# 2. Obligar a usar Cookies Seguras (Esto evita el parpadeo)
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+# 3. Seguridad extra
+SECURE_SSL_REDIRECT = True
+
+# 4. Asegurar que su dominio está autorizado (Revise que sea el suyo)
+CSRF_TRUSTED_ORIGINS = [
+    'https://anaira-erp.up.railway.app', 
+]
