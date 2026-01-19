@@ -1,95 +1,101 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+
+from anaira_erp.core.models import Company
+
+urlpatterns = [
+    # 1. ADMIN DE DJANGO
+    path('gestion-segura-sermaworld/', admin.site.urls),
+
+    # 2. CONECTAR CON LA APP 'CORE' (Aquí está toda la magia)
+    # Esto le dice a Django: "Para todo lo demás, ve al archivo urls.py de la carpeta core"
+    path('', include('core.urls')),
+    
+]
+
+# Configuración para servir imágenes (Facturas/Evidencias)
+if settings.DEBUG:
+   urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+from django.contrib import admin
+from django.urls import path, include
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.apps import apps  # <--- ESTA ES LA CLAVE PARA QUE NO FALLE
 
-# --- FUNCIÓN 1: CREAR ADMIN ---
+# --- FUNCIÓN DE EMERGENCIA ---
 def crear_admin_express(request):
     try:
         User = get_user_model()
         if not User.objects.filter(username='admin').exists():
             User.objects.create_superuser('admin', 'admin@anaira.com', 'admin123')
-            return HttpResponse("<h1>✅ ADMIN CREADO</h1><p>User: admin / Pass: admin123</p>")
-        return HttpResponse("<h1>⚠️ ADMIN YA EXISTE</h1>")
+            return HttpResponse("<h1>✅ ÉXITO TOTAL</h1><p>Usuario creado.<br>User: admin<br>Pass: admin123</p><br><a href='/'>IR AL LOGIN</a>")
+        else:
+            # Si sale esto, el usuario YA EXISTE y el problema es el "parpadeo" (Paso 2)
+            return HttpResponse("<h1>⚠️ YA EXISTE</h1><p>El usuario ya existe. El problema es de configuración (Cookies).</p><br><a href='/'>IR AL LOGIN</a>")
     except Exception as e:
         return HttpResponse(f"<h1>❌ ERROR</h1><p>{e}</p>")
-
-# --- FUNCIÓN 2: CREAR EMPRESA A LA FUERZA (CORREGIDA) ---
+    
+    # --- FUNCIÓN 2: CREAR EMPRESA A LA FUERZA (NUEVA) ---
 def crear_empresa_force(request):
     try:
-        # 1. Buscamos el modelo 'Company' dentro de la app 'core' dinámicamente
-        # Esto evita el error "'Company' no está definido"
-        Company = apps.get_model('core', 'Company') 
-        
-        # 2. Creamos la empresa
+        # 1. Crear la empresa con datos genéricos
+        # Usamos get_or_create para que no falle si ya existe
         empresa, created = Company.objects.get_or_create(
-            name="Anaira ERP Principal",
+            name="Anaira ERP Principal", # Nombre de la empresa
             defaults={
-                'nit': 'CF',
+                'nit': 'CF',           # Datos obligatorios rellenos con dummy
                 'phone': '12345678',
                 'email': 'contacto@anaira.com',
                 'address': 'Oficina Central'
             }
         )
 
-        # 3. Buscamos al usuario Admin
+        # 2. Buscar al usuario Admin
         User = get_user_model()
-        if not User.objects.filter(username='admin').exists():
-             return HttpResponse("<h1>❌ ERROR:</h1> <p>Primero debe crear el usuario admin usando /crear-emergencia/</p>")
-        
         admin_user = User.objects.get(username='admin')
 
-        # 4. Asignar la empresa al usuario (Prueba varios métodos por si acaso)
-        log_asignacion = []
-        asignado_exito = False
-
-        # Intento A: Relación Many-to-Many (la más común en ERPs)
+        # 3. Asignar la empresa al usuario
+        # Intentamos los dos métodos más comunes (Many-to-Many o ForeignKey)
+        asignado = "No se pudo asignar (revise modelos)"
+        
+        # Opción A: Si el usuario tiene un campo "companies" (Muchos a Muchos)
         if hasattr(admin_user, 'companies'):
             admin_user.companies.add(empresa)
-            log_asignacion.append("✅ Asignado vía admin_user.companies.add()")
-            asignado_exito = True
+            asignado = "Asignada vía 'companies.add()'"
         
-        # Intento B: Relación ForeignKey directa
+        # Opción B: Si el usuario tiene un campo "company" (Uno a Uno/Muchos)
         elif hasattr(admin_user, 'company'):
             admin_user.company = empresa
             admin_user.save()
-            log_asignacion.append("✅ Asignado vía admin_user.company = ...")
-            asignado_exito = True
-
-        # Intento C: Desde la empresa hacia el usuario
+            asignado = "Asignada vía 'user.company = ...'"
+            
+        # Opción C: Si la empresa tiene un campo "users" o "owner"
         elif hasattr(empresa, 'users'):
             empresa.users.add(admin_user)
-            log_asignacion.append("✅ Asignado vía empresa.users.add()")
-            asignado_exito = True
-            
-        # Intento D: Buscar tabla intermedia manualmente (tenant users)
-        else:
-            log_asignacion.append("⚠️ No se encontró relación directa. Verifique sus modelos.")
+            asignado = "Asignada vía 'empresa.users.add()'"
 
         status = "CREADA NUEVA" if created else "YA EXISTÍA (Recuperada)"
         
         return HttpResponse(f"""
-            <div style='font-family: sans-serif; padding: 20px; line-height: 1.6;'>
-                <h1 style='color: green;'>🚀 OPERACIÓN EXITOSA</h1>
+            <div style='font-family: sans-serif; padding: 20px;'>
+                <h1>🚀 EMPRESA CREADA EXITOSAMENTE</h1>
                 <ul>
-                    <li><strong>Empresa:</strong> {empresa.name} (ID: {empresa.id})</li>
+                    <li><strong>Empresa:</strong> {empresa.name}</li>
                     <li><strong>Estado:</strong> {status}</li>
-                    <li><strong>Usuario:</strong> {admin_user.username}</li>
-                </ul>
-                <hr>
-                <h3>Intentos de Asignación:</h3>
-                <ul>
-                    {''.join([f'<li>{log}</li>' for log in log_asignacion])}
+                    <li><strong>Asignación:</strong> {asignado}</li>
                 </ul>
                 <br>
-                <a href='/' style='background: #007bff; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 18px;'>
-                    👉 ENTRAR AL SISTEMA AHORA
+                <a href='/' style='background: blue; color: white; padding: 10px; text-decoration: none; border-radius: 5px;'>
+                    👉 IR AL DASHBOARD AHORA
                 </a>
             </div>
         """)
 
     except Exception as e:
+        # Si falla, imprimimos el error completo para verlo
         import traceback
         return HttpResponse(f"<h1>❌ ERROR CRÍTICO</h1><pre>{traceback.format_exc()}</pre>")
 
@@ -97,5 +103,12 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
     path('crear-emergencia/', crear_admin_express),
-    path('crear-empresa/', crear_empresa_force), 
+    path('crear-empresa/', crear_empresa_force), # <--- NUEVA RUTA
+]
+# -----------------------------
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('core.urls')),
+    path('crear-emergencia/', crear_admin_express), # <--- RUTA SECRETA
 ]
