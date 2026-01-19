@@ -1,49 +1,38 @@
 import os
-import dj_database_url # <--- AGREGUE ESTO
-import glob
+import dj_database_url
 from pathlib import Path
-from datetime import timedelta
 from django.utils.translation import gettext_lazy as _
 
 # 1. RUTAS BÁSICAS
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 2. SEGURIDAD
-SECRET_KEY = 'dev-insecure-secret-key-change-me'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-insecure-secret-key-change-me')
 DEBUG = True
-
-# Permitir acceso desde cualquier lugar (PC, Celular, Ngrok)
 ALLOWED_HOSTS = ['*'] 
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://refreshful-asthmatically-mackenzie.ngrok-free.dev',
-]
-
-# 3. CONFIGURACIÓN DE BASES DE DATOS (ARQUITECTURA MULTI-TENANT)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        # AQUÍ APUNTAMOS A LA "RECEPCIÓN" (Donde viven los usuarios y lista de empresas)
-        'NAME': BASE_DIR / 'db_main.sqlite3',
+# 3. CONFIGURACIÓN DE BASE DE DATOS (INTELIGENTE)
+# Esta configuración detecta si está en Railway o en su PC
+if 'DATABASE_URL' in os.environ:
+    # --- MODO PRODUCCIÓN (RAILWAY) ---
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
-
-# Auto-detección de bases de datos de empresas (db_empresa_X.sqlite3)
-db_files = glob.glob(os.path.join(BASE_DIR, "db_empresa_*.sqlite3"))
-for db_file in db_files:
-    # Extraemos el nombre (ej: empresa_1)
-    db_id = os.path.basename(db_file).replace('db_', '').replace('.sqlite3', '')
+    # ESTO SOLUCIONA EL ERROR KeyError: 'ATOMIC_REQUESTS'
+    DATABASES['default']['ATOMIC_REQUESTS'] = True
     
-    DATABASES[db_id] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': Path(db_file),
-        'TIME_ZONE': 'America/Guatemala',
-        'ATOMIC_REQUESTS': False,
-        'AUTOCOMMIT': True,
-        'CONN_MAX_AGE': 0,
-
-        'ATOMIC_REQUESTS': True,  # <--- ESTA LÍNEA ES LA CLAVE (No la borres)
-
+else:
+    # --- MODO LOCAL (PC) ---
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+            'ATOMIC_REQUESTS': True, 
+        }
     }
 
 # 4. APLICACIONES
@@ -61,7 +50,7 @@ INSTALLED_APPS = [
     "accounting.apps.AccountingConfig",
     "inventory.apps.InventoryConfig",
     "sales.apps.SalesConfig",
-    'hr',  # <--- AGREGAR ESTA LÍNEA
+    'hr',
     
     # Terceros
     "rest_framework",
@@ -73,13 +62,13 @@ INSTALLED_APPS = [
 # 5. MIDDLEWARE
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # <--- AGREGUE ESTA LÍNEA EXACTA
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware', # Agregado para evitar bloqueos
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'core.middleware.CompanyRoutingMiddleware', # TU SELECTOR DE EMPRESA
+    'core.middleware.CompanyRoutingMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -120,8 +109,6 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
@@ -143,23 +130,19 @@ REST_FRAMEWORK = {
     ],
 }
 
-# CONFIGURACIÓN DE ARCHIVOS MULTIMEDIA (LOGOS, EVIDENCIAS)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# 12. SEGURIDAD Y DOMINIOS (SOLUCIÓN LOGIN PARPADEANTE)
 
-# --- AL FINAL DE SETTINGS.PY ---
+# Lista de dominios permitidos
+CSRF_TRUSTED_ORIGINS = [
+    'https://anaira-erp.up.railway.app',
+    'https://refreshful-asthmatically-mackenzie.ngrok-free.dev',
+]
 
-# 1. Confiar en que Railway maneja el HTTPS
+# Configuración SSL para Railway
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# 2. Obligar a usar Cookies Seguras (Esto evita el parpadeo)
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-
-# 3. Seguridad extra
-SECURE_SSL_REDIRECT = True
-
-# 4. Asegurar que su dominio está autorizado (Revise que sea el suyo)
-CSRF_TRUSTED_ORIGINS = [
-    'https://anaira-erp.up.railway.app', 
-]
+# IMPORTANTE: Dejamos esto en False para GARANTIZAR que pueda entrar hoy.
+# (Más adelante, cuando todo funcione perfecto, podemos pasarlo a True)
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SECURE_SSL_REDIRECT = False
