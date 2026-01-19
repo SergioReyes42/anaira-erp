@@ -11,28 +11,29 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-insecure-secret-key-change-me')
 DEBUG = True
 ALLOWED_HOSTS = ['*'] 
 
-# 3. CONFIGURACIÓN DE BASE DE DATOS (INTELIGENTE)
-# Esta configuración detecta si está en Railway o en su PC
+# 3. CONFIGURACIÓN DE BASE DE DATOS (BLINDADA)
+DATABASES = {}
+
 if 'DATABASE_URL' in os.environ:
     # --- MODO PRODUCCIÓN (RAILWAY) ---
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
-            conn_max_age=600,
-            conn_health_checks=True,
-        )
-    }
-    # ESTO SOLUCIONA EL ERROR KeyError: 'ATOMIC_REQUESTS'
-    DATABASES['default']['ATOMIC_REQUESTS'] = True
+    # Obtenemos la config de Railway
+    db_config = dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+    # Forzamos ATOMIC_REQUESTS dentro del diccionario de configuración
+    db_config['ATOMIC_REQUESTS'] = True
+    
+    # Asignamos a default
+    DATABASES['default'] = db_config
     
 else:
     # --- MODO LOCAL (PC) ---
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-            'ATOMIC_REQUESTS': True, 
-        }
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+        'ATOMIC_REQUESTS': True, 
     }
 
 # 4. APLICACIONES
@@ -73,8 +74,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# 6. ROUTER DE BASE DE DATOS
-DATABASE_ROUTERS = ['anaira.router.CompanyRouter']
+# 6. ROUTER DE BASE DE DATOS (DESACTIVADO TEMPORALMENTE)
+# Lo comentamos para que le deje crear la empresa en la DB principal sin errores
+# DATABASE_ROUTERS = ['anaira.router.CompanyRouter'] 
 
 # 7. TEMPLATES
 TEMPLATES = [
@@ -130,7 +132,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-# 12. SEGURIDAD Y DOMINIOS (SOLUCIÓN LOGIN PARPADEANTE)
+# 12. SEGURIDAD Y DOMINIOS
 
 # Lista de dominios permitidos
 CSRF_TRUSTED_ORIGINS = [
@@ -141,8 +143,7 @@ CSRF_TRUSTED_ORIGINS = [
 # Configuración SSL para Railway
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# IMPORTANTE: Dejamos esto en False para GARANTIZAR que pueda entrar hoy.
-# (Más adelante, cuando todo funcione perfecto, podemos pasarlo a True)
+# IMPORTANTE: Cookies RELAJADAS para evitar el Login Loop (Parpadeo)
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
