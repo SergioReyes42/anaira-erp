@@ -42,6 +42,7 @@ for db_file in db_files:
         'AUTOCOMMIT': True,
         'CONN_MAX_AGE': 0,
         'ATOMIC_REQUESTS': True,  # <--- ESTA LÍNEA ES LA CLAVE (No la borres)
+
     }
 
 # 4. APLICACIONES
