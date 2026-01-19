@@ -11,29 +11,22 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-insecure-secret-key-change-me')
 DEBUG = True
 ALLOWED_HOSTS = ['*'] 
 
-# 3. CONFIGURACIÓN DE BASE DE DATOS (BLINDADA)
+# 3. CONFIGURACIÓN DE BASE DE DATOS
+# Inicializamos el diccionario vacío
 DATABASES = {}
 
 if 'DATABASE_URL' in os.environ:
     # --- MODO PRODUCCIÓN (RAILWAY) ---
-    # Obtenemos la config de Railway
-    db_config = dj_database_url.config(
+    DATABASES['default'] = dj_database_url.config(
         default=os.environ.get('DATABASE_URL'),
         conn_max_age=600,
         conn_health_checks=True,
     )
-    # Forzamos ATOMIC_REQUESTS dentro del diccionario de configuración
-    db_config['ATOMIC_REQUESTS'] = True
-    
-    # Asignamos a default
-    DATABASES['default'] = db_config
-    
 else:
     # --- MODO LOCAL (PC) ---
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
-        'ATOMIC_REQUESTS': True, 
     }
 
 # 4. APLICACIONES
@@ -74,9 +67,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# 6. ROUTER DE BASE DE DATOS (DESACTIVADO TEMPORALMENTE)
-# Lo comentamos para que le deje crear la empresa en la DB principal sin errores
-# DATABASE_ROUTERS = ['anaira.router.CompanyRouter'] 
+# 6. ROUTER DESACTIVADO (IMPORTANTE: Mantener comentado)
+# DATABASE_ROUTERS = ['anaira.router.CompanyRouter']
 
 # 7. TEMPLATES
 TEMPLATES = [
@@ -107,7 +99,7 @@ TIME_ZONE = 'America/Guatemala'
 USE_I18N = True
 USE_TZ = True
 
-# 10. ARCHIVOS ESTÁTICOS Y MEDIA
+# 10. ARCHIVOS ESTÁTICOS
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
@@ -127,23 +119,24 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
 }
 
-# 12. SEGURIDAD Y DOMINIOS
-
-# Lista de dominios permitidos
+# 12. SEGURIDAD
 CSRF_TRUSTED_ORIGINS = [
     'https://anaira-erp.up.railway.app',
     'https://refreshful-asthmatically-mackenzie.ngrok-free.dev',
 ]
-
-# Configuración SSL para Railway
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-# IMPORTANTE: Cookies RELAJADAS para evitar el Login Loop (Parpadeo)
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
+
+# ==========================================
+# 🛑 ZONA DE BLINDAJE FINAL (SOLUCIÓN AL ERROR)
+# ==========================================
+# Este bloque recorre TODAS las bases de datos configuradas y les inyecta 
+# la configuración ATOMIC a la fuerza. Es imposible que falle.
+if 'DATABASES' in locals():
+    for db_alias in DATABASES:
+        DATABASES[db_alias]['ATOMIC_REQUESTS'] = True
+# ==========================================
