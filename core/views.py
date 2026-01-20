@@ -524,7 +524,7 @@ def smart_hub(request):
 @login_required
 def product_list(request):
     company_id = request.session.get('company_id')
-    products = Product.objects.filter(company_id=company_id, active=True)
+    products = Product.objects.filter(company_id=company_id, is_active=True)
     return render(request, 'inventory/product_list.html', {'products': products})
 
 @login_required
@@ -605,7 +605,7 @@ def create_movement(request):
         messages.success(request, f"Movimiento registrado. Nuevo Stock: {producto.stock}")
         return redirect('product_list')
 
-    products = Product.objects.filter(company=company, active=True)
+    products = Product.objects.filter(company=company, is_active=True)
     return render(request, 'inventory/movement_form.html', {
         'products': products, 
         'pre_selected': int(pre_selected_product) if pre_selected_product else None
@@ -629,7 +629,7 @@ def employee_list(request):
             messages.success(request, "Empleado registrado correctamente.")
             return redirect('employee_list')
     
-    employees = Employee.objects.filter(company=company, active=True)
+    employees = Employee.objects.filter(company=company, is_active=True)
     form = EmployeeForm()
     return render(request, 'hr/employee_list.html', {'employees': employees, 'form': form})
 
@@ -642,8 +642,7 @@ def nomina_create(request):
     """
     company_id = request.session.get('company_id')
     company = get_object_or_404(Company, id=company_id)
-    employees = Employee.objects.filter(company=company, active=True)
-    
+    employees = Employee.objects.filter(company=company, is_active=True)            
     # CÁLCULO PREVIO (GET)
     preview_data = []
     total_planilla = 0
