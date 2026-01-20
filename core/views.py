@@ -137,33 +137,40 @@ def mobile_expense(request):
 
 @login_required
 def gasto_manual(request):
-    # Obtener empresa actual
+    # 1. Obtener la empresa actual de la sesión
     company_name = request.session.get('company_name')
-    if request.method == 'POST':
-        if not company_name:
-            return redirect('select_company')
     
-    # Usamos get_object_or_404 para evitar errores si no encuentra la empresa
+    # Validación de seguridad: Si no hay empresa en sesión, mandar a seleccionar
+    if not company_name:
+        return redirect('select_company')
+    
+    # 2. Convertir el nombre en el OBJETO real (La Instancia)
     company_obj = get_object_or_404(Company, name=company_name)
+
     try:
-            # 1. Recopilar datos del formulario HTML
+        if request.method == 'POST':
+            # --- PROCESAR FORMULARIO ---
             gasto = Gasto()
+            
+            # ¡IMPORTANTE! Asignar el gasto a la empresa actual
+            gasto.company = company_obj  # <--- FALTABA ESTO (Sin esto, el gasto queda huérfano)
+            
             gasto.fecha = request.POST.get('fecha')
-            gasto.proveedor = request.POST.get('nombre_emisor') # O nit_emisor
+            gasto.proveedor = request.POST.get('nombre_emisor')
             gasto.descripcion = request.POST.get('concepto')
             gasto.total = request.POST.get('monto_total')
             
-            # Datos calculados por el JS (Hidden inputs)
+            # Datos calculados
             gasto.amount_untaxed = request.POST.get('base_imponible') or 0
             gasto.iva = request.POST.get('impuesto_iva') or 0
             gasto.categoria = "Combustible" if request.POST.get('es_combustible') else "General"
             
-            # 2. Asignar Vehículo (Si seleccionó uno)
+            # Asignar Vehículo
             vehicle_id = request.POST.get('vehicle_id')
             if vehicle_id:
                 gasto.vehicle = Fleet.objects.get(id=vehicle_id)
 
-            # 3. Asignar Banco y Descontar Dinero
+            # Asignar Banco y Descontar Dinero
             bank_id = request.POST.get('bank_id')
             if bank_id:
                 cuenta = BankAccount.objects.get(id=bank_id)
@@ -176,7 +183,7 @@ def gasto_manual(request):
                     messages.error(request, "Fondos insuficientes en el banco seleccionado.")
                     return redirect('gasto_manual')
 
-            # Guardar imagen si hay
+            # Guardar imagen
             if 'imagen_factura' in request.FILES:
                 gasto.imagen = request.FILES['imagen_factura']
 
@@ -185,11 +192,12 @@ def gasto_manual(request):
             return redirect('expense_list')
 
     except Exception as e:
-            messages.error(request, f"Error al guardar: {e}")
+        messages.error(request, f"Error al guardar: {e}")
 
-    # Enviar listas al HTML
-    vehiculos = Fleet.objects.filter(company=Company)
-    bancos = BankAccount.objects.filter(company=Company)
+    # --- ENVIAR DATOS AL HTML (AQUÍ ESTABA EL ERROR) ---
+    # Usamos company_obj (la empresa específica) en lugar de Company (la clase general)
+    vehiculos = Fleet.objects.filter(company=company_obj) 
+    bancos = BankAccount.objects.filter(company=company_obj)
     
     return render(request, 'core/gasto_manual.html', {
         'vehiculos': vehiculos,
