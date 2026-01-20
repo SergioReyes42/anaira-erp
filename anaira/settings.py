@@ -1,36 +1,21 @@
 import os
-import shutil  # Para borrar carpetas
-import sys
+import shutil
 import dj_database_url
 from pathlib import Path
 
-# 1. DIRECTORIO BASE
+# 1. DIRECTORIO BASE Y LIMPIEZA PREVENTIVA
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# ==============================================================================
-# 🧹 FASE 1: EL EXORCISMO (ELIMINAR ARCHIVOS ZOMBIES)
-# ==============================================================================
-# Buscamos la carpeta 'tenants' que está causando el problema y la borramos.
+# Intentamos borrar basura vieja
 zombie_path = BASE_DIR / 'tenants'
 if zombie_path.exists():
     try:
         shutil.rmtree(zombie_path)
-        print("💥 ZOMBIE ELIMINADO: Carpeta /tenants/ borrada correctamente.")
-    except Exception as e:
-        print(f"⚠️ No se pudo borrar carpeta tenants: {e}")
-
-# También borramos cualquier sqlite suelto que no sea el principal
-for db_file in BASE_DIR.glob("*.sqlite3"):
-    if db_file.name != "db.sqlite3": # Respetamos solo la base local default
-        try:
-            os.remove(db_file)
-            print(f"💥 ZOMBIE ELIMINADO: {db_file.name}")
-        except:
-            pass
-# ==============================================================================
+    except:
+        pass
 
 # 2. SEGURIDAD
-SECRET_KEY = os.environ.get('SECRET_KEY', 'llave-maestra-anti-zombies')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'hack-patch-key-123')
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
@@ -54,7 +39,7 @@ INSTALLED_APPS = [
     "corsheaders",
 ]
 
-# 4. MIDDLEWARE (SIN ROUTERS)
+# 4. MIDDLEWARE
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -67,47 +52,25 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# 5. BASE DE DATOS (CONFIGURACIÓN ESTRICTA)
+# 5. BASE DE DATOS
 DATABASES = {}
 
 if 'DATABASE_URL' in os.environ:
-    # Railway (PostgreSQL)
     DATABASES['default'] = dj_database_url.config(
         default=os.environ.get('DATABASE_URL'),
         conn_max_age=600,
         conn_health_checks=True,
     )
 else:
-    # Local (SQLite)
     DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 
-# ==============================================================================
-# 🛡️ FASE 2: EL BLINDAJE (PURGA DE MEMORIA)
-# ==============================================================================
-# Aquí revisamos si algún código "travieso" metió bases de datos extras (como company_1)
-# y las borramos de la memoria a la fuerza.
-
-# 1. Obtenemos las llaves actuales (ej: 'default', 'company_1')
-db_keys = list(DATABASES.keys())
-
-# 2. Recorremos y eliminamos a los intrusos
-for alias in db_keys:
-    if alias != 'default':
-        del DATABASES[alias] # ¡Adiós company_1!
-        print(f"🚫 Base de datos intrusa '{alias}' eliminada de la configuración.")
-
-# 3. A la única sobreviviente (default), le ponemos la vacuna ATOMIC
+# Aseguramos la llave en la default
 DATABASES['default']['ATOMIC_REQUESTS'] = True
 
-# Aseguramos el motor (parche extra)
-if not DATABASES['default'].get('ENGINE'):
-    DATABASES['default']['ENGINE'] = 'django.db.backends.sqlite3'
-# ==============================================================================
-
-# 6. ROUTER (APAGADO)
+# 6. ROUTER (OFF)
 DATABASE_ROUTERS = []
 
 # 7. TEMPLATES
@@ -127,11 +90,12 @@ TEMPLATES = [
     },
 ]
 
-# 8. VARIOS
+# 8. GENERALES
 AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/select-company/'
+LOGIN_REDIRECT_URL = '/select-company/' # Importante: Redirigir aquí tras login
 LOGOUT_REDIRECT_URL = '/login/'
+
 LANGUAGE_CODE = 'es'
 TIME_ZONE = 'America/Guatemala'
 USE_I18N = True
@@ -153,9 +117,37 @@ REST_FRAMEWORK = {
     ],
 }
 
-# 9. SEGURIDAD HTTPS RELAJADA
+# 9. SEGURIDAD RELAJADA
 CSRF_TRUSTED_ORIGINS = ['https://anaira-erp.up.railway.app']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
+
+# ==============================================================================
+# 💉 EL PARCHE MAESTRO (MONKEY PATCH) - LA SOLUCIÓN FINAL
+# ==============================================================================
+# "Hackeamos" la función interna de Django que causa el error.
+# Le decimos: "Antes de revisar las bases de datos, asegúrate de que TODAS
+# tengan la llave ATOMIC_REQUESTS, si no la tienen, pónsela tú mismo".
+# ==============================================================================
+import django.core.handlers.base
+from django.conf import settings as django_settings
+
+# Guardamos la función original
+original_make_view_atomic = django.core.handlers.base.BaseHandler.make_view_atomic
+
+def patched_make_view_atomic(self, view):
+    # Justo antes de que Django revise, arreglamos cualquier base de datos rota
+    if hasattr(django_settings, 'DATABASES'):
+        for db_name, db_config in django_settings.DATABASES.items():
+            if 'ATOMIC_REQUESTS' not in db_config:
+                # ¡Aquí está la magia! Le inyectamos la llave faltante
+                db_config['ATOMIC_REQUESTS'] = True 
+    
+    # Ejecutamos la función original como si nada hubiera pasado
+    return original_make_view_atomic(self, view)
+
+# Aplicamos el parche
+django.core.handlers.base.BaseHandler.make_view_atomic = patched_make_view_atomic
+# ==============================================================================
