@@ -3,10 +3,10 @@ import shutil
 import dj_database_url
 from pathlib import Path
 
-# 1. DIRECTORIO BASE Y LIMPIEZA PREVENTIVA
+# 1. DIRECTORIO BASE Y LIMPIEZA
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Intentamos borrar basura vieja
+# Intentamos borrar basura vieja por si acaso
 zombie_path = BASE_DIR / 'tenants'
 if zombie_path.exists():
     try:
@@ -15,7 +15,7 @@ if zombie_path.exists():
         pass
 
 # 2. SEGURIDAD
-SECRET_KEY = os.environ.get('SECRET_KEY', 'hack-patch-key-123')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'hack-patch-key-ultimate')
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
@@ -67,8 +67,9 @@ else:
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 
-# Aseguramos la llave en la default
+# Aseguramos configuración completa en la default
 DATABASES['default']['ATOMIC_REQUESTS'] = True
+DATABASES['default']['TIME_ZONE'] = 'America/Guatemala'
 
 # 6. ROUTER (OFF)
 DATABASE_ROUTERS = []
@@ -93,7 +94,7 @@ TEMPLATES = [
 # 8. GENERALES
 AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/select-company/' # Importante: Redirigir aquí tras login
+LOGIN_REDIRECT_URL = '/select-company/'
 LOGOUT_REDIRECT_URL = '/login/'
 
 LANGUAGE_CODE = 'es'
@@ -117,7 +118,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-# 9. SEGURIDAD RELAJADA
+# 9. SEGURIDAD
 CSRF_TRUSTED_ORIGINS = ['https://anaira-erp.up.railway.app']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = False
@@ -125,11 +126,7 @@ CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
 
 # ==============================================================================
-# 💉 EL PARCHE MAESTRO (MONKEY PATCH) - LA SOLUCIÓN FINAL
-# ==============================================================================
-# "Hackeamos" la función interna de Django que causa el error.
-# Le decimos: "Antes de revisar las bases de datos, asegúrate de que TODAS
-# tengan la llave ATOMIC_REQUESTS, si no la tienen, pónsela tú mismo".
+# 💉 EL PARCHE MAESTRO v2.0 (Solución TOTAL)
 # ==============================================================================
 import django.core.handlers.base
 from django.conf import settings as django_settings
@@ -138,14 +135,27 @@ from django.conf import settings as django_settings
 original_make_view_atomic = django.core.handlers.base.BaseHandler.make_view_atomic
 
 def patched_make_view_atomic(self, view):
-    # Justo antes de que Django revise, arreglamos cualquier base de datos rota
+    # Revisamos TODAS las bases de datos activas
     if hasattr(django_settings, 'DATABASES'):
         for db_name, db_config in django_settings.DATABASES.items():
+            
+            # 1. Vacuna contra KeyError: 'ATOMIC_REQUESTS'
             if 'ATOMIC_REQUESTS' not in db_config:
-                # ¡Aquí está la magia! Le inyectamos la llave faltante
                 db_config['ATOMIC_REQUESTS'] = True 
-    
-    # Ejecutamos la función original como si nada hubiera pasado
+            
+            # 2. Vacuna contra KeyError: 'TIME_ZONE' (El error actual)
+            if 'TIME_ZONE' not in db_config:
+                db_config['TIME_ZONE'] = 'America/Guatemala'
+            
+            # 3. Vacunas preventivas (por si acaso pide más cosas)
+            if 'CONN_MAX_AGE' not in db_config:
+                db_config['CONN_MAX_AGE'] = 0
+            if 'AUTOCOMMIT' not in db_config:
+                db_config['AUTOCOMMIT'] = True
+            if 'ENGINE' not in db_config:
+                db_config['ENGINE'] = 'django.db.backends.sqlite3'
+
+    # Ejecutamos normalmente
     return original_make_view_atomic(self, view)
 
 # Aplicamos el parche
