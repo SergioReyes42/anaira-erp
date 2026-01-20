@@ -6,7 +6,7 @@ from pathlib import Path
 # 1. DIRECTORIO BASE Y LIMPIEZA
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Limpieza preventiva de carpetas viejas
+# Limpieza preventiva
 zombie_path = BASE_DIR / 'tenants'
 if zombie_path.exists():
     try:
@@ -15,7 +15,7 @@ if zombie_path.exists():
         pass
 
 # 2. SEGURIDAD
-SECRET_KEY = os.environ.get('SECRET_KEY', 'hack-patch-key-ultimate-v3')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'hack-patch-key-ultimate-v4')
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
@@ -67,7 +67,7 @@ else:
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 
-# Configuración inicial segura para default
+# Aseguramos configuración inicial
 DATABASES['default']['ATOMIC_REQUESTS'] = True
 DATABASES['default']['CONN_HEALTH_CHECKS'] = False
 
@@ -126,7 +126,7 @@ CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
 
 # ==============================================================================
-# 💉 EL PARCHE MAESTRO v3.0 (COBERTURA TOTAL)
+# 💉 EL PARCHE MAESTRO v4.0 (FRANKENSTEIN EDITION)
 # ==============================================================================
 import django.core.handlers.base
 from django.conf import settings as django_settings
@@ -136,23 +136,33 @@ original_make_view_atomic = django.core.handlers.base.BaseHandler.make_view_atom
 def patched_make_view_atomic(self, view):
     if hasattr(django_settings, 'DATABASES'):
         for db_name, db_config in django_settings.DATABASES.items():
-            # Inyectamos TODAS las llaves que Django 6.0 pueda pedir
-            # para evitar KeyErrors en cadena.
             
+            # Definimos una identidad completa falsa para rellenar huecos
             defaults = {
                 'ATOMIC_REQUESTS': True,
                 'TIME_ZONE': 'America/Guatemala',
-                'CONN_HEALTH_CHECKS': False,  # <--- ¡AQUÍ ESTÁ LA QUE FALTABA!
+                'CONN_HEALTH_CHECKS': False,
                 'CONN_MAX_AGE': 0,
                 'AUTOCOMMIT': True,
                 'OPTIONS': {},
                 'TEST': {},
-                'ENGINE': 'django.db.backends.sqlite3' # Fallback por si falta engine
+                'ENGINE': 'django.db.backends.sqlite3',
+                # ¡AQUÍ ESTÁ LA SOLUCIÓN AL NUEVO ERROR! 👇
+                'NAME': os.path.join(BASE_DIR, 'db_zombie_dummy.sqlite3'),
+                'USER': '',
+                'PASSWORD': '',
+                'HOST': '',
+                'PORT': '',
             }
 
+            # Si falta cualquier cosa, se la inyectamos a la fuerza
             for key, value in defaults.items():
                 if key not in db_config:
                     db_config[key] = value
+            
+            # Si el NAME está vacío o es None, lo forzamos también
+            if not db_config.get('NAME'):
+                db_config['NAME'] = defaults['NAME']
 
     return original_make_view_atomic(self, view)
 
