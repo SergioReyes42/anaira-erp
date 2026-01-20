@@ -6,7 +6,7 @@ from pathlib import Path
 # 1. DIRECTORIO BASE Y LIMPIEZA
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Intentamos borrar basura vieja por si acaso
+# Limpieza preventiva de carpetas viejas
 zombie_path = BASE_DIR / 'tenants'
 if zombie_path.exists():
     try:
@@ -15,7 +15,7 @@ if zombie_path.exists():
         pass
 
 # 2. SEGURIDAD
-SECRET_KEY = os.environ.get('SECRET_KEY', 'hack-patch-key-ultimate')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'hack-patch-key-ultimate-v3')
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
@@ -67,9 +67,9 @@ else:
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 
-# Aseguramos configuración completa en la default
+# Configuración inicial segura para default
 DATABASES['default']['ATOMIC_REQUESTS'] = True
-DATABASES['default']['TIME_ZONE'] = 'America/Guatemala'
+DATABASES['default']['CONN_HEALTH_CHECKS'] = False
 
 # 6. ROUTER (OFF)
 DATABASE_ROUTERS = []
@@ -126,36 +126,34 @@ CSRF_COOKIE_SECURE = False
 SECURE_SSL_REDIRECT = False
 
 # ==============================================================================
-# 💉 EL PARCHE MAESTRO v2.0 (Solución TOTAL)
+# 💉 EL PARCHE MAESTRO v3.0 (COBERTURA TOTAL)
 # ==============================================================================
 import django.core.handlers.base
 from django.conf import settings as django_settings
 
-# Guardamos la función original
 original_make_view_atomic = django.core.handlers.base.BaseHandler.make_view_atomic
 
 def patched_make_view_atomic(self, view):
-    # Revisamos TODAS las bases de datos activas
     if hasattr(django_settings, 'DATABASES'):
         for db_name, db_config in django_settings.DATABASES.items():
+            # Inyectamos TODAS las llaves que Django 6.0 pueda pedir
+            # para evitar KeyErrors en cadena.
             
-            # 1. Vacuna contra KeyError: 'ATOMIC_REQUESTS'
-            if 'ATOMIC_REQUESTS' not in db_config:
-                db_config['ATOMIC_REQUESTS'] = True 
-            
-            # 2. Vacuna contra KeyError: 'TIME_ZONE' (El error actual)
-            if 'TIME_ZONE' not in db_config:
-                db_config['TIME_ZONE'] = 'America/Guatemala'
-            
-            # 3. Vacunas preventivas (por si acaso pide más cosas)
-            if 'CONN_MAX_AGE' not in db_config:
-                db_config['CONN_MAX_AGE'] = 0
-            if 'AUTOCOMMIT' not in db_config:
-                db_config['AUTOCOMMIT'] = True
-            if 'ENGINE' not in db_config:
-                db_config['ENGINE'] = 'django.db.backends.sqlite3'
+            defaults = {
+                'ATOMIC_REQUESTS': True,
+                'TIME_ZONE': 'America/Guatemala',
+                'CONN_HEALTH_CHECKS': False,  # <--- ¡AQUÍ ESTÁ LA QUE FALTABA!
+                'CONN_MAX_AGE': 0,
+                'AUTOCOMMIT': True,
+                'OPTIONS': {},
+                'TEST': {},
+                'ENGINE': 'django.db.backends.sqlite3' # Fallback por si falta engine
+            }
 
-    # Ejecutamos normalmente
+            for key, value in defaults.items():
+                if key not in db_config:
+                    db_config[key] = value
+
     return original_make_view_atomic(self, view)
 
 # Aplicamos el parche
