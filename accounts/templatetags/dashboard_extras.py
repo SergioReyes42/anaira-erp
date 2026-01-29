@@ -9,14 +9,23 @@ register = template.Library()
 
 @register.simple_tag
 def get_online_users():
-    # Obtenemos todos los usuarios y verificamos si tienen el 'flag' en caché
-    users = User.objects.all().order_by('username')
+    # En lugar de importar User directamente, pedimos el modelo activo
+    User = get_user_model()
+    
+    # Ahora sí podemos hacer consultas sin error
+    # Usamos .filter(is_active=True) para ignorar usuarios bloqueados si desea
+    users = User.objects.filter(is_active=True)
+    
     online_users = []
     
     for user in users:
-        # Verificamos si existe la marca de tiempo creada por el middleware
-        last_seen = cache.get(f'seen_{user.username}')
-        if last_seen:
-            online_users.append(user)
+        # Obtenemos el nombre de usuario de forma segura
+        username = user.get_username()
+        
+        # Verificamos la caché
+        if username:
+            last_seen = cache.get(f'seen_{username}')
+            if last_seen:
+                online_users.append(user)
             
     return online_users
