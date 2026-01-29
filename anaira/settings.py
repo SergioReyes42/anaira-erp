@@ -21,7 +21,7 @@ ALLOWED_HOSTS = ['*']
 
 # 3. APPS
 INSTALLED_APPS = [
-    'jazzmin',  # Tema Jazzmin para el admin
+
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -64,6 +64,7 @@ DATABASES = {
 
 # Configuración explícita para evitar errores en la default
 DATABASES['default']['ATOMIC_REQUESTS'] = True
+
 
 # 6. CONFIGURACIÓN
 AUTH_USER_MODEL = "accounts.User"
