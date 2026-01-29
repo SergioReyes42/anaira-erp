@@ -1,20 +1,232 @@
-{% extends 'base.html' %}
-{% block title %}Inicio - {{ company.name }}{% endblock %}
+{% extends "base.html" %}
+{% load static dashboard_extras %}
+
+{% block title %}Inicio | Anaira ERP{% endblock %}
 
 {% block content %}
-<div class="row align-items-center justify-content-center" style="min-height: 60vh;">
-    <div class="col-md-8 text-center">
-        <div class="mb-4">
-            <i class="bi bi-building-check display-1 text-primary"></i>
+<style>
+    /* --- TARJETAS KPI (Indicadores Superiores) --- */
+    .kpi-card {
+        background: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border-left: 4px solid #0f2d5c;
+        transition: transform 0.2s, box-shadow 0.2s;
+        height: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .kpi-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .kpi-data h3 { font-size: 1.8rem; font-weight: 700; margin: 0; color: #333; }
+    .kpi-data span { font-size: 0.85rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-icon { font-size: 2rem; opacity: 0.2; }
+
+    /* --- SEMÁFORO DE MÓDULOS --- */
+    .module-status-card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        overflow: hidden;
+        height: 100%;
+    }
+    .card-header-custom {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        font-weight: bold;
+        color: #0f2d5c;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .status-list { padding: 0; margin: 0; list-style: none; }
+    .status-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background 0.2s;
+    }
+    .status-item:last-child { border-bottom: none; }
+    .status-item:hover { background: #fcfcfc; }
+    
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    .badge-active { background: #d1e7dd; color: #0f5132; } /* Verde */
+    .badge-dev { background: #fff3cd; color: #664d03; }    /* Amarillo */
+    
+    .module-icon { width: 25px; text-align: center; margin-right: 10px; color: #0f2d5c; }
+
+    /* --- TARJETA DE FUTUROS DESARROLLOS --- */
+    .future-dev-box {
+        background: linear-gradient(135deg, #0f2d5c 0%, #0A2342 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        margin-top: 20px;
+    }
+    .future-dev-box i { font-size: 2rem; margin-bottom: 10px; opacity: 0.8; }
+</style>
+
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h3 class="fw-bold text-dark m-0">Panel General</h3>
+        <p class="text-muted m-0">Bienvenido al ERP de {{ request.session.company_name|default:"Anaira Systems" }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <span class="badge bg-light text-dark border">
+            <i class="bi bi-calendar-event"></i> Ejercicio Fiscal: {% now "Y" %}
+        </span>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="kpi-card" style="border-left-color: #28a745;">
+            <div class="kpi-data">
+                {% get_online_users as active_users %}
+                <h3>{{ active_users|length }}</h3>
+                <span>Usuarios Online</span>
+            </div>
+            <i class="bi bi-people-fill kpi-icon text-success"></i>
         </div>
-        
-        <h1 class="display-4 fw-bold text-dark">{{ company.name }}</h1>
-        <h3 class="text-muted mb-4">NIT: {{ company.nit|default:"Sin NIT Registrado" }}</h3>
-        
-        <div class="card shadow-sm border-0 d-inline-block p-4 mt-3">
-            <h5 class="text-muted text-uppercase small ls-1">Estado del Sistema</h5>
-            <p class="mb-0 text-success fw-bold"><i class="bi bi-circle-fill small"></i> En Línea / Operativo</p>
+    </div>
+    
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="kpi-card" style="border-left-color: #0d6efd;">
+            <div class="kpi-data">
+                <h3>6</h3>
+                <span>Módulos Activos</span>
+            </div>
+            <i class="bi bi-grid-fill kpi-icon text-primary"></i>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="kpi-card" style="border-left-color: #ffc107;">
+            <div class="kpi-data">
+                <h3>OK</h3>
+                <span>Estado Sistema</span>
+            </div>
+            <i class="bi bi-activity kpi-icon text-warning"></i>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="kpi-card" style="border-left-color: #6c757d;">
+            <div class="kpi-data">
+                <h5 class="m-0 fw-bold text-truncate" style="max-width: 150px;">
+                    {{ request.session.company_name|default:"Matriz" }}
+                </h5>
+                <span>Empresa Actual</span>
+            </div>
+            <i class="bi bi-building kpi-icon text-secondary"></i>
         </div>
     </div>
 </div>
-{% endblock %}
+
+<div class="row">
+    <div class="col-lg-7 mb-4">
+        <div class="module-status-card">
+            <div class="card-header-custom">
+                <span><i class="bi bi-cpu"></i> Estado de Módulos ERP</span>
+                <span class="badge bg-success" style="font-size: 0.65rem;">ONLINE</span>
+            </div>
+            <ul class="status-list">
+                <li class="status-item">
+                    <div class="d-flex align-items-center">
+                        <div class="module-icon"><i class="bi bi-magic"></i></div>
+                        <div>
+                            <strong>Smart Scanner</strong>
+                            <div class="small text-muted">OCR e Inteligencia Artificial</div>
+                        </div>
+                    </div>
+                    <span class="status-badge badge-active">Operativo</span>
+                </li>
+
+                <li class="status-item">
+                    <div class="d-flex align-items-center">
+                        <div class="module-icon"><i class="bi bi-wallet2"></i></div>
+                        <div>
+                            <strong>Gastos y Flota</strong>
+                            <div class="small text-muted">Liquidaciones y Vehículos</div>
+                        </div>
+                    </div>
+                    <span class="status-badge badge-active">Operativo</span>
+                </li>
+
+                <li class="status-item">
+                    <div class="d-flex align-items-center">
+                        <div class="module-icon"><i class="bi bi-cash-stack"></i></div>
+                        <div>
+                            <strong>Tesorería</strong>
+                            <div class="small text-muted">Bancos y Proveedores</div>
+                        </div>
+                    </div>
+                    <span class="status-badge badge-active">Operativo</span>
+                </li>
+
+                <li class="status-item">
+                    <div class="d-flex align-items-center">
+                        <div class="module-icon"><i class="bi bi-calculator"></i></div>
+                        <div>
+                            <strong>Contabilidad</strong>
+                            <div class="small text-muted">Libros y Estados Financieros</div>
+                        </div>
+                    </div>
+                    <span class="status-badge badge-active">Operativo</span>
+                </li>
+
+                <li class="status-item">
+                    <div class="d-flex align-items-center">
+                        <div class="module-icon"><i class="bi bi-box-seam"></i></div>
+                        <div>
+                            <strong>Bodega e Inventario</strong>
+                            <div class="small text-muted">Entradas, Salidas y Kardex</div>
+                        </div>
+                    </div>
+                    <span class="status-badge badge-active">Operativo</span>
+                </li>
+
+                <li class="status-item">
+                    <div class="d-flex align-items-center">
+                        <div class="module-icon"><i class="bi bi-people"></i></div>
+                        <div>
+                            <strong>Recursos Humanos</strong>
+                            <div class="small text-muted">Planillas y Gestión de Personal</div>
+                        </div>
+                    </div>
+                    <span class="status-badge badge-active">Operativo</span>
+                </li>
+
+                <li class="status-item bg-light">
+                    <div class="d-flex align-items-center" style="opacity: 0.7;">
+                        <div class="module-icon"><i class="bi bi-code-square"></i></div>
+                        <div>
+                            <strong>Nuevos Módulos</strong>
+                            <div class="small text-muted">Planificación de Desarrollo</div>
+                        </div>
+                    </div>
+                    <span class="status-badge badge-dev">En Cola</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        
+        <div class="module-status-card mb-4">
+            <div class="card-header-custom">
+                <span>
