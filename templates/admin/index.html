@@ -1,10 +1,11 @@
 {% extends "admin/index.html" %}
-{# Cargamos log (para actividad) y dashboard_extras (para usuarios online) #}
+{# Cargamos log (para actividad) y dashboard_extras (para usuarios) #}
 {% load static i18n log dashboard_extras %}
 
 {% block extrahead %}
     {{ block.super }}
     <style>
+        /* --- ESTILOS DEL DASHBOARD PRINCIPAL --- */
         .ns-dashboard-banner {
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
@@ -13,74 +14,71 @@
             color: #666;
         }
 
-        /* --- WIDGET USUARIOS ONLINE --- */
-        .online-users-panel {
+        /* --- ESTILOS DEL WIDGET FLOTANTE (Esquina Inferior Derecha) --- */
+        .online-widget-container {
+            position: fixed;
+            bottom: 0;
+            right: 20px;
+            width: 280px;
             background: #fff;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+            z-index: 9999; /* Para que quede siempre encima */
+            border: 1px solid #dcdcdc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .online-widget-header {
+            background: #0A2342; /* Azul Corporativo */
+            color: #fff;
+            padding: 10px 15px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .online-widget-body {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #f9f9f9;
+        }
+
+        .online-user-row {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
             display: flex;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
+            background: #fff;
+            transition: background 0.2s;
         }
-        .online-title {
-            font-weight: bold;
-            color: #555;
-            margin-right: 15px;
-            font-size: 13px;
-            text-transform: uppercase;
-            border-right: 1px solid #eee;
-            padding-right: 15px;
+        .online-user-row:hover {
+            background: #f0f8ff;
         }
-        .user-badge {
-            display: inline-flex;
-            align-items: center;
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #333;
-            transition: all 0.3s;
-        }
-        .user-badge:hover {
-            border-color: #b1d5f1;
-            background: #eef6fc;
-        }
+
         .status-dot {
             height: 10px;
             width: 10px;
-            background-color: #198754; /* Verde Online */
+            background-color: #28a745; /* Verde Activo */
             border-radius: 50%;
             display: inline-block;
-            margin-right: 8px;
-            box-shadow: 0 0 0 2px rgba(25, 135, 84, 0.2);
+            margin-right: 10px;
+            box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
             animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
-            70% { box-shadow: 0 0 0 6px rgba(25, 135, 84, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
         }
 
-        /* --- MONITOR DE ACTIVIDAD --- */
-        .activity-dashboard {
-            margin-bottom: 25px;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .activity-header {
-            background: #f1f3f5;
-            padding: 12px 20px;
-            border-bottom: 1px solid #ddd;
-            display: flex; justify-content: space-between; align-items: center;
-        }
+        /* --- ESTILOS DE BITACORA --- */
+        .activity-dashboard { margin-bottom: 25px; background: #fff; border: 1px solid #ddd; border-radius: 8px; }
+        .activity-header { background: #f1f3f5; padding: 12px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
         .ns-table { width: 100%; border-collapse: collapse; }
         .ns-table th { text-align: left; padding: 10px 20px; background: #fafafa; border-bottom: 2px solid #eee; font-size: 11px; text-transform: uppercase; color: #666; }
         .ns-table td { padding: 12px 20px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
@@ -96,26 +94,6 @@
     <div class="ns-dashboard-banner" style="background: linear-gradient(90deg, #0B5ED7 0%, #0A2342 100%); color: #fff; padding: 20px; border-radius: 8px; margin-bottom: 25px;">
         <h2 style="margin:0; font-weight: 600;">Bienvenido a ANAIRA SYSTEMS</h2>
         <p style="margin:6px 0 0 0; opacity: 0.9;">Panel de control y reportería</p>
-    </div>
-
-    <div class="online-users-panel">
-        <span class="online-title">👥 Usuarios Activos Ahora</span>
-        
-        {# Llama a la función de Python que creamos #}
-        {% get_online_users as active_users_list %}
-
-        {% if active_users_list %}
-            {% for user in active_users_list %}
-                <div class="user-badge" title="Última actividad: Reciente">
-                    <span class="status-dot"></span>
-                    {{ user.username|upper }}
-                </div>
-            {% endfor %}
-        {% else %}
-            <span style="color: #999; font-size: 13px; font-style: italic;">
-                No hay otros usuarios conectados.
-            </span>
-        {% endif %}
     </div>
 
     <div class="activity-dashboard">
@@ -164,7 +142,57 @@
 
     {{ block.super }}
 
+    <div class="online-widget-container">
+        <div class="online-widget-header" onclick="toggleWidget()">
+            <span>👥 Usuarios Online</span>
+            <span id="widget-toggle-icon">▼</span>
+        </div>
+
+        <div class="online-widget-body" id="widget-body">
+            {% get_online_users as active_users_list %}
+            
+            {% if active_users_list %}
+                {% for user in active_users_list %}
+                    <div class="online-user-row">
+                        <span class="status-dot"></span>
+                        <div style="display:flex; flex-direction:column;">
+                            <span style="font-weight:600; font-size:13px; color:#333;">
+                                {{ user.username|upper }}
+                            </span>
+                            <span style="font-size:11px; color:#888;">
+                                {% if user.email %}{{ user.email }}{% else %}Conectado{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div style="padding:15px; text-align:center; color:#999; font-size:13px;">
+                    No hay nadie más.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
     <div class="text-center" style="margin-top: 30px; padding: 20px 0; border-top: 1px solid #eee;">
         <span class="ns-footer">ANAIRA SYSTEMS &copy; {% now "Y" %}</span>
     </div>
+{% endblock %}
+
+{% block extrajs %}
+    {{ block.super }}
+    <script>
+        // Pequeño script para minimizar/maximizar la ventana del chat
+        function toggleWidget() {
+            var body = document.getElementById('widget-body');
+            var icon = document.getElementById('widget-toggle-icon');
+            
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                icon.innerHTML = '▼';
+            } else {
+                body.style.display = 'none';
+                icon.innerHTML = '▲';
+            }
+        }
+    </script>
 {% endblock %}
