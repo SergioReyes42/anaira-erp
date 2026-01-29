@@ -1,28 +1,28 @@
-# anaira_erp/templatetags/dashboard_extras.py
 from django import template
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model  # <--- ESTA ES LA LÍNEA QUE FALTABA
 from django.core.cache import cache
-import datetime
-from django.utils import timezone
 
 register = template.Library()
 
 @register.simple_tag
 def get_online_users():
-    # En lugar de importar User directamente, pedimos el modelo activo
+    # 1. Obtenemos el modelo de usuario correcto (accounts.User)
     User = get_user_model()
     
-    # Ahora sí podemos hacer consultas sin error
-    # Usamos .filter(is_active=True) para ignorar usuarios bloqueados si desea
-    users = User.objects.filter(is_active=True)
+    # 2. Filtramos solo usuarios activos para evitar errores
+    try:
+        users = User.objects.filter(is_active=True)
+    except:
+        return [] # Si falla la DB, devolvemos lista vacía para no romper el sitio
     
     online_users = []
     
+    # 3. Verificamos quién tiene la marca de tiempo en caché
     for user in users:
-        # Obtenemos el nombre de usuario de forma segura
+        # Usamos el campo que sirve como username (usualmente 'username' o 'email')
+        # get_username() es el método seguro de Django
         username = user.get_username()
         
-        # Verificamos la caché
         if username:
             last_seen = cache.get(f'seen_{username}')
             if last_seen:
