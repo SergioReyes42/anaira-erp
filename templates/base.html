@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{% load static i18n dashboard_extras %} <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -113,6 +113,64 @@
         footer {
             background: white;
             border-top: 1px solid #dee2e6;
+        }
+
+        /* =========================================
+           NUEVO: ESTILOS DEL WIDGET FLOTANTE
+           ========================================= */
+        #users-widget {
+            position: fixed;
+            bottom: 0;
+            right: 20px;
+            width: 260px;
+            background: #fff;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+            z-index: 99999;
+            border: 1px solid #dcdcdc;
+            font-family: sans-serif;
+            display: block;
+        }
+        .widget-header {
+            background: #0f2d5c; /* Mismo azul que el sidebar */
+            color: #fff;
+            padding: 10px 15px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .widget-body {
+            max-height: 250px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            display: block; /* Visible por defecto */
+        }
+        .user-row {
+            padding: 8px 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            color: #333;
+            background: white;
+        }
+        .user-row:hover { background: #f0f8ff; }
+        .dot-online {
+            height: 8px; width: 8px;
+            background-color: #28a745; /* Verde */
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+            box-shadow: 0 0 0 2px rgba(40,167,69,0.2);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
         }
     </style>
 </head>
@@ -296,13 +354,44 @@
         <footer class="mt-auto py-3 text-center text-muted">
             <div class="container">
                 <small>
-                    &copy; {% now "Y" %} Corporacion Sermaworld | Todos los derechos reservados |Desarrollado Por Ing. Sergio Marroquin.
+                    &copy; {% now "Y" %} Corporacion Sermaworld | Todos los derechos reservados | Desarrollado Por Ing. Sergio Marroquin.
                 </small>
             </div>
         </footer>
     </div>
 </div>
 
+<div id="users-widget">
+    <div class="widget-header" onclick="var b=document.getElementById('widget-content'); b.style.display = (b.style.display=='none'?'block':'none');">
+        <span>👥 Usuarios Online</span>
+        <span>▼</span>
+    </div>
+
+    <div id="widget-content" class="widget-body">
+        {% get_online_users as active_users_list %}
+        
+        {% if active_users_list %}
+            <div style="padding: 8px 15px; background: #e9ecef; color: #666; font-size: 11px;">
+                {{ active_users_list|length }} conectado(s)
+            </div>
+            {% for user in active_users_list %}
+                <div class="user-row">
+                    <span class="dot-online"></span>
+                    <div>
+                        <strong style="display:block;">{{ user.username|upper }}</strong>
+                        {% if user.email %}
+                        <span style="font-size:10px; color:#888;">{{ user.email }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div style="padding:15px; text-align:center; color:#999; font-size:12px;">
+                Solo tú estás conectado.
+            </div>
+        {% endif %}
+    </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
