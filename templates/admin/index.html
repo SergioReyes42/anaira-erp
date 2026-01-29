@@ -1,14 +1,13 @@
 {% extends "admin/index.html" %}
-{% load static i18n %}
+{# IMPORTANTE: Agregué 'log' aquí para poder leer el historial #}
+{% load static i18n log %}
 
-{# 1. Bloque para CSS personalizado #}
+{# 1. Bloque para CSS #}
 {% block extrahead %}
     {{ block.super }}
-    {# Si tiene un CSS propio, descomente la siguiente línea y ajuste la ruta #}
-    {# <link rel="stylesheet" type="text/css" href="{% static 'css/admin_custom.css' %}"> #}
     
-    {# Estilos rápidos inline para corregir márgenes si es necesario #}
     <style>
+        /* Estilos generales del dashboard */
         .ns-dashboard-banner {
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
@@ -16,6 +15,66 @@
             font-size: 0.8rem;
             color: #666;
         }
+
+        /* --- ESTILOS NUEVOS PARA EL MONITOR DE ACTIVIDAD --- */
+        .activity-dashboard {
+            margin-bottom: 25px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px; /* Bordes redondeados como el banner */
+            overflow: hidden;
+        }
+        .activity-header {
+            background: #f1f3f5;
+            padding: 12px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .activity-header h3 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #0A2342; /* Mismo azul oscuro del banner */
+            text-transform: uppercase;
+        }
+        
+        /* Tabla personalizada */
+        .ns-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .ns-table th {
+            text-align: left;
+            padding: 10px 20px;
+            background: #fafafa;
+            color: #666;
+            font-size: 11px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #eee;
+        }
+        .ns-table td {
+            padding: 12px 20px;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+            vertical-align: middle;
+        }
+        .ns-table tr:hover {
+            background-color: #f8f9fa; /* Efecto hover */
+        }
+
+        /* Badges de estado (Semaforo) */
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .badge-add { background: #d1e7dd; color: #0f5132; } /* Verde */
+        .badge-change { background: #fff3cd; color: #664d03; } /* Amarillo */
+        .badge-delete { background: #f8d7da; color: #842029; } /* Rojo */
     </style>
 {% endblock %}
 
@@ -23,26 +82,3 @@
 {% block content %}
     <div class="ns-dashboard-banner" style="
         background: linear-gradient(90deg, #0B5ED7 0%, #0A2342 100%);
-        color: #fff; 
-        padding: 20px; 
-        border-radius: 8px; 
-        margin-bottom: 25px;">
-        <h2 style="margin:0; font-weight: 600;">Bienvenido a ANAIRA SYSTEMS</h2>
-        <p style="margin:6px 0 0 0; opacity: 0.9;">Panel de control y reportería</p>
-    </div>
-
-    {{ block.super }}
-
-    <div class="text-center" style="margin-top: 30px; padding: 20px 0; border-top: 1px solid #eee;">
-        <span class="ns-footer">
-            ANAIRA SYSTEMS &copy; {% now "Y" %}
-        </span>
-    </div>
-{% endblock %}
-
-{# 3. Bloque para JS adicional #}
-{% block extrajs %}
-    {{ block.super }}
-    {# Si tiene un JS propio, descomente la siguiente línea y ajuste la ruta #}
-    {# <script src="{% static 'js/admin_custom.js' %}"></script> #}
-{% endblock %}
