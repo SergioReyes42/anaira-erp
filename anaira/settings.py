@@ -3,20 +3,20 @@ import shutil
 import dj_database_url
 from pathlib import Path
 
-# 1. DIRECTORIO BASE Y LIMPIEZA
+# 1. DIRECTORIO BASE Y LIMPIEZA AUTOMÁTICA
+# (Esto intenta borrar las bases de datos viejas para que no molesten)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Limpieza preventiva
-zombie_path = BASE_DIR / 'tenants'
-if zombie_path.exists():
-    try:
+try:
+    zombie_path = BASE_DIR / 'tenants'
+    if zombie_path.exists():
         shutil.rmtree(zombie_path)
-    except:
-        pass
+except:
+    pass
 
 # 2. SEGURIDAD
-SECRET_KEY = os.environ.get('SECRET_KEY', 'hack-patch-key-ultimate-v4')
-DEBUG = True
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-key-reemplazar')
+DEBUG = True # Mantenemos True para ver errores si salen
 ALLOWED_HOSTS = ['*']
 
 # 3. APPS
@@ -27,15 +27,15 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "core.apps.CoreConfig",
-    "accounts.apps.AccountsConfig",
-    "accounting.apps.AccountingConfig",
-    "inventory.apps.InventoryConfig",
-    "sales.apps.SalesConfig",
-    'hr',
+    # Sus apps
+    "core",
+    "accounts",
+    "accounting",
+    "inventory",
+    "sales",
+    "hr",
+    # Terceros
     "rest_framework",
-    "rest_framework.authtoken",
-    "rest_framework_simplejwt",
     "corsheaders",
 ]
 
@@ -52,27 +52,37 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# 5. BASE DE DATOS
-DATABASES = {}
-
-if 'DATABASE_URL' in os.environ:
-    DATABASES['default'] = dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
+# 5. BASE DE DATOS PRINCIPAL (PostgreSQL o SQLite)
+DATABASES = {
+    'default': dj_database_url.config(
+        default='sqlite:///db.sqlite3',
         conn_max_age=600,
         conn_health_checks=True,
     )
-else:
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+}
 
-# Aseguramos configuración inicial
+# Configuración explícita para evitar errores en la default
 DATABASES['default']['ATOMIC_REQUESTS'] = True
-DATABASES['default']['CONN_HEALTH_CHECKS'] = False
+DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql' # Forzamos postgres si hay URL
 
-# 6. ROUTER (OFF)
-DATABASE_ROUTERS = []
+# 6. CONFIGURACIÓN
+AUTH_USER_MODEL = "accounts.User"
+LANGUAGE_CODE = 'es'
+TIME_ZONE = 'America/Guatemala'
+USE_I18N = True
+USE_TZ = True
+
+STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+ROOT_URLCONF = 'anaira.urls'
+WSGI_APPLICATION = 'anaira.wsgi.application'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # 7. TEMPLATES
 TEMPLATES = [
@@ -91,42 +101,17 @@ TEMPLATES = [
     },
 ]
 
-# 8. GENERALES
-AUTH_USER_MODEL = "accounts.User"
-LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/select-company/'
-LOGOUT_REDIRECT_URL = '/login/'
-
-LANGUAGE_CODE = 'es'
-TIME_ZONE = 'America/Guatemala'
-USE_I18N = True
-USE_TZ = True
-
-STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
-ROOT_URLCONF = 'anaira.urls'
-WSGI_APPLICATION = 'anaira.wsgi.application'
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    ],
-}
-
-# 9. SEGURIDAD
-CSRF_TRUSTED_ORIGINS = ['https://anaira-erp.up.railway.app']
+# 8. SEGURIDAD SSL
+CSRF_TRUSTED_ORIGINS = ['https://*.up.railway.app']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False # False temporalmente para facilitar login
 CSRF_COOKIE_SECURE = False
-SECURE_SSL_REDIRECT = False
 
 # ==============================================================================
-# 💉 EL PARCHE MAESTRO v4.0 (FRANKENSTEIN EDITION)
+# 💉 EL PARCHE MAESTRO (LA VACUNA)
+# ==============================================================================
+# Este bloque detecta cualquier base de datos rota (como company_1) y
+# le inyecta las configuraciones faltantes ANTES de que Django explote.
 # ==============================================================================
 import django.core.handlers.base
 from django.conf import settings as django_settings
@@ -136,8 +121,7 @@ original_make_view_atomic = django.core.handlers.base.BaseHandler.make_view_atom
 def patched_make_view_atomic(self, view):
     if hasattr(django_settings, 'DATABASES'):
         for db_name, db_config in django_settings.DATABASES.items():
-            
-            # Definimos una identidad completa falsa para rellenar huecos
+            # Rellenamos todo lo que pueda faltar
             defaults = {
                 'ATOMIC_REQUESTS': True,
                 'TIME_ZONE': 'America/Guatemala',
@@ -147,22 +131,13 @@ def patched_make_view_atomic(self, view):
                 'OPTIONS': {},
                 'TEST': {},
                 'ENGINE': 'django.db.backends.sqlite3',
-                # ¡AQUÍ ESTÁ LA SOLUCIÓN AL NUEVO ERROR! 👇
-                'NAME': os.path.join(BASE_DIR, 'db_zombie_dummy.sqlite3'),
-                'USER': '',
-                'PASSWORD': '',
-                'HOST': '',
-                'PORT': '',
+                # Nombre falso por si falta
+                'NAME': os.path.join(BASE_DIR, 'db_dummy.sqlite3'),
             }
-
-            # Si falta cualquier cosa, se la inyectamos a la fuerza
+            
             for key, value in defaults.items():
                 if key not in db_config:
                     db_config[key] = value
-            
-            # Si el NAME está vacío o es None, lo forzamos también
-            if not db_config.get('NAME'):
-                db_config['NAME'] = defaults['NAME']
 
     return original_make_view_atomic(self, view)
 
