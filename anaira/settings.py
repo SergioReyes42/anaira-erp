@@ -21,7 +21,7 @@ ALLOWED_HOSTS = ['*']
 
 # 3. APPS
 INSTALLED_APPS = [
-    'jazzmin'
+    'jazzmin',  # Tema Jazzmin para el admin
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
