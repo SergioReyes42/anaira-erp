@@ -63,7 +63,6 @@ DATABASES = {
 
 # Configuración explícita para evitar errores en la default
 DATABASES['default']['ATOMIC_REQUESTS'] = True
-DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql' # Forzamos postgres si hay URL
 
 # 6. CONFIGURACIÓN
 AUTH_USER_MODEL = "accounts.User"
