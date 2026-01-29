@@ -52,7 +52,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'anaira_erp.middleware.ActiveUserMiddleware',
+    'anaira.middleware.ActiveUserMiddleware',
 ]
 
 # 5. BASE DE DATOS PRINCIPAL (PostgreSQL o SQLite)
