@@ -39,4 +39,21 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
     
+    # NUEVO CAMPO: Rastreador de ubicación
+    current_company = models.ForeignKey(
+        'core.Company',  # Apunta a su modelo en Core
+        on_delete=models.SET_NULL, # Si borran la empresa, el usuario no se borra
+        null=True, 
+        blank=True,
+        related_name='users_working_here',
+        verbose_name="Trabajando actualmente en"
+    )
+
+    # Para saber si está "Online" usaremos la lógica:
+    # Si su último click fue hace menos de 5 min = Online 🟢
+    
+    def __str__(self):
+        return self.email
