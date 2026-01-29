@@ -1,6 +1,6 @@
 import os
 import shutil
-import dj_database_url
+import dj_database_url # type: ignore
 from pathlib import Path
 
 # 1. DIRECTORIO BASE Y LIMPIEZA AUTOMÁTICA
@@ -21,7 +21,7 @@ ALLOWED_HOSTS = ['*']
 
 # 3. APPS
 INSTALLED_APPS = [
-    
+
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -146,3 +146,9 @@ def patched_make_view_atomic(self, view):
 # Aplicamos el parche
 django.core.handlers.base.BaseHandler.make_view_atomic = patched_make_view_atomic
 # ==============================================================================
+
+# SEGURIDAD DE DOMINIOS (Importante para que el Login no parpadee)
+CSRF_TRUSTED_ORIGINS = [
+    'https://anaira-erp-production.up.railway.app', 
+    'https://*.railway.app' 
+]
