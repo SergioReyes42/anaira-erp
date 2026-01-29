@@ -1,31 +1,48 @@
-
 {% extends "admin/index.html" %}
 {% load static i18n %}
 
-{% block content %}
-  <div class="ns-dashboard-banner" style="
-       background: linear-gradient(90deg, #0B5ED7 0%, #0A2342 100%);
-       color: #fff; padding: 16px; border-radius: 6px; margin-bottom: 16px;">
-    <h2 style="margin:0;">Bienvenido a ANAIRA SYSTEMS</h2>
-    <p style="margin:6px 0 0 0;">Panel de control y reportería</p>
-  </div>
-
-  {# Si quieres footer, inclúyelo aquí dentro del content: #}
-  <div class="text-center" style="margin-top: 8px;">
-    <span class="ns-footer">ANAIRA SYSTEMS &copy; {{ current_year|default:2026 }}</span>
-  </div>
-
-  {{ block.super }}
-{% endblock %}
-
-{# CSS adicional: usa UN solo bloque para estilos. Aquí uso extrahead #}
+{# 1. Bloque para CSS personalizado #}
 {% block extrahead %}
-  {{ block.super }}
-  {% static 
+    {{ block.super }}
+    {# Si tiene un CSS propio, descomente la siguiente línea y ajuste la ruta #}
+    {# <link rel="stylesheet" type="text/css" href="{% static 'css/admin_custom.css' %}"> #}
+    
+    {# Estilos rápidos inline para corregir márgenes si es necesario #}
+    <style>
+        .ns-dashboard-banner {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .ns-footer {
+            font-size: 0.8rem;
+            color: #666;
+        }
+    </style>
 {% endblock %}
 
-{# JS adicional: usa UN solo bloque extrajs en toda la plantilla #}
+{# 2. Contenido Principal #}
+{% block content %}
+    <div class="ns-dashboard-banner" style="
+        background: linear-gradient(90deg, #0B5ED7 0%, #0A2342 100%);
+        color: #fff; 
+        padding: 20px; 
+        border-radius: 8px; 
+        margin-bottom: 25px;">
+        <h2 style="margin:0; font-weight: 600;">Bienvenido a ANAIRA SYSTEMS</h2>
+        <p style="margin:6px 0 0 0; opacity: 0.9;">Panel de control y reportería</p>
+    </div>
+
+    {{ block.super }}
+
+    <div class="text-center" style="margin-top: 30px; padding: 20px 0; border-top: 1px solid #eee;">
+        <span class="ns-footer">
+            ANAIRA SYSTEMS &copy; {% now "Y" %}
+        </span>
+    </div>
+{% endblock %}
+
+{# 3. Bloque para JS adicional #}
 {% block extrajs %}
-  {{ block.super }}
-  {% static </script>
+    {{ block.super }}
+    {# Si tiene un JS propio, descomente la siguiente línea y ajuste la ruta #}
+    {# <script src="{% static 'js/admin_custom.js' %}"></script> #}
 {% endblock %}
