@@ -189,12 +189,32 @@ def gasto_manual(request):
             if resultado['exito']:
                 datos = resultado['datos']
                 messages.success(request, f"IA Detectada: {resultado['tipo_detectado']}.")
+                # --- LÓGICA CONTABLE GUATEMALA (IDP + IVA) ---
+                total_factura = float(datos.get('total', 0))
+                monto_idp = float(datos.get('idp', 0))
+                es_fuel = datos.get('es_combustible', False)
+                
+                # Si la IA detectó combustible pero no leyó el IDP (a veces pasa), 
+                # podríamos estimarlo por galones, pero por ahora usaremos lo que leyó.
+                
+                # Cálculo de Base e IVA
+                # 1. Al total le quitamos el IDP (porque el IDP no paga IVA)
+                monto_sujeto_iva = total_factura - monto_idp
+                
+                # 2. Sacamos la base imponible (dividido 1.12)
+                base_imponible = round(monto_sujeto_iva / 1.12, 2)
+                
+                # 3. Calculamos el IVA
+                iva_calculado = round(base_imponible * 0.12, 2)
+
                 contexto_form.update({
                     'proveedor': datos.get('proveedor', ''),
-                    'total': datos.get('total', ''),
-                    'descripcion': f"Gasto detectado (Serie: {datos.get('serie', 'SN')})",
-                    'es_combustible': datos.get('es_combustible', False),
-                    'iva': round(float(datos.get('total', 0)) / 1.12 * 0.12, 2) if datos.get('total') else ''
+                    'total': total_factura,
+                    'descripcion': f"Combustible ({datos.get('galones', '?')} gal) - Fact: {datos.get('serie', '')}",
+                    'es_combustible': es_fuel,
+                    'monto_idp': monto_idp,          # <--- Nuevo dato para el HTML
+                    'base_imponible': base_imponible, # <--- Base calculada
+                    'iva': iva_calculado              # <--- IVA calculado
                 })
             else:
                 # === CAMBIO IMPORTANTE AQUÍ ===

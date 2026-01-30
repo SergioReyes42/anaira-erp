@@ -52,14 +52,16 @@ def analizar_documento_ia(imagen, contexto=None):
         """
 
         if contexto == 'GASTO':
-            prompt_especifico = """
-            La imagen es una FACTURA de compra o recibo. Extrae:
+           prompt_especifico = """
+            La imagen es una FACTURA de compra o recibo de combustible. Extrae:
             - "proveedor": Nombre del establecimiento.
-            - "total": Monto total numérico (solo numero).
-            - "fecha": Fecha en formato YYYY-MM-DD (si no hay año, asume 2026).
+            - "total": Monto total numérico (ej: 300.00).
+            - "fecha": Fecha en formato YYYY-MM-DD.
             - "serie": Número de serie o factura.
             - "nit": NIT del proveedor.
-            - "es_combustible": true si es gasolina/diesel, false si no.
+            - "es_combustible": true si detectas palabras como Diesel, Gasolina, Super, Regular, IDP.
+            - "idp": Busca el monto que diga "IDP", "Impuesto IDP" o "Impuesto Distribución". Si no aparece, pon 0.
+            - "galones": Cantidad de galones si aparece.
             """
         elif contexto == 'IN': # Depósitos
             prompt_especifico = """

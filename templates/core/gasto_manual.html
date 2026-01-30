@@ -60,25 +60,43 @@
                     </div>
 
                     <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold text-success">Total a Pagar (Q)</label>
-                            <input type="number" step="0.01" name="monto_total" class="form-control border-success fw-bold" style="font-size: 1.2rem;" value="{{ total|default:'' }}" required>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold text-success">Total (Caja)</label>
+                            <input type="number" step="0.01" name="monto_total" class="form-control border-success fw-bold" 
+                                   style="font-size: 1.1rem;" value="{{ total|default:'' }}" required>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small text-muted">IVA (Opcional)</label>
-                            <input type="number" step="0.01" name="impuesto_iva" class="form-control" value="{{ iva|default:'' }}">
+
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold text-primary">IDP (Gasolina)</label>
+                            <input type="number" step="0.01" name="monto_idp" class="form-control" 
+                                   value="{{ monto_idp|default:'0' }}" placeholder="0.00">
+                            <small class="text-muted" style="font-size: 0.7rem;">No paga IVA</small>
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-check mt-4 p-3 border rounded bg-light">
+
+                        <div class="col-md-3">
+                            <label class="form-label small">Base (Gasto Real)</label>
+                            <input type="number" step="0.01" name="base_imponible" class="form-control bg-light" 
+                                   value="{{ base_imponible|default:'' }}" readonly>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label small">IVA (Crédito)</label>
+                            <input type="number" step="0.01" name="impuesto_iva" class="form-control bg-light" 
+                                   value="{{ iva|default:'' }}" readonly>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <div class="form-check p-3 border rounded bg-light">
                                 <input class="form-check-input" type="checkbox" name="es_combustible" id="checkFuel" {% if es_combustible %}checked{% endif %}>
                                 <label class="form-check-label fw-bold" for="checkFuel">
-                                    <i class="bi bi-fuel-pump text-danger"></i> ¿Es Combustible?
+                                    <i class="bi bi-fuel-pump text-danger"></i> ¿Es Compra de Combustible?
                                 </label>
                             </div>
                         </div>
                     </div>
-
-                    <h6 class="text-muted border-bottom pb-2 mb-3 mt-4">Método de Pago</h6>
+                    <h6 class="text-muted border-bottom pb-2 mb-3 mt-4">Método de Pago y Asignación</h6>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
