@@ -1,65 +1,122 @@
 # core/ai_brain.py
-import random
+import google.generativeai as genai
+from django.conf import settings
+import json
 from datetime import date
+import logging
+
+# Configurar la IA con su llave
+genai.configure(api_key=settings.GEMINI_API_KEY)
+
+# Configuración del modelo (Usamos Flash porque es rápido y barato)
+generation_config = {
+    "temperature": 0.1,  # 0.1 para que sea muy preciso y no "invente" datos
+    "top_p": 1,
+    "top_k": 32,
+    "max_output_tokens": 8192,
+}
+
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    generation_config=generation_config,
+)
 
 def analizar_documento_ia(imagen, contexto=None):
     """
-    Simula el procesamiento de IA.
-    1. Intenta detectar por nombre de archivo.
-    2. Si falla, usa el 'contexto' (IN/OUT) para deducir el tipo.
+    Envía la imagen a Google Gemini 1.5 Flash y extrae datos estructurados.
+    
+    Parámetros:
+    - imagen: El archivo subido desde el formulario Django (InMemoryUploadedFile)
+    - contexto: 'IN' (Depósito), 'OUT' (Cheque), 'GASTO' (Factura)
     """
-    nombre_archivo = imagen.name.lower()
+    print(f"--- INICIANDO ANÁLISIS IA (Contexto: {contexto}) ---")
+    
     resultado = {
-        'exito': True, # Somos optimistas por defecto para la Demo
-        'tipo_detectado': 'GENERICO',
+        'exito': False,
+        'tipo_detectado': 'DESCONOCIDO',
         'datos': {}
     }
 
-    # --- LÓGICA DE DETECCIÓN ---
-    es_cheque = 'cheque' in nombre_archivo or (contexto == 'OUT' and 'deposito' not in nombre_archivo)
-    es_deposito = 'deposito' in nombre_archivo or 'boleta' in nombre_archivo or (contexto == 'IN' and 'cheque' not in nombre_archivo)
-    es_factura = 'factura' in nombre_archivo or 'gasto' in nombre_archivo
+    try:
+        # 1. Preparamos la imagen para enviarla a Google
+        # Django tiene la imagen en memoria, necesitamos sus bytes
+        img_bytes = imagen.read()
+        
+        # 2. Definimos el Prompt (Las instrucciones para la IA) según el contexto
+        prompt_base = """
+        Eres un asistente contable experto de la empresa 'Anaira ERP'. 
+        Tu trabajo es analizar esta imagen y extraer datos clave en formato JSON estricto.
+        NO escribas nada más que el JSON.
+        """
 
-    # 1. CASO CHEQUE (Salidas)
-    if es_cheque:
-        resultado['tipo_detectado'] = 'CHEQUE'
-        resultado['datos'] = {
-            'monto': round(random.uniform(1000, 5000), 2),
-            'banco_emisor': 'Banrural',
-            'numero_cheque': str(random.randint(100000, 999999)),
-            'beneficiario': 'Portador',
-            'fecha': date.today()
-        }
+        if contexto == 'GASTO':
+            prompt_especifico = """
+            La imagen es una FACTURA de compra o recibo. Extrae:
+            - "proveedor": Nombre del establecimiento.
+            - "total": Monto total numérico (solo numero).
+            - "fecha": Fecha en formato YYYY-MM-DD (si no hay año, asume 2026).
+            - "serie": Número de serie o factura.
+            - "nit": NIT del proveedor.
+            - "es_combustible": true si es gasolina/diesel, false si no.
+            """
+        elif contexto == 'IN': # Depósitos
+            prompt_especifico = """
+            La imagen es una BOLETA DE DEPÓSITO o transferencia entrante. Extrae:
+            - "monto": Monto total depositado (solo numero).
+            - "no_boleta": Número de boleta o referencia.
+            - "banco_receptor": Banco donde se depositó.
+            - "fecha": Fecha en formato YYYY-MM-DD.
+            """
+        elif contexto == 'OUT': # Cheques
+            prompt_especifico = """
+            La imagen es un CHEQUE o comprobante de pago. Extrae:
+            - "monto": Monto numérico.
+            - "numero_cheque": Número del cheque.
+            - "beneficiario": Nombre de a quién se paga.
+            - "fecha": Fecha en formato YYYY-MM-DD.
+            """
+        else: # Genérico
+            prompt_especifico = """
+            Identifica qué documento es (Cheque, Factura, Depósito) y extrae:
+            - "tipo": Tipo de documento.
+            - "monto": Monto total.
+            - "referencia": Cualquier número de identificación.
+            """
 
-    # 2. CASO DEPÓSITO (Entradas)
-    elif es_deposito:
-        resultado['tipo_detectado'] = 'DEPOSITO'
-        resultado['datos'] = {
-            'monto': round(random.uniform(500, 2500), 2),
-            'banco_receptor': 'Banco Industrial',
-            'no_boleta': str(random.randint(444000, 888000)),
-            'depositante': 'Cliente Mostrador',
-            'fecha': date.today()
-        }
+        full_prompt = prompt_base + prompt_especifico
 
-    # 3. CASO FACTURA (Gastos)
-    elif es_factura:
-        resultado['tipo_detectado'] = 'FACTURA'
-        resultado['datos'] = {
-            'total': round(random.uniform(100, 800), 2),
-            'proveedor': 'Gasolinera La Torre',
-            'nit': 'CF',
-            'serie': 'FEL-1',
-            'es_combustible': True
-        }
+        # 3. Enviamos a Gemini
+        # Pasamos el tipo MIME (ej: image/jpeg) y los datos
+        response = model.generate_content([
+            {'mime_type': imagen.content_type, 'data': img_bytes},
+            full_prompt
+        ])
+
+        # 4. Procesamos la respuesta
+        texto_respuesta = response.text
+        
+        # Limpieza: A veces Gemini envuelve el JSON en ```json ... ```
+        texto_limpio = texto_respuesta.replace("```json", "").replace("```", "").strip()
+        
+        datos_json = json.loads(texto_limpio)
+        
+        # 5. Éxito
+        resultado['exito'] = True
+        resultado['datos'] = datos_json
+        
+        # Determinar tipo detectado basado en el contexto
+        if contexto == 'GASTO': resultado['tipo_detectado'] = 'FACTURA'
+        elif contexto == 'IN': resultado['tipo_detectado'] = 'DEPOSITO'
+        elif contexto == 'OUT': resultado['tipo_detectado'] = 'CHEQUE'
+        
+        print("--- ANÁLISIS IA EXITOSO ---")
+        print(datos_json)
+
+    except Exception as e:
+        print(f"--- ERROR IA: {str(e)} ---")
+        resultado['mensaje'] = f"Error al procesar con IA: {str(e)}"
+
+    # Importante: Regresar el puntero del archivo al inicio por si Django necesita guardarlo después
+    imagen.seek(0)
     
-    else:
-        # Si todo falla, devolvemos un genérico para no dar error
-        resultado['tipo_detectado'] = 'DOCUMENTO'
-        resultado['datos'] = {
-            'monto': 0.00,
-            'description': 'No se pudo leer el texto claro',
-            'fecha': date.today()
-        }
-
     return resultado

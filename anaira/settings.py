@@ -155,3 +155,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://anaira-erp-production.up.railway.app', 
     'https://*.railway.app' 
 ]
+
+# Configuración de Inteligencia Artificial (Google Gemini)
+# Pegue aquí la llave que copió en el Paso 1
+GEMINI_API_KEY = "AIzaSyBAL_Z7wJ59UD7usNYDdYNe0YoVIRWeloc"
