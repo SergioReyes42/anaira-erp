@@ -22,14 +22,15 @@ model = genai.GenerativeModel(
 )
 
 def analizar_documento_ia(imagen, contexto=None):
-    """
-    Envía la imagen a Google Gemini 1.5 Flash y extrae datos estructurados.
-    
-    Parámetros:
-    - imagen: El archivo subido desde el formulario Django (InMemoryUploadedFile)
-    - contexto: 'IN' (Depósito), 'OUT' (Cheque), 'GASTO' (Factura)
-    """
-    print(f"--- INICIANDO ANÁLISIS IA (Contexto: {contexto}) ---")
+   # --- DEBUG: IMPRIMIR MODELOS DISPONIBLES ---
+    print("--- CONSULTANDO MODELOS DISPONIBLES ---")
+    try:
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                print(m.name)
+    except Exception as e:
+        print(f"Error listando modelos: {e}")
+    # -------------------------------------------
     
     resultado = {
         'exito': False,
