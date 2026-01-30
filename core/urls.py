@@ -1,6 +1,9 @@
 from django.urls import path
 from . import views
 
+from django.conf import settings
+from django.conf.urls.static import static
+
 urlpatterns = [
     # --- ACCESO Y CONFIGURACIÓN ---
     # CORRECCIÓN AQUÍ: Agregamos ambas rutas para evitar el error 404
@@ -70,3 +73,6 @@ urlpatterns = [
 
    
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
