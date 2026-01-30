@@ -78,6 +78,23 @@ class Account(models.Model):
     def __str__(self):
         return f"{self.code} - {self.name}"
 
+class JournalEntry(models.Model):
+    date = models.DateField(verbose_name="Fecha")
+    description = models.CharField(max_length=255, verbose_name="Descripción")
+    reference = models.CharField(max_length=100, blank=True, null=True, verbose_name="Referencia")
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Partida {self.id} - {self.date}"
+
+class JournalItem(models.Model):
+    entry = models.ForeignKey(JournalEntry, related_name='items', on_delete=models.CASCADE)
+    account_name = models.CharField(max_length=100, verbose_name="Nombre Cuenta") # Ej: Caja, IVA
+    debit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Debe")
+    credit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Haber")
+
+    def __str__(self):
+        return f"{self.account_name} | D:{self.debit} H:{self.credit}"
 
 # ==========================================
 # 3. TESORERÍA (BANCOS Y SOCIOS)

@@ -34,6 +34,7 @@ urlpatterns = [
     path('bancos/eliminar-transaccion/<int:pk>/', views.delete_transaction, name='delete_transaction'),
     path('transaccion/eliminar/<int:pk>/', views.delete_transaction, name='delete_transaction'),
     path('bancos/crear/', views.bank_create, name='bank_create'),
+    path('bancos/estado-de-cuenta/<int:bank_id>/', views.bank_statement, name='bank_statement'),
     
     # --- INGRESOS Y PROVEEDORES ---
     path('ingresos/', views.income_list, name='income_list'),

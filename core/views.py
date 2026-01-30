@@ -21,7 +21,8 @@ from .forms import BankTransactionForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from datetime import date
-from .models import Company, Fleet, BankAccount, Gasto, BankTransaction
+from .models import Company, Fleet, BankAccount, Gasto, BankTransaction, JournalEntry, JournalItem
+# from .ai_brain import analizar_documento_ia
 # --- MODELOS ---
 from .models import (
     UserRoleCompany, Branch, Warehouse, Account,
@@ -161,119 +162,165 @@ def mobile_expense(request):
 
 @login_required
 def gasto_manual(request):
-    # 1. Usamos el ID de la sesión (Es más seguro que el nombre)
+    # 1. Validación de Seguridad (Empresa)
     company_id = request.session.get('company_id')
-    
-    if not company_id:
-        return redirect('select_company')
-    
-    # Obtenemos el objeto para cuando tengamos que guardar el Gasto
+    if not company_id: return redirect('select_company')
     company_obj = get_object_or_404(Company, id=company_id)
 
-    # Valores iniciales
+    # Contexto Inicial del Formulario
     contexto_form = {
         'fecha': date.today(),
         'proveedor': '',
         'descripcion': '',
         'total': '',
+        'monto_idp': 0,
+        'base_imponible': '',
         'iva': '',
         'es_combustible': False
     }
 
+    # --- FUNCIÓN HELPER: LIMPIAR DINERO ---
+    # Esto evita errores si la IA manda "Q300" o "1,200.00"
+    def limpiar_monto(valor):
+        if not valor: return 0.0
+        s = str(valor).upper().replace('Q', '').replace(',', '').replace(' ', '')
+        try:
+            return float(s)
+        except ValueError:
+            return 0.0
+    # --------------------------------------
+
     if request.method == 'POST':
-        # --- LÓGICA IA (SMART SCANNER) ---
+        
+        # =================================================
+        # RAMA A: SMART SCANNER (IA)
+        # =================================================
         if 'analizar_ia' in request.POST and request.FILES.get('imagen_factura'):
-            # (El código de la IA se mantiene igual)
-            from .ai_brain import analizar_documento_ia
             imagen = request.FILES['imagen_factura']
+            # Llamamos al cerebro (Gemini)
             resultado = analizar_documento_ia(imagen, contexto='GASTO')
             
             if resultado['exito']:
                 datos = resultado['datos']
-                messages.success(request, f"IA Detectada: {resultado['tipo_detectado']}.")
-                # --- LÓGICA CONTABLE GUATEMALA (IDP + IVA) ---
-                total_factura = float(datos.get('total', 0))
-                monto_idp = float(datos.get('idp', 0))
+                messages.success(request, f"IA Detectada: {resultado['tipo_detectado']}. Datos extraídos.")
+                
+                # 1. Limpiamos los datos crudos
+                total_factura = limpiar_monto(datos.get('total'))
+                monto_idp = limpiar_monto(datos.get('idp'))
                 es_fuel = datos.get('es_combustible', False)
                 
-                # Si la IA detectó combustible pero no leyó el IDP (a veces pasa), 
-                # podríamos estimarlo por galones, pero por ahora usaremos lo que leyó.
-                
-                # Cálculo de Base e IVA
-                # 1. Al total le quitamos el IDP (porque el IDP no paga IVA)
+                # 2. Cálculos Contables Guatemala
+                # Al total le quitamos el IDP (El IDP no paga IVA)
                 monto_sujeto_iva = total_factura - monto_idp
                 
-                # 2. Sacamos la base imponible (dividido 1.12)
+                # Base = Monto / 1.12
                 base_imponible = round(monto_sujeto_iva / 1.12, 2)
                 
-                # 3. Calculamos el IVA
+                # IVA = Base * 0.12
                 iva_calculado = round(base_imponible * 0.12, 2)
 
+                # 3. Actualizamos el formulario para que el usuario revise
                 contexto_form.update({
                     'proveedor': datos.get('proveedor', ''),
                     'total': total_factura,
-                    'descripcion': f"Combustible ({datos.get('galones', '?')} gal) - Fact: {datos.get('serie', '')}",
+                    'descripcion': f"Combustible ({datos.get('galones', '?')} gal) - Fact: {datos.get('serie', '')}" if es_fuel else f"Gasto detectado: {datos.get('serie', '')}",
                     'es_combustible': es_fuel,
-                    'monto_idp': monto_idp,          # <--- Nuevo dato para el HTML
-                    'base_imponible': base_imponible, # <--- Base calculada
-                    'iva': iva_calculado              # <--- IVA calculado
+                    'monto_idp': monto_idp,
+                    'base_imponible': base_imponible,
+                    'iva': iva_calculado,
+                    'fecha': datos.get('fecha', date.today())
                 })
             else:
-                # === CAMBIO IMPORTANTE AQUÍ ===
-                # Obtenemos el mensaje técnico del error
-                error_tecnico = resultado.get('mensaje', 'Desconocido')
-                
-                # Lo imprimimos en la consola de Railway (Logs) para que quede registro
-                print(f"!!! ERROR CRÍTICO IA: {error_tecnico} !!!")
-                
-                # Se lo mostramos a usted en pantalla en ROJO
-                messages.error(request, f"Fallo de Conexión IA: {error_tecnico}")
+                error_real = resultado.get('mensaje', 'Error desconocido')
+                messages.error(request, f"Fallo IA: {error_real}")
 
-        # --- GUARDADO NORMAL ---
+        # =================================================
+        # RAMA B: GUARDAR GASTO Y CONTABILIZAR
+        # =================================================
         else:
             try:
+                # 1. Recopilar datos limpios del formulario
+                monto_total = float(request.POST.get('monto_total', 0))
+                monto_idp = float(request.POST.get('monto_idp', 0))
+                monto_base = float(request.POST.get('base_imponible', 0))
+                monto_iva = float(request.POST.get('impuesto_iva', 0))
+                
+                # 2. Crear Objeto Gasto
                 gasto = Gasto()
-                gasto.company = company_obj # Aquí sí usamos el objeto
+                gasto.company = company_obj
                 gasto.fecha = request.POST.get('fecha')
                 gasto.proveedor = request.POST.get('nombre_emisor')
                 gasto.descripcion = request.POST.get('concepto')
-                gasto.total = request.POST.get('monto_total')
-                
-                gasto.amount_untaxed = request.POST.get('base_imponible') or 0
-                gasto.iva = request.POST.get('impuesto_iva') or 0
+                gasto.total = monto_total
+                gasto.amount_untaxed = monto_base
+                gasto.iva = monto_iva
                 gasto.categoria = "Combustible" if request.POST.get('es_combustible') else "General"
                 
-                # Asignaciones
+                # Asignación Vehículo
                 vehicle_id = request.POST.get('vehicle_id')
-                if vehicle_id: 
-                    gasto.vehicle = Fleet.objects.get(id=vehicle_id)
+                if vehicle_id: gasto.vehicle = Fleet.objects.get(id=vehicle_id)
 
+                # Asignación Banco (Descontar Saldo)
                 bank_id = request.POST.get('bank_id')
                 if bank_id:
                     cuenta = BankAccount.objects.get(id=bank_id)
-                    if cuenta.current_balance >= float(gasto.total):
-                        cuenta.current_balance -= float(gasto.total)
+                    if cuenta.current_balance >= monto_total:
+                        cuenta.current_balance -= sum([monto_total]) # Truco decimal
+                        cuenta.current_balance = round(cuenta.current_balance, 2)
                         cuenta.save()
                         gasto.bank_account = cuenta
                     else:
-                        messages.error(request, "Fondos insuficientes.")
-                        contexto_form.update(request.POST.dict())
-                        raise Exception("Fondos insuficientes")
+                        raise Exception("Fondos insuficientes en la cuenta seleccionada.")
 
+                # Imagen
                 if 'imagen_factura' in request.FILES:
                     gasto.imagen = request.FILES['imagen_factura']
 
                 gasto.save()
-                messages.success(request, "Gasto registrado correctamente.")
-                return redirect('expense_list')
+
+                # --------------------------------------------------------
+                # 3. AUTOMATIZACIÓN CONTABLE (CREAR PARTIDA)
+                # --------------------------------------------------------
+                try:
+                    # A. Cabecera
+                    partida = JournalEntry.objects.create(
+                        date=gasto.fecha,
+                        description=f"Compra: {gasto.proveedor} - {gasto.descripcion}",
+                        reference=f"Gasto #{gasto.id}"
+                    )
+                    
+                    # B. Detalle (DEBE)
+                    if request.POST.get('es_combustible'):
+                        # Cuenta Gasto Combustible
+                        JournalItem.objects.create(entry=partida, account_name="Combustibles y Lubricantes", debit=monto_base, credit=0)
+                        # Cuenta IDP
+                        if monto_idp > 0:
+                            JournalItem.objects.create(entry=partida, account_name="Impuesto IDP", debit=monto_idp, credit=0)
+                    else:
+                        # Cuenta Gasto General
+                        JournalItem.objects.create(entry=partida, account_name="Gastos Generales", debit=monto_base, credit=0)
+
+                    # Cuenta IVA (Común)
+                    if monto_iva > 0:
+                        JournalItem.objects.create(entry=partida, account_name="IVA por Cobrar", debit=monto_iva, credit=0)
+
+                    # C. Detalle (HABER) - Salida de dinero
+                    cuenta_salida = "Caja y Bancos" if bank_id else "Cuentas por Pagar"
+                    JournalItem.objects.create(entry=partida, account_name=cuenta_salida, debit=0, credit=monto_total)
+
+                except Exception as e_contable:
+                    print(f"Error generando partida contable: {e_contable}")
+                # --------------------------------------------------------
+
+                messages.success(request, "Gasto registrado y contabilizado correctamente.")
+                return redirect('expense_list') # O 'dashboard_gastos' según su url
 
             except Exception as e:
-                if str(e) != "Fondos insuficientes": 
-                     messages.error(request, f"Error al guardar: {e}")
+                messages.error(request, f"Error al guardar: {str(e)}")
+                # Mantenemos los datos en pantalla para no borrar lo que escribió el usuario
+                contexto_form.update(request.POST.dict())
 
-    # --- AQUÍ ESTABA EL ERROR (CORREGIDO) ---
-    # Usamos company_id=... en lugar de company=company_obj
-    # Esto evita que Django confunda el objeto con un número.
+    # GET Request: Cargar listas para selects
     vehiculos = Fleet.objects.filter(company_id=company_id) 
     bancos = BankAccount.objects.filter(company_id=company_id)
     
@@ -573,10 +620,6 @@ def pay_supplier(request):
         form = SupplierPaymentForm(company)
 
     return render(request, 'core/pay_supplier.html', {'form': form})
-
-
-
-
 
 # ==========================================
 # 4. CONTABILIDAD (LIBROS Y ESTADOS)
@@ -1081,3 +1124,18 @@ def admin_control_panel(request):
     }
     
     return render(request, 'core/control_panel.html', context)
+
+# En core/views.py (al final)
+
+@login_required
+def bank_statement(request, bank_id):
+    # Obtenemos la cuenta o damos error 404 si no existe
+    cuenta = get_object_or_404(BankAccount, id=bank_id)
+    
+    # Traemos TODOS los movimientos ordenados por fecha (del más reciente al más viejo)
+    movimientos = BankTransaction.objects.filter(account=cuenta).order_by('-date', '-created_at')
+    
+    return render(request, 'core/bank_statement.html', {
+        'cuenta': cuenta,
+        'movimientos': movimientos
+    })
