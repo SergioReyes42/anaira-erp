@@ -197,8 +197,15 @@ def gasto_manual(request):
                     'iva': round(float(datos.get('total', 0)) / 1.12 * 0.12, 2) if datos.get('total') else ''
                 })
             else:
-                error_real = resultado.get('mensaje', 'Error desconocido')
-                messages.error(request, f"Fallo Técnico IA: {error_real}")
+                # === CAMBIO IMPORTANTE AQUÍ ===
+                # Obtenemos el mensaje técnico del error
+                error_tecnico = resultado.get('mensaje', 'Desconocido')
+                
+                # Lo imprimimos en la consola de Railway (Logs) para que quede registro
+                print(f"!!! ERROR CRÍTICO IA: {error_tecnico} !!!")
+                
+                # Se lo mostramos a usted en pantalla en ROJO
+                messages.error(request, f"Fallo de Conexión IA: {error_tecnico}")
 
         # --- GUARDADO NORMAL ---
         else:
