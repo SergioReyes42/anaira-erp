@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from itertools import chain
 from operator import attrgetter
+from .ai_brain import analizar_documento_ia
 
 # --- IMPORTS DE DJANGO ---
 from django.shortcuts import render, redirect, get_object_or_404
@@ -325,47 +326,64 @@ def transfer_create(request):
 
 @login_required
 def bank_transaction_create(request):
-    # 1. Obtener la empresa actual
     company_name = request.session.get('company_name')
-    if not company_name:
-        return redirect('select_company')
-    
+    if not company_name: return redirect('select_company')
     company = get_object_or_404(Company, name=company_name)
 
-    # 2. Manejar el tipo de movimiento (Entrada o Salida) desde la URL
-    # Si la URL es /bancos/transaccion/?type=OUT es un Cheque/Retiro
     initial_type = request.GET.get('type', 'OUT') 
+    datos_ia = None # Variable para guardar lo que detecte la IA
 
     if request.method == 'POST':
-        # OJO AQUÍ: Pasamos 'company' PRIMERO, luego 'request.POST'
-        form = BankTransactionForm(company, request.POST, request.FILES)
-        if form.is_valid():
-            transaction = form.save(commit=False)
+        # 1. ¿Viene un archivo para analizar PRIMERO?
+        if 'analizar_ia' in request.POST and request.FILES.get('evidence'):
+            imagen = request.FILES['evidence']
             
-            # Asignar tipo automático si el usuario no lo eligió
-            if not transaction.movement_type:
-                 transaction.movement_type = initial_type
-                 
-            transaction.save()
+            # --- LLAMADA AL CEREBRO DE IA ---
+            resultado = analizar_documento_ia(imagen)
             
-            # Actualizar saldo de la cuenta
-            cuenta = transaction.account
-            if transaction.movement_type == 'IN':
-                cuenta.current_balance += transaction.amount
-            else: # OUT
-                cuenta.current_balance -= transaction.amount
-            cuenta.save()
-            
-            messages.success(request, f"Transacción de {transaction.amount} registrada correctamente.")
-            return redirect('bank_list')
+            if resultado['exito']:
+                datos = resultado['datos']
+                messages.success(request, f"IA Detectada: {resultado['tipo_detectado']}. Datos precargados.")
+                
+                # Pre-llenamos el formulario con los datos de la IA
+                initial_data = {
+                    'movement_type': initial_type,
+                    'amount': datos.get('monto', 0),
+                    'description': f"{resultado['tipo_detectado']} detectado (Ref: {datos.get('numero_cheque') or datos.get('no_boleta')})",
+                    'reference': datos.get('numero_cheque') or datos.get('no_boleta'),
+                    'date': datos.get('fecha')
+                }
+                form = BankTransactionForm(company, initial=initial_data)
+                # Pasamos la imagen de vuelta para que no se pierda, aunque en HTML file input es complejo rellenar
+                datos_ia = True 
+            else:
+                messages.warning(request, resultado.get('mensaje'))
+                form = BankTransactionForm(company, request.POST, request.FILES)
+
+        # 2. Guardado Normal
+        else:
+            form = BankTransactionForm(company, request.POST, request.FILES)
+            if form.is_valid():
+                transaction = form.save(commit=False)
+                if not transaction.movement_type: transaction.movement_type = initial_type
+                transaction.save()
+                
+                cuenta = transaction.account
+                if transaction.movement_type == 'IN': cuenta.current_balance += transaction.amount
+                else: cuenta.current_balance -= transaction.amount
+                cuenta.save()
+                
+                messages.success(request, "Transacción registrada exitosamente.")
+                return redirect('bank_list')
+
     else:
-        # GET: Pasamos 'company' y prellenamos el tipo de movimiento
         form = BankTransactionForm(company, initial={'movement_type': initial_type})
 
     return render(request, 'core/bank_transaction_form.html', {
         'form': form,
         'company': company,
-        'tipo': initial_type
+        'tipo': initial_type,
+        'datos_ia': datos_ia
     })
 
 @login_required

@@ -3,25 +3,58 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {% if 'IA Detectada' in message.message %}
+                        <i class="bi bi-robot"></i> 
+                    {% endif %}
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
         <div class="card shadow">
             <div class="card-header {% if tipo == 'IN' %}bg-success{% else %}bg-danger{% endif %} text-white">
                 <h4 class="mb-0">
                     {% if tipo == 'IN' %}
-                        <i class="fas fa-arrow-down"></i> Registrar Depósito / Entrada
+                        <i class="bi bi-arrow-down-circle"></i> Registrar Depósito / Entrada
                     {% else %}
-                        <i class="fas fa-arrow-up"></i> Registrar Cheque / Salida
+                        <i class="bi bi-arrow-up-circle"></i> Registrar Cheque / Salida
                     {% endif %}
                 </h4>
             </div>
+
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     
+                    <div class="alert alert-info border-info" style="background: #f0f8ff;">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-robot fs-3 me-2 text-primary"></i>
+                            <div>
+                                <strong class="d-block text-primary">Smart Scanner (IA)</strong>
+                                <small class="text-muted">Suba la foto del cheque o boleta y presione "Analizar" para autocompletar.</small>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            {{ form.evidence }}
+                            
+                            <button type="submit" name="analizar_ia" value="1" class="btn btn-info text-white fw-bold" formnovalidate>
+                                <i class="bi bi-magic"></i> Analizar
+                            </button>
+                        </div>
+                    </div>
                     {% if form.errors %}
-                        <div class="alert alert-danger">Verifique los campos marcados.</div>
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> Verifique los datos ingresados. {{ form.errors }}
+                        </div>
                     {% endif %}
 
-                    <div class="row mb-3">
+                    <div class="row mb-3 mt-4">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Cuenta Bancaria</label>
                             {{ form.account }}
@@ -48,16 +81,11 @@
                         {{ form.description }}
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Comprobante (Imagen)</label>
-                        {{ form.evidence }}
-                    </div>
-
                     <input type="hidden" name="movement_type" value="{{ tipo }}">
 
-                    <div class="d-grid gap-2">
+                    <div class="d-grid gap-2 mt-4">
                         <button type="submit" class="btn {% if tipo == 'IN' %}btn-success{% else %}btn-danger{% endif %} btn-lg">
-                            Guardar Transacción
+                            <i class="bi bi-save"></i> Guardar Transacción Final
                         </button>
                         <a href="{% url 'bank_list' %}" class="btn btn-outline-secondary">Cancelar</a>
                     </div>
@@ -66,4 +94,25 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* Hace que los inputs manuales se vean mejor si Django los renderiza planos */
+    input[type="text"], input[type="number"], input[type="date"], select, textarea {
+        display: block;
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+    /* El input file ya tiene estilo de bootstrap en el scanner, esto es para asegurarnos */
+    input[type="file"] {
+        border: 1px solid #b6d4fe; 
+        background-color: #fff;
+    }
+</style>
 {% endblock %}
