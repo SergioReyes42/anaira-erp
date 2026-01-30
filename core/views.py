@@ -339,7 +339,7 @@ def bank_transaction_create(request):
             imagen = request.FILES['evidence']
             
             # --- LLAMADA AL CEREBRO DE IA ---
-            resultado = analizar_documento_ia(imagen)
+            resultado = analizar_documento_ia(imagen, contexto=initial_type)
             
             if resultado['exito']:
                 datos = resultado['datos']
