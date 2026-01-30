@@ -159,65 +159,101 @@ def mobile_expense(request):
 
 @login_required
 def gasto_manual(request):
-    # Obtener empresa actual
-    company_name = request.session.get('company_name')
+    # 1. Usamos el ID de la sesión (Es más seguro que el nombre)
+    company_id = request.session.get('company_id')
+    
+    if not company_id:
+        return redirect('select_company')
+    
+    # Obtenemos el objeto para cuando tengamos que guardar el Gasto
+    company_obj = get_object_or_404(Company, id=company_id)
+
+    # Valores iniciales
+    contexto_form = {
+        'fecha': date.today(),
+        'proveedor': '',
+        'descripcion': '',
+        'total': '',
+        'iva': '',
+        'es_combustible': False
+    }
+
     if request.method == 'POST':
-        if not company_name:
-            return redirect('select_company')
-    
-    # Usamos get_object_or_404 para evitar errores si no encuentra la empresa
-    company_obj = get_object_or_404(Company, name=company_name)
-    try:
-            # 1. Recopilar datos del formulario HTML
-            gasto = Gasto()
-            gasto.fecha = request.POST.get('fecha')
-            gasto.proveedor = request.POST.get('nombre_emisor') # O nit_emisor
-            gasto.descripcion = request.POST.get('concepto')
-            gasto.total = request.POST.get('monto_total')
+        # --- LÓGICA IA (SMART SCANNER) ---
+        if 'analizar_ia' in request.POST and request.FILES.get('imagen_factura'):
+            # (El código de la IA se mantiene igual)
+            from .ai_brain import analizar_documento_ia
+            imagen = request.FILES['imagen_factura']
+            resultado = analizar_documento_ia(imagen, contexto='GASTO')
             
-            # Datos calculados por el JS (Hidden inputs)
-            gasto.amount_untaxed = request.POST.get('base_imponible') or 0
-            gasto.iva = request.POST.get('impuesto_iva') or 0
-            gasto.categoria = "Combustible" if request.POST.get('es_combustible') else "General"
-            
-            # 2. Asignar Vehículo (Si seleccionó uno)
-            vehicle_id = request.POST.get('vehicle_id')
-            if vehicle_id:
-                gasto.vehicle = Fleet.objects.get(id=vehicle_id)
+            if resultado['exito']:
+                datos = resultado['datos']
+                messages.success(request, f"IA Detectada: {resultado['tipo_detectado']}.")
+                contexto_form.update({
+                    'proveedor': datos.get('proveedor', ''),
+                    'total': datos.get('total', ''),
+                    'descripcion': f"Gasto detectado (Serie: {datos.get('serie', 'SN')})",
+                    'es_combustible': datos.get('es_combustible', False),
+                    'iva': round(float(datos.get('total', 0)) / 1.12 * 0.12, 2) if datos.get('total') else ''
+                })
+            else:
+                messages.warning(request, "No se pudo analizar el documento.")
 
-            # 3. Asignar Banco y Descontar Dinero
-            bank_id = request.POST.get('bank_id')
-            if bank_id:
-                cuenta = BankAccount.objects.get(id=bank_id)
-                # Validación de fondos
-                if cuenta.current_balance >= float(gasto.total):
-                    cuenta.current_balance -= float(gasto.total)
-                    cuenta.save()
-                    gasto.bank_account = cuenta
-                else:
-                    messages.error(request, "Fondos insuficientes en el banco seleccionado.")
-                    return redirect('gasto_manual')
+        # --- GUARDADO NORMAL ---
+        else:
+            try:
+                gasto = Gasto()
+                gasto.company = company_obj # Aquí sí usamos el objeto
+                gasto.fecha = request.POST.get('fecha')
+                gasto.proveedor = request.POST.get('nombre_emisor')
+                gasto.descripcion = request.POST.get('concepto')
+                gasto.total = request.POST.get('monto_total')
+                
+                gasto.amount_untaxed = request.POST.get('base_imponible') or 0
+                gasto.iva = request.POST.get('impuesto_iva') or 0
+                gasto.categoria = "Combustible" if request.POST.get('es_combustible') else "General"
+                
+                # Asignaciones
+                vehicle_id = request.POST.get('vehicle_id')
+                if vehicle_id: 
+                    gasto.vehicle = Fleet.objects.get(id=vehicle_id)
 
-            # Guardar imagen si hay
-            if 'imagen_factura' in request.FILES:
-                gasto.imagen = request.FILES['imagen_factura']
+                bank_id = request.POST.get('bank_id')
+                if bank_id:
+                    cuenta = BankAccount.objects.get(id=bank_id)
+                    if cuenta.current_balance >= float(gasto.total):
+                        cuenta.current_balance -= float(gasto.total)
+                        cuenta.save()
+                        gasto.bank_account = cuenta
+                    else:
+                        messages.error(request, "Fondos insuficientes.")
+                        contexto_form.update(request.POST.dict())
+                        raise Exception("Fondos insuficientes")
 
-            gasto.save()
-            messages.success(request, "Gasto registrado correctamente.")
-            return redirect('expense_list')
+                if 'imagen_factura' in request.FILES:
+                    gasto.imagen = request.FILES['imagen_factura']
 
-    except Exception as e:
-            messages.error(request, f"Error al guardar: {e}")
+                gasto.save()
+                messages.success(request, "Gasto registrado correctamente.")
+                return redirect('expense_list')
 
-    # Enviar listas al HTML
-    vehiculos = Fleet.objects.filter(company=Company)
-    bancos = BankAccount.objects.filter(company=Company)
+            except Exception as e:
+                if str(e) != "Fondos insuficientes": 
+                     messages.error(request, f"Error al guardar: {e}")
+
+    # --- AQUÍ ESTABA EL ERROR (CORREGIDO) ---
+    # Usamos company_id=... en lugar de company=company_obj
+    # Esto evita que Django confunda el objeto con un número.
+    vehiculos = Fleet.objects.filter(company_id=company_id) 
+    bancos = BankAccount.objects.filter(company_id=company_id)
     
-    return render(request, 'core/gasto_manual.html', {
+    full_context = {
         'vehiculos': vehiculos,
-        'bancos': bancos,
-        'today': datetime.date.today()
-    })
+        'bancos': bancos
+    }
+    full_context.update(contexto_form)
+    
+    return render(request, 'core/gasto_manual.html', full_context)
 
 @csrf_exempt
 def api_ocr_process(request):
