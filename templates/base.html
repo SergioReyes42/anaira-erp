@@ -180,9 +180,16 @@
     
     <nav class="sidebar d-flex flex-column flex-shrink-0 p-3">
         <a href="/" class="d-flex align-items-center mb-4 mb-md-0 me-md-auto text-white text-decoration-none px-2">
-            <i class="bi bi-building-gear fs-2 me-2 text-info"></i>
-            <span class="fs-4 fw-bold">Anaira ERP</span>
-        </a>
+    {% if request.session.company_logo %}
+        <img src="{{ request.session.company_logo }}" 
+             style="max-height: 40px; max-width: 50px; margin-right: 10px; background: white; border-radius: 5px; padding: 3px;"
+             alt="Logo">
+    {% else %}
+        <i class="bi bi-building-gear fs-2 me-2 text-info"></i>
+    {% endif %}
+    
+    <span class="fs-4 fw-bold">Anaira ERP</span>
+</a>
         <hr class="text-white-50">
 
         <ul class="nav nav-pills flex-column mb-auto">
