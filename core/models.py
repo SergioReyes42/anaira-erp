@@ -82,7 +82,6 @@ class Account(models.Model):
 # ==========================================
 # 3. TESORERÍA (BANCOS Y SOCIOS)
 # ==========================================
-
 class BankAccount(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     bank_name = models.CharField(max_length=100, verbose_name="Nombre del Banco")
@@ -92,6 +91,26 @@ class BankAccount(models.Model):
     accounting_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Cuenta Contable")
     
     def __str__(self): return f"{self.bank_name} - {self.account_number}"
+
+class BankTransaction(models.Model):
+    MOVEMENT_CHOICES = (
+        ('IN', 'Entrada / Depósito'),
+        ('OUT', 'Salida / Retiro'),
+    )
+    
+    # Aquí usamos 'BankAccount' que acabamos de definir arriba
+    account = models.ForeignKey(BankAccount, on_delete=models.CASCADE)
+    
+    date = models.DateField(verbose_name="Fecha")
+    movement_type = models.CharField(max_length=3, choices=MOVEMENT_CHOICES, default='OUT')
+    amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto")
+    description = models.CharField(max_length=255, verbose_name="Descripción")
+    reference = models.CharField(max_length=100, blank=True, null=True, verbose_name="Referencia")
+    evidence = models.ImageField(upload_to='bank_evidence/', blank=True, null=True, verbose_name="Comprobante")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_movement_type_display()} - Q{self.amount}"
 
 class BankMovement(models.Model):
     """El historial real de la libreta"""
@@ -343,3 +362,4 @@ class PayrollDetail(models.Model):
 
     def __str__(self):
         return f"Detalle {self.employee.first_name} - {self.payroll}"
+
