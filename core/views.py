@@ -199,7 +199,7 @@ def gasto_manual(request):
             else:
                 error_real = resultado.get('mensaje', 'Error desconocido')
                 messages.error(request, f"Fallo Técnico IA: {error_real}")
-                
+
         # --- GUARDADO NORMAL ---
         else:
             try:
