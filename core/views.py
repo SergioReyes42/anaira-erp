@@ -1,25 +1,27 @@
 import csv
 import os
 import json
-from datetime import datetime, date
+from datetime import datetime
 from itertools import chain
 from operator import attrgetter
 
 # --- IMPORTS DE DJANGO ---
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, get_user_model
+from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, Q, Count
 from django.conf import settings
+from .models import BankAccount
+from .forms import BankTransactionForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-
+from datetime import date
+from .models import Company, Fleet, BankAccount, Gasto
 # --- MODELOS ---
 from .models import (
     UserRoleCompany, Branch, Warehouse, Account,
-    Company, Fleet, 
     # Finanzas
     Gasto, Income, BankAccount, BankMovement, BusinessPartner,
     # Inventario
@@ -43,7 +45,8 @@ from .forms import (
     LoanForm,
     ProductForm
 )
-# ========================================
+
+# ==========================================
 # 1. SISTEMA DE ACCESO Y DASHBOARD
 # ==========================================
 
@@ -96,7 +99,7 @@ def select_company(request): # <--- AQUÍ ESTABA EL ERROR: FALTABA ESTA LÍNEA
             
         return redirect('home')
 
-    return render(request, 'core/select_company.html', {'companies': companies})
+    return render(request, 'core/seleccion_nueva.html', {'companies': companies})
 
 @login_required
 def home(request):
@@ -105,7 +108,9 @@ def home(request):
     company = Company.objects.get(id=company_id)
     return render(request, 'core/home.html', {'company': company})
 
-
+@login_required
+def admin_control_panel(request): 
+    return redirect('dashboard_gastos')
 
 # ==========================================
 # 2. GASTOS Y OCR
@@ -153,40 +158,33 @@ def mobile_expense(request):
 
 @login_required
 def gasto_manual(request):
-    # 1. Obtener la empresa actual de la sesión
+    # Obtener empresa actual
     company_name = request.session.get('company_name')
+    if request.method == 'POST':
+        if not company_name:
+            return redirect('select_company')
     
-    # Validación de seguridad: Si no hay empresa en sesión, mandar a seleccionar
-    if not company_name:
-        return redirect('select_company')
-    
-    # 2. Convertir el nombre en el OBJETO real (La Instancia)
+    # Usamos get_object_or_404 para evitar errores si no encuentra la empresa
     company_obj = get_object_or_404(Company, name=company_name)
-
     try:
-        if request.method == 'POST':
-            # --- PROCESAR FORMULARIO ---
+            # 1. Recopilar datos del formulario HTML
             gasto = Gasto()
-            
-            # ¡IMPORTANTE! Asignar el gasto a la empresa actual
-            gasto.company = company_obj  # <--- FALTABA ESTO (Sin esto, el gasto queda huérfano)
-            
             gasto.fecha = request.POST.get('fecha')
-            gasto.proveedor = request.POST.get('nombre_emisor')
+            gasto.proveedor = request.POST.get('nombre_emisor') # O nit_emisor
             gasto.descripcion = request.POST.get('concepto')
             gasto.total = request.POST.get('monto_total')
             
-            # Datos calculados
+            # Datos calculados por el JS (Hidden inputs)
             gasto.amount_untaxed = request.POST.get('base_imponible') or 0
             gasto.iva = request.POST.get('impuesto_iva') or 0
             gasto.categoria = "Combustible" if request.POST.get('es_combustible') else "General"
             
-            # Asignar Vehículo
+            # 2. Asignar Vehículo (Si seleccionó uno)
             vehicle_id = request.POST.get('vehicle_id')
             if vehicle_id:
                 gasto.vehicle = Fleet.objects.get(id=vehicle_id)
 
-            # Asignar Banco y Descontar Dinero
+            # 3. Asignar Banco y Descontar Dinero
             bank_id = request.POST.get('bank_id')
             if bank_id:
                 cuenta = BankAccount.objects.get(id=bank_id)
@@ -199,7 +197,7 @@ def gasto_manual(request):
                     messages.error(request, "Fondos insuficientes en el banco seleccionado.")
                     return redirect('gasto_manual')
 
-            # Guardar imagen
+            # Guardar imagen si hay
             if 'imagen_factura' in request.FILES:
                 gasto.imagen = request.FILES['imagen_factura']
 
@@ -208,12 +206,11 @@ def gasto_manual(request):
             return redirect('expense_list')
 
     except Exception as e:
-        messages.error(request, f"Error al guardar: {e}")
+            messages.error(request, f"Error al guardar: {e}")
 
-    # --- ENVIAR DATOS AL HTML (AQUÍ ESTABA EL ERROR) ---
-    # Usamos company_obj (la empresa específica) en lugar de Company (la clase general)
-    vehiculos = Fleet.objects.filter(company=company_obj) 
-    bancos = BankAccount.objects.filter(company=company_obj)
+    # Enviar listas al HTML
+    vehiculos = Fleet.objects.filter(company=Company)
+    bancos = BankAccount.objects.filter(company=Company)
     
     return render(request, 'core/gasto_manual.html', {
         'vehiculos': vehiculos,
@@ -548,7 +545,7 @@ def smart_hub(request):
 @login_required
 def product_list(request):
     company_id = request.session.get('company_id')
-    products = Product.objects.filter(company_id=company_id, is_active=True)
+    products = Product.objects.filter(company_id=company_id, active=True)
     return render(request, 'inventory/product_list.html', {'products': products})
 
 @login_required
@@ -629,7 +626,7 @@ def create_movement(request):
         messages.success(request, f"Movimiento registrado. Nuevo Stock: {producto.stock}")
         return redirect('product_list')
 
-    products = Product.objects.filter(company=company, is_active=True)
+    products = Product.objects.filter(company=company, active=True)
     return render(request, 'inventory/movement_form.html', {
         'products': products, 
         'pre_selected': int(pre_selected_product) if pre_selected_product else None
@@ -653,7 +650,7 @@ def employee_list(request):
             messages.success(request, "Empleado registrado correctamente.")
             return redirect('employee_list')
     
-    employees = Employee.objects.filter(company=company, is_active=True)
+    employees = Employee.objects.filter(company=company, active=True)
     form = EmployeeForm()
     return render(request, 'hr/employee_list.html', {'employees': employees, 'form': form})
 
