@@ -18,7 +18,7 @@ generation_config = {
 
 model = genai.GenerativeModel(
     # CAMBIO AQUÍ: Usamos el modelo que sí apareció en su lista
-    model_name="gemini-2.0-flash", 
+    model_name="gemini-2.5-flash", 
     generation_config=generation_config,
 )
 
