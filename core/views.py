@@ -1,27 +1,25 @@
 import csv
 import os
 import json
-from datetime import datetime
+from datetime import datetime, date
 from itertools import chain
 from operator import attrgetter
 
 # --- IMPORTS DE DJANGO ---
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, get_user_model
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, Q, Count
 from django.conf import settings
-from .models import BankAccount
-from .forms import BankTransactionForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from datetime import date
-from .models import Company, Fleet, BankAccount, Gasto
+
 # --- MODELOS ---
 from .models import (
     UserRoleCompany, Branch, Warehouse, Account,
+    Company, Fleet, 
     # Finanzas
     Gasto, Income, BankAccount, BankMovement, BusinessPartner,
     # Inventario
@@ -45,7 +43,6 @@ from .forms import (
     LoanForm,
     ProductForm
 )
-
 # ==========================================
 # 1. SISTEMA DE ACCESO Y DASHBOARD
 # ==========================================
@@ -66,19 +63,40 @@ def logout_view(request):
     return redirect('login')
 
 @login_required
-def select_company(request):
-    user_companies = UserRoleCompany.objects.filter(user=request.user).select_related('company')
+def select_company(request): # <--- AQUÍ ESTABA EL ERROR: FALTABA ESTA LÍNEA
+    """
+    Vista para seleccionar la empresa activa y guardar sus datos (Logo, NIT, Nombre) en la sesión.
+    """
+    # 1. Obtener listado de empresas
+    companies = Company.objects.all()
+
     if request.method == 'POST':
         company_id = request.POST.get('company_id')
-        try:
-            access = user_companies.get(company_id=company_id)
-            company = access.company
-            request.session['company_id'] = company.id
-            request.session['company_name'] = company.name
-            return redirect('home')
-        except UserRoleCompany.DoesNotExist:
-            pass
-    return render(request, 'core/seleccion_nueva.html', {'companies': [uc.company for uc in user_companies]})
+        
+        # 2. Obtener la empresa seleccionada de la Base de Datos
+        company = get_object_or_404(Company, id=company_id)
+        
+        # 3. GUARDAR DATOS EN LA SESIÓN (Esto actualiza el Dashboard)
+        request.session['company_id'] = company.id
+        
+        # Guardar Nombre
+        request.session['company_name'] = getattr(company, 'name', getattr(company, 'nombre', 'Empresa'))
+        
+        # Guardar NIT
+        if hasattr(company, 'nit') and company.nit:
+            request.session['company_nit'] = company.nit
+        else:
+            request.session['company_nit'] = None
+
+        # --- GUARDAR EL LOGO ---
+        if hasattr(company, 'logo') and company.logo:
+            request.session['company_logo'] = company.logo.url
+        else:
+            request.session['company_logo'] = None 
+            
+        return redirect('home')
+
+    return render(request, 'core/select_company.html', {'companies': companies})
 
 @login_required
 def home(request):
@@ -87,9 +105,7 @@ def home(request):
     company = Company.objects.get(id=company_id)
     return render(request, 'core/home.html', {'company': company})
 
-@login_required
-def admin_control_panel(request): 
-    return redirect('dashboard_gastos')
+
 
 # ==========================================
 # 2. GASTOS Y OCR
