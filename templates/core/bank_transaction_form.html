@@ -115,4 +115,21 @@
         background-color: #fff;
     }
 </style>
+<script>
+    document.querySelector('form').addEventListener('submit', function(e) {
+        // Buscamos el botón de guardar (el que no es de analizar)
+        const btnGuardar = this.querySelector('button[type="submit"]:not([name="analizar_ia"])');
+        
+        // Si el botón que se presionó fue el de Analizar IA, no lo bloqueamos permanentemente
+        // Pero si fue el de Guardar, sí.
+        if (e.submitter && e.submitter.name === 'analizar_ia') {
+            e.submitter.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Analizando...';
+        } else if (btnGuardar) {
+            btnGuardar.disabled = true;
+            btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Guardando...';
+        }
+    });
+</script>
+
+{% endblock %}
 {% endblock %}

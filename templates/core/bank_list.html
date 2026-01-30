@@ -1,105 +1,88 @@
 {% extends 'base.html' %}
-{% block title %}Bancos y Tesorería{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">🏦 Tesorería y Bancos</h1>
+<div class="container-fluid">
     
-    <div>
-        <a href="{% url 'transfer_create' %}" class="btn btn-sm btn-outline-secondary me-2">
-            <i class="bi bi-arrow-left-right"></i> Transferir
-        </a>
-        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newBankModal">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-dark"><i class="bi bi-bank2"></i> Tesorería y Bancos</h3>
+        <a href="{% url 'bank_create' %}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Nueva Cuenta
-        </button>
+        </a>
     </div>
-</div>
 
-<div class="row">
-    {% for cuenta in cuentas %}
-    <div class="col-md-4">
-        <div class="card text-white bg-dark mb-4 shadow border-0 h-100">
-            <div class="card-header d-flex justify-content-between align-items-center bg-transparent border-bottom border-secondary">
-                <span class="fw-bold">{{ cuenta.bank_name }}</span>
-                <i class="bi bi-bank fs-5"></i>
-            </div>
-            <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-white-50">{{ cuenta.currency }} - {{ cuenta.account_number }}</h6>
-                <h2 class="card-title display-6 fw-bold">Q {{ cuenta.current_balance|floatformat:2 }}</h2>
-            </div>
-            
-            <div class="card-footer bg-transparent border-top border-secondary text-end">
-                <a href="{% url 'bank_detail' bank_id=cuenta.id %}" class="text-white text-decoration-none stretched-link">
-                    Ver Movimientos <i class="bi bi-chevron-right"></i>
-                </a>
-            </div>
-        </div>
-    </div>
-    {% empty %}
-    <div class="col-12 text-center py-5">
-        <i class="bi bi-wallet2 display-1 text-muted"></i>
-        <h4 class="mt-3 text-muted">No hay cuentas bancarias registradas.</h4>
-        <p class="text-muted">Agrega tu primera cuenta para controlar el dinero.</p>
-    </div>
-    {% endfor %}
-</div>
-
-<div class="modal fade" id="newBankModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Agregar Cuenta Bancaria</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="post">
-                <div class="modal-body">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label">Banco</label>
-                        {{ form.bank_name }}
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Número de Cuenta</label>
-                        {{ form.account_number }}
-                    </div>
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label">Moneda</label>
-                            {{ form.currency }}
+    <div class="row">
+        {% for banco in bancos %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card shadow h-100 border-0">
+                <div class="card-header bg-dark text-white d-flex justify-content-between">
+                    <span class="fw-bold">{{ banco.bank_name }}</span>
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <div class="card-body text-center">
+                    <h6 class="text-muted small">{{ banco.account_number }} ({{ banco.currency }})</h6>
+                    
+                    <h2 class="display-6 fw-bold {% if banco.current_balance < 0 %}text-danger{% else %}text-success{% endif %} my-3">
+                        Q {{ banco.current_balance|floatformat:2 }}
+                    </h2>
+                    
+                    <div class="d-grid gap-2">
+                        <div class="btn-group">
+                            <a href="{% url 'bank_transaction_create' %}?type=IN&account={{ banco.id }}" class="btn btn-success btn-sm">
+                                <i class="bi bi-arrow-down"></i> Depósito
+                            </a>
+                            <a href="{% url 'bank_transaction_create' %}?type=OUT&account={{ banco.id }}" class="btn btn-danger btn-sm">
+                                <i class="bi bi-arrow-up"></i> Cheque/Retiro
+                            </a>
                         </div>
-                        <div class="col-6 mb-3">
-                            <label class="form-label">Saldo Inicial</label>
-                            {{ form.current_balance }}
+                        
+                        <button class="btn btn-outline-dark btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#historial{{ banco.id }}">
+                            Ver Movimientos <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="collapse" id="historial{{ banco.id }}">
+                    <div class="card-footer bg-light">
+                        <div class="d-flex justify-content-between mb-2">
+                            <small class="fw-bold">Últimos movimientos</small>
+                            <a href="{% url 'recalcular_saldo' banco.id %}" class="badge bg-warning text-dark text-decoration-none" title="Si el saldo no cuadra, presione aquí">
+                                <i class="bi bi-arrow-repeat"></i> Recalcular Saldo
+                            </a>
+                        </div>
+
+                        <ul class="list-group list-group-flush small">
+                            {% for t in banco.banktransaction_set.all|slice:":5" %} 
+                            <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent">
+                                <div>
+                                    <span class="d-block fw-bold">{{ t.date|date:"d/m" }} - {{ t.description|truncatechars:20 }}</span>
+                                    <span class="text-muted" style="font-size: 0.75rem;">Ref: {{ t.reference }}</span>
+                                </div>
+                                <div class="text-end">
+                                    <span class="fw-bold {% if t.movement_type == 'IN' %}text-success{% else %}text-danger{% endif %}">
+                                        {% if t.movement_type == 'OUT' %}-{% endif %}Q{{ t.amount }}
+                                    </span>
+                                    <a href="{% url 'delete_transaction' t.id %}" class="text-danger ms-2" onclick="return confirm('¿Eliminar transacción? El saldo se ajustará.');">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                    </a>
+                                </div>
+                            </li>
+                            {% empty %}
+                            <li class="list-group-item text-center text-muted">Sin movimientos</li>
+                            {% endfor %}
+                        </ul>
+                        <div class="text-center mt-2">
+                             <a href="#" class="small text-decoration-none">Ver todo el historial</a>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Cuenta</button>
-                </div>
-            </form>
+            </div>
         </div>
-    </div>
-</div>
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">🏦 Tesorería y Bancos</h1>
-    
-    <div>
-        <a href="{% url 'bank_transaction_create' %}?type=OUT" class="btn btn-sm btn-outline-danger me-1">
-            <i class="bi bi-pen"></i> Cheque/Retiro
-        </a>
-        
-        <a href="{% url 'bank_transaction_create' %}?type=IN" class="btn btn-sm btn-outline-success me-1">
-            <i class="bi bi-arrow-down"></i> Depósito
-        </a>
-
-        <a href="{% url 'transfer_create' %}" class="btn btn-sm btn-outline-secondary me-2">
-            <i class="bi bi-arrow-left-right"></i> Transferir
-        </a>
-        
-        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#newBankModal">
-            <i class="bi bi-plus-circle"></i> Nueva Cuenta
-        </button>
+        {% empty %}
+        <div class="col-12 text-center mt-5">
+            <h4 class="text-muted">No hay cuentas bancarias registradas.</h4>
+            <a href="{% url 'bank_create' %}" class="btn btn-primary mt-3">Crear Primera Cuenta</a>
+        </div>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}

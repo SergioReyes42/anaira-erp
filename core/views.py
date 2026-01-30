@@ -7,6 +7,7 @@ from operator import attrgetter
 from .ai_brain import analizar_documento_ia
 
 # --- IMPORTS DE DJANGO ---
+from django.db.models import Sum
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
@@ -19,7 +20,7 @@ from .forms import BankTransactionForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from datetime import date
-from .models import Company, Fleet, BankAccount, Gasto
+from .models import Company, Fleet, BankAccount, Gasto, BankTransaction
 # --- MODELOS ---
 from .models import (
     UserRoleCompany, Branch, Warehouse, Account,
@@ -498,6 +499,51 @@ def pay_supplier(request):
         form = SupplierPaymentForm(company)
 
     return render(request, 'core/pay_supplier.html', {'form': form})
+
+@login_required
+def recalcular_saldo(request, bank_id):
+    """Función administrativa para arreglar saldos desincronizados"""
+    cuenta = get_object_or_404(BankAccount, id=bank_id)
+    
+    # 1. Sumar todas las Entradas (IN)
+    total_entradas = BankTransaction.objects.filter(
+        account=cuenta, movement_type='IN'
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    # 2. Sumar todas las Salidas (OUT)
+    total_salidas = BankTransaction.objects.filter(
+        account=cuenta, movement_type='OUT'
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    # 3. Calcular el saldo real (Asumiendo saldo inicial 0, o agregue un campo initial_balance si lo tiene)
+    # Si su modelo tiene saldo inicial, súmelo aquí.
+    saldo_real = total_entradas - total_salidas
+    
+    # 4. Guardar corrección
+    cuenta.current_balance = saldo_real
+    cuenta.save()
+    
+    messages.success(request, f"Saldo recalculado correctamente. Nuevo saldo: Q{saldo_real}")
+    return redirect('bank_list')
+
+# core/views.py
+
+@login_required
+def delete_transaction(request, pk):
+    transaccion = get_object_or_404(BankTransaction, pk=pk)
+    cuenta = transaccion.account
+    
+    # Reversar el dinero antes de borrar
+    if transaccion.movement_type == 'IN':
+        cuenta.current_balance -= transaccion.amount
+    elif transaccion.movement_type == 'OUT':
+        cuenta.current_balance += transaccion.amount
+        
+    cuenta.save()
+    transaccion.delete()
+    
+    messages.warning(request, "Transacción eliminada y saldo ajustado.")
+    return redirect('bank_list')
 
 # ==========================================
 # 4. CONTABILIDAD (LIBROS Y ESTADOS)
