@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="m-0"><i class="bi bi-bank"></i> {{ titulo }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nombre del Banco</label>
+                        {{ form.bank_name }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Número de Cuenta</label>
+                        {{ form.account_number }}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Moneda</label>
+                            {{ form.currency }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Saldo Inicial</label>
+                            {{ form.current_balance }}
+                            <div class="form-text text-muted">Use 0 si es cuenta nueva.</div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar Cuenta
+                        </button>
+                        <a href="{% url 'bank_list' %}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

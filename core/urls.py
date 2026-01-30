@@ -33,6 +33,7 @@ urlpatterns = [
     path('bancos/recalcular/<int:bank_id>/', views.recalcular_saldo, name='recalcular_saldo'),
     path('bancos/eliminar-transaccion/<int:pk>/', views.delete_transaction, name='delete_transaction'),
     path('transaccion/eliminar/<int:pk>/', views.delete_transaction, name='delete_transaction'),
+    path('bancos/crear/', views.bank_create, name='bank_create'),
     
     # --- INGRESOS Y PROVEEDORES ---
     path('ingresos/', views.income_list, name='income_list'),

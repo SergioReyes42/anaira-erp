@@ -8,6 +8,7 @@ from .ai_brain import analizar_documento_ia
 
 # --- IMPORTS DE DJANGO ---
 from django.db.models import Sum
+from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
@@ -544,6 +545,36 @@ def delete_transaction(request, pk):
     
     messages.warning(request, "Transacción eliminada y saldo ajustado.")
     return redirect('bank_list')
+
+class BankAccountForm(forms.ModelForm):
+    class Meta:
+        model = BankAccount
+        fields = ['bank_name', 'account_number', 'currency', 'current_balance']
+        widgets = {
+            'bank_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Banco Industrial'}),
+            'account_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 00-000000-0'}),
+            'currency': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'GTQ'}),
+            'current_balance': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+# 2. La Vista para crear el banco
+@login_required
+def bank_create(request):
+    if request.method == 'POST':
+        form = BankAccountForm(request.POST)
+        if form.is_valid():
+            # Si descomentó lo de 'company' en models.py, aquí asignaría la empresa.
+            # Por ahora lo guardamos directo según su modelo actual.
+            form.save()
+            messages.success(request, "Cuenta bancaria creada exitosamente.")
+            return redirect('bank_list')
+    else:
+        form = BankAccountForm()
+
+    return render(request, 'core/bank_form.html', {
+        'form': form,
+        'titulo': 'Registrar Nueva Cuenta Bancaria'
+    })
 
 # ==========================================
 # 4. CONTABILIDAD (LIBROS Y ESTADOS)
