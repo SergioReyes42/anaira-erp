@@ -4,46 +4,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anaira ERP v2.0</title>
+    <title>Anaira ERP</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     
     <style>
-        /* ESTILOS DEL MENÚ LATERAL PROFESIONAL */
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #f4f6f9; overflow-x: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; overflow-x: hidden; }
         
+        /* SIDEBAR ESTILO SAP/MI DIAMANTE */
         #wrapper { display: flex; width: 100%; align-items: stretch; }
-        
-        /* Sidebar Styling */
         #sidebar-wrapper {
-            min-width: 250px;
-            max-width: 250px;
-            background: #1e293b; /* Color Azul Oscuro Ejecutivo */
-            color: #fff;
+            min-width: 260px; max-width: 260px;
+            background: #2c3e50; /* Gris Oscuro Profesional */
+            color: #ecf0f1;
             transition: all 0.3s;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
         }
+        #sidebar-wrapper.toggled { margin-left: -260px; }
         
-        #sidebar-wrapper.toggled { margin-left: -250px; }
+        .sidebar-heading { padding: 20px; font-size: 1.3rem; font-weight: bold; background: #1a252f; border-bottom: 1px solid #34495e; }
         
-        .sidebar-heading { padding: 1.5rem; font-size: 1.25rem; font-weight: bold; border-bottom: 1px solid #334155; }
+        /* ITEMS DEL MENÚ */
         .list-group-item {
-            background-color: transparent;
-            color: #cbd5e1;
-            border: none;
-            padding: 12px 20px;
+            background-color: transparent; color: #bdc3c7; border: none;
+            padding: 10px 20px; font-size: 0.95rem;
         }
-        .list-group-item:hover { background-color: #334155; color: #fff; }
-        .list-group-item.active { background-color: #0f172a; color: #38bdf8; font-weight: bold; border-left: 4px solid #38bdf8; }
+        .list-group-item:hover { background-color: #34495e; color: #fff; cursor: pointer; }
+        .list-group-item.active { background-color: #3498db; color: white; font-weight: 600; }
         
-        /* Submenús */
-        .submenu { background-color: #0f172a; font-size: 0.9rem; }
-        .submenu a { padding-left: 3rem !important; }
+        /* SUBMENÚS (Indentados) */
+        .submenu { background-color: #23303d; font-size: 0.9rem; }
+        .submenu a { padding-left: 45px !important; border-left: 3px solid transparent; }
+        .submenu a:hover { border-left: 3px solid #3498db; }
 
-        /* Contenido Principal */
+        /* CONTENIDO */
         #page-content-wrapper { width: 100%; }
-        
-        .navbar { background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .navbar { box-shadow: 0 2px 5px rgba(0,0,0,0.05); background: white; }
     </style>
 </head>
 <body>
@@ -51,90 +46,76 @@
 <div class="d-flex" id="wrapper">
 
     <div id="sidebar-wrapper">
-        <div class="sidebar-heading text-center py-4 text-white">
-            <i class="bi bi-buildings-fill text-info"></i> ANAIRA ERP
+        <div class="sidebar-heading text-center">
+            <i class="bi bi-gem"></i> ANAIRA ERP
         </div>
         
-        <div class="list-group list-group-flush my-3">
+        <div class="list-group list-group-flush mt-3">
             
             <a href="#" class="list-group-item list-group-item-action">
-                <i class="bi bi-speedometer2 me-2"></i> Mi Diamante (Inicio)
+                <i class="bi bi-speedometer2 me-2"></i> Mi Tablero
             </a>
 
             <a href="#menuBancos" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
-                <i class="bi bi-bank2 me-2 text-success"></i> Tesorería / Bancos
+                <i class="bi bi-bank2 me-2 text-success"></i> Tesorería
             </a>
             <div class="collapse submenu" id="menuBancos">
                 <a href="{% url 'bank_list' %}" class="list-group-item list-group-item-action">Panel de Bancos</a>
-                <a href="{% url 'bank_transaction_create' %}" class="list-group-item list-group-item-action">Registrar Movimiento</a>
+                <a href="{% url 'bank_create' %}" class="list-group-item list-group-item-action">Crear Cuenta</a>
+                <a href="{% url 'bank_transaction_create' %}" class="list-group-item list-group-item-action">Operar (Cheque/Dep)</a>
             </div>
 
             <a href="#menuCompras" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
                 <i class="bi bi-cart3 me-2 text-warning"></i> Compras / Gastos
             </a>
             <div class="collapse submenu" id="menuCompras">
-                <a href="{% url 'gasto_manual' %}" class="list-group-item list-group-item-action">Nuevo Gasto (IA)</a>
+                <a href="{% url 'gasto_manual' %}" class="list-group-item list-group-item-action">Ingreso Factura (IA)</a>
+                <a href="#" class="list-group-item list-group-item-action">Historial de Gastos</a>
                 <a href="#" class="list-group-item list-group-item-action">Proveedores</a>
             </div>
 
-            <a href="#menuContabilidad" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
+            <a href="#menuConta" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
                 <i class="bi bi-journal-bookmark-fill me-2 text-primary"></i> Contabilidad
             </a>
-            <div class="collapse submenu" id="menuContabilidad">
-                <a href="#" class="list-group-item list-group-item-action">Libro Diario</a>
-                <a href="#" class="list-group-item list-group-item-action">Balance General</a>
+            <div class="collapse submenu" id="menuConta">
+                <a href="{% url 'journal_list' %}" class="list-group-item list-group-item-action">Libro Diario</a>
+                <a href="{% url 'ledger_list' %}" class="list-group-item list-group-item-action">Libro Mayor</a>
+                <a href="{% url 'trial_balance' %}" class="list-group-item list-group-item-action">Balance de Saldos</a>
+            </div>
+
+            <a href="#menuFinan" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
+                <i class="bi bi-graph-up-arrow me-2 text-info"></i> Estados Financieros
+            </a>
+            <div class="collapse submenu" id="menuFinan">
+                <a href="{% url 'income_statement' %}" class="list-group-item list-group-item-action">Estado de Resultados</a>
+                <a href="{% url 'balance_sheet' %}" class="list-group-item list-group-item-action">Balance General</a>
             </div>
 
             <a href="#menuRRHH" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
                 <i class="bi bi-people-fill me-2 text-danger"></i> Recursos Humanos
             </a>
             <div class="collapse submenu" id="menuRRHH">
-                <a href="#" class="list-group-item list-group-item-action">Empleados</a>
+                <a href="{% url 'employee_list' %}" class="list-group-item list-group-item-action">Lista de Empleados</a>
                 <a href="#" class="list-group-item list-group-item-action">Nómina</a>
             </div>
 
-             <a href="#" class="list-group-item list-group-item-action mt-4">
-                <i class="bi bi-gear me-2"></i> Configuración
+             <a href="#menuInv" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
+                <i class="bi bi-box-seam me-2"></i> Inventarios
             </a>
-            
-             <a href="#" class="list-group-item list-group-item-action text-danger">
-                <i class="bi bi-box-arrow-left me-2"></i> Cerrar Sesión
-            </a>
+            <div class="collapse submenu" id="menuInv">
+                <a href="{% url 'inventory_list' %}" class="list-group-item list-group-item-action">Kardex / Bodega</a>
+                <a href="#" class="list-group-item list-group-item-action">Productos</a>
+            </div>
 
         </div>
     </div>
     <div id="page-content-wrapper">
-        
-        <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom px-4">
-            <div class="d-flex align-items-center w-100 justify-content-between">
-                
-                <button class="btn btn-outline-secondary" id="menu-toggle">
-                    <i class="bi bi-list fs-5"></i>
-                </button>
-
-                <div class="fw-bold text-secondary">
-                    {% if request.session.company_name %}
-                        {{ request.session.company_name }}
-                    {% else %}
-                        Seleccione Empresa
-                    {% endif %}
-                </div>
-
-                <div class="d-flex align-items-center">
-                    <div class="dropdown">
-                        <a href="#" class="d-flex align-items-center link-dark text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
-                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
-                                <i class="bi bi-person-fill"></i>
-                            </div>
-                            <strong>{{ request.user.username|default:"Usuario" }}</strong>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownUser1">
-                            <li><a class="dropdown-item" href="#">Mi Perfil</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="#">Salir</a></li>
-                        </ul>
-                    </div>
-                </div>
+        <nav class="navbar navbar-expand-lg navbar-light border-bottom px-3">
+            <button class="btn btn-primary btn-sm" id="menu-toggle"><i class="bi bi-list"></i> Menú</button>
+            
+            <div class="ms-auto fw-bold text-secondary">
+                {{ request.session.company_name|default:"EMPRESA DEMO S.A." }}
+                <i class="bi bi-building ms-2"></i>
             </div>
         </nav>
 
@@ -147,11 +128,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
     var el = document.getElementById("wrapper");
     var toggleButton = document.getElementById("menu-toggle");
-
     toggleButton.onclick = function () {
         el.classList.toggle("toggled");
     };
