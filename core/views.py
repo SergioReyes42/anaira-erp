@@ -197,8 +197,9 @@ def gasto_manual(request):
                     'iva': round(float(datos.get('total', 0)) / 1.12 * 0.12, 2) if datos.get('total') else ''
                 })
             else:
-                messages.warning(request, "No se pudo analizar el documento.")
-
+                error_real = resultado.get('mensaje', 'Error desconocido')
+                messages.error(request, f"Fallo Técnico IA: {error_real}")
+                
         # --- GUARDADO NORMAL ---
         else:
             try:
