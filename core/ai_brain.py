@@ -8,16 +8,17 @@ import logging
 # Configurar la IA con su llave
 genai.configure(api_key=settings.GEMINI_API_KEY)
 
-# Configuración del modelo (Usamos Flash porque es rápido y barato)
+# Configuración del modelo (ACTUALIZADA A GEMINI 2.0)
 generation_config = {
-    "temperature": 0.1,  # 0.1 para que sea muy preciso y no "invente" datos
+    "temperature": 0.1,
     "top_p": 1,
     "top_k": 32,
     "max_output_tokens": 8192,
 }
 
 model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash-001",
+    # CAMBIO AQUÍ: Usamos el modelo que sí apareció en su lista
+    model_name="gemini-2.0-flash", 
     generation_config=generation_config,
 )
 
