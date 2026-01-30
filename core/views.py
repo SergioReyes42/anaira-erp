@@ -294,23 +294,156 @@ def api_ocr_process(request):
 # ==========================================
 # 3. BANCOS, INGRESOS Y PROVEEDORES
 # ==========================================
-
+# =========================================================
+# VISTA 1: LISTADO DE BANCOS (Dashboard Principal)
+# =========================================================
 @login_required
 def bank_list(request):
-    company_id = request.session.get('company_id')
-    if not company_id: return redirect('select_company')
+    # Traemos todas las cuentas
+    bancos = BankAccount.objects.all()
     
+    # Renderizamos la pantalla de tarjetas (bank_list.html)
+    return render(request, 'core/bank_list.html', {
+        'bancos': bancos
+    })
+
+# =========================================================
+# VISTA 2: CREAR NUEVA CUENTA (El formulario nuevo)
+# =========================================================
+class BankAccountForm(forms.ModelForm):
+    class Meta:
+        model = BankAccount
+        fields = ['bank_name', 'account_number', 'currency', 'current_balance']
+        widgets = {
+            'bank_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Banco Industrial'}),
+            'account_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'currency': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'GTQ'}),
+            'current_balance': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+@login_required
+def bank_create(request):
     if request.method == 'POST':
         form = BankAccountForm(request.POST)
         if form.is_valid():
-            bank = form.save(commit=False)
-            bank.company_id = company_id
-            bank.save()
+            form.save()
+            messages.success(request, "Cuenta bancaria creada exitosamente.")
             return redirect('bank_list')
+    else:
+        form = BankAccountForm()
+
+    return render(request, 'core/bank_form.html', {
+        'form': form,
+        'titulo': 'Registrar Nueva Cuenta Bancaria'
+    })
+
+# =========================================================
+# VISTA 3: TRANSACCIONES + IA (La lógica potente)
+# =========================================================
+class BankTransactionForm(forms.ModelForm):
+    class Meta:
+        model = BankTransaction
+        fields = ['account', 'date', 'movement_type', 'amount', 'description', 'reference', 'evidence']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'description': forms.TextInput(attrs={'class': 'form-control'}),
+            'reference': forms.TextInput(attrs={'class': 'form-control'}),
+            'account': forms.Select(attrs={'class': 'form-select'}),
+            'evidence': forms.FileInput(attrs={'class': 'form-control'}),
+        }
+
+@login_required
+def bank_transaction_create(request):
+    # Intentamos obtener la cuenta de la URL si viene (ej: ?account=1)
+    account_id = request.GET.get('account')
+    initial_type = request.GET.get('type', 'OUT')
+    
+    datos_ia = None 
+
+    if request.method == 'POST':
+        # --- LÓGICA IA ---
+        if 'analizar_ia' in request.POST and request.FILES.get('evidence'):
+            imagen = request.FILES['evidence']
+            # Llamamos al cerebro con contexto (IN o OUT)
+            resultado = analizar_documento_ia(imagen, contexto=initial_type)
             
-    cuentas = BankAccount.objects.filter(company_id=company_id)
-    form = BankAccountForm()
-    return render(request, 'core/bank_list.html', {'cuentas': cuentas, 'form': form})
+            if resultado['exito']:
+                datos = resultado['datos']
+                messages.success(request, f"IA Detectada: {resultado['tipo_detectado']}.")
+                
+                # Preparamos los datos para que el usuario los vea
+                initial_data = {
+                    'movement_type': initial_type,
+                    'amount': datos.get('monto', 0) if datos.get('monto') else datos.get('total', 0),
+                    'description': f"{resultado['tipo_detectado']} detectado (Ref: {datos.get('numero_cheque') or datos.get('no_boleta')})",
+                    'reference': datos.get('numero_cheque') or datos.get('no_boleta'),
+                    'date': datos.get('fecha') or date.today()
+                }
+                
+                form = BankTransactionForm(initial=initial_data)
+                # Si venía cuenta seleccionada, la mantenemos
+                if account_id: form.fields['account'].initial = account_id
+                
+                datos_ia = True
+            else:
+                messages.error(request, f"Error IA: {resultado.get('mensaje')}")
+                form = BankTransactionForm(request.POST, request.FILES)
+
+        # --- GUARDADO NORMAL ---
+        else:
+            form = BankTransactionForm(request.POST, request.FILES)
+            if form.is_valid():
+                transaction = form.save(commit=False)
+                # Forzar el tipo de movimiento si no viene
+                if not transaction.movement_type: transaction.movement_type = initial_type
+                transaction.save()
+                
+                # Actualizar saldo de la cuenta
+                cuenta = transaction.account
+                if transaction.movement_type == 'IN':
+                    cuenta.current_balance += transaction.amount
+                else:
+                    cuenta.current_balance -= transaction.amount
+                cuenta.save()
+                
+                messages.success(request, "Transacción registrada exitosamente.")
+                return redirect('bank_list')
+    else:
+        initial_data = {'movement_type': initial_type, 'date': date.today()}
+        form = BankTransactionForm(initial=initial_data)
+        if account_id: form.fields['account'].initial = account_id
+
+    return render(request, 'core/bank_transaction_form.html', {
+        'form': form,
+        'tipo': initial_type,
+        'datos_ia': datos_ia
+    })
+
+# =========================================================
+# VISTAS 4 y 5: HERRAMIENTAS DE CORRECCIÓN
+# =========================================================
+@login_required
+def recalcular_saldo(request, bank_id):
+    cuenta = get_object_or_404(BankAccount, id=bank_id)
+    total_in = BankTransaction.objects.filter(account=cuenta, movement_type='IN').aggregate(Sum('amount'))['amount__sum'] or 0
+    total_out = BankTransaction.objects.filter(account=cuenta, movement_type='OUT').aggregate(Sum('amount'))['amount__sum'] or 0
+    cuenta.current_balance = total_in - total_out
+    cuenta.save()
+    messages.success(request, f"Saldo recalculado: Q{cuenta.current_balance}")
+    return redirect('bank_list')
+
+@login_required
+def delete_transaction(request, pk):
+    transaccion = get_object_or_404(BankTransaction, pk=pk)
+    cuenta = transaccion.account
+    # Reversar saldo
+    if transaccion.movement_type == 'IN': cuenta.current_balance -= transaccion.amount
+    else: cuenta.current_balance += transaccion.amount
+    cuenta.save()
+    transaccion.delete()
+    messages.warning(request, "Transacción eliminada.")
+    return redirect('bank_list')
 
 @login_required
 def bank_detail(request, bank_id):
@@ -390,67 +523,7 @@ def transfer_create(request):
         
     return render(request, 'core/transfer_form.html', {'form': form})
 
-@login_required
-def bank_transaction_create(request):
-    company_name = request.session.get('company_name')
-    if not company_name: return redirect('select_company')
-    company = get_object_or_404(Company, name=company_name)
 
-    initial_type = request.GET.get('type', 'OUT') 
-    datos_ia = None # Variable para guardar lo que detecte la IA
-
-    if request.method == 'POST':
-        # 1. ¿Viene un archivo para analizar PRIMERO?
-        if 'analizar_ia' in request.POST and request.FILES.get('evidence'):
-            imagen = request.FILES['evidence']
-            
-            # --- LLAMADA AL CEREBRO DE IA ---
-            resultado = analizar_documento_ia(imagen, contexto=initial_type)
-            
-            if resultado['exito']:
-                datos = resultado['datos']
-                messages.success(request, f"IA Detectada: {resultado['tipo_detectado']}. Datos precargados.")
-                
-                # Pre-llenamos el formulario con los datos de la IA
-                initial_data = {
-                    'movement_type': initial_type,
-                    'amount': datos.get('monto', 0),
-                    'description': f"{resultado['tipo_detectado']} detectado (Ref: {datos.get('numero_cheque') or datos.get('no_boleta')})",
-                    'reference': datos.get('numero_cheque') or datos.get('no_boleta'),
-                    'date': datos.get('fecha')
-                }
-                form = BankTransactionForm(company, initial=initial_data)
-                # Pasamos la imagen de vuelta para que no se pierda, aunque en HTML file input es complejo rellenar
-                datos_ia = True 
-            else:
-                messages.warning(request, resultado.get('mensaje'))
-                form = BankTransactionForm(company, request.POST, request.FILES)
-
-        # 2. Guardado Normal
-        else:
-            form = BankTransactionForm(company, request.POST, request.FILES)
-            if form.is_valid():
-                transaction = form.save(commit=False)
-                if not transaction.movement_type: transaction.movement_type = initial_type
-                transaction.save()
-                
-                cuenta = transaction.account
-                if transaction.movement_type == 'IN': cuenta.current_balance += transaction.amount
-                else: cuenta.current_balance -= transaction.amount
-                cuenta.save()
-                
-                messages.success(request, "Transacción registrada exitosamente.")
-                return redirect('bank_list')
-
-    else:
-        form = BankTransactionForm(company, initial={'movement_type': initial_type})
-
-    return render(request, 'core/bank_transaction_form.html', {
-        'form': form,
-        'company': company,
-        'tipo': initial_type,
-        'datos_ia': datos_ia
-    })
 
 @login_required
 def supplier_list(request):
@@ -501,80 +574,9 @@ def pay_supplier(request):
 
     return render(request, 'core/pay_supplier.html', {'form': form})
 
-@login_required
-def recalcular_saldo(request, bank_id):
-    """Función administrativa para arreglar saldos desincronizados"""
-    cuenta = get_object_or_404(BankAccount, id=bank_id)
-    
-    # 1. Sumar todas las Entradas (IN)
-    total_entradas = BankTransaction.objects.filter(
-        account=cuenta, movement_type='IN'
-    ).aggregate(Sum('amount'))['amount__sum'] or 0
-    
-    # 2. Sumar todas las Salidas (OUT)
-    total_salidas = BankTransaction.objects.filter(
-        account=cuenta, movement_type='OUT'
-    ).aggregate(Sum('amount'))['amount__sum'] or 0
-    
-    # 3. Calcular el saldo real (Asumiendo saldo inicial 0, o agregue un campo initial_balance si lo tiene)
-    # Si su modelo tiene saldo inicial, súmelo aquí.
-    saldo_real = total_entradas - total_salidas
-    
-    # 4. Guardar corrección
-    cuenta.current_balance = saldo_real
-    cuenta.save()
-    
-    messages.success(request, f"Saldo recalculado correctamente. Nuevo saldo: Q{saldo_real}")
-    return redirect('bank_list')
 
-# core/views.py
 
-@login_required
-def delete_transaction(request, pk):
-    transaccion = get_object_or_404(BankTransaction, pk=pk)
-    cuenta = transaccion.account
-    
-    # Reversar el dinero antes de borrar
-    if transaccion.movement_type == 'IN':
-        cuenta.current_balance -= transaccion.amount
-    elif transaccion.movement_type == 'OUT':
-        cuenta.current_balance += transaccion.amount
-        
-    cuenta.save()
-    transaccion.delete()
-    
-    messages.warning(request, "Transacción eliminada y saldo ajustado.")
-    return redirect('bank_list')
 
-class BankAccountForm(forms.ModelForm):
-    class Meta:
-        model = BankAccount
-        fields = ['bank_name', 'account_number', 'currency', 'current_balance']
-        widgets = {
-            'bank_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Banco Industrial'}),
-            'account_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 00-000000-0'}),
-            'currency': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'GTQ'}),
-            'current_balance': forms.NumberInput(attrs={'class': 'form-control'}),
-        }
-
-# 2. La Vista para crear el banco
-@login_required
-def bank_create(request):
-    if request.method == 'POST':
-        form = BankAccountForm(request.POST)
-        if form.is_valid():
-            # Si descomentó lo de 'company' en models.py, aquí asignaría la empresa.
-            # Por ahora lo guardamos directo según su modelo actual.
-            form.save()
-            messages.success(request, "Cuenta bancaria creada exitosamente.")
-            return redirect('bank_list')
-    else:
-        form = BankAccountForm()
-
-    return render(request, 'core/bank_form.html', {
-        'form': form,
-        'titulo': 'Registrar Nueva Cuenta Bancaria'
-    })
 
 # ==========================================
 # 4. CONTABILIDAD (LIBROS Y ESTADOS)
