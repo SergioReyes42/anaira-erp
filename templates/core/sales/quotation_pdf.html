@@ -7,7 +7,7 @@
             size: letter portrait;
             margin: 2cm;
         }
-        body { font-family: Helvetica, sans-serif; font-size: 12px; color: #333; }
+        body { font-family: Helvetica, sans-serif; font-size: 12px; color: #333; margin: 0; }
         
         /* Encabezado */
         .header { width: 100%; border-bottom: 2px solid #0d6efd; padding-bottom: 10px; margin-bottom: 20px; }
@@ -25,24 +25,35 @@
         td { border-bottom: 1px solid #eee; padding: 8px; }
         .num { text-align: right; }
 
-        /* Totales */
-        .total-box { float: right; width: 40%; text-align: right; }
-        .total-row { font-size: 14px; font-weight: bold; border-top: 2px solid #333; padding-top: 5px; }
-
         /* Pie de Página */
         .footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #ddd; padding-top: 10px; }
+
+        /* Estilos Impresión */
+        @media print {
+            @page { margin: 1cm; size: letter; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .no-print { display: none; }
+        }
     </style>
 </head>
 <body>
 
     <table class="header">
         <tr>
-            <td style="border:none;">
-                <div class="empresa">{{ empresa }}</div>
-                <div>Soluciones Tecnológicas y Seguridad</div>
-                <div>Guatemala, Guatemala</div>
+            <td style="border:none; width: 60%;">
+                {% if empresa.logo %}
+                    <img src="{{ empresa.logo.url }}" style="max-height: 80px; max-width: 250px;">
+                {% else %}
+                    <div class="empresa">{{ empresa.name|default:"Mi Empresa S.A." }}</div>
+                {% endif %}
+                
+                <div style="margin-top: 5px; font-size: 12px; color: #555;">
+                    <strong>NIT:</strong> {{ empresa.nit }}<br>
+                    {{ empresa.address }}<br>
+                    {{ empresa.phone }} | {{ empresa.email }}
+                </div>
             </td>
-            <td style="border:none; text-align: right;">
+            <td style="border:none; text-align: right; width: 40%;">
                 <div class="titulo">COTIZACIÓN</div>
                 <div class="subtitulo"># {{ c.id|stringformat:"05d" }}</div>
                 <div style="margin-top:5px;">Fecha: {{ c.date|date:"d/m/Y" }}</div>
@@ -89,7 +100,6 @@
                 <strong>Notas / Condiciones:</strong><br>
                 <small>
                     - Esta cotización es válida hasta el {{ c.valid_until|date:"d/m/Y" }}.<br>
-                    - Tiempo de entrega: A convenir.<br>
                     - Forma de pago: 50% anticipo, 50% contra entrega.
                 </small>
             </td>
@@ -111,7 +121,7 @@
             <td style="border:none; width: 50%;">
                 __________________________<br>
                 Autorizado por<br>
-                <strong>{{ empresa }}</strong>
+                <strong>{{ empresa.name|default:"Anaira ERP" }}</strong>
             </td>
             <td style="border:none; width: 50%;">
                 __________________________<br>
@@ -124,29 +134,11 @@
     <div class="footer">
         Gracias por su preferencia. | Generado por Anaira ERP v2.0
     </div>
-<script type="text/javascript">
-    // Apenas cargue la página, abre el cuadro de diálogo para imprimir/guardar PDF
-    window.onload = function() {
-        window.print();
-    }
-</script>
 
-<style>
-    /* Estilos para asegurar que se vea perfecto al imprimir */
-    @media print {
-        @page { 
-            margin: 1cm; 
-            size: letter;
+    <script type="text/javascript">
+        window.onload = function() {
+            window.print();
         }
-        body { 
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            margin: 0;
-        }
-        /* Ocultar botones o elementos que no queremos en el papel, si los hubiera */
-        .no-print { display: none; }
-    }
-</style>
-</style>
+    </script>
 </body>
 </html>

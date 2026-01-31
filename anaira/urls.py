@@ -2,7 +2,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
-from django.apps import apps 
+from django.apps import apps
+
+# --- IMPORTS PARA IMÁGENES (LOGOS) ---
+from django.conf import settings
+from django.conf.urls.static import static
 
 # --- FUNCIÓN 1: CREAR ADMIN ---
 def crear_admin_express(request):
@@ -15,23 +19,18 @@ def crear_admin_express(request):
     except Exception as e:
         return HttpResponse(f"<h1>❌ ERROR</h1><p>{e}</p>")
 
-# --- FUNCIÓN 2: CREAR EMPRESA + ROL (SIN IMPORTACIONES ERRÓNEAS) ---
+# --- FUNCIÓN 2: CREAR EMPRESA + ROL ---
 def crear_empresa_force(request):
     try:
-        # 1. CARGA DINÁMICA (Para evitar el error de ModuleNotFound)
-        # Buscamos los modelos dentro de la memoria de Django
         Company = apps.get_model('core', 'Company')
-        
-        # Intentamos obtener el modelo de Rol. Si no se llama 'Role', avisa.
         try:
             Role = apps.get_model('core', 'Role')
         except LookupError:
-            # Si su modelo se llama diferente (ej: UserRole), cambie 'Role' por el nombre real
-            return HttpResponse("<h1>❌ Error:</h1> No encuentro el modelo 'Role' en la app 'core'.")
+            return HttpResponse("<h1>❌ Error:</h1> No encuentro el modelo 'Role'.")
             
         User = get_user_model()
 
-        # 2. CREAR OBTENER LA EMPRESA
+        # 1. OBTENER LA EMPRESA
         empresa, created_comp = Company.objects.get_or_create(
             name="Anaira ERP Principal",
             defaults={
@@ -39,20 +38,19 @@ def crear_empresa_force(request):
             }
         )
 
-        # 3. CREAR OBTENER EL ROL "ADMINISTRADOR"
+        # 2. OBTENER EL ROL "ADMINISTRADOR"
         rol_admin, created_rol = Role.objects.get_or_create(
             name="Administrador",
             defaults={'is_active': True} 
         )
 
-        # 4. OBTENER EL USUARIO
+        # 3. OBTENER EL USUARIO
         if not User.objects.filter(username='admin').exists():
              return HttpResponse("<h1>❌ ERROR:</h1> <p>Primero cree el admin en /crear-emergencia/</p>")
         admin_user = User.objects.get(username='admin')
 
-        # 5. ASIGNACIÓN MANUAL (Usuario + Empresa + Rol)
+        # 4. ASIGNACIÓN MANUAL
         ThroughModel = Company.users.through 
-        
         if not ThroughModel.objects.filter(user=admin_user, company=empresa).exists():
             ThroughModel.objects.create(
                 user=admin_user,
@@ -75,7 +73,6 @@ def crear_empresa_force(request):
                 </a>
             </div>
         """)
-
     except Exception as e:
         import traceback
         return HttpResponse(f"<h1>❌ ERROR CRÍTICO</h1><pre>{traceback.format_exc()}</pre>")
@@ -86,3 +83,7 @@ urlpatterns = [
     path('crear-emergencia/', crear_admin_express),
     path('crear-empresa/', crear_empresa_force), 
 ]
+
+# --- HABILITAR CARGA DE LOGOS EN MODO DEBUG ---
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
