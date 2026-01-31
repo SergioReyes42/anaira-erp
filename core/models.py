@@ -380,3 +380,25 @@ class PayrollDetail(models.Model):
     def __str__(self):
         return f"Detalle {self.employee.first_name} - {self.payroll}"
 
+# En core/models.py (al final)
+
+class Client(models.Model):
+    # Datos Fiscales
+    name = models.CharField(max_length=200, verbose_name="Razón Social / Nombre")
+    nit = models.CharField(max_length=20, verbose_name="NIT", unique=True)
+    address = models.CharField(max_length=255, verbose_name="Dirección Fiscal", blank=True)
+    
+    # Datos de Contacto
+    phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True)
+    email = models.EmailField(verbose_name="Email Facturación", blank=True)
+    contact_name = models.CharField(max_length=100, verbose_name="Nombre de Contacto", blank=True)
+    
+    # Datos Comerciales (Para el Libro Negro y Créditos)
+    credit_days = models.IntegerField(default=0, verbose_name="Días de Crédito")
+    credit_limit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Límite de Crédito")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
+
+    def __str__(self):
+        return f"{self.name} ({self.nit})"

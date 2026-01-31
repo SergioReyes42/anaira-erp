@@ -5,6 +5,7 @@ from datetime import datetime
 from itertools import chain
 from operator import attrgetter
 from .ai_brain import analizar_documento_ia
+from .models import Client
 
 # --- IMPORTS DE DJANGO ---
 from django.db.models import Sum
@@ -1184,3 +1185,39 @@ def expense_list(request):
     # Si no, esto evita el error en el menú de compras.
     gastos = Gasto.objects.filter(company_id=request.session.get('company_id')).order_by('-fecha')
     return render(request, 'core/expense_list.html', {'gastos': gastos})
+
+# FORMULARIO DE CLIENTE
+class ClientForm(forms.ModelForm):
+    class Meta:
+        model = Client
+        fields = ['nit', 'name', 'address', 'phone', 'email', 'contact_name', 'credit_days', 'credit_limit']
+        widgets = {
+            'nit': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'CF o NIT'}),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'address': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'contact_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'credit_days': forms.NumberInput(attrs={'class': 'form-control'}),
+            'credit_limit': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+@login_required
+def client_list(request):
+    """Directorio de Clientes"""
+    clientes = Client.objects.filter(is_active=True).order_by('name')
+    return render(request, 'core/sales/client_list.html', {'clientes': clientes})
+
+@login_required
+def client_create(request):
+    """Registrar Nuevo Cliente"""
+    if request.method == 'POST':
+        form = ClientForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Cliente registrado exitosamente.")
+            return redirect('client_list')
+    else:
+        form = ClientForm()
+    
+    return render(request, 'core/sales/client_form.html', {'form': form})
