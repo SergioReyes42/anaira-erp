@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
+
 # ==========================================
 # 1. ESTRUCTURA EMPRESARIAL Y SEGURIDAD
 # ==========================================
@@ -245,31 +246,25 @@ class Gasto(models.Model):
 # ==========================================
 
 class Product(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='core_products')
-    name = models.CharField(max_length=200, verbose_name="Nombre del Producto")
-    description = models.TextField(blank=True, verbose_name="Descripción")
+    TYPE_CHOICES = (
+        ('SERVICE', 'Servicio'),
+        ('PRODUCT', 'Producto Físico'),
+    )
     
-    # Identificadores
-    sku = models.CharField(max_length=50, verbose_name="SKU / Código Interno") 
-    barcode = models.CharField(max_length=100, blank=True, null=True, verbose_name="Código de Barras (Escáner)")
+    code = models.CharField(max_length=50, verbose_name="Código Interno", unique=True)
+    name = models.CharField(max_length=200, verbose_name="Nombre del Producto/Servicio")
+    product_type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='SERVICE')
     
-    # Valores
-    cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Costo Promedio")
-    sale_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Precio Venta")
+    price = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Precio de Venta")
+    cost = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Costo (Referencia)")
     
-    # Control
+    # Stock simple (luego lo haremos avanzado con Kardex)
     stock = models.IntegerField(default=0, verbose_name="Existencia Actual")
-    min_stock = models.IntegerField(default=5, verbose_name="Stock Mínimo")
     
-    # Multimedia
-    image = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Foto del Producto")
-    active = models.BooleanField(default=True)
-
-    class Meta:
-        unique_together = ('company', 'sku')
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
 
     def __str__(self):
-        return f"[{self.sku}] {self.name}"
+        return f"[{self.code}] {self.name}"
 
 class InventoryMovement(models.Model):
     MOVEMENT_TYPES = [
@@ -402,3 +397,4 @@ class Client(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.nit})"
+    

@@ -6,6 +6,7 @@ from itertools import chain
 from operator import attrgetter
 from .ai_brain import analizar_documento_ia
 from .models import Client
+from .models import Product
 
 # --- IMPORTS DE DJANGO ---
 from django.db.models import Sum
@@ -1174,9 +1175,37 @@ def employee_list(request):
     return pagina_construccion(request, 'Listado de Empleados')
 
 # === VISTAS DE LOGÍSTICA (Aquí estaba el error) ===
+# FORMULARIO RÁPIDO
+class ProductForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = ['code', 'name', 'product_type', 'price', 'cost', 'stock']
+        widgets = {
+            'code': forms.TextInput(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'product_type': forms.Select(attrs={'class': 'form-select'}),
+            'price': forms.NumberInput(attrs={'class': 'form-control'}),
+            'cost': forms.NumberInput(attrs={'class': 'form-control'}),
+            'stock': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
 @login_required
 def inventory_list(request):
-    return pagina_construccion(request, 'Kardex de Inventario')
+    productos = Product.objects.filter(is_active=True).order_by('code')
+    
+    if request.method == 'POST':
+        form = ProductForm(request.POST) # Usa el de forms.py
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Producto creado.")
+            return redirect('inventory_list')
+    else:
+        form = ProductForm()
+
+    return render(request, 'core/inventory/product_list.html', {
+        'productos': productos,
+        'form': form
+    })
 
 # === VISTA DE LISTA DE GASTOS (Si no la tenía) ===
 @login_required

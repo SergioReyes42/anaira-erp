@@ -1,4 +1,5 @@
 from django import forms
+from .models import Product
 from .models import (
     Company, BankAccount, BankMovement, Income, Gasto,
     BusinessPartner, Product, Employee, Loan, Fleet
@@ -150,16 +151,15 @@ class SupplierPaymentForm(forms.Form):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['sku', 'barcode', 'name', 'description', 'cost_price', 'sale_price', 'min_stock', 'image']
+        # Estos son los campos EXACTOS que definimos en models.py
+        fields = ['code', 'name', 'product_type', 'price', 'cost', 'stock']
         widgets = {
-            'sku': forms.TextInput(attrs={'class': 'form-control'}),
-            'barcode': forms.TextInput(attrs={'class': 'form-control'}),
+            'code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: SERV-001'}),
             'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'cost_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'sale_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'min_stock': forms.NumberInput(attrs={'class': 'form-control'}),
-            'image': forms.FileInput(attrs={'class': 'form-control'}),
+            'product_type': forms.Select(attrs={'class': 'form-select'}),
+            'price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'cost': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'stock': forms.NumberInput(attrs={'class': 'form-control'}),
         }
 
 # --- 6. RRHH ---

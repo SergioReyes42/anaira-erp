@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-box-seam"></i> Catálogo de Productos y Servicios</h5>
+                    <span class="badge bg-primary">{{ productos.count }} Items</span>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-3">Código</th>
+                                <th>Descripción</th>
+                                <th>Tipo</th>
+                                <th>Precio (Q)</th>
+                                <th>Stock</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in productos %}
+                            <tr>
+                                <td class="ps-3 fw-bold">{{ p.code }}</td>
+                                <td>{{ p.name }}</td>
+                                <td>
+                                    {% if p.product_type == 'SERVICE' %}
+                                        <span class="badge bg-info text-dark">Servicio</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Producto</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold text-primary">Q {{ p.price }}</td>
+                                <td>
+                                    {% if p.product_type == 'PRODUCT' %}
+                                        {% if p.stock > 0 %}
+                                            <span class="text-success fw-bold">{{ p.stock }}</span>
+                                        {% else %}
+                                            <span class="text-danger fw-bold">Agotado</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="text-center py-4 text-muted">No hay productos registrados.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow border-0 sticky-top" style="top: 20px;">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-plus-circle"></i> Nuevo Item</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold">Código</label>
+                            {{ form.code }}
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold">Nombre</label>
+                            {{ form.name }}
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold">Tipo</label>
+                            {{ form.product_type }}
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold">Precio Venta</label>
+                                {{ form.price }}
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold">Costo</label>
+                                {{ form.cost }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Stock Inicial</label>
+                            {{ form.stock }}
+                            <div class="form-text small">Deje en 0 si es servicio.</div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Guardar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
