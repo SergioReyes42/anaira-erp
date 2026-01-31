@@ -1333,12 +1333,16 @@ def quotation_create(request):
 
 @login_required
 def quotation_pdf(request, pk):
-    """Vista de Impresión (Nativa del Navegador)"""
+    """
+    Vista de Impresión Nativa.
+    Muestra el HTML limpio y el navegador se encarga de convertirlo a PDF.
+    """
     cotizacion = get_object_or_404(Quotation, pk=pk)
+    
+    # Renderizamos solo el HTML
     template_path = 'core/sales/quotation_pdf.html'
     context = {
         'c': cotizacion, 
         'empresa': request.session.get('company_name', 'Mi Empresa S.A.')
     }
-    # Solo renderizamos el HTML, el navegador hará el resto
     return render(request, template_path, context)

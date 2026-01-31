@@ -124,18 +124,29 @@
     <div class="footer">
         Gracias por su preferencia. | Generado por Anaira ERP v2.0
     </div>
-<script>
-    // Apenas cargue la página, abrir el diálogo de impresión
+<script type="text/javascript">
+    // Apenas cargue la página, abre el cuadro de diálogo para imprimir/guardar PDF
     window.onload = function() {
         window.print();
     }
 </script>
 
 <style>
+    /* Estilos para asegurar que se vea perfecto al imprimir */
     @media print {
-        @page { margin: 0.5cm; }
-        body { margin: 1cm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        @page { 
+            margin: 1cm; 
+            size: letter;
+        }
+        body { 
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            margin: 0;
+        }
+        /* Ocultar botones o elementos que no queremos en el papel, si los hubiera */
+        .no-print { display: none; }
     }
+</style>
 </style>
 </body>
 </html>
