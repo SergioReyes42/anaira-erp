@@ -124,6 +124,18 @@
     <div class="footer">
         Gracias por su preferencia. | Generado por Anaira ERP v2.0
     </div>
+<script>
+    // Apenas cargue la página, abrir el diálogo de impresión
+    window.onload = function() {
+        window.print();
+    }
+</script>
 
+<style>
+    @media print {
+        @page { margin: 0.5cm; }
+        body { margin: 1cm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+</style>
 </body>
 </html>
