@@ -1,404 +1,298 @@
-{% load static i18n dashboard_extras %} <!DOCTYPE html>
+{% load static %}
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Anaira ERP{% endblock %}</title>
+    <title>Anaira ERP v2.0 | Sistema de Gestión</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+
     <style>
-        /* =========================================
-           ESTILO PERSONALIZADO CORPORATIVO SERMAWORLD
-           ========================================= */
-        body {
-            background-color: #f4f6f9;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            margin: 0;
+        /* ESTILOS GENERALES */
+        body { 
+            font-family: 'Roboto', sans-serif; 
+            background-color: #f4f6f9; 
+            overflow-x: hidden; 
         }
 
         /* --- SIDEBAR (Menú Lateral) --- */
-        .sidebar {
-            background-color: #0f2d5c; /* Azul corporativo */
-            height: 100vh;
+        #wrapper { display: flex; width: 100%; align-items: stretch; transition: all 0.3s; }
+        
+        #sidebar-wrapper {
+            min-width: 280px; 
+            max-width: 280px;
+            background: #1e293b; /* Azul Oscuro Profundo (Slate 900) */
             color: #fff;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-            position: fixed;
-            width: 260px;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
             z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto; /* Scroll para menús largos */
         }
 
-        /* Scrollbar personalizado del menú */
-        .sidebar::-webkit-scrollbar { width: 6px; }
-        .sidebar::-webkit-scrollbar-track { background: #0f2d5c; }
-        .sidebar::-webkit-scrollbar-thumb { background: #2b4d85; border-radius: 10px; }
+        #sidebar-wrapper.toggled { margin-left: -280px; }
 
-        /* Enlaces del menú */
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.85);
-            font-weight: 500;
-            padding: 10px 15px;
-            border-radius: 5px;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-        }
-
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            background-color: #2b4d85;
-            color: #fff;
-            transform: translateX(5px);
-        }
-
-        .sidebar .nav-link i {
-            margin-right: 10px;
-            font-size: 1.1rem;
-        }
-
-        /* Encabezados de sección (OPERACIONES, FINANZAS, etc.) */
-        .sidebar-heading {
-            font-size: 0.75rem;
-            text-transform: uppercase;
+        /* Cabecera del Sidebar */
+        .sidebar-heading { 
+            padding: 1.5rem; 
+            font-size: 1.4rem; 
+            font-weight: 700; 
+            text-align: center;
+            background-color: #0f172a; /* Más oscuro */
+            border-bottom: 1px solid #334155;
             letter-spacing: 1px;
-            color: rgba(255, 255, 255, 0.4);
-            margin-top: 25px;
-            margin-bottom: 5px;
-            padding-left: 15px;
-            font-weight: bold;
         }
 
-        /* Submenús */
-        .sub-menu {
-            background-color: rgba(0, 0, 0, 0.15);
-            border-radius: 8px;
-            margin: 0 10px 5px 10px;
+        /* Links del Menú Principal */
+        .list-group-item {
+            background-color: transparent;
+            color: #cbd5e1; /* Gris claro */
+            border: none;
+            padding: 12px 25px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-left: 4px solid transparent;
+            transition: all 0.2s;
         }
-        .sub-menu .nav-link {
-            padding-left: 40px;
+
+        .list-group-item:hover {
+            background-color: #334155;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        /* Flecha del desplegable */
+        .dropdown-toggle::after {
+            float: right;
+            margin-top: 8px;
+            transition: transform 0.2s;
+        }
+        /* Rotar flecha cuando está abierto */
+        .collapsed .dropdown-toggle::after { transform: rotate(-90deg); }
+
+        /* --- SUBMENÚS --- */
+        .submenu { 
+            background-color: #0f172a; /* Fondo más oscuro para submenús */
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.2);
+        }
+        
+        /* Links del Submenú (Indentados) */
+        .submenu .list-group-item {
+            padding-left: 3.5rem; /* Sangría nivel 1 */
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        .submenu .list-group-item:hover {
+            color: #38bdf8; /* Celeste al pasar mouse */
+            background-color: #1e293b;
+        }
+        
+        /* Sub-Submenú (Nivel 2 - Si fuera necesario) */
+        .sub-submenu .list-group-item {
+            padding-left: 5rem;
             font-size: 0.85rem;
         }
 
-        /* Tercer nivel (Sub-submenús) */
-        .sub-sub-menu .nav-link {
-            padding-left: 55px;
-            font-size: 0.80rem;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .dropdown-toggle::after { margin-left: auto; }
-
         /* --- CONTENIDO PRINCIPAL --- */
-        .main-content {
-            margin-left: 260px;
-            width: calc(100% - 260px);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+        #page-content-wrapper { width: 100%; }
+        
+        .navbar { 
+            background: #ffffff; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08); 
+            padding: 10px 20px;
         }
 
-        header {
-            background: white;
-            border-bottom: 1px solid #dee2e6;
-            position: sticky;
-            top: 0;
-            z-index: 999;
+        /* Botón Hamburguesa */
+        #menu-toggle {
+            color: #1e293b;
+            border-color: #cbd5e1;
         }
+        #menu-toggle:hover { background-color: #e2e8f0; }
 
-        footer {
-            background: white;
-            border-top: 1px solid #dee2e6;
-        }
-
-        /* =========================================
-           NUEVO: ESTILOS DEL WIDGET FLOTANTE
-           ========================================= */
-        #users-widget {
-            position: fixed;
-            bottom: 0;
-            right: 20px;
-            width: 260px;
-            background: #fff;
-            border-radius: 8px 8px 0 0;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-            z-index: 99999;
-            border: 1px solid #dcdcdc;
-            font-family: sans-serif;
-            display: block;
-        }
-        .widget-header {
-            background: #0f2d5c; /* Mismo azul que el sidebar */
-            color: #fff;
-            padding: 10px 15px;
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .widget-body {
-            max-height: 250px;
-            overflow-y: auto;
-            background: #f8f9fa;
-            display: block; /* Visible por defecto */
-        }
-        .user-row {
-            padding: 8px 15px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
-            font-size: 12px;
-            color: #333;
-            background: white;
-        }
-        .user-row:hover { background: #f0f8ff; }
-        .dot-online {
-            height: 8px; width: 8px;
-            background-color: #28a745; /* Verde */
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 10px;
-            box-shadow: 0 0 0 2px rgba(40,167,69,0.2);
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
-            70% { box-shadow: 0 0 0 6px rgba(40, 167, 69, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        /* Badges/Notificaciones en menú */
+        .badge-sidebar {
+            float: right;
+            font-size: 0.75rem;
+            margin-top: 2px;
         }
     </style>
 </head>
 <body>
 
-<div class="d-flex">
-    
-    <nav class="sidebar d-flex flex-column flex-shrink-0 p-3">
-        <a href="/" class="d-flex align-items-center mb-4 mb-md-0 me-md-auto text-white text-decoration-none px-2">
-    {% if request.session.company_logo %}
-        <img src="{{ request.session.company_logo }}" 
-             style="max-height: 40px; max-width: 50px; margin-right: 10px; background: white; border-radius: 5px; padding: 3px;"
-             alt="Logo">
-    {% else %}
-        <i class="bi bi-building-gear fs-2 me-2 text-info"></i>
-    {% endif %}
-    
-    <span class="fs-4 fw-bold">Anaira ERP</span>
-</a>
-        <hr class="text-white-50">
+<div class="d-flex" id="wrapper">
 
-        <ul class="nav nav-pills flex-column mb-auto">
-            
-            <li class="nav-item">
-                <a href="{% url 'home' %}" class="nav-link {% if request.path == '/' %}active{% endif %}">
-                    <i class="bi bi-house-door"></i> Inicio
-                </a>
-            </li>
-
-            <li class="nav-item mt-2 mb-2">
-                <a class="nav-link text-white shadow-sm" href="{% url 'smart_hub' %}" style="background: linear-gradient(45deg, #0d6efd, #0dcaf0); border: 1px solid rgba(255,255,255,0.2);">
-                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="bi bi-magic"></i>
-                    </div>
-                    <span class="nav-link-text ms-1 fw-bold">Smart Scanner</span>
-                </a>
-            </li>
-
-            <div class="sidebar-heading">Operaciones</div>
-            <li>
-                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#menuGastos">
-                    <i class="bi bi-wallet2"></i> Gastos y Flota
-                </a>
-                <div class="collapse {% if 'expense' in request.path or 'fleet' in request.path %}show{% endif %} sub-menu" id="menuGastos">
-                    <ul class="nav flex-column">
-                        <li><a href="{% url 'dashboard_gastos' %}" class="nav-link">Dashboard</a></li>
-                        <li><a href="{% url 'mobile_expense' %}" class="nav-link">Captura OCR</a></li>
-                        <li><a href="{% url 'gasto_manual' %}" class="nav-link">Ingreso Manual</a></li>
-                        <li><a href="{% url 'expense_list' %}" class="nav-link">Mis Gastos</a></li>
-                        <li><a href="{% url 'fleet_report' %}" class="nav-link">Control Flota</a></li>
-                    </ul>
-                </div>
-            </li>
-
-            <div class="sidebar-heading">Finanzas</div>
-            <li>
-                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#menuTesoreria">
-                    <i class="bi bi-cash-stack"></i> Tesorería
-                </a>
-                <div class="collapse sub-menu" id="menuTesoreria">
-                    <ul class="nav flex-column">
-                        <li><a href="{% url 'bank_list' %}" class="nav-link">Cuentas Bancarias</a></li>
-                        <li><a href="{% url 'supplier_list' %}" class="nav-link">Proveedores</a></li>
-                    </ul>
-                </div>
-
-                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#menuContabilidad">
-                    <i class="bi bi-calculator"></i> Contabilidad
-                </a>
-                <div class="collapse sub-menu" id="menuContabilidad">
-                    <ul class="nav flex-column">
-                        <li>
-                            <a href="#" class="nav-link dropdown-toggle small" data-bs-toggle="collapse" data-bs-target="#subLibros">
-                                <i class="bi bi-book"></i> Libros Contables
-                            </a>
-                            <div class="collapse sub-sub-menu" id="subLibros">
-                                <ul class="nav flex-column">
-                                    <li><a href="{% url 'libro_diario' %}" class="nav-link">Libro Diario</a></li>
-                                    <li><a href="{% url 'libro_mayor' %}" class="nav-link">Libro Mayor</a></li>
-                                    <li><a href="{% url 'balance_saldos' %}" class="nav-link">Balance de Saldos</a></li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li>
-                            <a href="#" class="nav-link dropdown-toggle small" data-bs-toggle="collapse" data-bs-target="#subEstados">
-                                <i class="bi bi-file-earmark-bar-graph"></i> Estados Financieros
-                            </a>
-                            <div class="collapse sub-sub-menu" id="subEstados">
-                                <ul class="nav flex-column">
-                                    <li><a href="{% url 'estado_resultados' %}" class="nav-link">Estado de Resultados</a></li>
-                                    <li><a href="{% url 'balance_general' %}" class="nav-link">Balance General</a></li>
-                                </ul>
-                            </div>
-                        </li>
-                        <li><a href="{% url 'reports_dashboard' %}" class="nav-link"><i class="bi bi-graph-up"></i> Reportes Generales</a></li>
-                    </ul>
-                </div>
-            </li>
-
-            <div class="sidebar-heading">Logística</div>
-            <li>
-                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#menuInventario">
-                    <i class="bi bi-box-seam"></i> Bodega
-                </a>
-                <div class="collapse sub-menu" id="menuInventario">
-                    <ul class="nav flex-column">
-                        <li><a href="{% url 'product_list' %}" class="nav-link">Catálogo Productos</a></li>
-                        <li><a href="{% url 'create_movement' %}" class="nav-link">Registrar Movimiento</a></li>
-                    </ul>
-                </div>
-            </li>
-
-            <div class="sidebar-heading">Personal</div>
-            <li>
-                <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="collapse" data-bs-target="#menuRRHH">
-                    <i class="bi bi-people"></i> Recursos Humanos
-                </a>
-                <div class="collapse sub-menu show" id="menuRRHH">
-                    <ul class="nav flex-column">
-                        <li><a href="{% url 'employee_list' %}" class="nav-link">Listado de Empleados</a></li>
-                        <li><a href="{% url 'nomina_create' %}" class="nav-link">Generar Nómina Mensual</a></li>
-                        <li><a href="{% url 'gestion_isr' %}" class="nav-link">Proyección ISR Asalariado</a></li>
-                        <li><a href="{% url 'libro_salarios' %}" class="nav-link">Libro de Salarios (MINTRAB)</a></li>
-                        <li><a href="{% url 'prestamo_list' %}" class="nav-link">Préstamos y Anticipos</a></li>
-                    </ul>
-                </div>
-            </li>
-
-            <div class="sidebar-heading">Sistema</div>
-            {% if user.is_staff %}
-        <div class="sidebar-heading">SISTEMAS</div>
-        <a href="{% url 'control_panel' %}" class="nav-link text-warning">
-            <i class="fas fa-shield-alt"></i> Panel de Control
-        </a>
-        {% endif %}
-            <li>
-                <a href="{% url 'select_company' %}" class="nav-link">
-                    <i class="bi bi-arrow-repeat"></i> Cambiar Empresa
-                </a>
-            </li>
-            <li>
-                <form action="{% url 'logout' %}" method="post" class="px-3 mt-2">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-light btn-sm w-100">
-                        <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
-                    </button>
-                </form>
-            </li>
-        </ul>
-        
-        <hr>
-        <div class="px-2 pb-5">
-            <small class="text-white-50 d-block">Usuario Conectado:</small>
-            <strong class="text-info">{{ request.user.username }}</strong>
+    <div id="sidebar-wrapper">
+        <div class="sidebar-heading text-white">
+            <i class="bi bi-layers-fill text-primary"></i> ANAIRA ERP
         </div>
-    </nav>
-
-    <div class="main-content">
         
-        <header class="p-3 shadow-sm d-flex justify-content-between align-items-center">
-            <div>
-                <span class="text-muted small text-uppercase">Organización</span>
-                <h5 class="m-0 fw-bold text-primary">
-                    {{ request.session.company_name|default:"Empresa No Seleccionada" }}
-                </h5>
-            </div>
-            <div class="text-end">
-                <div class="text-muted small">{% now "l, d F Y" %}</div>
-                <div class="fw-bold small text-secondary">Anaira ERP v2.0</div>
-            </div>
-        </header>
-
-        <div class="container-fluid p-4">
+        <div class="list-group list-group-flush pt-3">
             
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-0">
-                        <i class="bi bi-info-circle me-2"></i> {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
+            <a href="/" class="list-group-item list-group-item-action">
+                <i class="bi bi-grid-1x2-fill me-2 text-info"></i> Mi Tablero
+            </a>
 
+            <a href="#menuVentas" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
+                <i class="bi bi-cart-fill me-2 text-warning"></i> Ventas & CRM
+            </a>
+            <div class="collapse submenu" id="menuVentas">
+                <a href="#" class="list-group-item list-group-item-action">Cotizaciones</a>
+                <a href="#" class="list-group-item list-group-item-action">Pedidos de Venta</a>
+                <a href="#" class="list-group-item list-group-item-action">Facturación Electrónica</a>
+                <div class="dropdown-divider border-secondary"></div>
+                <a href="#" class="list-group-item list-group-item-action">Directorio Clientes</a>
+                <a href="#" class="list-group-item list-group-item-action">Seguimiento / CRM</a>
+                <a href="#" class="list-group-item list-group-item-action text-danger">
+                    <i class="bi bi-exclamation-triangle me-1"></i> Libro Negro (Mora)
+                </a>
+            </div>
+
+            <a href="#menuCompras" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
+                <i class="bi bi-bag-check-fill me-2 text-success"></i> Compras
+            </a>
+            <div class="collapse submenu" id="menuCompras">
+                <a href="{% url 'gasto_manual' %}" class="list-group-item list-group-item-action">
+                    Registrar Gasto (IA) <span class="badge bg-primary badge-sidebar">New</span>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">Gastos Operativos</a>
+                <a href="#" class="list-group-item list-group-item-action">Órdenes de Compra</a>
+                <a href="#" class="list-group-item list-group-item-action">Proveedores</a>
+                <a href="#" class="list-group-item list-group-item-action">Importaciones / Aduana</a>
+            </div>
+
+            <a href="#menuLogistica" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
+                <i class="bi bi-box-seam-fill me-2 text-white"></i> Logística
+            </a>
+            <div class="collapse submenu" id="menuLogistica">
+                <a href="{% url 'inventory_list' %}" class="list-group-item list-group-item-action">Kardex de Inventario</a>
+                <a href="#" class="list-group-item list-group-item-action">Gestión de Bodegas</a>
+                <a href="#" class="list-group-item list-group-item-action">Producción / Fórmulas</a>
+                <a href="#" class="list-group-item list-group-item-action">Despachos</a>
+            </div>
+
+            <a href="#menuFinanzas" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
+                <i class="bi bi-cash-coin me-2 text-warning"></i> Tesorería
+            </a>
+            <div class="collapse submenu" id="menuFinanzas">
+                <a href="{% url 'bank_list' %}" class="list-group-item list-group-item-action fw-bold text-white">
+                    <i class="bi bi-bank me-1"></i> Panel Bancario
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">Control de Caja Chica</a>
+                <div class="dropdown-divider border-secondary"></div>
+                <a href="#" class="list-group-item list-group-item-action">Cuentas por Cobrar</a>
+                <a href="#" class="list-group-item list-group-item-action">Notas de Crédito/Débito</a>
+                <a href="#" class="list-group-item list-group-item-action">Cuentas por Pagar</a>
+                <a href="#" class="list-group-item list-group-item-action">Programación de Pagos</a>
+            </div>
+
+            <a href="#menuConta" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
+                <i class="bi bi-journal-text me-2 text-primary"></i> Contabilidad
+            </a>
+            <div class="collapse submenu" id="menuConta">
+                <a href="{% url 'journal_list' %}" class="list-group-item list-group-item-action">Libro Diario</a>
+                <a href="{% url 'ledger_list' %}" class="list-group-item list-group-item-action">Libro Mayor</a>
+                <a href="{% url 'trial_balance' %}" class="list-group-item list-group-item-action">Balance de Saldos</a>
+                <div class="dropdown-divider border-secondary"></div>
+                <a href="{% url 'income_statement' %}" class="list-group-item list-group-item-action">Estado de Resultados</a>
+                <a href="{% url 'balance_sheet' %}" class="list-group-item list-group-item-action">Balance General</a>
+                <a href="#" class="list-group-item list-group-item-action">Impuestos (IVA/ISR)</a>
+            </div>
+
+            <a href="#menuRRHH" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
+                <i class="bi bi-people-fill me-2 text-danger"></i> RRHH
+            </a>
+            <div class="collapse submenu" id="menuRRHH">
+                <a href="{% url 'employee_list' %}" class="list-group-item list-group-item-action">Empleados</a>
+                <a href="#" class="list-group-item list-group-item-action">Generar Nómina</a>
+                <a href="#" class="list-group-item list-group-item-action">Vacaciones y Ausencias</a>
+            </div>
+
+             <div class="mt-4 border-top border-secondary pt-2">
+                 <a href="#" class="list-group-item list-group-item-action">
+                    <i class="bi bi-gear-fill me-2"></i> Configuración
+                </a>
+                 <a href="#" class="list-group-item list-group-item-action text-danger">
+                    <i class="bi bi-power me-2"></i> Cerrar Sesión
+                </a>
+             </div>
+
+        </div>
+    </div>
+    <div id="page-content-wrapper">
+        
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+            <div class="container-fluid">
+                
+                <button class="btn btn-outline-dark btn-sm me-3" id="menu-toggle">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+
+                <span class="navbar-brand fw-bold fs-6 text-uppercase text-secondary">
+                    {% if request.session.company_name %}
+                        <i class="bi bi-building-fill me-2"></i>{{ request.session.company_name }}
+                    {% else %}
+                        SISTEMA ERP
+                    {% endif %}
+                </span>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav ms-auto mt-2 mt-lg-0 align-items-center">
+                        <li class="nav-item dropdown me-3">
+                            <a class="nav-link position-relative" href="#" id="navbarDropdownNotif" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-bell fs-5"></i>
+                                <span class="position-absolute top-25 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                                    3
+                                </span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="navbarDropdownNotif">
+                                <li><a class="dropdown-item small" href="#">Stock bajo en Bodega 1</a></li>
+                                <li><a class="dropdown-item small" href="#">Factura pendiente de pago</a></li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-2" style="width:32px; height:32px; font-weight:bold;">
+                                    {{ request.user.username|make_list|first|upper|default:"U" }}
+                                </div>
+                                <span class="d-none d-sm-inline">{{ request.user.username|default:"Usuario" }}</span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="navbarDropdown">
+                                <a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Mi Perfil</a>
+                                <a class="dropdown-item" href="#"><i class="bi bi-shield-lock me-2"></i> Seguridad</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i> Salir</a>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid px-4 py-4">
             {% block content %}
             {% endblock %}
         </div>
 
-        <footer class="mt-auto py-3 text-center text-muted">
-            <div class="container">
-                <small>
-                    &copy; {% now "Y" %} Corporacion Sermaworld | Todos los derechos reservados | Desarrollado Por Ing. Sergio Marroquin.
-                </small>
-            </div>
+        <footer class="bg-light text-center text-muted py-3 border-top mt-auto" style="font-size: 0.8rem;">
+            &copy; {% now "Y" %} Corporación Sermaworld | Anaira ERP v2.0
         </footer>
+
     </div>
 </div>
 
-<div id="users-widget">
-    <div class="widget-header" onclick="var b=document.getElementById('widget-content'); b.style.display = (b.style.display=='none'?'block':'none');">
-        <span>👥 Usuarios Online</span>
-        <span>▼</span>
-    </div>
-
-    <div id="widget-content" class="widget-body">
-        {% get_online_users as active_users_list %}
-        
-        {% if active_users_list %}
-            <div style="padding: 8px 15px; background: #e9ecef; color: #666; font-size: 11px;">
-                {{ active_users_list|length }} conectado(s)
-            </div>
-            {% for user in active_users_list %}
-                <div class="user-row">
-                    <span class="dot-online"></span>
-                    <div>
-                        <strong style="display:block;">{{ user.username|upper }}</strong>
-                        {% if user.email %}
-                        <span style="font-size:10px; color:#888;">{{ user.email }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-            {% endfor %}
-        {% else %}
-            <div style="padding:15px; text-align:center; color:#999; font-size:12px;">
-                Solo tú estás conectado.
-            </div>
-        {% endif %}
-    </div>
-</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    var el = document.getElementById("wrapper");
+    var toggleButton = document.getElementById("menu-toggle");
+
+    toggleButton.onclick = function () {
+        el.classList.toggle("toggled");
+    };
+</script>
+
 </body>
 </html>
