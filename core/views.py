@@ -1333,13 +1333,16 @@ def quotation_create(request):
 
 @login_required
 def quotation_pdf(request, pk):
-    # 1. Buscamos la cotización
     cotizacion = get_object_or_404(Quotation, pk=pk)
     
-    # 2. Buscamos los datos de SU empresa (El primero que encuentre)
-    empresa = CompanyProfile.objects.first()
+    # ESTRATEGIA BLINDADA:
+    # 1. Intentar buscar específicamente por nombre (para que no falle)
+    empresa = CompanyProfile.objects.filter(name__icontains="Transfer").first()
     
-    # 3. Enviamos todo al HTML
+    # 2. Si no lo encuentra, traer el ÚLTIMO creado (el más nuevo)
+    if not empresa:
+        empresa = CompanyProfile.objects.last()
+        
     context = {
         'c': cotizacion, 
         'empresa': empresa, 
