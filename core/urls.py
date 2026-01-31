@@ -32,7 +32,7 @@ urlpatterns = [
     # === LOGÍSTICA / INVENTARIO (Aquí estaba el error) ===
     path('inventario/kardex/', views.inventory_list, name='inventory_list'),
 
-    # === VENTAS Y CLIENTES ===
+  # === RUTAS DE CLIENTES ===
     path('clientes/', views.client_list, name='client_list'),
     path('clientes/nuevo/', views.client_create, name='client_create'),
 ]

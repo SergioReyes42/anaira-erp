@@ -1201,16 +1201,33 @@ class ClientForm(forms.ModelForm):
             'credit_days': forms.NumberInput(attrs={'class': 'form-control'}),
             'credit_limit': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+# --- VISTAS DE CLIENTES ---
 
 @login_required
 def client_list(request):
-    """Directorio de Clientes"""
+    """Muestra el listado de clientes"""
     clientes = Client.objects.filter(is_active=True).order_by('name')
     return render(request, 'core/sales/client_list.html', {'clientes': clientes})
 
 @login_required
 def client_create(request):
-    """Registrar Nuevo Cliente"""
+    """Formulario para crear cliente"""
+    # Definimos el formulario aquí mismo para ir rápido
+    class ClientForm(forms.ModelForm):
+        class Meta:
+            model = Client
+            fields = ['nit', 'name', 'address', 'phone', 'email', 'contact_name', 'credit_days', 'credit_limit']
+            widgets = {
+                'nit': forms.TextInput(attrs={'class': 'form-control'}),
+                'name': forms.TextInput(attrs={'class': 'form-control'}),
+                'address': forms.TextInput(attrs={'class': 'form-control'}),
+                'phone': forms.TextInput(attrs={'class': 'form-control'}),
+                'email': forms.EmailInput(attrs={'class': 'form-control'}),
+                'contact_name': forms.TextInput(attrs={'class': 'form-control'}),
+                'credit_days': forms.NumberInput(attrs={'class': 'form-control'}),
+                'credit_limit': forms.NumberInput(attrs={'class': 'form-control'}),
+            }
+
     if request.method == 'POST':
         form = ClientForm(request.POST)
         if form.is_valid():
