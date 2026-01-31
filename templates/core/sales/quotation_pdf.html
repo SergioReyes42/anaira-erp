@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: letter portrait;
+            margin: 2cm;
+        }
+        body { font-family: Helvetica, sans-serif; font-size: 12px; color: #333; }
+        
+        /* Encabezado */
+        .header { width: 100%; border-bottom: 2px solid #0d6efd; padding-bottom: 10px; margin-bottom: 20px; }
+        .empresa { font-size: 20px; font-weight: bold; color: #0d6efd; text-transform: uppercase; }
+        .titulo { font-size: 24px; font-weight: bold; text-align: right; color: #555; }
+        .subtitulo { text-align: right; color: #777; }
+
+        /* Datos Cliente */
+        .info-box { width: 100%; margin-bottom: 20px; }
+        .info-label { font-weight: bold; color: #555; }
+
+        /* Tabla Productos */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background-color: #f0f0f0; border-bottom: 1px solid #ddd; padding: 8px; text-align: left; font-weight: bold; }
+        td { border-bottom: 1px solid #eee; padding: 8px; }
+        .num { text-align: right; }
+
+        /* Totales */
+        .total-box { float: right; width: 40%; text-align: right; }
+        .total-row { font-size: 14px; font-weight: bold; border-top: 2px solid #333; padding-top: 5px; }
+
+        /* Pie de Página */
+        .footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #ddd; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <table class="header">
+        <tr>
+            <td style="border:none;">
+                <div class="empresa">{{ empresa }}</div>
+                <div>Soluciones Tecnológicas y Seguridad</div>
+                <div>Guatemala, Guatemala</div>
+            </td>
+            <td style="border:none; text-align: right;">
+                <div class="titulo">COTIZACIÓN</div>
+                <div class="subtitulo"># {{ c.id|stringformat:"05d" }}</div>
+                <div style="margin-top:5px;">Fecha: {{ c.date|date:"d/m/Y" }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="info-box">
+        <strong>Cliente:</strong> {{ c.client.name }} <br>
+        <strong>NIT:</strong> {{ c.client.nit }} <br>
+        <strong>Dirección:</strong> {{ c.client.address|default:"Ciudad" }} <br>
+        <strong>Atención a:</strong> {{ c.client.contact_name }}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th width="10%">Cant.</th>
+                <th width="50%">Descripción</th>
+                <th width="20%" class="num">Precio Unit.</th>
+                <th width="20%" class="num">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in c.details.all %}
+            <tr>
+                <td style="text-align: center;">{{ item.quantity }}</td>
+                <td>
+                    <strong>{{ item.product.name }}</strong>
+                    {% if item.product.product_type == 'SERVICE' %}
+                    <br><small style="color:#777;">(Servicio Profesional)</small>
+                    {% endif %}
+                </td>
+                <td class="num">Q {{ item.unit_price }}</td>
+                <td class="num">Q {{ item.subtotal }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table style="page-break-inside: avoid;">
+        <tr>
+            <td style="border:none; width: 60%;">
+                <strong>Notas / Condiciones:</strong><br>
+                <small>
+                    - Esta cotización es válida hasta el {{ c.valid_until|date:"d/m/Y" }}.<br>
+                    - Tiempo de entrega: A convenir.<br>
+                    - Forma de pago: 50% anticipo, 50% contra entrega.
+                </small>
+            </td>
+            <td style="border:none; width: 40%; vertical-align: top;">
+                <table style="margin-bottom: 0;">
+                    <tr>
+                        <td style="border:none; text-align: right;"><strong>TOTAL:</strong></td>
+                        <td style="border:none; text-align: right; font-size: 16px; color: #0d6efd;"><strong>Q {{ c.total }}</strong></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <br><br><br><br>
+    
+    <table style="width: 100%; text-align: center; border:none;">
+        <tr>
+            <td style="border:none; width: 50%;">
+                __________________________<br>
+                Autorizado por<br>
+                <strong>{{ empresa }}</strong>
+            </td>
+            <td style="border:none; width: 50%;">
+                __________________________<br>
+                Aceptado por<br>
+                <strong>{{ c.client.name }}</strong>
+            </td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        Gracias por su preferencia. | Generado por Anaira ERP v2.0
+    </div>
+
+</body>
+</html>

@@ -8,6 +8,9 @@ from .ai_brain import analizar_documento_ia
 from .models import Client
 from .models import Product
 from .models import Quotation, QuotationDetail
+from django.http import HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
 
 # --- IMPORTS DE DJANGO ---
 from django.db.models import Sum
@@ -1329,3 +1332,26 @@ def quotation_create(request):
         'fecha_hoy': fecha_hoy,
         'validez': fecha_vencimiento
     })
+
+@login_required
+def quotation_pdf(request, pk):
+    """Generar PDF de Cotización"""
+    cotizacion = get_object_or_404(Quotation, pk=pk)
+    
+    # Renderizamos el HTML con los datos
+    template_path = 'core/sales/quotation_pdf.html'
+    context = {'c': cotizacion, 'empresa': request.session.get('company_name', 'Mi Empresa S.A.')}
+    response = HttpResponse(content_type='application/pdf')
+    
+    # Si quiere que se descargue directo, cambie 'inline' por 'attachment'
+    response['Content-Disposition'] = f'inline; filename="Cotizacion-{cotizacion.id}.pdf"'
+    
+    template = get_template(template_path)
+    html = template.render(context)
+    
+    # Crear PDF
+    pisa_status = pisa.CreatePDF(html, dest=response)
+    
+    if pisa_status.err:
+        return HttpResponse('Tuvimos algunos errores <pre>' + html + '</pre>')
+    return response

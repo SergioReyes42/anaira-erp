@@ -36,7 +36,9 @@
                         </td>
                         <td class="text-end pe-4 fw-bold">Q {{ c.total }}</td>
                         <td>
-                            <a href="#" class="btn btn-sm btn-outline-dark"><i class="bi bi-printer"></i></a>
+                            <a href="{% url 'quotation_pdf' c.id %}" target="_blank" class="btn btn-sm btn-outline-dark" title="Imprimir PDF">
+    <i class="bi bi-printer"></i>
+</a>
                         </td>
                     </tr>
                     {% empty %}

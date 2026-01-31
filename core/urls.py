@@ -39,4 +39,6 @@ urlpatterns = [
   # === COTIZACIONES ===
     path('ventas/cotizaciones/', views.quotation_list, name='quotation_list'),
     path('ventas/cotizacion/nueva/', views.quotation_create, name='quotation_create'),
+
+    path('ventas/cotizacion/<int:pk>/pdf/', views.quotation_pdf, name='quotation_pdf'),
 ]
