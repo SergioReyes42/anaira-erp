@@ -7,6 +7,8 @@ from django.utils import timezone
 # 1. ESTRUCTURA EMPRESARIAL Y SEGURIDAD
 # ==========================================
 
+
+
 class Company(models.Model):
     name = models.CharField(max_length=255, verbose_name="Nombre de la Empresa")
     nit = models.CharField(max_length=20, verbose_name="NIT", default="CF")
@@ -376,6 +378,22 @@ class PayrollDetail(models.Model):
         return f"Detalle {self.employee.first_name} - {self.payroll}"
 
 # core/models.py (Pegar al final)
+class CompanyProfile(models.Model):
+    """Datos de la Empresa Dueña del Sistema (Tenant)"""
+    name = models.CharField(max_length=100, verbose_name="Nombre Empresa", default="Mi Empresa")
+    logo = models.ImageField(upload_to='company_logos/', blank=True, null=True, verbose_name="Logo")
+    nit = models.CharField(max_length=20, verbose_name="NIT", blank=True)
+    address = models.CharField(max_length=200, verbose_name="Dirección", blank=True)
+    phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True)
+    email = models.EmailField(verbose_name="Email", blank=True)
+    website = models.URLField(verbose_name="Sitio Web", blank=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Perfil de Empresa"
+        verbose_name_plural = "Perfil de Empresa"
 
 class Client(models.Model):
     # Datos Fiscales
