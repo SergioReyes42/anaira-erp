@@ -1139,3 +1139,48 @@ def bank_statement(request, bank_id):
         'cuenta': cuenta,
         'movimientos': movimientos
     })
+
+# Vista simple para "En Construcción" (Evita que el sistema falle)
+def pagina_construccion(request, titulo):
+    return render(request, 'core/construction.html', {'titulo': titulo})
+
+# === VISTAS DE CONTABILIDAD ===
+@login_required
+def journal_list(request):
+    # Esta sí la mostramos real porque ya guardamos partidas
+    partidas = JournalEntry.objects.all().order_by('-date', '-id')
+    return render(request, 'core/accounting/journal_list.html', {'partidas': partidas})
+
+@login_required
+def ledger_list(request):
+    return pagina_construccion(request, 'Libro Mayor')
+
+@login_required
+def trial_balance(request):
+    return pagina_construccion(request, 'Balance de Saldos')
+
+@login_required
+def income_statement(request):
+    return pagina_construccion(request, 'Estado de Resultados')
+
+@login_required
+def balance_sheet(request):
+    return pagina_construccion(request, 'Balance General')
+
+# === VISTAS DE RRHH ===
+@login_required
+def employee_list(request):
+    return pagina_construccion(request, 'Listado de Empleados')
+
+# === VISTAS DE LOGÍSTICA (Aquí estaba el error) ===
+@login_required
+def inventory_list(request):
+    return pagina_construccion(request, 'Kardex de Inventario')
+
+# === VISTA DE LISTA DE GASTOS (Si no la tenía) ===
+@login_required
+def expense_list(request):
+    # Si ya tenía una vista de lista de gastos, ignore esto.
+    # Si no, esto evita el error en el menú de compras.
+    gastos = Gasto.objects.filter(company_id=request.session.get('company_id')).order_by('-fecha')
+    return render(request, 'core/expense_list.html', {'gastos': gastos})

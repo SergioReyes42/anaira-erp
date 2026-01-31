@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4"><i class="bi bi-journal-text"></i> Libro Diario</h3>
+
+    {% for partida in partidas %}
+    <div class="card mb-3 shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <div>
+                <span class="fw-bold text-primary">Partida #{{ partida.id }}</span>
+                <span class="mx-2 text-muted">|</span>
+                <span class="fw-bold">{{ partida.date|date:"d/m/Y" }}</span>
+            </div>
+            <small class="text-muted">{{ partida.description }}</small>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Cuenta Contable</th>
+                        <th class="text-end" style="width: 150px;">Debe</th>
+                        <th class="text-end pe-4" style="width: 150px;">Haber</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in partida.items.all %}
+                    <tr>
+                        <td class="ps-4">{{ item.account_name }}</td>
+                        <td class="text-end text-dark">{% if item.debit > 0 %}Q {{ item.debit }}{% endif %}</td>
+                        <td class="text-end pe-4 text-dark">{% if item.credit > 0 %}Q {{ item.credit }}{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info">No hay partidas contables registradas aún.</div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container text-center mt-5">
+    <div class="card shadow p-5">
+        <h1 class="display-4 text-warning"><i class="bi bi-cone-striped"></i></h1>
+        <h2 class="mb-3">{{ titulo }}</h2>
+        <p class="lead text-muted">Este módulo está en desarrollo y estará disponible pronto.</p>
+        <hr>
+        <a href="{% url 'home' %}" class="btn btn-primary">Volver al Inicio</a>
+    </div>
+</div>
+{% endblock %}
