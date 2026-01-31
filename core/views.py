@@ -1333,16 +1333,28 @@ def quotation_create(request):
 
 @login_required
 def quotation_pdf(request, pk):
+    # Buscamos la cotización
     cotizacion = get_object_or_404(Quotation, pk=pk)
     
-    # ESTRATEGIA BLINDADA:
-    # 1. Intentar buscar específicamente por nombre (para que no falle)
-    empresa = CompanyProfile.objects.filter(name__icontains="Transfer").first()
-    
-    # 2. Si no lo encuentra, traer el ÚLTIMO creado (el más nuevo)
-    if not empresa:
+    # --- BLOQUE DE DIAGNÓSTICO ---
+    # Intentamos traer la empresa. Si falla, creamos una "falsa" para que no salga vacío.
+    try:
+        # Trae la última creada (la más nueva)
         empresa = CompanyProfile.objects.last()
-        
+    except:
+        empresa = None
+
+    # Si por alguna razón la base de datos no responde, forzamos los datos de Transfer
+    if not empresa:
+        class EmpresaFake:
+            name = "Grupo Transfer S.A. (Modo Seguro)"
+            nit = "120300443"
+            address = "15 Av Lote 6a Zona 0 Chinautla"
+            phone = "PBX: 2222-0000"
+            email = "info@grupotransfer.com"
+            logo = None # No cargará logo, pero sí el nombre
+        empresa = EmpresaFake()
+
     context = {
         'c': cotizacion, 
         'empresa': empresa, 
