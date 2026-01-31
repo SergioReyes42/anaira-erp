@@ -397,4 +397,35 @@ class Client(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.nit})"
+from datetime import date   
+class Quotation(models.Model):
+    STATUS_CHOICES = (
+        ('DRAFT', 'Borrador'),
+        ('SENT', 'Enviada'),
+        ('ACCEPTED', 'Aceptada'),
+        ('REJECTED', 'Rechazada'),
+    )
     
+    # Relación con Cliente (Asegúrese que la clase Client exista arriba)
+    client = models.ForeignKey('Client', on_delete=models.CASCADE, verbose_name="Cliente")
+    date = models.DateField(default=date.today, verbose_name="Fecha Emisión")
+    valid_until = models.DateField(verbose_name="Válida Hasta")
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Total")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='DRAFT', verbose_name="Estado")
+    notes = models.TextField(blank=True, verbose_name="Notas / Condiciones")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"COT-{self.id}"
+
+class QuotationDetail(models.Model):
+    quotation = models.ForeignKey(Quotation, related_name='details', on_delete=models.CASCADE)
+    # Relación con Producto (Asegúrese que la clase Product exista arriba)
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=1, verbose_name="Cantidad")
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Precio Unitario")
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Subtotal")
+
+    def __str__(self):
+        return f"Detalle Cot-{self.quotation.id}"

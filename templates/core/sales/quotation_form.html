@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<form method="post" id="formCotizacion">
+    {% csrf_token %}
+    <div class="container-fluid">
+        
+        <div class="card shadow border-0 mb-3">
+            <div class="card-header bg-dark text-white d-flex justify-content-between">
+                <h5 class="mb-0">Nueva Cotización</h5>
+                <div>
+                    <button type="submit" class="btn btn-success btn-sm fw-bold">
+                        <i class="bi bi-save"></i> Guardar Cotización
+                    </button>
+                    <a href="{% url 'quotation_list' %}" class="btn btn-secondary btn-sm">Cancelar</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="fw-bold">Cliente</label>
+                        <select name="client" class="form-select" required>
+                            <option value="">-- Seleccione Cliente --</option>
+                            {% for c in clientes %}
+                            <option value="{{ c.id }}">{{ c.name }} ({{ c.nit }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="fw-bold">Fecha Emisión</label>
+                        <input type="date" name="date" class="form-control" value="{{ fecha_hoy|date:'Y-m-d' }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="fw-bold">Válida Hasta</label>
+                        <input type="date" name="valid_until" class="form-control" value="{{ validez|date:'Y-m-d' }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card shadow border-0">
+                    <div class="card-header bg-light fw-bold">Agregar Producto/Servicio</div>
+                    <div class="card-body">
+                        <label>Producto</label>
+                        <select id="selectProducto" class="form-select mb-2">
+                            <option value="">-- Buscar Item --</option>
+                            {% for p in productos %}
+                            <option value="{{ p.id }}" data-price="{{ p.price }}" data-code="{{ p.code }}" data-name="{{ p.name }}">
+                                {{ p.code }} - {{ p.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        
+                        <div class="row">
+                            <div class="col-6">
+                                <label>Precio (Q)</label>
+                                <input type="number" id="inputPrecio" class="form-control" step="0.01">
+                            </div>
+                            <div class="col-6">
+                                <label>Cantidad</label>
+                                <input type="number" id="inputCant" class="form-control" value="1" min="1">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary w-100 mt-3" onclick="agregarFila()">
+                            <i class="bi bi-plus-circle"></i> Agregar a la Lista
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card shadow border-0">
+                    <div class="card-body p-0">
+                        <table class="table table-striped mb-0">
+                            <thead class="bg-dark text-white">
+                                <tr>
+                                    <th>Descripción</th>
+                                    <th class="text-center" width="100">Cant.</th>
+                                    <th class="text-end" width="120">Precio</th>
+                                    <th class="text-end" width="120">Subtotal</th>
+                                    <th width="50"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaProductos">
+                                </tbody>
+                            <tfoot>
+                                <tr class="bg-light fw-bold fs-5">
+                                    <td colspan="3" class="text-end">TOTAL GENERAL:</td>
+                                    <td class="text-end text-primary">Q <span id="spanTotal">0.00</span></td>
+                                    <td>
+                                        <input type="hidden" name="total_general" id="inputTotalGeneral" value="0">
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    // 1. Cuando seleccionan un producto, poner su precio automático
+    document.getElementById('selectProducto').addEventListener('change', function() {
+        var option = this.options[this.selectedIndex];
+        var precio = option.getAttribute('data-price');
+        if(precio) {
+            document.getElementById('inputPrecio').value = precio;
+        }
+    });
+
+    // 2. Función Agregar Fila
+    function agregarFila() {
+        var select = document.getElementById('selectProducto');
+        var idProd = select.value;
+        var nombre = select.options[select.selectedIndex].getAttribute('data-name');
+        
+        var precio = parseFloat(document.getElementById('inputPrecio').value) || 0;
+        var cantidad = parseInt(document.getElementById('inputCant').value) || 1;
+        var subtotal = precio * cantidad;
+
+        if(!idProd || precio <= 0) {
+            alert("Seleccione un producto y precio válido.");
+            return;
+        }
+
+        var fila = `
+            <tr>
+                <td>
+                    <input type="hidden" name="product_id[]" value="${idProd}">
+                    ${nombre}
+                </td>
+                <td class="text-center">
+                    <input type="hidden" name="qty[]" value="${cantidad}">
+                    ${cantidad}
+                </td>
+                <td class="text-end">
+                    <input type="hidden" name="price[]" value="${precio.toFixed(2)}">
+                    ${precio.toFixed(2)}
+                </td>
+                <td class="text-end fw-bold">
+                    <input type="hidden" name="subtotal[]" value="${subtotal.toFixed(2)}">
+                    Q ${subtotal.toFixed(2)}
+                </td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm py-0" onclick="eliminarFila(this, ${subtotal})">&times;</button>
+                </td>
+            </tr>
+        `;
+
+        document.getElementById('tablaProductos').insertAdjacentHTML('beforeend', fila);
+        actualizarTotal(subtotal);
+        
+        // Limpiar inputs
+        select.value = "";
+        document.getElementById('inputPrecio').value = "";
+        document.getElementById('inputCant').value = "1";
+    }
+
+    // 3. Función Eliminar y Recalcular
+    function eliminarFila(btn, monto) {
+        var row = btn.parentNode.parentNode;
+        row.parentNode.removeChild(row);
+        actualizarTotal(-monto);
+    }
+
+    var totalAcumulado = 0;
+    function actualizarTotal(monto) {
+        totalAcumulado += monto;
+        document.getElementById('spanTotal').innerText = totalAcumulado.toFixed(2);
+        document.getElementById('inputTotalGeneral').value = totalAcumulado.toFixed(2);
+    }
+</script>
+{% endblock %}

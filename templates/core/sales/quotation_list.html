@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="text-dark"><i class="bi bi-file-earmark-text text-warning"></i> Cotizaciones</h3>
+        <a href="{% url 'quotation_create' %}" class="btn btn-primary fw-bold">
+            <i class="bi bi-plus-lg"></i> Nueva Cotización
+        </a>
+    </div>
+
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">#</th>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Estado</th>
+                        <th class="text-end pe-4">Total</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in cotizaciones %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-primary">COT-{{ c.id }}</td>
+                        <td>{{ c.date|date:"d/m/Y" }}</td>
+                        <td>{{ c.client.name }}</td>
+                        <td>
+                            {% if c.status == 'DRAFT' %}<span class="badge bg-secondary">Borrador</span>
+                            {% elif c.status == 'SENT' %}<span class="badge bg-info text-dark">Enviada</span>
+                            {% elif c.status == 'ACCEPTED' %}<span class="badge bg-success">Aceptada</span>
+                            {% else %}<span class="badge bg-danger">Rechazada</span>{% endif %}
+                        </td>
+                        <td class="text-end pe-4 fw-bold">Q {{ c.total }}</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-dark"><i class="bi bi-printer"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center py-5 text-muted">No hay cotizaciones registradas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

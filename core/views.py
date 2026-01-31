@@ -7,6 +7,7 @@ from operator import attrgetter
 from .ai_brain import analizar_documento_ia
 from .models import Client
 from .models import Product
+from .models import Quotation, QuotationDetail
 
 # --- IMPORTS DE DJANGO ---
 from django.db.models import Sum
@@ -1267,3 +1268,64 @@ def client_create(request):
         form = ClientForm()
     
     return render(request, 'core/sales/client_form.html', {'form': form})
+
+from datetime import timedelta
+
+@login_required
+def quotation_list(request):
+    """Listado de Cotizaciones"""
+    cotizaciones = Quotation.objects.all().order_by('-id')
+    return render(request, 'core/sales/quotation_list.html', {'cotizaciones': cotizaciones})
+
+@login_required
+def quotation_create(request):
+    """Crear Nueva Cotización (Con lógica Maestro-Detalle)"""
+    if request.method == 'POST':
+        try:
+            # 1. Guardar Encabezado
+            cliente_id = request.POST.get('client')
+            fecha = request.POST.get('date')
+            validez = request.POST.get('valid_until')
+            total_cotizacion = request.POST.get('total_general')
+            
+            cotizacion = Quotation.objects.create(
+                client_id=cliente_id,
+                date=fecha,
+                valid_until=validez,
+                total=total_cotizacion,
+                status='DRAFT'
+            )
+            
+            # 2. Guardar Productos (Vienen en listas)
+            productos = request.POST.getlist('product_id[]')
+            cantidades = request.POST.getlist('qty[]')
+            precios = request.POST.getlist('price[]')
+            subtotales = request.POST.getlist('subtotal[]')
+            
+            for i in range(len(productos)):
+                QuotationDetail.objects.create(
+                    quotation=cotizacion,
+                    product_id=productos[i],
+                    quantity=cantidades[i],
+                    unit_price=precios[i],
+                    subtotal=subtotales[i]
+                )
+                
+            messages.success(request, f"Cotización #{cotizacion.id} creada exitosamente.")
+            return redirect('quotation_list')
+            
+        except Exception as e:
+            messages.error(request, f"Error al guardar: {e}")
+
+    # GET: Cargar datos para el formulario
+    clientes = Client.objects.filter(is_active=True)
+    productos = Product.objects.filter(is_active=True)
+    fecha_hoy = date.today()
+    fecha_vencimiento = date.today() + timedelta(days=15) # 15 días de vigencia por defecto
+    
+    return render(request, 'core/sales/quotation_form.html', {
+        'clientes': clientes,
+        'productos': productos,
+        'fecha_hoy': fecha_hoy,
+        'validez': fecha_vencimiento
+    })

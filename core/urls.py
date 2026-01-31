@@ -35,4 +35,8 @@ urlpatterns = [
   # === RUTAS DE CLIENTES ===
     path('clientes/', views.client_list, name='client_list'),
     path('clientes/nuevo/', views.client_create, name='client_create'),
+
+  # === COTIZACIONES ===
+    path('ventas/cotizaciones/', views.quotation_list, name='quotation_list'),
+    path('ventas/cotizacion/nueva/', views.quotation_create, name='quotation_create'),
 ]
