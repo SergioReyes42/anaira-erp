@@ -7,7 +7,7 @@ from operator import attrgetter
 from .ai_brain import analizar_documento_ia
 from .models import Client
 from .models import Product
-from .models import Quotation, QuotationDetail
+from .models import Quotation, QuotationDetail, CompanyProfile
 
 
 # --- IMPORTS DE DJANGO ---
@@ -1333,16 +1333,15 @@ def quotation_create(request):
 
 @login_required
 def quotation_pdf(request, pk):
-    """
-    Vista de Impresión Nativa.
-    Muestra el HTML limpio y el navegador se encarga de convertirlo a PDF.
-    """
+    # 1. Buscamos la cotización
     cotizacion = get_object_or_404(Quotation, pk=pk)
     
-    # Renderizamos solo el HTML
-    template_path = 'core/sales/quotation_pdf.html'
+    # 2. Buscamos los datos de SU empresa (El primero que encuentre)
+    empresa = CompanyProfile.objects.first()
+    
+    # 3. Enviamos todo al HTML
     context = {
         'c': cotizacion, 
-        'empresa': request.session.get('company_name', 'Mi Empresa S.A.')
+        'empresa': empresa, 
     }
-    return render(request, template_path, context)
+    return render(request, 'core/sales/quotation_pdf.html', context)
