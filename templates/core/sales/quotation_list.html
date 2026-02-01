@@ -24,14 +24,15 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for c in quotations %} <tr>
+                    {% for c in quotations %}
+                    <tr>
                         <td class="ps-4 fw-bold">#{{ c.id|stringformat:"05d" }}</td>
                         <td>{{ c.date|date:"d/m/Y" }}</td>
                         <td>{{ c.client.name }}</td>
                         <td class="fw-bold text-success">Q {{ c.total }}</td>
                         
                         <td class="text-end pe-4">
-                            <a href="{% url 'quotation_pdf' c.id %}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Imprimir PDF">
+                            <a href="{% url 'quotation_pdf' c.id %}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Imprimir Cotización">
                                 <i class="bi bi-printer"></i>
                             </a>
 
@@ -40,20 +41,12 @@
                                     <i class="bi bi-cash-coin"></i> Vender
                                 </a>
                             {% else %}
-                                <span class="badge bg-success">Vendida</span>
+                                <a href="{% url 'invoice_pdf' c.sale.id %}" target="_blank" class="btn btn-sm btn-primary" title="Imprimir Factura / Recibo">
+                                    <i class="bi bi-receipt"></i> Factura
+                                </a>
                             {% endif %}
-                            
-                            </td>
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">
-                            No hay cotizaciones registradas aún.
-                        </td>
-                    </tr>
-                    {% endfor %} </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-{% endblock %}
+                        <td colspan="5" class="text-center py-

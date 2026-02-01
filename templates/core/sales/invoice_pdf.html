@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Factura #{{ sale.id }}</title>
+    <style>
+        @page { size: letter portrait; margin: 1.5cm; }
+        body { font-family: Helvetica, sans-serif; font-size: 12px; color: #333; }
+        
+        /* Encabezado */
+        .header { width: 100%; border-bottom: 2px solid #28a745; padding-bottom: 10px; margin-bottom: 20px; }
+        .empresa-nombre { font-size: 22px; font-weight: bold; color: #28a745; text-transform: uppercase; }
+        .titulo-doc { font-size: 28px; font-weight: bold; text-align: right; color: #555; }
+        .subtitulo { text-align: right; color: #777; font-size: 14px; }
+
+        .info-box { width: 100%; margin-bottom: 20px; border: 1px solid #eee; padding: 10px; }
+        
+        /* Tablas */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background-color: #f8f9fa; border-bottom: 2px solid #ddd; padding: 8px; text-align: left; }
+        td { border-bottom: 1px solid #eee; padding: 8px; }
+        .num { text-align: right; }
+        .total-row td { border-top: 2px solid #28a745; font-size: 14px; font-weight: bold; }
+
+        /* Pie */
+        .footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #ddd; padding-top: 10px; }
+    </style>
+</head>
+<body>
+    <table class="header">
+        <tr>
+            <td style="border:none; width: 60%;">
+                {% if sale.company.logo %}
+                    <img src="{{ sale.company.logo.url }}" style="max-height: 80px;">
+                {% else %}
+                    <div class="empresa-nombre">{{ sale.company.name }}</div>
+                {% endif %}
+                <div style="font-size: 11px; margin-top: 5px;">
+                    <strong>NIT:</strong> {{ sale.company.nit }}<br>
+                    {{ sale.company.address }}<br>
+                    {{ sale.company.phone }} | {{ sale.company.email }}
+                </div>
+            </td>
+            <td style="border:none; text-align: right;">
+                <div class="titulo-doc">FACTURA</div>
+                <div class="subtitulo">No. {{ sale.id|stringformat:"05d" }}</div>
+                <div style="margin-top: 5px;">Fecha: {{ sale.date|date:"d/m/Y H:i" }}</div>
+                <div style="color: red; font-weight: bold; margin-top: 5px;">{{ sale.payment_method }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="info-box">
+        <table style="margin:0;">
+            <tr>
+                <td style="border:none; width: 50%;">
+                    <strong>CLIENTE:</strong><br>
+                    {{ sale.client.name }}<br>
+                    NIT: {{ sale.client.nit }}
+                </td>
+                <td style="border:none; width: 50%;">
+                    <strong>DIRECCIÓN:</strong><br>
+                    {{ sale.client.address|default:"Ciudad" }}<br>
+                    Tel: {{ sale.client.phone }}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th width="10%">Cant.</th>
+                <th width="50%">Descripción</th>
+                <th width="20%" class="num">Precio Unit.</th>
+                <th width="20%" class="num">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in sale.details.all %}
+            <tr>
+                <td style="text-align: center;">{{ item.quantity }}</td>
+                <td>{{ item.product.name }}</td>
+                <td class="num">Q {{ item.unit_price }}</td>
+                <td class="num">Q {{ item.subtotal }}</td>
+            </tr>
+            {% endfor %}
+            <tr class="total-row">
+                <td colspan="3" class="num">TOTAL A PAGAR:</td>
+                <td class="num" style="color: #28a745;">Q {{ sale.total }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <br><br>
+    <div style="text-align: center; font-size: 11px;">
+        __________________________<br>
+        Firma y Sello
+    </div>
+
+    <div class="footer">
+        Gracias por su compra. | Documento generado por Anaira ERP
+    </div>
+
+    <script>window.onload = function() { window.print(); }</script>
+</body>
+</html>

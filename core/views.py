@@ -1459,3 +1459,12 @@ def create_quotation(request):
             'clients': clients,
             'products': products
         })
+    
+@login_required
+def invoice_pdf(request, pk):
+    # Buscamos la VENTA (Sale), no la cotización
+    venta = get_object_or_404(Sale, pk=pk)
+    
+    return render(request, 'core/sales/invoice_pdf.html', {
+        'sale': venta
+    })
