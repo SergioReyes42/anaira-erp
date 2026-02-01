@@ -111,14 +111,30 @@ def select_company(request): # <--- AQUÍ ESTABA EL ERROR: FALTABA ESTA LÍNEA
 
 @login_required
 def home(request):
-    company_id = request.session.get('company_id')
-    if not company_id: return redirect('select_company')
-    company = Company.objects.get(id=company_id)
-    return render(request, 'core/home.html', {'company': company})
+    # 1. Total Ventas (Suma de todo lo vendido)
+    total_ventas = Sale.objects.aggregate(Sum('total'))['total__sum'] or 0
+    
+    # 2. Total Compras (Inversión en mercadería)
+    total_compras = Purchase.objects.aggregate(Sum('total'))['total__sum'] or 0
+    
+    # 3. Alertas de Stock (Productos con menos de 5 unidades)
+    # Usted puede cambiar el '5' por el número que considere "peligroso"
+    productos_bajos = Product.objects.filter(stock__lte=5).count()
+    
+    # 4. Total de Clientes
+    total_clientes = Client.objects.count()
 
-@login_required
-def admin_control_panel(request): 
-    return redirect('dashboard_gastos')
+    # 5. Últimos 5 movimientos (para ver actividad reciente)
+    ultimas_ventas = Sale.objects.order_by('-date')[:5]
+
+    context = {
+        'total_ventas': total_ventas,
+        'total_compras': total_compras,
+        'productos_bajos': productos_bajos,
+        'total_clientes': total_clientes,
+        'ultimas_ventas': ultimas_ventas,
+    }
+    return render(request, 'home.html', context)
 
 # ==========================================
 # 2. GASTOS Y OCR
