@@ -2,7 +2,13 @@
 
 import django.db.models.deletion
 from django.db import migrations, models
+from django.db import connection # <--- AGREGUE ESTE
 
+def limpiar_fantasmas(apps, schema_editor):
+    # Ejecutamos SQL directo para borrar el registro corrupto del servidor
+    with connection.cursor() as cursor:
+        # Borra cualquier cuenta bancaria que apunte a la empresa ID 2 (la que da error)
+        cursor.execute("DELETE FROM core_bankaccount WHERE company_id = 2;")
 
 class Migration(migrations.Migration):
 
@@ -11,6 +17,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(limpiar_fantasmas),
         migrations.AlterModelOptions(
             name='bankaccount',
             options={'verbose_name': 'Cuenta Bancaria', 'verbose_name_plural': 'Cuentas Bancarias'},
