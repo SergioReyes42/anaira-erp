@@ -82,6 +82,12 @@ urlpatterns = [
     path('', include('core.urls')),
     path('crear-emergencia/', crear_admin_express),
     path('crear-empresa/', crear_empresa_force), 
+
+    # --- ESTA ES LA LÍNEA QUE FALTA (LA PUERTA DE LOGIN) ---
+    path('accounts/', include('django.contrib.auth.urls')),
+    
+    # Sus rutas de la aplicación
+    path('', include('core.urls')),
 ]
 
 # --- HABILITAR CARGA DE LOGOS EN MODO DEBUG ---
