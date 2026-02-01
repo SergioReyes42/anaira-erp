@@ -358,20 +358,17 @@ def api_ocr_process(request):
         return JsonResponse({'status': 'success', 'message': 'OCR recibido (Simulado)'})
     return JsonResponse({'status': 'error', 'message': 'Método no permitido'})
 
-# ==========================================
-# 3. BANCOS, INGRESOS Y PROVEEDORES
-# ==========================================
-# =========================================================
-# VISTA 1: LISTADO DE BANCOS (Dashboard Principal)
-# =========================================================
+# --- 9. TESORERÍA / BANCOS ---
+
 @login_required
 def bank_list(request):
-    # Traemos todas las cuentas
-    bancos = BankAccount.objects.all()
+    cuentas = BankAccount.objects.all()
+    # Calculamos el total de dinero disponible sumando todas las cuentas
+    total_disponible = sum(c.balance for c in cuentas)
     
-    # Renderizamos la pantalla de tarjetas (bank_list.html)
-    return render(request, 'core/bank_list.html', {
-        'bancos': bancos
+    return render(request, 'core/treasury/bank_list.html', {
+        'cuentas': cuentas,
+        'total_disponible': total_disponible
     })
 
 # =========================================================
@@ -391,18 +388,24 @@ class BankAccountForm(forms.ModelForm):
 @login_required
 def bank_create(request):
     if request.method == 'POST':
-        form = BankAccountForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Cuenta bancaria creada exitosamente.")
-            return redirect('bank_list')
-    else:
-        form = BankAccountForm()
-
-    return render(request, 'core/bank_form.html', {
-        'form': form,
-        'titulo': 'Registrar Nueva Cuenta Bancaria'
-    })
+        bank_name = request.POST.get('bank_name')
+        account_number = request.POST.get('account_number')
+        currency = request.POST.get('currency')
+        initial_balance = request.POST.get('initial_balance')
+        
+        empresa = CompanyProfile.objects.first()
+        
+        BankAccount.objects.create(
+            company=empresa,
+            bank_name=bank_name,
+            account_number=account_number,
+            currency=currency,
+            balance=initial_balance
+        )
+        messages.success(request, 'Cuenta bancaria creada exitosamente.')
+        return redirect('bank_list')
+        
+    return render(request, 'core/treasury/bank_form.html')
 
 # =========================================================
 # VISTA 3: TRANSACCIONES + IA (La lógica potente)

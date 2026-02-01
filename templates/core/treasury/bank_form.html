@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-bank"></i> Registrar Cuenta Bancaria</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre del Banco</label>
+                            <input type="text" name="bank_name" class="form-control" required placeholder="Ej: Banco Industrial, Banrural...">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Número de Cuenta</label>
+                            <input type="text" name="account_number" class="form-control" required placeholder="Ej: 00-00000-0">
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Moneda</label>
+                                <select name="currency" class="form-select">
+                                    <option value="GTQ">Quetzales (GTQ)</option>
+                                    <option value="USD">Dólares (USD)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Saldo Inicial</label>
+                                <input type="number" step="0.01" name="initial_balance" class="form-control" value="0.00">
+                                <div class="form-text">Dinero con el que inicia en sistema.</div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">Guardar Cuenta</button>
+                            <a href="{% url 'bank_list' %}" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
