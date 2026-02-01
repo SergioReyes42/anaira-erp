@@ -41,4 +41,6 @@ urlpatterns = [
     path('ventas/cotizacion/nueva/', views.quotation_create, name='quotation_create'),
 
     path('ventas/cotizacion/<int:pk>/pdf/', views.quotation_pdf, name='quotation_pdf'),
+
+    path('ventas/convertir/<int:pk>/', views.convertir_a_venta, name='convertir_a_venta'),
 ]

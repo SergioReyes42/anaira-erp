@@ -21,6 +21,16 @@
                         <th class="text-end pe-4">Total</th>
                         <th>Acciones</th>
                     </tr>
+                    <a href="{% url 'quotation_pdf' c.id %}" target="_blank" class="btn btn-sm btn-secondary" title="Imprimir PDF">
+    <i class="bi bi-printer"></i>
+</a>
+
+{% if not c.sale %} <a href="{% url 'convertir_a_venta' c.id %}" class="btn btn-sm btn-success" title="Convertir a Venta" onclick="return confirm('¿Confirmar Venta? Esto generará un registro de cobro.');">
+        <i class="bi bi-cash-coin"></i> Vender
+    </a>
+{% else %}
+    <span class="badge bg-success">Vendida</span>
+{% endif %}
                 </thead>
                 <tbody>
                     {% for c in cotizaciones %}

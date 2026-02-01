@@ -1345,3 +1345,40 @@ def quotation_pdf(request, pk):
         'empresa': empresa, 
     }
     return render(request, 'core/sales/quotation_pdf.html', context)
+
+# --- AGREGAR AL FINAL DE core/views.py ---
+from django.contrib import messages
+from .models import Sale, SaleDetail # Asegúrese de importar estos arriba
+
+@login_required
+def convertir_a_venta(request, pk):
+    # 1. Buscamos la cotización original
+    cotizacion = get_object_or_404(Quotation, pk=pk)
+    
+    # 2. Verificamos si ya fue convertida antes (para no duplicar)
+    if hasattr(cotizacion, 'sale'):
+        messages.warning(request, f"La cotización #{cotizacion.id} ya fue convertida en venta anteriormente.")
+        return redirect('quotation_list')
+
+    # 3. Creamos la Venta (Cabecera)
+    empresa = CompanyProfile.objects.first() # Asignamos a la empresa actual
+    nueva_venta = Sale.objects.create(
+        company=empresa,
+        client=cotizacion.client,
+        quotation_origin=cotizacion, # Guardamos el vínculo
+        total=cotizacion.total,
+        payment_method='EFECTIVO' # Por defecto, luego se puede editar
+    )
+
+    # 4. Copiamos los detalles (Productos)
+    for item in cotizacion.details.all():
+        SaleDetail.objects.create(
+            sale=nueva_venta,
+            product=item.product,
+            quantity=item.quantity,
+            unit_price=item.unit_price
+        )
+        # AQUÍ IRÁ LA LÓGICA DE RESTAR INVENTARIO MÁS ADELANTE
+
+    messages.success(request, f"¡Éxito! Cotización #{cotizacion.id} convertida en Venta #{nueva_venta.id}")
+    return redirect('quotation_list') # Nos devuelve a la lista
