@@ -1,110 +1,6 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<form method="post" id="formCotizacion">
-    {% csrf_token %}
-    <div class="container-fluid">
-        
-        <div class="card shadow border-0 mb-3">
-            <div class="card-header bg-dark text-white d-flex justify-content-between">
-                <h5 class="mb-0">Nueva Cotización</h5>
-                <div>
-                    <button type="submit" class="btn btn-success btn-sm fw-bold">
-                        <i class="bi bi-save"></i> Guardar Cotización
-                    </button>
-                    <a href="{% url 'quotation_list' %}" class="btn btn-secondary btn-sm">Cancelar</a>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="fw-bold">Cliente</label>
-                        <select name="client" class="form-select" required>
-                            <option value="">-- Seleccione Cliente --</option>
-                            {% for c in clientes %}
-                            <option value="{{ c.id }}">{{ c.name }} ({{ c.nit }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="fw-bold">Fecha Emisión</label>
-                        <input type="date" name="date" class="form-control" value="{{ fecha_hoy|date:'Y-m-d' }}">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="fw-bold">Válida Hasta</label>
-                        <input type="date" name="valid_until" class="form-control" value="{{ validez|date:'Y-m-d' }}">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card shadow border-0">
-                    <div class="card-header bg-light fw-bold">Agregar Producto/Servicio</div>
-                    <div class="card-body">
-                        <label>Producto</label>
-                        <select id="selectProducto" class="form-select mb-2">
-                            <option value="">-- Buscar Item --</option>
-                            {% for p in productos %}
-                            <option value="{{ p.id }}" data-price="{{ p.price }}" data-code="{{ p.code }}" data-name="{{ p.name }}">
-                                {{ p.code }} - {{ p.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                        
-                        <div class="row">
-                            <div class="col-6">
-                                <label>Precio (Q)</label>
-                                <input type="number" id="inputPrecio" class="form-control" step="0.01">
-                            </div>
-                            <div class="col-6">
-                                <label>Cantidad</label>
-                                <input type="number" id="inputCant" class="form-control" value="1" min="1">
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-primary w-100 mt-3" onclick="agregarFila()">
-                            <i class="bi bi-plus-circle"></i> Agregar a la Lista
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-8">
-                <div class="card shadow border-0">
-                    <div class="card-body p-0">
-                        <table class="table table-striped mb-0">
-                            <thead class="bg-dark text-white">
-                                <tr>
-                                    <th>Descripción</th>
-                                    <th class="text-center" width="100">Cant.</th>
-                                    <th class="text-end" width="120">Precio</th>
-                                    <th class="text-end" width="120">Subtotal</th>
-                                    <th width="50"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="tablaProductos">
-                                </tbody>
-                            <tfoot>
-                                <tr class="bg-light fw-bold fs-5">
-                                    <td colspan="3" class="text-end">TOTAL GENERAL:</td>
-                                    <td class="text-end text-primary">Q <span id="spanTotal">0.00</span></td>
-                                    <td>
-                                        <input type="hidden" name="total_general" id="inputTotalGeneral" value="0">
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</form>
-
-{% extends 'base.html' %}
-
-{% block content %}
 <div class="container mt-4">
     <div class="card shadow">
         <div class="card-header bg-primary text-white">
@@ -182,16 +78,14 @@
     const productsList = [];
     const dataElements = document.querySelectorAll('#django-data .product-data');
 
-    // Convertimos los elementos HTML a nuestra lista de objetos JS
     dataElements.forEach(item => {
         productsList.push({
             id: item.dataset.id,
-            // dataset decodifica automáticamente caracteres especiales
             name: `${item.dataset.name} - Q${item.dataset.price}`
         });
     });
 
-    // 2. Función para agregar filas (NO CAMBIA)
+    // 2. Función para agregar filas
     function addProductRow() {
         const tbody = document.getElementById('productsBody');
         const row = document.createElement('tr');
@@ -222,5 +116,4 @@
     // Agregar una fila al cargar
     window.onload = addProductRow;
 </script>
-
 {% endblock %}
