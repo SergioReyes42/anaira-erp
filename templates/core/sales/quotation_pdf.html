@@ -41,30 +41,25 @@
     <table class="header">
         <tr>
             <td style="border:none; width: 60%;">
-                {% if empresa and empresa.logo %}
-                    <img src="{{ empresa.logo.url }}" style="max-height: 80px; max-width: 250px;">
-                
-                {% elif empresa %}
-                    <div class="empresa" style="font-size: 22px; color: #004085; text-transform: uppercase;">
-                        {{ empresa.name }}
-                    </div>
-                
-                {% else %}
-                    <div class="empresa" style="font-size: 22px; color: #999; text-transform: uppercase;">
-                        NOMBRE DE SU EMPRESA
-                    </div>
-                    <small style="color: red;">(Configure su perfil en el Admin)</small>
-                {% endif %}
+    {% if empresa.logo %}
+        <img src="{{ empresa.logo.url }}" style="max-height: 80px; max-width: 250px;">
+    {% else %}
+        <div class="empresa" style="font-size: 22px; color: #004085; text-transform: uppercase;">
+            {{ empresa.name }}
+        </div>
+    {% endif %}
 
-                {% if empresa %}
-                <div style="margin-top: 5px; font-size: 12px; color: #555;">
-                    <strong>NIT:</strong> {{ empresa.nit }}<br>
-                    {{ empresa.address }}<br>
-                    {{ empresa.phone }} | {{ empresa.email }}
-                </div>
-                {% endif %}
-            </td>
-
+    {% if not empresa %}
+        <div class="empresa" style="font-size: 22px; color: red;">
+            GRUPO TRANSFER S.A.
+        </div>
+    {% endif %}
+    
+    <div style="margin-top: 5px; font-size: 12px; color: #555;">
+        <strong>NIT:</strong> {{ empresa.nit|default:"120300443" }}<br>
+        {{ empresa.address|default:"Guatemala" }}<br>
+    </div>
+</td>
             <td style="border:none; text-align: right; width: 40%;">
                 <div class="titulo">COTIZACIÓN</div>
                 <div class="subtitulo"># {{ c.id|stringformat:"05d" }}</div>
