@@ -5,9 +5,17 @@ from django.db import migrations, models
 from django.db import connection # <--- AGREGUE ESTE
 
 def limpiar_fantasmas(apps, schema_editor):
-    # Ejecutamos SQL directo para borrar el registro corrupto del servidor
     with connection.cursor() as cursor:
-        # Borra cualquier cuenta bancaria que apunte a la empresa ID 2 (la que da error)
+        # PASO 1: Borrar los MOVIMIENTOS (Hijos) de esas cuentas huérfanas
+        # Buscamos los movimientos donde la cuenta pertenezca a la empresa 2
+        cursor.execute("""
+            DELETE FROM core_bankmovement 
+            WHERE account_id IN (
+                SELECT id FROM core_bankaccount WHERE company_id = 2
+            );
+        """)
+
+        # PASO 2: Ahora sí, borrar la CUENTA (Padre)
         cursor.execute("DELETE FROM core_bankaccount WHERE company_id = 2;")
 
 class Migration(migrations.Migration):
