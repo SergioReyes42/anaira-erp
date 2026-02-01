@@ -493,3 +493,54 @@ class SaleDetail(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
+    
+# ==========================================
+#         PROVEEDORES Y COMPRAS
+# ==========================================
+# 1. TABLA DE PROVEEDORES
+class Provider(models.Model):
+    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
+    name = models.CharField(max_length=100, verbose_name="Razón Social / Nombre")
+    nit = models.CharField(max_length=20, blank=True, verbose_name="NIT")
+    contact_name = models.CharField(max_length=100, blank=True, verbose_name="Contacto")
+    phone = models.CharField(max_length=20, blank=True, verbose_name="Teléfono")
+    email = models.EmailField(blank=True, verbose_name="Email")
+    
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Proveedor"
+        verbose_name_plural = "Proveedores"
+
+# 2. TABLA DE COMPRAS (Cabecera)
+class Purchase(models.Model):
+    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
+    provider = models.ForeignKey(Provider, on_delete=models.CASCADE, verbose_name="Proveedor")
+    date = models.DateField(auto_now_add=True, verbose_name="Fecha de Compra")
+    reference = models.CharField(max_length=50, blank=True, verbose_name="No. Factura Proveedor")
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Total Compra")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Compra #{self.id} - {self.provider.name}"
+
+    class Meta:
+        verbose_name = "Compra"
+        verbose_name_plural = "Compras"
+
+# 3. DETALLE DE COMPRA (Productos)
+class PurchaseDetail(models.Model):
+    purchase = models.ForeignKey(Purchase, related_name='details', on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Producto")
+    quantity = models.PositiveIntegerField(verbose_name="Cantidad")
+    cost_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Costo Unitario")
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, editable=False)
+
+    def save(self, *args, **kwargs):
+        self.subtotal = self.quantity * self.cost_price
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.name}"
