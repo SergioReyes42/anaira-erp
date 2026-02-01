@@ -1349,7 +1349,7 @@ from django.contrib import messages
 from .models import Sale, SaleDetail # Asegúrese de importar estos arriba
 
 # --- 4. CONVERTIR A VENTA (BOTÓN MÁGICO) ---
-login_required
+@login_required
 def convertir_a_venta(request, pk):
     cotizacion = get_object_or_404(Quotation, pk=pk)
     
@@ -1358,11 +1358,8 @@ def convertir_a_venta(request, pk):
         messages.warning(request, f"La cotización #{cotizacion.id} ya fue convertida anteriormente.")
         return redirect('quotation_list')
 
-    # 2. Buscar la empresa dueña
+    # 2. Buscar o Crear Empresa (Salvavidas)
     empresa = CompanyProfile.objects.first()
-    
-    # --- SALVAVIDAS ---
-    # Si la base de datos de empresas está vacía, creamos una de emergencia
     if not empresa:
         empresa = CompanyProfile.objects.create(
             name="Mi Empresa (Auto-generada)",
@@ -1371,9 +1368,8 @@ def convertir_a_venta(request, pk):
             phone="0000-0000",
             email="admin@ejemplo.com"
         )
-    # ------------------
 
-    # 3. Crear Venta (Ahora 'empresa' nunca será None)
+    # 3. Crear Venta
     nueva_venta = Sale.objects.create(
         company=empresa,
         client=cotizacion.client,
@@ -1382,18 +1378,42 @@ def convertir_a_venta(request, pk):
         payment_method='EFECTIVO'
     )
 
-    # 4. Copiar Detalles
+    # 4. Copiar Detalles y RESTAR INVENTARIO 📉
+    errores_stock = []
+    
     for item in cotizacion.details.all():
+        # A. Crear el detalle de la venta
         SaleDetail.objects.create(
             sale=nueva_venta,
             product=item.product,
             quantity=item.quantity,
             unit_price=item.unit_price,
-            # Calculamos subtotal explícito por seguridad
             subtotal=item.quantity * item.unit_price
         )
+        
+        # B. Lógica de Inventario (Solo para productos tangibles)
+        producto = item.product
+        
+        # Verificamos si es un producto físico (asumiendo que tiene control de stock)
+        # Si su modelo tiene un campo 'type' o similar, aquí es donde sirve.
+        # Por ahora restamos a todo lo que tenga stock.
+        
+        if producto.stock >= item.quantity:
+            producto.stock -= item.quantity
+            producto.save()
+        else:
+            # Si no hay suficiente stock, lo anotamos pero permitimos la venta (o podríamos bloquearla)
+            errores_stock.append(f"Producto {producto.name}: Stock insuficiente (Tiene {producto.stock}, vendió {item.quantity})")
+            # Forzamos la resta para que quede en negativo y avise que debe reponer
+            producto.stock -= item.quantity 
+            producto.save()
 
-    messages.success(request, f"¡Éxito! Venta #{nueva_venta.id} generada correctamente.")
+    # 5. Mensaje Final
+    if errores_stock:
+        messages.warning(request, f"Venta creada, pero con alertas de stock: {', '.join(errores_stock)}")
+    else:
+        messages.success(request, f"¡Éxito! Venta #{nueva_venta.id} generada y stock actualizado.")
+        
     return redirect('quotation_list')
 
 # --- AGREGAR O REEMPLAZAR EN core/views.py ---
