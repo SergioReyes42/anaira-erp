@@ -17,12 +17,12 @@ class CompanySelectForm(forms.Form):
 class BankAccountForm(forms.ModelForm):
     class Meta:
         model = BankAccount
-        fields = ['bank_name', 'account_number', 'currency', 'current_balance']
+        fields = ['bank_name', 'account_number', 'currency', 'balance']
         labels = {
             'bank_name': 'Nombre del Banco',
             'account_number': 'Número de Cuenta',
             'currency': 'Moneda (GTQ/USD)',
-            'current_balance': 'Saldo Inicial'
+            'balance': 'Saldo Inicial'
         }
         widgets = {
             'bank_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Banco Industrial'}),

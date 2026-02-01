@@ -103,14 +103,23 @@ class JournalItem(models.Model):
 # 3. TESORERÍA (BANCOS Y SOCIOS)
 # ==========================================
 class BankAccount(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    bank_name = models.CharField(max_length=100, verbose_name="Nombre del Banco")
+    company = models.ForeignKey('CompanyProfile', on_delete=models.CASCADE, verbose_name="Empresa")
+    bank_name = models.CharField(max_length=50, verbose_name="Nombre del Banco")
     account_number = models.CharField(max_length=50, verbose_name="Número de Cuenta")
     currency = models.CharField(max_length=3, default='GTQ', verbose_name="Moneda")
-    current_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Saldo Actual")
-    accounting_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Cuenta Contable")
     
-    def __str__(self): return f"{self.bank_name} - {self.account_number}"
+    # --- ESTE ES EL CAMPO QUE FALTABA ---
+    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Saldo Actual")
+    # ------------------------------------
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.bank_name} - {self.account_number}"
+
+    class Meta:
+        verbose_name = "Cuenta Bancaria"
+        verbose_name_plural = "Cuentas Bancarias"
 
 class BankTransaction(models.Model):
     MOVEMENT_CHOICES = (

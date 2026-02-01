@@ -377,12 +377,12 @@ def bank_list(request):
 class BankAccountForm(forms.ModelForm):
     class Meta:
         model = BankAccount
-        fields = ['bank_name', 'account_number', 'currency', 'current_balance']
+        fields = ['bank_name', 'account_number', 'currency', 'balance']
         widgets = {
             'bank_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Banco Industrial'}),
             'account_number': forms.TextInput(attrs={'class': 'form-control'}),
             'currency': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'GTQ'}),
-            'current_balance': forms.NumberInput(attrs={'class': 'form-control'}),
+            'balance': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }
 
 @login_required
