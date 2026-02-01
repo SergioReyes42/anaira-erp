@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import mark_safe # Permite mostrar HTML (la imagen) en el admin
-from .models import Company, Employee, UserRoleCompany, Income, Gasto, Fleet
+from .models import Company, Employee, UserRoleCompany, Income, Gasto, Fleet, Client, Sale
 
 # CONFIGURACIÓN AVANZADA PARA EMPRESAS
 class CompanyAdmin(admin.ModelAdmin):
@@ -26,3 +26,17 @@ class FleetAdmin(admin.ModelAdmin):
     list_display = ('plate', 'brand', 'model', 'year', 'company') # Lo que se ve en la lista
     search_fields = ('plate', 'brand', 'model') # Barra de búsqueda
     list_filter = ('company', 'brand') # Filtros laterales
+
+@admin.register(Client)
+class ClientAdmin(admin.ModelAdmin):
+    list_display = ('name', 'nit', 'contact_name', 'phone', 'email')
+    search_fields = ('name', 'nit', 'contact_name')
+    list_filter = ('company',) # Si tiene campo company
+
+@admin.register(Sale)
+class SaleAdmin(admin.ModelAdmin):
+    list_display = ('id', 'client', 'date', 'total', 'payment_method')
+    list_filter = ('date', 'payment_method')
+
+# Si no tenía CompanyProfile registrado, agréguelo también:
+# admin.site.register(CompanyProfile)
