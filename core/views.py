@@ -1333,27 +1333,15 @@ def quotation_create(request):
 
 @login_required
 def quotation_pdf(request, pk):
-    # Buscar cotización
     cotizacion = get_object_or_404(Quotation, pk=pk)
     
-    # ESTRATEGIA: Traer el ÚLTIMO perfil creado.
-    # Como usted ya borró los viejos, el último TIENE que ser Grupo Transfer.
-    empresa = CompanyProfile.objects.last()
+    # 1. BÚSQUEDA SEGURA (Dinámica)
+    # Buscamos el perfil de empresa de este entorno (Tenant)
+    # Usamos .first() porque asumimos que cada cliente solo tiene SU propia empresa en su BD.
+    empresa = CompanyProfile.objects.first()
     
-    # DIAGNÓSTICO: Si por alguna razón extraña la base de datos devuelve vacío,
-    # forzamos los datos "a mano" para que NO salga 'Mi Empresa'.
-    if not empresa:
-        class EmpresaEmergency:
-            name = "GRUPO TRANSFER S.A."
-            nit = "120300443"
-            address = "15 Av Lote 6a Zona 0 Chinautla, Guatemala"
-            phone = ""
-            email = ""
-            logo = None 
-        empresa = EmpresaEmergency()
-
     context = {
         'c': cotizacion, 
-        'empresa': empresa,
+        'empresa': empresa, 
     }
     return render(request, 'core/sales/quotation_pdf.html', context)
