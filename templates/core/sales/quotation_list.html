@@ -37,11 +37,11 @@
                             </a>
 
                             {% if not c.sale %}
-                                <a href="{% url 'convertir_a_venta' c.id %}" class="btn btn-sm btn-success" title="Convertir a Venta" onclick="return confirm('¿Está seguro de convertir esta cotización en una Venta real?');">
+                                <a href="{% url 'convertir_a_venta' c.id %}" class="btn btn-sm btn-success" title="Convertir a Venta" onclick="return confirm('¿Confirmar Venta?');">
                                     <i class="bi bi-cash-coin"></i> Vender
                                 </a>
                             {% else %}
-                                <a href="{% url 'invoice_pdf' c.sale.id %}" target="_blank" class="btn btn-sm btn-primary" title="Imprimir Factura / Recibo">
+                                <a href="{% url 'invoice_pdf' c.sale.id %}" target="_blank" class="btn btn-sm btn-primary" title="Imprimir Factura">
                                     <i class="bi bi-receipt"></i> Factura
                                 </a>
                             {% endif %}
@@ -49,4 +49,14 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center py-
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            No hay cotizaciones registradas.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
