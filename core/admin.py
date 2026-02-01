@@ -29,9 +29,10 @@ class FleetAdmin(admin.ModelAdmin):
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
+    # Quitamos 'company' de list_filter porque dio error
     list_display = ('name', 'nit', 'contact_name', 'phone', 'email')
     search_fields = ('name', 'nit', 'contact_name')
-    list_filter = ('company',) # Si tiene campo company
+    # list_filter = ('company',)  <--- ESTA LÍNEA LA ELIMINAMOS O COMENTAMOS
 
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
