@@ -1272,11 +1272,11 @@ def client_create(request):
 
 from datetime import timedelta
 
+# --- 1. LISTA DE COTIZACIONES ---
 @login_required
 def quotation_list(request):
-    """Listado de Cotizaciones"""
-    cotizaciones = Quotation.objects.all().order_by('-id')
-    return render(request, 'core/sales/quotation_list.html', {'cotizaciones': cotizaciones})
+    quotations = Quotation.objects.all().order_by('-id')
+    return render(request, 'core/sales/quotation_list.html', {'quotations': quotations})
 
 @login_required
 def quotation_create(request):
@@ -1331,13 +1331,12 @@ def quotation_create(request):
         'validez': fecha_vencimiento
     })
 
+# --- 3. GENERAR PDF (CON EMPRESA DINÁMICA) ---
 @login_required
 def quotation_pdf(request, pk):
     cotizacion = get_object_or_404(Quotation, pk=pk)
     
-    # 1. BÚSQUEDA SEGURA (Dinámica)
-    # Buscamos el perfil de empresa de este entorno (Tenant)
-    # Usamos .first() porque asumimos que cada cliente solo tiene SU propia empresa en su BD.
+    # Busca la empresa del usuario (la primera disponible)
     empresa = CompanyProfile.objects.first()
     
     context = {
@@ -1345,43 +1344,43 @@ def quotation_pdf(request, pk):
         'empresa': empresa, 
     }
     return render(request, 'core/sales/quotation_pdf.html', context)
-
 # --- AGREGAR AL FINAL DE core/views.py ---
 from django.contrib import messages
 from .models import Sale, SaleDetail # Asegúrese de importar estos arriba
 
+# --- 4. CONVERTIR A VENTA (BOTÓN MÁGICO) ---
 @login_required
 def convertir_a_venta(request, pk):
-    # 1. Buscamos la cotización original
     cotizacion = get_object_or_404(Quotation, pk=pk)
     
-    # 2. Verificamos si ya fue convertida antes (para no duplicar)
     if hasattr(cotizacion, 'sale'):
-        messages.warning(request, f"La cotización #{cotizacion.id} ya fue convertida en venta anteriormente.")
+        messages.warning(request, f"La cotización #{cotizacion.id} ya fue convertida anteriormente.")
         return redirect('quotation_list')
 
-    # 3. Creamos la Venta (Cabecera)
-    empresa = CompanyProfile.objects.first() # Asignamos a la empresa actual
+    empresa = CompanyProfile.objects.first()
+    
+    # Crear Venta
     nueva_venta = Sale.objects.create(
         company=empresa,
         client=cotizacion.client,
-        quotation_origin=cotizacion, # Guardamos el vínculo
+        quotation_origin=cotizacion,
         total=cotizacion.total,
-        payment_method='EFECTIVO' # Por defecto, luego se puede editar
+        payment_method='EFECTIVO'
     )
 
-    # 4. Copiamos los detalles (Productos)
+    # Copiar Detalles
     for item in cotizacion.details.all():
         SaleDetail.objects.create(
             sale=nueva_venta,
             product=item.product,
             quantity=item.quantity,
-            unit_price=item.unit_price
+            unit_price=item.unit_price,
+            # El modelo SaleDetail calculará su subtotal automáticamente al guardar,
+            # pero por seguridad podríamos pasarlo también.
         )
-        # AQUÍ IRÁ LA LÓGICA DE RESTAR INVENTARIO MÁS ADELANTE
 
     messages.success(request, f"¡Éxito! Cotización #{cotizacion.id} convertida en Venta #{nueva_venta.id}")
-    return redirect('quotation_list') # Nos devuelve a la lista
+    return redirect('quotation_list')
 
 # --- AGREGAR O REEMPLAZAR EN core/views.py ---
 
@@ -1390,49 +1389,56 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import Client, Product, Quotation, QuotationDetail, Sale, SaleDetail, CompanyProfile
 from django.contrib import messages
 
+# --- 2. CREAR COTIZACIÓN (CORREGIDO: CÁLCULO DE SUBTOTAL) ---
 @login_required
 def create_quotation(request):
-    # 1. Si enviaron el formulario (POST)
     if request.method == 'POST':
         client_id = request.POST.get('client')
         valid_until = request.POST.get('valid_until')
         
-        # Crear la Cotización (Cabecera)
+        # 1. Crear la Cabecera
         cliente = Client.objects.get(id=client_id)
         cotizacion = Quotation.objects.create(
             client=cliente,
-            valid_until=valid_until
+            valid_until=valid_until,
+            total=0 # Iniciamos en 0, luego actualizamos
         )
         
-        # Guardar los productos (Detalles)
-        # El formulario envía listas de datos: products[], quantities[]
+        # 2. Guardar los Detalles
         products = request.POST.getlist('products[]')
         quantities = request.POST.getlist('quantities[]')
         
-        total = 0
+        total_general = 0
+        
         for i in range(len(products)):
-            if products[i] and quantities[i]: # Solo si hay datos válidos
+            if products[i] and quantities[i]:
                 producto = Product.objects.get(id=products[i])
                 cantidad = int(quantities[i])
-                precio = producto.price # Usamos el precio base del producto
+                precio = producto.price
+                
+                # --- CORRECCIÓN AQUÍ ---
+                # Calculamos el subtotal ANTES de guardar para evitar el error "null value"
+                subtotal_linea = precio * cantidad
                 
                 QuotationDetail.objects.create(
                     quotation=cotizacion,
                     product=producto,
                     quantity=cantidad,
-                    unit_price=precio
+                    unit_price=precio,
+                    subtotal=subtotal_linea  # <--- ¡ESTO FALTABA!
                 )
-                total += (precio * cantidad)
+                
+                total_general += subtotal_linea
         
-        # Actualizamos el total de la cotización
-        cotizacion.total = total
+        # 3. Actualizar el total final de la cotización
+        cotizacion.total = total_general
         cotizacion.save()
         
         messages.success(request, 'Cotización creada exitosamente')
         return redirect('quotation_list')
 
-    # 2. Si solo están entrando a la página (GET)
     else:
+        # Modo GET: Mostrar el formulario
         clients = Client.objects.all()
         products = Product.objects.all()
         return render(request, 'core/sales/quotation_form.html', {
