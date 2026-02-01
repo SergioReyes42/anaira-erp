@@ -156,6 +156,11 @@
             <a href="#menuCompras" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
                 <i class="bi bi-bag-check-fill me-2 text-success"></i> Compras
             </a>
+            <li class="nav-item">
+    <a class="nav-link" href="{% url 'purchase_list' %}">
+        <i class="bi bi-cart4"></i> Compras / Ingresos
+    </a>
+</li>
             <div class="collapse submenu" id="menuCompras">
                 <a href="{% url 'gasto_manual' %}" class="list-group-item list-group-item-action">
                     Registrar Gasto (IA) <span class="badge bg-primary badge-sidebar">New</span>
