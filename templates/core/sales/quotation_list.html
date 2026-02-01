@@ -1,60 +1,57 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="text-dark"><i class="bi bi-file-earmark-text text-warning"></i> Cotizaciones</h3>
-        <a href="{% url 'quotation_create' %}" class="btn btn-primary fw-bold">
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Cotizaciones</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'create_quotation' %}" class="btn btn-primary">
             <i class="bi bi-plus-lg"></i> Nueva Cotización
         </a>
     </div>
+</div>
 
-    <div class="card shadow border-0">
-        <div class="card-body p-0">
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
             <table class="table table-hover mb-0 align-middle">
                 <thead class="bg-light">
                     <tr>
                         <th class="ps-4">#</th>
                         <th>Fecha</th>
                         <th>Cliente</th>
-                        <th>Estado</th>
-                        <th class="text-end pe-4">Total</th>
-                        <th>Acciones</th>
+                        <th>Total</th>
+                        <th class="text-end pe-4">Acciones</th>
                     </tr>
-                    <a href="{% url 'quotation_pdf' c.id %}" target="_blank" class="btn btn-sm btn-secondary" title="Imprimir PDF">
-    <i class="bi bi-printer"></i>
-</a>
-
-{% if not c.sale %} <a href="{% url 'convertir_a_venta' c.id %}" class="btn btn-sm btn-success" title="Convertir a Venta" onclick="return confirm('¿Confirmar Venta? Esto generará un registro de cobro.');">
-        <i class="bi bi-cash-coin"></i> Vender
-    </a>
-{% else %}
-    <span class="badge bg-success">Vendida</span>
-{% endif %}
                 </thead>
                 <tbody>
-                    {% for c in cotizaciones %}
-                    <tr>
-                        <td class="ps-4 fw-bold text-primary">COT-{{ c.id }}</td>
+                    {% for c in quotations %} <tr>
+                        <td class="ps-4 fw-bold">#{{ c.id|stringformat:"05d" }}</td>
                         <td>{{ c.date|date:"d/m/Y" }}</td>
                         <td>{{ c.client.name }}</td>
-                        <td>
-                            {% if c.status == 'DRAFT' %}<span class="badge bg-secondary">Borrador</span>
-                            {% elif c.status == 'SENT' %}<span class="badge bg-info text-dark">Enviada</span>
-                            {% elif c.status == 'ACCEPTED' %}<span class="badge bg-success">Aceptada</span>
-                            {% else %}<span class="badge bg-danger">Rechazada</span>{% endif %}
-                        </td>
-                        <td class="text-end pe-4 fw-bold">Q {{ c.total }}</td>
-                        <td>
-                            <a href="{% url 'quotation_pdf' c.id %}" target="_blank" class="btn btn-sm btn-outline-dark" title="Imprimir PDF">
-    <i class="bi bi-printer"></i>
-</a>
-                        </td>
+                        <td class="fw-bold text-success">Q {{ c.total }}</td>
+                        
+                        <td class="text-end pe-4">
+                            <a href="{% url 'quotation_pdf' c.id %}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Imprimir PDF">
+                                <i class="bi bi-printer"></i>
+                            </a>
+
+                            {% if not c.sale %}
+                                <a href="{% url 'convertir_a_venta' c.id %}" class="btn btn-sm btn-success" title="Convertir a Venta" onclick="return confirm('¿Está seguro de convertir esta cotización en una Venta real?');">
+                                    <i class="bi bi-cash-coin"></i> Vender
+                                </a>
+                            {% else %}
+                                <span class="badge bg-success">Vendida</span>
+                            {% endif %}
+                            
+                            </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="6" class="text-center py-5 text-muted">No hay cotizaciones registradas.</td></tr>
-                    {% endfor %}
-                </tbody>
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            No hay cotizaciones registradas aún.
+                        </td>
+                    </tr>
+                    {% endfor %} </tbody>
             </table>
         </div>
     </div>
