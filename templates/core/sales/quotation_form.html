@@ -102,76 +102,125 @@
     </div>
 </form>
 
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0"><i class="bi bi-file-earmark-plus"></i> Nueva Cotización</h3>
+        </div>
+        <div class="card-body">
+            <form method="post" id="quotationForm">
+                {% csrf_token %}
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Seleccionar Cliente:</label>
+                        <select name="client" class="form-select" required>
+                            <option value="">-- Busque un cliente --</option>
+                            {% for client in clients %}
+                                <option value="{{ client.id }}">{{ client.name }} (NIT: {{ client.nit }})</option>
+                            {% empty %}
+                                <option disabled>⚠️ No hay clientes registrados</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            ¿No aparece? <a href="/admin/core/client/add/" target="_blank">Cree uno nuevo aquí</a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Válida hasta:</label>
+                        <input type="date" name="valid_until" class="form-control" required>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h5 class="mb-3">Productos</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="productsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th width="150">Cantidad</th>
+                                <th width="50"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsBody">
+                            </tbody>
+                    </table>
+                </div>
+
+                <button type="button" class="btn btn-outline-primary btn-sm mb-3" onclick="addProductRow()">
+                    <i class="bi bi-plus-circle"></i> Agregar Producto
+                </button>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="bi bi-save"></i> Guardar Cotización
+                    </button>
+                    <a href="{% url 'quotation_list' %}" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="django-data" style="display:none;">
+    {% for p in products %}
+    <span class="product-data" 
+          data-id="{{ p.id }}" 
+          data-name="{{ p.name }}" 
+          data-price="{{ p.price }}">
+    </span>
+    {% endfor %}
+</div>
+
 <script>
-    // 1. Cuando seleccionan un producto, poner su precio automático
-    document.getElementById('selectProducto').addEventListener('change', function() {
-        var option = this.options[this.selectedIndex];
-        var precio = option.getAttribute('data-price');
-        if(precio) {
-            document.getElementById('inputPrecio').value = precio;
-        }
+    // 1. Leemos los datos desde el HTML oculto
+    const productsList = [];
+    const dataElements = document.querySelectorAll('#django-data .product-data');
+
+    // Convertimos los elementos HTML a nuestra lista de objetos JS
+    dataElements.forEach(item => {
+        productsList.push({
+            id: item.dataset.id,
+            // dataset decodifica automáticamente caracteres especiales
+            name: `${item.dataset.name} - Q${item.dataset.price}`
+        });
     });
 
-    // 2. Función Agregar Fila
-    function agregarFila() {
-        var select = document.getElementById('selectProducto');
-        var idProd = select.value;
-        var nombre = select.options[select.selectedIndex].getAttribute('data-name');
+    // 2. Función para agregar filas (NO CAMBIA)
+    function addProductRow() {
+        const tbody = document.getElementById('productsBody');
+        const row = document.createElement('tr');
         
-        var precio = parseFloat(document.getElementById('inputPrecio').value) || 0;
-        var cantidad = parseInt(document.getElementById('inputCant').value) || 1;
-        var subtotal = precio * cantidad;
+        let optionsHtml = '<option value="">-- Seleccionar --</option>';
+        productsList.forEach(p => {
+            optionsHtml += `<option value="${p.id}">${p.name}</option>`;
+        });
 
-        if(!idProd || precio <= 0) {
-            alert("Seleccione un producto y precio válido.");
-            return;
-        }
-
-        var fila = `
-            <tr>
-                <td>
-                    <input type="hidden" name="product_id[]" value="${idProd}">
-                    ${nombre}
-                </td>
-                <td class="text-center">
-                    <input type="hidden" name="qty[]" value="${cantidad}">
-                    ${cantidad}
-                </td>
-                <td class="text-end">
-                    <input type="hidden" name="price[]" value="${precio.toFixed(2)}">
-                    ${precio.toFixed(2)}
-                </td>
-                <td class="text-end fw-bold">
-                    <input type="hidden" name="subtotal[]" value="${subtotal.toFixed(2)}">
-                    Q ${subtotal.toFixed(2)}
-                </td>
-                <td>
-                    <button type="button" class="btn btn-danger btn-sm py-0" onclick="eliminarFila(this, ${subtotal})">&times;</button>
-                </td>
-            </tr>
+        row.innerHTML = `
+            <td>
+                <select name="products[]" class="form-select" required>
+                    ${optionsHtml}
+                </select>
+            </td>
+            <td>
+                <input type="number" name="quantities[]" class="form-control" value="1" min="1" required>
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
         `;
-
-        document.getElementById('tablaProductos').insertAdjacentHTML('beforeend', fila);
-        actualizarTotal(subtotal);
-        
-        // Limpiar inputs
-        select.value = "";
-        document.getElementById('inputPrecio').value = "";
-        document.getElementById('inputCant').value = "1";
+        tbody.appendChild(row);
     }
 
-    // 3. Función Eliminar y Recalcular
-    function eliminarFila(btn, monto) {
-        var row = btn.parentNode.parentNode;
-        row.parentNode.removeChild(row);
-        actualizarTotal(-monto);
-    }
-
-    var totalAcumulado = 0;
-    function actualizarTotal(monto) {
-        totalAcumulado += monto;
-        document.getElementById('spanTotal').innerText = totalAcumulado.toFixed(2);
-        document.getElementById('inputTotalGeneral').value = totalAcumulado.toFixed(2);
-    }
+    // Agregar una fila al cargar
+    window.onload = addProductRow;
 </script>
+{% endblock %}
 {% endblock %}
