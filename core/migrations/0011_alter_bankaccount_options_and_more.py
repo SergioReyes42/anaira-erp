@@ -6,16 +6,27 @@ from django.db import connection # <--- AGREGUE ESTE
 
 def limpiar_fantasmas(apps, schema_editor):
     with connection.cursor() as cursor:
-        # PASO 1: Borrar los MOVIMIENTOS (Hijos) de esas cuentas huérfanas
-        # Buscamos los movimientos donde la cuenta pertenezca a la empresa 2
+        # PASO 1: Borrar de la tabla 'core_banktransaction' (La que dio error ahorita)
         cursor.execute("""
-            DELETE FROM core_bankmovement 
+            DELETE FROM core_banktransaction 
             WHERE account_id IN (
                 SELECT id FROM core_bankaccount WHERE company_id = 2
             );
         """)
 
-        # PASO 2: Ahora sí, borrar la CUENTA (Padre)
+        # PASO 2: Borrar de la tabla 'core_bankmovement' (La que dio error antes, por si acaso)
+        # Usamos un bloque TRY/CATCH en SQL por si la tabla no existe, para que no falle
+        try:
+            cursor.execute("""
+                DELETE FROM core_bankmovement 
+                WHERE account_id IN (
+                    SELECT id FROM core_bankaccount WHERE company_id = 2
+                );
+            """)
+        except:
+            pass # Si la tabla no existe, ignoramos el error
+
+        # PASO 3: Ahora sí, borrar la CUENTA PADRE
         cursor.execute("DELETE FROM core_bankaccount WHERE company_id = 2;")
 
 class Migration(migrations.Migration):
