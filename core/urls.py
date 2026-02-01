@@ -43,4 +43,17 @@ urlpatterns = [
     path('ventas/cotizacion/<int:pk>/pdf/', views.quotation_pdf, name='quotation_pdf'),
 
     path('ventas/convertir/<int:pk>/', views.convertir_a_venta, name='convertir_a_venta'),
+
+    # --- RUTAS DE COTIZACIONES ---
+    # 1. Lista (La pantalla donde está ahorita)
+    path('ventas/cotizaciones/', views.quotation_list, name='quotation_list'),
+    
+    # 2. Crear Nueva (¡ESTA ES LA QUE LE FALTA O SE LLAMA DIFERENTE!)
+    path('ventas/cotizaciones/nueva/', views.create_quotation, name='create_quotation'),
+
+    # 3. Imprimir PDF
+    path('ventas/cotizacion/<int:pk>/pdf/', views.quotation_pdf, name='quotation_pdf'),
+
+    # 4. Convertir a Venta (Botón Mágico)
+    path('ventas/convertir/<int:pk>/', views.convertir_a_venta, name='convertir_a_venta'),
 ]
