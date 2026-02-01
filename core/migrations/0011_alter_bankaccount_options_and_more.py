@@ -12,6 +12,8 @@ def limpiar_fantasmas(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
+    atomic = False
+
     dependencies = [
         ('core', '0010_provider_purchase_purchasedetail'),
     ]
