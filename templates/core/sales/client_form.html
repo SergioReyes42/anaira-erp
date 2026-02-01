@@ -1,63 +1,57 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card shadow border-0">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="mb-0"><i class="bi bi-person-plus-fill"></i> Registrar Cliente</h5>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">NIT / RUT</label>
-                            {{ form.nit }}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i class="bi bi-person-plus-fill"></i> Registrar Nuevo Cliente</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Nombre / Razón Social *</label>
+                                <input type="text" name="name" class="form-control" required placeholder="Ej: Distribuidora El Sol S.A.">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">NIT *</label>
+                                <input type="text" name="nit" class="form-control" required placeholder="Sin guiones">
+                            </div>
                         </div>
-                        <div class="col-md-8">
-                            <label class="form-label fw-bold">Razón Social / Nombre</label>
-                            {{ form.name }}
-                        </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Dirección Fiscal</label>
-                        {{ form.address }}
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Teléfono</label>
-                            {{ form.phone }}
+                        <div class="mb-3">
+                            <label class="form-label">Dirección Fiscal</label>
+                            <input type="text" name="address" class="form-control" placeholder="Ciudad, Zona, Calle...">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Email Facturación</label>
-                            {{ form.email }}
-                        </div>
-                    </div>
 
-                    <hr>
-                    <h6 class="text-muted">Configuración Comercial</h6>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Días de Crédito</label>
-                            {{ form.credit_days }}
-                            <div class="form-text">0 para Contado.</div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Teléfono</label>
+                                <input type="text" name="phone" class="form-control" placeholder="Teléfono de contacto">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Correo Electrónico</label>
+                                <input type="email" name="email" class="form-control" placeholder="cliente@empresa.com">
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Límite de Crédito (Q)</label>
-                            {{ form.credit_limit }}
-                        </div>
-                    </div>
 
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-warning fw-bold">Guardar Cliente</button>
-                        <a href="{% url 'client_list' %}" class="btn btn-light border">Cancelar</a>
-                    </div>
-                </form>
+                        <div class="mb-4">
+                            <label class="form-label">Nombre del Contacto (Persona)</label>
+                            <input type="text" name="contact_name" class="form-control" placeholder="Ej: Lic. Juan Pérez">
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning btn-lg text-dark fw-bold">
+                                <i class="bi bi-save"></i> Guardar Cliente
+                            </button>
+                            <a href="{% url 'client_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

@@ -8,6 +8,7 @@ urlpatterns = [
     # --- 2. RUTAS DE CLIENTES ---
     path('clientes/', views.client_list, name='client_list'),
     path('admin/core/client/add/', views.client_list, name='add_client_shortcut'), # Atajo
+    path('clientes/nuevo/', views.create_client, name='client_create'),
 
     # --- 3. VENTAS Y COTIZACIONES ---
     path('ventas/cotizaciones/', views.quotation_list, name='quotation_list'),

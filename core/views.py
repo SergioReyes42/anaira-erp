@@ -1567,3 +1567,31 @@ def create_purchase(request):
             'providers': providers,
             'products': products
         })
+
+@login_required
+def create_client(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        nit = request.POST.get('nit')
+        address = request.POST.get('address')
+        phone = request.POST.get('phone')
+        email = request.POST.get('email')
+        contact_name = request.POST.get('contact_name')
+        
+        # Buscamos la empresa principal para asignarle el cliente
+        empresa = CompanyProfile.objects.first()
+        
+        Client.objects.create(
+            company=empresa,
+            name=name,
+            nit=nit,
+            address=address,
+            phone=phone,
+            email=email,
+            contact_name=contact_name
+        )
+        
+        messages.success(request, 'Cliente registrado exitosamente.')
+        return redirect('client_list')
+        
+    return render(request, 'core/sales/client_form.html')
