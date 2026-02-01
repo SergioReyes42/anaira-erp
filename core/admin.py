@@ -1,6 +1,13 @@
 from django.contrib import admin
-# Importamos TODOS los modelos para que no falte ninguno
-from .models import CompanyProfile, Client, Product, Quotation, Sale, SaleDetail
+from .models import (
+    CompanyProfile, 
+    Client, 
+    Product, 
+    Quotation, 
+    QuotationDetail,  # <--- ¡IMPORTANTE! Agregamos esto
+    Sale, 
+    SaleDetail
+)
 
 # --- 1. PERFIL DE EMPRESA ---
 @admin.register(CompanyProfile)
@@ -8,14 +15,12 @@ class CompanyProfileAdmin(admin.ModelAdmin):
     list_display = ('name', 'nit', 'phone', 'email')
     search_fields = ('name', 'nit')
 
-# --- 2. CLIENTES (Corregido: Sin el filtro que daba error) ---
+# --- 2. CLIENTES ---
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    # Mostramos las columnas más importantes
     list_display = ('name', 'nit', 'contact_name', 'phone', 'email')
-    # Permitimos buscar por nombre o NIT
     search_fields = ('name', 'nit', 'contact_name')
-    # OJO: Quitamos 'list_filter' porque la relación con company no estaba lista y daba error.
+    # Sin list_filter para evitar errores
 
 # --- 3. PRODUCTOS ---
 @admin.register(Product)
@@ -26,7 +31,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 # --- 4. COTIZACIONES ---
 class QuotationDetailInline(admin.TabularInline):
-    model = Quotation.details.through # O el modelo intermedio si se usa
+    model = QuotationDetail  # <--- CORREGIDO: Apuntamos directo al modelo
     extra = 0
 
 @admin.register(Quotation)
@@ -34,8 +39,9 @@ class QuotationAdmin(admin.ModelAdmin):
     list_display = ('id', 'client', 'date', 'total', 'valid_until')
     list_filter = ('date',)
     search_fields = ('client__name',)
+    inlines = [QuotationDetailInline]
 
-# --- 5. VENTAS (El nuevo módulo) ---
+# --- 5. VENTAS ---
 class SaleDetailInline(admin.TabularInline):
     model = SaleDetail
     extra = 0
