@@ -7,7 +7,7 @@ from operator import attrgetter
 from .ai_brain import analizar_documento_ia
 from .models import Client
 from .models import Product
-from .models import Quotation, QuotationDetail, CompanyProfile
+from .models import Quotation, QuotationDetail, CompanyProfile, Provider, Purchase, PurchaseDetail
 
 
 # --- IMPORTS DE DJANGO ---
@@ -1488,3 +1488,66 @@ def invoice_pdf(request, pk):
     return render(request, 'core/sales/invoice_pdf.html', {
         'sale': venta
     })
+
+# --- 5. COMPRAS (MÓDULO NUEVO) ---
+
+@login_required
+def purchase_list(request):
+    # Mostramos las compras ordenadas por fecha (la más reciente arriba)
+    purchases = Purchase.objects.all().order_by('-date')
+    return render(request, 'core/purchases/purchase_list.html', {'purchases': purchases})
+
+@login_required
+def create_purchase(request):
+    if request.method == 'POST':
+        provider_id = request.POST.get('provider')
+        reference = request.POST.get('reference')
+        
+        # 1. Crear Cabecera de Compra
+        proveedor = Provider.objects.get(id=provider_id)
+        nueva_compra = Purchase.objects.create(
+            company=CompanyProfile.objects.first(), # Asignamos a la empresa principal
+            provider=proveedor,
+            reference=reference,
+            total=0 # Se calcula abajo
+        )
+        
+        # 2. Guardar Detalles
+        products = request.POST.getlist('products[]')
+        quantities = request.POST.getlist('quantities[]')
+        costs = request.POST.getlist('costs[]') # Precio de Costo
+        
+        total_compra = 0
+        
+        for i in range(len(products)):
+            if products[i] and quantities[i]:
+                producto = Product.objects.get(id=products[i])
+                cantidad = int(quantities[i])
+                costo = float(costs[i])
+                
+                # Al crear esto, la "Señal" automática que hicimos antes 
+                # aumentará el stock sola. No hay que programarlo aquí.
+                PurchaseDetail.objects.create(
+                    purchase=nueva_compra,
+                    product=producto,
+                    quantity=cantidad,
+                    cost_price=costo
+                )
+                
+                total_compra += (cantidad * costo)
+        
+        # 3. Actualizar Total
+        nueva_compra.total = total_compra
+        nueva_compra.save()
+        
+        messages.success(request, f'Compra #{nueva_compra.id} registrada y Stock actualizado.')
+        return redirect('purchase_list')
+
+    else:
+        # Modo GET: Mostrar formulario
+        providers = Provider.objects.all()
+        products = Product.objects.all()
+        return render(request, 'core/purchases/purchase_form.html', {
+            'providers': providers,
+            'products': products
+        })

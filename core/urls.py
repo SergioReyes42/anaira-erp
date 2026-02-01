@@ -58,5 +58,9 @@ urlpatterns = [
     path('ventas/convertir/<int:pk>/', views.convertir_a_venta, name='convertir_a_venta'),
 
     path('ventas/factura/<int:pk>/', views.invoice_pdf, name='invoice_pdf'),
+
+    # Rutas de Compras
+    path('compras/', views.purchase_list, name='purchase_list'),
+    path('compras/nueva/', views.create_purchase, name='create_purchase'),
     
 ]
