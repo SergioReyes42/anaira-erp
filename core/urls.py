@@ -2,67 +2,42 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # === DASHBOARD PRINCIPAL ===
-    path('', views.home, name='home'),
+    # --- 1. HOME / DASHBOARD (LA ENTRADA PRINCIPAL) ---
+    path('', views.home, name='home'), # <--- Aquí estaba el detalle, debe apuntar a 'home'
 
-    path('', views.bank_list, name='home'), # Por ahora el inicio es bancos
+    # --- 2. RUTAS DE CLIENTES ---
+    path('clientes/', views.client_list, name='client_list'),
+    path('admin/core/client/add/', views.client_list, name='add_client_shortcut'), # Atajo
 
-    # === TESORERÍA Y BANCOS (Lo que ya funciona) ===
+    # --- 3. VENTAS Y COTIZACIONES ---
+    path('ventas/cotizaciones/', views.quotation_list, name='quotation_list'),
+    path('ventas/cotizaciones/nueva/', views.create_quotation, name='create_quotation'),
+    path('ventas/cotizaciones/<int:pk>/pdf/', views.quotation_pdf, name='quotation_pdf'),
+    path('ventas/convertir/<int:pk>/', views.convertir_a_venta, name='convertir_a_venta'),
+    path('ventas/factura/<int:pk>/', views.invoice_pdf, name='invoice_pdf'),
+
+    # --- 4. COMPRAS (NUEVO) ---
+    path('compras/', views.purchase_list, name='purchase_list'),
+    path('compras/nueva/', views.create_purchase, name='create_purchase'),
+
+    # --- 5. INVENTARIO Y LOGÍSTICA ---
+    path('inventario/', views.inventory_list, name='inventory_list'),
+    
+    # --- 6. TESORERÍA / BANCOS ---
     path('bancos/', views.bank_list, name='bank_list'),
     path('bancos/crear/', views.bank_create, name='bank_create'),
     path('bancos/transaccion/', views.bank_transaction_create, name='bank_transaction_create'),
-    path('bancos/estado-de-cuenta/<int:bank_id>/', views.bank_statement, name='bank_statement'),
-    path('bancos/recalcular/<int:bank_id>/', views.recalcular_saldo, name='recalcular_saldo'),
-    path('transaccion/eliminar/<int:pk>/', views.delete_transaction, name='delete_transaction'),
 
-    # === GASTOS (Lo que ya funciona) ===
-    path('gastos/nuevo/', views.gasto_manual, name='gasto_manual'),
-    path('gastos/lista/', views.expense_list, name='expense_list'), # Asegúrese de tener esta vista o cambie el nombre
-
-    # === CONTABILIDAD (NUEVO - Para que el menú no falle) ===
-    path('contabilidad/libro-diario/', views.journal_list, name='journal_list'),
-    path('contabilidad/libro-mayor/', views.ledger_list, name='ledger_list'),
+    # --- 7. CONTABILIDAD ---
+    path('contabilidad/diario/', views.journal_list, name='journal_list'),
+    path('contabilidad/mayor/', views.ledger_list, name='ledger_list'),
     path('contabilidad/balance-saldos/', views.trial_balance, name='trial_balance'),
-    
-    # === ESTADOS FINANCIEROS (NUEVO) ===
-    path('financiero/estado-resultados/', views.income_statement, name='income_statement'),
-    path('financiero/balance-general/', views.balance_sheet, name='balance_sheet'),
-    
-    # === RRHH (NUEVO) ===
+    path('contabilidad/estado-resultados/', views.income_statement, name='income_statement'),
+    path('contabilidad/balance-general/', views.balance_sheet, name='balance_sheet'),
+
+    # --- 8. RRHH ---
     path('rrhh/empleados/', views.employee_list, name='employee_list'),
-
-    # === LOGÍSTICA / INVENTARIO (Aquí estaba el error) ===
-    path('inventario/kardex/', views.inventory_list, name='inventory_list'),
-
-  # === RUTAS DE CLIENTES ===
-    path('clientes/', views.client_list, name='client_list'),
-    path('clientes/nuevo/', views.client_create, name='client_create'),
-
-  # === COTIZACIONES ===
-    path('ventas/cotizaciones/', views.quotation_list, name='quotation_list'),
-    path('ventas/cotizacion/nueva/', views.quotation_create, name='quotation_create'),
-
-    path('ventas/cotizacion/<int:pk>/pdf/', views.quotation_pdf, name='quotation_pdf'),
-
-    path('ventas/convertir/<int:pk>/', views.convertir_a_venta, name='convertir_a_venta'),
-
-    # --- RUTAS DE COTIZACIONES ---
-    # 1. Lista (La pantalla donde está ahorita)
-    path('ventas/cotizaciones/', views.quotation_list, name='quotation_list'),
     
-    # 2. Crear Nueva (¡ESTA ES LA QUE LE FALTA O SE LLAMA DIFERENTE!)
-    path('ventas/cotizaciones/nueva/', views.create_quotation, name='create_quotation'),
-
-    # 3. Imprimir PDF
-    path('ventas/cotizacion/<int:pk>/pdf/', views.quotation_pdf, name='quotation_pdf'),
-
-    # 4. Convertir a Venta (Botón Mágico)
-    path('ventas/convertir/<int:pk>/', views.convertir_a_venta, name='convertir_a_venta'),
-
-    path('ventas/factura/<int:pk>/', views.invoice_pdf, name='invoice_pdf'),
-
-    # Rutas de Compras
-    path('compras/', views.purchase_list, name='purchase_list'),
-    path('compras/nueva/', views.create_purchase, name='create_purchase'),
-    
+    # --- 9. GASTOS ---
+    path('gastos/manual/', views.gasto_manual, name='gasto_manual'),
 ]
