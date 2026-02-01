@@ -156,11 +156,12 @@
             <a href="#menuCompras" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
                 <i class="bi bi-bag-check-fill me-2 text-success"></i> Compras
             </a>
+            
             <div class="collapse submenu" id="menuCompras">
                 <a href="{% url 'purchase_list' %}" class="list-group-item list-group-item-action fw-bold text-white">
                     <i class="bi bi-cart4 me-2"></i> Historial de Compras
                 </a>
-            <div class="collapse submenu" id="menuCompras">
+
                 <a href="{% url 'gasto_manual' %}" class="list-group-item list-group-item-action">
                     Registrar Gasto (IA) <span class="badge bg-primary badge-sidebar">New</span>
                 </a>
@@ -169,7 +170,6 @@
                 <a href="#" class="list-group-item list-group-item-action">Proveedores</a>
                 <a href="#" class="list-group-item list-group-item-action">Importaciones / Aduana</a>
             </div>
-
             <a href="#menuLogistica" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
                 <i class="bi bi-box-seam-fill me-2 text-white"></i> Logística
             </a>
@@ -249,6 +249,7 @@
 
         </div>
     </div>
+    
     <div id="page-content-wrapper">
         
         <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
