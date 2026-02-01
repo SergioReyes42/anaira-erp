@@ -1349,17 +1349,31 @@ from django.contrib import messages
 from .models import Sale, SaleDetail # Asegúrese de importar estos arriba
 
 # --- 4. CONVERTIR A VENTA (BOTÓN MÁGICO) ---
-@login_required
+login_required
 def convertir_a_venta(request, pk):
     cotizacion = get_object_or_404(Quotation, pk=pk)
     
+    # 1. Evitar duplicados
     if hasattr(cotizacion, 'sale'):
         messages.warning(request, f"La cotización #{cotizacion.id} ya fue convertida anteriormente.")
         return redirect('quotation_list')
 
+    # 2. Buscar la empresa dueña
     empresa = CompanyProfile.objects.first()
     
-    # Crear Venta
+    # --- SALVAVIDAS ---
+    # Si la base de datos de empresas está vacía, creamos una de emergencia
+    if not empresa:
+        empresa = CompanyProfile.objects.create(
+            name="Mi Empresa (Auto-generada)",
+            nit="CF",
+            address="Ciudad",
+            phone="0000-0000",
+            email="admin@ejemplo.com"
+        )
+    # ------------------
+
+    # 3. Crear Venta (Ahora 'empresa' nunca será None)
     nueva_venta = Sale.objects.create(
         company=empresa,
         client=cotizacion.client,
@@ -1368,18 +1382,18 @@ def convertir_a_venta(request, pk):
         payment_method='EFECTIVO'
     )
 
-    # Copiar Detalles
+    # 4. Copiar Detalles
     for item in cotizacion.details.all():
         SaleDetail.objects.create(
             sale=nueva_venta,
             product=item.product,
             quantity=item.quantity,
             unit_price=item.unit_price,
-            # El modelo SaleDetail calculará su subtotal automáticamente al guardar,
-            # pero por seguridad podríamos pasarlo también.
+            # Calculamos subtotal explícito por seguridad
+            subtotal=item.quantity * item.unit_price
         )
 
-    messages.success(request, f"¡Éxito! Cotización #{cotizacion.id} convertida en Venta #{nueva_venta.id}")
+    messages.success(request, f"¡Éxito! Venta #{nueva_venta.id} generada correctamente.")
     return redirect('quotation_list')
 
 # --- AGREGAR O REEMPLAZAR EN core/views.py ---
