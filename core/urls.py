@@ -3,6 +3,8 @@ from . import views
 
 urlpatterns = [
     # === DASHBOARD PRINCIPAL ===
+    path('', views.home, name='home'),
+
     path('', views.bank_list, name='home'), # Por ahora el inicio es bancos
 
     # === TESORERÍA Y BANCOS (Lo que ya funciona) ===
