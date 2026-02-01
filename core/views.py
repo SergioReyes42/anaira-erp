@@ -1382,3 +1382,60 @@ def convertir_a_venta(request, pk):
 
     messages.success(request, f"¡Éxito! Cotización #{cotizacion.id} convertida en Venta #{nueva_venta.id}")
     return redirect('quotation_list') # Nos devuelve a la lista
+
+# --- AGREGAR O REEMPLAZAR EN core/views.py ---
+
+# Asegúrese de tener estos imports al inicio del archivo:
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Client, Product, Quotation, QuotationDetail, Sale, SaleDetail, CompanyProfile
+from django.contrib import messages
+
+@login_required
+def create_quotation(request):
+    # 1. Si enviaron el formulario (POST)
+    if request.method == 'POST':
+        client_id = request.POST.get('client')
+        valid_until = request.POST.get('valid_until')
+        
+        # Crear la Cotización (Cabecera)
+        cliente = Client.objects.get(id=client_id)
+        cotizacion = Quotation.objects.create(
+            client=cliente,
+            valid_until=valid_until
+        )
+        
+        # Guardar los productos (Detalles)
+        # El formulario envía listas de datos: products[], quantities[]
+        products = request.POST.getlist('products[]')
+        quantities = request.POST.getlist('quantities[]')
+        
+        total = 0
+        for i in range(len(products)):
+            if products[i] and quantities[i]: # Solo si hay datos válidos
+                producto = Product.objects.get(id=products[i])
+                cantidad = int(quantities[i])
+                precio = producto.price # Usamos el precio base del producto
+                
+                QuotationDetail.objects.create(
+                    quotation=cotizacion,
+                    product=producto,
+                    quantity=cantidad,
+                    unit_price=precio
+                )
+                total += (precio * cantidad)
+        
+        # Actualizamos el total de la cotización
+        cotizacion.total = total
+        cotizacion.save()
+        
+        messages.success(request, 'Cotización creada exitosamente')
+        return redirect('quotation_list')
+
+    # 2. Si solo están entrando a la página (GET)
+    else:
+        clients = Client.objects.all()
+        products = Product.objects.all()
+        return render(request, 'core/sales/quotation_form.html', {
+            'clients': clients,
+            'products': products
+        })
