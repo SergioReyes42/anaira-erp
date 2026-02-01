@@ -544,3 +544,16 @@ class PurchaseDetail(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
+    
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+@receiver(post_save, sender=PurchaseDetail)
+def update_inventory_on_purchase(sender, instance, created, **kwargs):
+    """
+    Automáticamente suma al stock cuando se crea un detalle de compra.
+    """
+    if created: # Solo si es un registro NUEVO (para no sumar doble si edita)
+        producto = instance.product
+        producto.stock += instance.quantity
+        producto.save()
