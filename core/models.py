@@ -447,3 +447,49 @@ class QuotationDetail(models.Model):
 
     def __str__(self):
         return f"Detalle Cot-{self.quotation.id}"
+    
+# --- AGREGAR AL FINAL DE core/models.py ---
+
+class Sale(models.Model):
+    """Registro de una Venta completada (Facturada)"""
+    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, verbose_name="Cliente")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Venta")
+    
+    # Relación con la cotización original (Opcional, por si la venta vino de una cotización)
+    quotation_origin = models.OneToOneField(Quotation, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Cotización Origen")
+    
+    payment_method = models.CharField(max_length=50, choices=[
+        ('EFECTIVO', 'Efectivo'),
+        ('TRANSFERENCIA', 'Transferencia'),
+        ('CHEQUE', 'Cheque'),
+        ('CREDITO', 'Crédito / Por Cobrar'),
+    ], default='EFECTIVO', verbose_name="Método de Pago")
+    
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # Correlativo de Factura (Para control interno o SAT)
+    invoice_number = models.CharField(max_length=50, blank=True, verbose_name="No. Factura/Recibo")
+
+    def __str__(self):
+        return f"Venta #{self.id} - {self.client.name}"
+
+    class Meta:
+        verbose_name = "Venta"
+        verbose_name_plural = "Ventas"
+
+
+class SaleDetail(models.Model):
+    """Productos dentro de la venta"""
+    sale = models.ForeignKey(Sale, related_name='details', on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(verbose_name="Cantidad")
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Precio Unitario")
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+
+    def save(self, *args, **kwargs):
+        self.subtotal = self.quantity * self.unit_price
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.name}"
