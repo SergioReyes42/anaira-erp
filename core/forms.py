@@ -45,6 +45,11 @@ class BankTransactionForm(forms.ModelForm):
             'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }
 
+labels = {
+            'account': 'Cuenta',
+            'amount': 'CUANTO BILLETE (PRUEBA)',  # <--- CAMBIO VISIBLE
+        }
+
 class TransferForm(forms.Form):
     from_account = forms.ModelChoiceField(queryset=None, label="Cuenta Origen", widget=forms.Select(attrs={'class': 'form-select'}))
     to_account = forms.ModelChoiceField(queryset=None, label="Cuenta Destino", widget=forms.Select(attrs={'class': 'form-select'}))
