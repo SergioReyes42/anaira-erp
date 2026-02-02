@@ -22,6 +22,7 @@ from django.db.models import Sum, Q, Count
 from django.conf import settings
 from .models import BankAccount
 from .forms import BankTransactionForm
+from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from datetime import date
@@ -425,69 +426,50 @@ class BankTransactionForm(forms.ModelForm):
 
 @login_required
 def bank_transaction_create(request):
-    # Intentamos obtener la cuenta de la URL si viene (ej: ?account=1)
-    account_id = request.GET.get('account')
-    initial_type = request.GET.get('type', 'OUT')
+    # Capturamos si es "IN" (Depósito) o "OUT" (Cheque/Retiro) desde la URL
+    tipo_operacion = request.GET.get('type', 'OUT') 
     
-    datos_ia = None 
-
     if request.method == 'POST':
-        # --- LÓGICA IA ---
-        if 'analizar_ia' in request.POST and request.FILES.get('evidence'):
-            imagen = request.FILES['evidence']
-            # Llamamos al cerebro con contexto (IN o OUT)
-            resultado = analizar_documento_ia(imagen, contexto=initial_type)
-            
-            if resultado['exito']:
-                datos = resultado['datos']
-                messages.success(request, f"IA Detectada: {resultado['tipo_detectado']}.")
-                
-                # Preparamos los datos para que el usuario los vea
-                initial_data = {
-                    'movement_type': initial_type,
-                    'amount': datos.get('monto', 0) if datos.get('monto') else datos.get('total', 0),
-                    'description': f"{resultado['tipo_detectado']} detectado (Ref: {datos.get('numero_cheque') or datos.get('no_boleta')})",
-                    'reference': datos.get('numero_cheque') or datos.get('no_boleta'),
-                    'date': datos.get('fecha') or date.today()
-                }
-                
-                form = BankTransactionForm(initial=initial_data)
-                # Si venía cuenta seleccionada, la mantenemos
-                if account_id: form.fields['account'].initial = account_id
-                
-                datos_ia = True
-            else:
-                messages.error(request, f"Error IA: {resultado.get('mensaje')}")
-                form = BankTransactionForm(request.POST, request.FILES)
-
-        # --- GUARDADO NORMAL ---
-        else:
-            form = BankTransactionForm(request.POST, request.FILES)
-            if form.is_valid():
-                transaction = form.save(commit=False)
-                # Forzar el tipo de movimiento si no viene
-                if not transaction.movement_type: transaction.movement_type = initial_type
-                transaction.save()
-                
-                # Actualizar saldo de la cuenta
-                cuenta = transaction.account
-                if transaction.movement_type == 'IN':
-                    cuenta.current_balance += transaction.amount
-                else:
-                    cuenta.current_balance -= transaction.amount
-                cuenta.save()
-                
-                messages.success(request, "Transacción registrada exitosamente.")
-                return redirect('bank_list')
+        form = BankTransactionForm(request.POST)
+        if form.is_valid():
+            try:
+                with transaction.atomic(): # Si algo falla, deshace todo (seguridad)
+                    nueva_transaccion = form.save(commit=False)
+                    
+                    # 1. Obtener la cuenta afectada
+                    cuenta = nueva_transaccion.account
+                    monto = nueva_transaccion.amount
+                    
+                    # 2. Actualizar el Saldo de la Cuenta
+                    if nueva_transaccion.transaction_type == 'IN':
+                        cuenta.balance += monto
+                        mensaje = f"Depósito de Q{monto} registrado exitosamente."
+                    else:
+                        # Validar si hay fondos suficientes
+                        if cuenta.balance < monto:
+                            messages.error(request, "¡Fondos Insuficientes para realizar esta operación!")
+                            return render(request, 'core/treasury/transaction_form.html', {'form': form, 'tipo': tipo_operacion})
+                        
+                        cuenta.balance -= monto
+                        mensaje = f"Débito/Cheque de Q{monto} registrado exitosamente."
+                    
+                    # 3. Guardar cambios
+                    cuenta.save() # Guarda el nuevo saldo
+                    nueva_transaccion.save() # Guarda el historial
+                    
+                    messages.success(request, mensaje)
+                    return redirect('bank_list')
+                    
+            except Exception as e:
+                messages.error(request, f"Error al procesar: {str(e)}")
     else:
-        initial_data = {'movement_type': initial_type, 'date': date.today()}
+        # Pre-llenamos el tipo de transacción según el botón que presionó
+        initial_data = {'transaction_type': 'IN' if tipo_operacion == 'IN' else 'OUT'}
         form = BankTransactionForm(initial=initial_data)
-        if account_id: form.fields['account'].initial = account_id
 
-    return render(request, 'core/bank_transaction_form.html', {
-        'form': form,
-        'tipo': initial_type,
-        'datos_ia': datos_ia
+    return render(request, 'core/treasury/transaction_form.html', {
+        'form': form, 
+        'tipo': tipo_operacion
     })
 
 # =========================================================

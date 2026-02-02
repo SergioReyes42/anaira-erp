@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0">
+                
+                <div class="card-header text-white {% if tipo == 'IN' %}bg-success{% else %}bg-danger{% endif %}">
+                    <h4 class="mb-0">
+                        {% if tipo == 'IN' %}
+                            <i class="bi bi-arrow-down-circle"></i> Registrar Ingreso / Depósito
+                        {% else %}
+                            <i class="bi bi-arrow-up-circle"></i> Registrar Egreso / Cheque
+                        {% endif %}
+                    </h4>
+                </div>
+
+                <div class="card-body bg-light">
+                    
+                    <div class="alert alert-warning border-warning d-flex align-items-center" role="alert">
+                        <i class="bi bi-robot fs-3 me-3"></i>
+                        <div>
+                            <strong>¿Le da pereza llenar el formulario?</strong><br>
+                            <small>Próximamente aquí: "Asistente IA". Solo escriba "Pago de luz Q300" y yo lleno todo.</small>
+                        </div>
+                    </div>
+                    <form method="post" class="bg-white p-4 rounded shadow-sm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Cuenta Bancaria Afectada</label>
+                            {{ form.account }} </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Fecha</label>
+                                {{ form.date }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Referencia (No. Cheque/Boleta)</label>
+                                {{ form.reference }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descripción / Concepto</label>
+                            {{ form.description }}
+                        </div>
+
+                        <div class="row mb-4 align-items-end">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-success">Monto (Q)</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text">Q</span>
+                                    {{ form.amount }}
+                                </div>
+                            </div>
+                            
+                            <div class="d-none">
+                                {{ form.transaction_type }}
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'bank_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn {% if tipo == 'IN' %}btn-success{% else %}btn-danger{% endif %} btn-lg px-5">
+                                <i class="bi bi-save"></i> Procesar Transacción
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
