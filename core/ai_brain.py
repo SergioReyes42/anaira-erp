@@ -41,13 +41,10 @@ def analizar_documento_ia(imagen, contexto=None):
     try:
         img_bytes = imagen.read()
         
-        prompt_base = """
-        Eres un asistente experto en ERP. Analiza la imagen y extrae datos en JSON estricto.
-        """
+        prompt_base = "Eres un asistente experto en ERP. Analiza la imagen y extrae datos en JSON estricto."
 
-        # --- AQUI ESTA LO NUEVO (Bloque VENTA/COTIZACION) ---
         if contexto == 'GASTO':
-            prompt_especifico = """Contexto: FACTURA DE COMPRA. Extrae: "proveedor", "total", "fecha", "serie", "nit"."""
+            prompt_especifico = """Contexto: FACTURA COMPRA. Extrae: "proveedor", "total", "fecha", "serie", "nit"."""
         
         elif contexto == 'IN':
             prompt_especifico = """Contexto: BOLETA DEPOSITO. Extrae: "monto", "no_boleta", "fecha"."""
@@ -55,17 +52,21 @@ def analizar_documento_ia(imagen, contexto=None):
         elif contexto == 'OUT':
             prompt_especifico = """Contexto: CHEQUE. Extrae: "monto", "numero_cheque", "beneficiario", "fecha"."""
             
-        elif contexto == 'COTIZACION': # <--- ¡NUEVO PODER!
+        elif contexto == 'COTIZACION':
+            prompt_especifico = """Contexto: PEDIDO CLIENTE. Extrae: "cliente", "productos" (array), "observaciones"."""
+        
+        # --- NUEVO: CONTEXTO PRODUCTO ---
+        elif contexto == 'PRODUCTO':
             prompt_especifico = """
-            Contexto: SOLICITUD DE CLIENTE (WhatsApp, Correo o Listado).
+            Contexto: ETIQUETA O CAJA DE PRODUCTO.
             Extrae:
-            - "cliente": Nombre de la persona o empresa que pide.
-            - "fecha": Fecha de la solicitud.
-            - "productos": Lista de textos con lo que piden (ej: ["Laptop Dell", "Mouse logitech"]).
-            - "observaciones": Alguna nota especial (ej: "Urgente", "Pago contra entrega").
+            - "nombre": Nombre comercial del producto.
+            - "descripcion": Características clave (peso, tamaño, modelo).
+            - "marca": Marca del fabricante.
+            - "codigo": Si ves un código de barras o SKU escríbelo.
             """
         else:
-            prompt_especifico = """Extrae datos generales: monto, fecha, descripcion."""
+            prompt_especifico = "Extrae datos generales."
 
         full_prompt = prompt_base + prompt_especifico
 
@@ -83,7 +84,6 @@ def analizar_documento_ia(imagen, contexto=None):
 
     imagen.seek(0)
     return resultado
-
 
 # --- FUNCIÓN 2: PARA TEXTO (Regex) ---
 def analizar_texto_bancario(texto):

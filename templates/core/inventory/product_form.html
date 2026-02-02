@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-warning">
+                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0 fw-bold"><i class="bi bi-box-seam"></i> Nuevo Producto</h3>
+                    <span class="badge bg-dark text-white">Inventario</span>
+                </div>
+                <div class="card-body">
+
+                    <div class="card border-dark mb-4 shadow-sm bg-light">
+                        <div class="card-body p-3">
+                            <label class="form-label fw-bold text-dark mb-2">
+                                <i class="bi bi-qr-code-scan"></i> Escáner IA de Producto
+                            </label>
+                            <div class="input-group">
+                                <input type="file" id="aiImage" class="d-none" accept="image/*">
+                                
+                                <button class="btn btn-outline-dark" type="button" onclick="document.getElementById('aiImage').click()">
+                                    <i class="bi bi-camera-fill"></i> Foto a Etiqueta
+                                </button>
+                                
+                                <input type="text" id="aiPrompt" class="form-control" 
+                                       placeholder="Suba foto de la caja o escriba: 'Laptop HP 15 pulgadas ram 8gb'">
+                                
+                                <button class="btn btn-dark" type="button" id="btnMagic">
+                                    <i class="bi bi-magic"></i> Auto-llenar
+                                </button>
+                            </div>
+                            <small id="fileNameDisplay" class="text-muted ms-2 fst-italic"></small>
+                        </div>
+                    </div>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Nombre del Producto *</label>
+                                {{ form.name }} 
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Código Interno / Barras</label>
+                                {{ form.code }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descripción</label>
+                            {{ form.description }}
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold text-success">Precio de Venta (Q) *</label>
+                                {{ form.price }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Costo (Q)</label>
+                                {{ form.cost }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold text-primary">Stock Inicial</label>
+                                {{ form.stock }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Imagen del Producto</label>
+                            {{ form.image }}
+                        </div>
+
+                        <hr>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'product_list' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            <button type="submit" class="btn btn-warning fw-bold px-5">
+                                <i class="bi bi-save"></i> Guardar Producto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnMagic = document.getElementById('btnMagic');
+        const aiPrompt = document.getElementById('aiPrompt');
+        const aiImageInput = document.getElementById('aiImage');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+        // Referencias a los campos (Django suele usar id_nombrecampo)
+        // Ajuste estos IDs si su form.py usa otros nombres
+        const fieldName = document.getElementById('id_name');
+        const fieldDesc = document.getElementById('id_description');
+        const fieldCode = document.getElementById('id_code');
+        // const fieldBrand = document.getElementById('id_brand'); // Si tuviera marca
+
+        // Mostrar nombre archivo
+        aiImageInput.addEventListener('change', function() {
+            if(this.files[0]) {
+                fileNameDisplay.textContent = "📦 " + this.files[0].name;
+                aiPrompt.placeholder = "¡Listo para escanear!";
+                aiPrompt.disabled = true;
+            }
+        });
+
+        if(btnMagic) {
+            btnMagic.addEventListener('click', async () => {
+                const originalText = btnMagic.innerHTML;
+                btnMagic.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Analizando...';
+                btnMagic.disabled = true;
+
+                try {
+                    let response;
+                    const formData = new FormData();
+
+                    // A. MODO FOTO (Etiqueta/Caja)
+                    if (aiImageInput.files.length > 0) {
+                        formData.append('image', aiImageInput.files[0]);
+                        formData.append('context', 'PRODUCTO'); // <--- Contexto Importante
+                        response = await fetch('/api/ai-magic/', { method: 'POST', body: formData });
+                    
+                    // B. MODO TEXTO
+                    } else {
+                        const texto = aiPrompt.value;
+                        if(!texto) throw new Error("Suba una foto del producto o escriba sus detalles.");
+                        response = await fetch('/api/ai-magic/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ prompt: texto })
+                        });
+                    }
+
+                    const json = await response.json();
+
+                    if(json.status === 'ok') {
+                        const data = json.data;
+                        console.log("IA Producto:", data);
+
+                        // 1. LLENAR NOMBRE
+                        if(data.nombre && fieldName) {
+                            fieldName.value = data.nombre;
+                            if(data.marca) fieldName.value = data.marca + " " + data.nombre; // Marca + Nombre queda mejor
+                        }
+
+                        // 2. LLENAR DESCRIPCION
+                        if(data.descripcion && fieldDesc) {
+                            fieldDesc.value = data.descripcion;
+                        }
+
+                        // 3. LLENAR CODIGO (Si detectó código de barras en la foto)
+                        if(data.codigo && fieldCode) {
+                            fieldCode.value = data.codigo;
+                        }
+
+                    } else {
+                        alert("Error IA: " + (json.message || "Desconocido"));
+                    }
+
+                } catch (e) {
+                    console.error(e);
+                    alert("Error: " + e.message);
+                }
+
+                btnMagic.innerHTML = originalText;
+                btnMagic.disabled = false;
+            });
+        }
+    });
+</script>
+{% endblock %}
