@@ -429,28 +429,25 @@ def bank_transaction_create(request):
     tipo_operacion = request.GET.get('type', 'OUT') 
     
     if request.method == 'POST':
-        # Nota: Ya no necesitamos el .copy() porque el form tiene required=False
         form = BankTransactionForm(request.POST)
         
         if form.is_valid():
             try:
                 with transaction.atomic():
                     nueva_transaccion = form.save(commit=False)
-                    
-                    # --- AQUÍ LLENAMOS EL DATO OBLIGATORIAMENTE ---
-                    nueva_transaccion.transaction_type = tipo_operacion
-                    # ----------------------------------------------
+                    # NO necesitamos asignar manualmente, el form ya lo trae del HTML
                     
                     cuenta = nueva_transaccion.account
-                    # Como usamos el input visual con JS, el valor llega limpio
                     monto = nueva_transaccion.amount 
                     
-                    if tipo_operacion == 'IN':
+                    # 1. AQUÍ EL CAMBIO: Usamos .movement_type
+                    if nueva_transaccion.movement_type == 'IN':
                         cuenta.balance += monto
                         mensaje = f"Depósito de Q{monto} registrado exitosamente."
                     else:
                         if cuenta.balance < monto:
                             messages.error(request, "¡Fondos Insuficientes!")
+                            # Pasamos el tipo para que no se pierda si falla
                             return render(request, 'core/treasury/transaction_form.html', {'form': form, 'tipo': tipo_operacion})
                         
                         cuenta.balance -= monto
@@ -458,14 +455,14 @@ def bank_transaction_create(request):
                     
                     cuenta.save()
                     nueva_transaccion.save()
-                    
                     messages.success(request, mensaje)
                     return redirect('bank_list')
                     
             except Exception as e:
                 messages.error(request, f"Error al procesar: {str(e)}")
     else:
-        form = BankTransactionForm()
+        # 2. AQUÍ TAMBIÉN: Pre-llenamos 'movement_type'
+        form = BankTransactionForm(initial={'movement_type': tipo_operacion})
 
     return render(request, 'core/treasury/transaction_form.html', {
         'form': form, 
