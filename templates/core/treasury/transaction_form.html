@@ -21,17 +21,25 @@
                     <div class="card border-primary mb-4 shadow-sm">
                         <div class="card-body bg-soft-primary p-3">
                             <label class="form-label fw-bold text-primary mb-2">
-                                <i class="bi bi-stars"></i> Asistente IA
+                                <i class="bi bi-stars"></i> Asistente IA (Gemini)
                             </label>
                             <div class="input-group">
+                                <input type="file" id="aiImage" class="d-none" accept="image/*">
+                                <button class="btn btn-outline-primary" type="button" onclick="document.getElementById('aiImage').click()">
+                                    <i class="bi bi-camera-fill"></i> Subir Foto
+                                </button>
+                                
                                 <input type="text" id="aiPrompt" class="form-control" 
-                                       placeholder="Ej: Pago de luz Q300 hoy...">
+                                       placeholder="Escriba O suba una foto del cheque/boleta...">
+                                
                                 <button class="btn btn-primary" type="button" id="btnMagic">
-                                    <i class="bi bi-lightning-fill"></i> Autocompletar
+                                    <i class="bi bi-lightning-fill"></i> Analizar
                                 </button>
                             </div>
+                            <small id="fileNameDisplay" class="text-muted ms-2"></small>
                         </div>
                     </div>
+
                     <form method="post" class="bg-white p-4 rounded shadow-sm" id="transactionForm">
                         {% csrf_token %}
 
@@ -105,11 +113,12 @@
         // --- 1. VARIABLES ---
         const visualInput = document.getElementById('montoVisual');
         const realInput = document.getElementById('montoReal');
-        const form = document.getElementById('transactionForm');
-        const btnMagic = document.getElementById('btnMagic'); // Botón IA
-        const aiPrompt = document.getElementById('aiPrompt'); // Input IA
+        const btnMagic = document.getElementById('btnMagic');
+        const aiPrompt = document.getElementById('aiPrompt');
+        const aiImageInput = document.getElementById('aiImage');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
 
-        // --- 2. LÓGICA DE COMAS (MONEDA) ---
+        // --- 2. LÓGICA DE COMAS ---
         const formatNumber = (n) => {
             let val = n.replace(/\D/g, "").replace(/^0+/, "");
             if (val === "") return "";
@@ -126,60 +135,89 @@
             realInput.value = formatted.replace(/,/g, "");
         });
 
-        // Asegurar valor al enviar manual
-        form.addEventListener('submit', (e) => {
+        // Asegurar valor al enviar
+        document.getElementById('transactionForm').addEventListener('submit', (e) => {
             if(!realInput.value && visualInput.value) {
                 realInput.value = visualInput.value.replace(/,/g, "");
             }
         });
 
-        // --- 3. LÓGICA DE IA (NUEVA) ---
+        // --- 3. LÓGICA IA (HÍBRIDA) ---
+        
+        // Mostrar nombre archivo
+        aiImageInput.addEventListener('change', function() {
+            if(this.files && this.files[0]) {
+                fileNameDisplay.textContent = "Imagen seleccionada: " + this.files[0].name;
+                aiPrompt.placeholder = "¡Imagen lista! Presione Analizar ->";
+                aiPrompt.disabled = true;
+            }
+        });
+
         if(btnMagic){
             btnMagic.addEventListener('click', async () => {
-                const texto = aiPrompt.value;
-                if(!texto) return;
-
-                // Efecto visual "Pensando"
                 const originalIcon = btnMagic.innerHTML;
-                btnMagic.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                btnMagic.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Leyendo...';
                 btnMagic.disabled = true;
 
                 try {
-                    // Llamada al Servidor (API)
-                    const response = await fetch('/api/ai-magic/', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt: texto })
-                    });
+                    let response;
+                    
+                    // A. ESCENARIO IMAGEN
+                    if (aiImageInput.files.length > 0) {
+                        const formData = new FormData();
+                        formData.append('image', aiImageInput.files[0]);
+                        const tipoActual = document.querySelector('.bg-danger') ? 'OUT' : 'IN';
+                        formData.append('context', tipoActual);
+
+                        response = await fetch('/api/ai-magic/', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                    // B. ESCENARIO TEXTO
+                    } else {
+                        const texto = aiPrompt.value;
+                        if(!texto) { alert("Escriba algo o suba una foto"); throw new Error("Vacio"); }
+                        
+                        response = await fetch('/api/ai-magic/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ prompt: texto })
+                        });
+                    }
                     
                     const json = await response.json();
                     
                     if(json.status === 'ok') {
                         const data = json.data;
                         
-                        // Llenar campos
-                        document.getElementById('id_description').value = data.description;
-                        document.getElementById('id_date').value = data.date;
+                        // Mapeo Inteligente de campos
+                        if(data.description) document.getElementById('id_description').value = data.description;
+                        if(data.fecha) document.getElementById('id_date').value = data.fecha;
+                        if(data.date) document.getElementById('id_date').value = data.date;
                         
-                        // Llenar Monto y disparar evento para que se pongan las comas
-                        if(data.amount) {
-                            visualInput.value = data.amount;
+                        // Referencias varias
+                        const ref = data.referencia || data.no_boleta || data.numero_cheque || data.serie;
+                        if(ref) document.getElementById('id_reference').value = ref;
+
+                        // Monto
+                        let montoFinal = data.amount || data.monto || data.total;
+                        if(montoFinal) {
+                            montoFinal = montoFinal.toString().replace(/,/g, ""); 
+                            visualInput.value = montoFinal;
                             visualInput.dispatchEvent(new Event('input')); 
                         }
-
-                        // Alerta inteligente si el tipo no coincide
-                        // (Si la IA dice INGRESO pero estamos en pantalla ROJA)
-                        const pantallaActual = document.querySelector('.bg-danger') ? 'OUT' : 'IN';
-                        if (data.movement_type !== pantallaActual) {
-                            alert("⚠️ OJO: La IA detectó un tipo de movimiento diferente al de esta pantalla. Verifique.");
-                        }
+                    } else {
+                        alert("Error IA: " + (json.message || "Desconocido"));
                     }
+
                 } catch (error) {
-                    console.error('Error IA:', error);
-                    alert('Error al conectar con el cerebro.');
+                    if (error.message !== "Vacio") {
+                        console.error(error);
+                        alert('Error al conectar con el cerebro.');
+                    }
                 }
 
-                // Restaurar botón
                 btnMagic.innerHTML = originalIcon;
                 btnMagic.disabled = false;
             });

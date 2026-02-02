@@ -1589,19 +1589,33 @@ def create_client(request):
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .ai_brain import analizar_texto_bancario
+from .ai_brain import analizar_texto_bancario, analizar_documento_ia
 
 @csrf_exempt
 def api_ai_transaction(request):
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)
-            prompt = data.get('prompt', '')
-            
-            # Llamamos a nuestro cerebro
-            resultado = analizar_texto_bancario(prompt)
-            
-            return JsonResponse({'status': 'ok', 'data': resultado})
+            # A. DETECCIÓN DE IMAGEN (Gemini Vision)
+            if 'image' in request.FILES:
+                imagen = request.FILES['image']
+                # Obtenemos el contexto (si es IN o OUT) para guiar a la IA
+                contexto = request.POST.get('context', 'GENERIC') 
+                
+                # Llamamos a Gemini
+                resultado = analizar_documento_ia(imagen, contexto=contexto)
+                
+                if resultado['exito']:
+                    return JsonResponse({'status': 'ok', 'data': resultado['datos']})
+                else:
+                    return JsonResponse({'status': 'error', 'message': 'No pude leer la imagen.'})
+
+            # B. DETECCIÓN DE TEXTO (Lógica Regex)
+            else:
+                data = json.loads(request.body)
+                prompt = data.get('prompt', '')
+                resultado = analizar_texto_bancario(prompt)
+                return JsonResponse({'status': 'ok', 'data': resultado})
+
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
             
