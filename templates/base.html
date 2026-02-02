@@ -195,13 +195,17 @@
 
                 <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Operaciones</small>
                 
-                <a href="{% url 'bank_transaction_create' %}?type=IN" class="list-group-item list-group-item-action">
-                    <i class="bi bi-arrow-down-circle text-success me-2"></i> Registrar Depósito
-                </a>
+               <a href="{% url 'bank_transaction_create' %}?type=IN" 
+   class="list-group-item list-group-item-action"
+   onclick="window.location.href=this.getAttribute('href'); return false;">
+    <i class="bi bi-arrow-down-circle text-success me-2"></i> Registrar Depósito
+</a>
                 
-                <a href="{% url 'bank_transaction_create' %}?type=OUT" class="list-group-item list-group-item-action">
-                    <i class="bi bi-arrow-up-circle text-danger me-2"></i> Registrar Cheque
-                </a>
+              <a href="{% url 'bank_transaction_create' %}?type=OUT" 
+   class="list-group-item list-group-item-action"
+   onclick="window.location.href=this.getAttribute('href'); return false;">
+    <i class="bi bi-arrow-up-circle text-danger me-2"></i> Registrar Cheque
+</a>
 
                 <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Reportes</small>
                 <a href="{% url 'bank_list' %}" class="list-group-item list-group-item-action">
