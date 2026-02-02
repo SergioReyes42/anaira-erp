@@ -1,227 +1,213 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow border-0">
-                
-                <div class="card-header text-white {% if tipo == 'IN' %}bg-success{% else %}bg-danger{% endif %}">
-                    <h4 class="mb-0">
-                        {% if tipo == 'IN' %}
-                            <i class="bi bi-arrow-down-circle"></i> Registrar Ingreso / Depósito
-                        {% else %}
-                            <i class="bi bi-arrow-up-circle"></i> Registrar Egreso / Cheque
-                        {% endif %}
-                    </h4>
-                </div>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Tablero de Control</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary">Hoy</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">Esta Semana</button>
+        </div>
+    </div>
+</div>
 
-                <div class="card-body bg-light">
-                    
-                    <div class="card border-primary mb-4 shadow-sm">
-                        <div class="card-body bg-soft-primary p-3">
-                            <label class="form-label fw-bold text-primary mb-2">
-                                <i class="bi bi-stars"></i> Asistente IA (Gemini)
-                            </label>
-                            <div class="input-group">
-                                <input type="file" id="aiImage" class="d-none" accept="image/*">
-                                <button class="btn btn-outline-primary" type="button" onclick="document.getElementById('aiImage').click()">
-                                    <i class="bi bi-camera-fill"></i> Subir Foto
-                                </button>
-                                
-                                <input type="text" id="aiPrompt" class="form-control" 
-                                       placeholder="Escriba O suba una foto del cheque/boleta...">
-                                
-                                <button class="btn btn-primary" type="button" id="btnMagic">
-                                    <i class="bi bi-lightning-fill"></i> Analizar
-                                </button>
-                            </div>
-                            <small id="fileNameDisplay" class="text-muted ms-2"></small>
-                        </div>
+<div class="row g-4 mb-4">
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-success shadow h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Ventas Totales</h6>
+                        <h2 class="my-2 fw-bold">Q {{ total_ventas|floatformat:2 }}</h2>
+                        <small class="text-white-50"><i class="bi bi-arrow-up"></i> Ingresos</small>
                     </div>
+                    <i class="bi bi-cash-coin fs-1 opacity-50"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 small">
+                <a href="{% url 'quotation_list' %}" class="text-white text-decoration-none stretched-link">Ver detalle</a>
+            </div>
+        </div>
+    </div>
 
-                    <form method="post" class="bg-white p-4 rounded shadow-sm" id="transactionForm">
-                        {% csrf_token %}
+    <div class="col-md-3">
+        <div class="card text-white bg-primary shadow h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Compras / Inversión</h6>
+                        <h2 class="my-2 fw-bold">Q {{ total_compras|floatformat:2 }}</h2>
+                        <small class="text-white-50"><i class="bi bi-cart4"></i> Salidas</small>
+                    </div>
+                    <i class="bi bi-bag-check fs-1 opacity-50"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 small">
+                <a href="{% url 'purchase_list' %}" class="text-white text-decoration-none stretched-link">Ver detalle</a>
+            </div>
+        </div>
+    </div>
 
-                        {% if form.errors %}
-                            <div class="alert alert-danger">
-                                <strong>¡Atención! No se pudo guardar:</strong>
-                                <ul>
-                                {% for field in form %}
-                                    {% for error in field.errors %}
-                                        <li><strong>{{ field.label }}:</strong> {{ error }}</li>
-                                    {% endfor %}
-                                {% endfor %}
-                                {% for error in form.non_field_errors %}
-                                    <li>{{ error }}</li>
-                                {% endfor %}
-                                </ul>
-                            </div>
-                        {% endif %}
-                        
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">Cuenta Bancaria Afectada</label>
-                            {{ form.account }}
-                        </div>
+    <div class="col-md-3">
+        <div class="card text-dark bg-light shadow h-100 border-start border-4 border-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0 text-muted">Cartera Clientes</h6>
+                        <h2 class="my-2 fw-bold text-info">{{ total_clientes }}</h2>
+                        <small class="text-muted">Activos</small>
+                    </div>
+                    <i class="bi bi-people fs-1 text-info opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Fecha</label>
-                                {{ form.date }}
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Referencia (No. Cheque/Boleta)</label>
-                                {{ form.reference }}
-                            </div>
-                        </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger shadow h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-0">Stock Crítico</h6>
+                        <h2 class="my-2 fw-bold">{{ productos_bajos }}</h2>
+                        <small class="text-white-50">Productos por agotarse</small>
+                    </div>
+                    <i class="bi bi-exclamation-triangle fs-1 opacity-50"></i>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 small">
+                <a href="/admin/core/product/?stock__lt=5" target="_blank" class="text-white text-decoration-none stretched-link">Revisar Inventario</a>
+            </div>
+        </div>
+    </div>
+</div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Descripción / Concepto</label>
-                            {{ form.description }}
-                        </div>
+<div class="row">
+    <div class="col-md-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 text-gray-800">Últimas Ventas Realizadas</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th># Factura</th>
+                                <th>Cliente</th>
+                                <th>Fecha</th>
+                                <th class="text-end">Monto</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for venta in ultimas_ventas %}
+                            <tr>
+                                <td class="fw-bold">
+                                    <a href="{% url 'invoice_pdf' venta.id %}" target="_blank" class="text-decoration-none">
+                                        {{ venta.id|stringformat:"05d" }}
+                                    </a>
+                                </td>
+                                <td>{{ venta.client.name }}</td>
+                                <td>{{ venta.date|date:"d M Y" }}</td>
+                                <td class="text-end fw-bold text-success">Q {{ venta.total }}</td>
+                                <td><span class="badge bg-success">Pagado</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">Aún no hay movimientos.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                        <div class="row mb-4 align-items-end">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold text-success">Monto (Q)</label>
-                                <div class="input-group input-group-lg">
-                                    <span class="input-group-text">Q</span>
-                                    <input type="text" id="montoVisual" class="form-control fw-bold fs-4" placeholder="0.00" required>
-                                    <input type="hidden" name="amount" id="montoReal">
-                                </div>
-                                <small class="text-muted">Escriba el número, el sistema pone las comas.</small>
-                            </div>
-                        </div>
-
-                        <input type="hidden" name="movement_type" value="{{ tipo }}">
-                        <hr>
-
-                        <div class="d-flex justify-content-between">
-                            <a href="{% url 'bank_list' %}" class="btn btn-outline-secondary">Cancelar</a>
-                            <button type="submit" class="btn {% if tipo == 'IN' %}btn-success{% else %}btn-danger{% endif %} btn-lg px-5">
-                                <i class="bi bi-save"></i> Procesar Transacción
-                            </button>
-                        </div>
-                    </form>
+    <div class="col-md-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0">Accesos Rápidos</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-3">
+                    <a href="{% url 'create_quotation' %}" class="btn btn-outline-primary text-start p-3">
+                        <i class="bi bi-plus-circle-fill me-2 fs-5"></i> Nueva Cotización
+                    </a>
+                    <a href="{% url 'create_purchase' %}" class="btn btn-outline-success text-start p-3">
+                        <i class="bi bi-cart-plus-fill me-2 fs-5"></i> Ingresar Mercadería
+                    </a>
+                    <a href="/admin/core/client/add/" target="_blank" class="btn btn-outline-secondary text-start p-3">
+                        <i class="bi bi-person-plus-fill me-2 fs-5"></i> Registrar Nuevo Cliente
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- 1. VARIABLES ---
-        const visualInput = document.getElementById('montoVisual');
-        const realInput = document.getElementById('montoReal');
-        const btnMagic = document.getElementById('btnMagic');
-        const aiPrompt = document.getElementById('aiPrompt');
-        const aiImageInput = document.getElementById('aiImage');
-        const fileNameDisplay = document.getElementById('fileNameDisplay');
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050">
+    
+    <div class="collapse mb-2" id="collapseUsers">
+        <div class="card shadow border-info" style="width: 300px;">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center py-2">
+                <h6 class="mb-0 small"><i class="bi bi-people-fill"></i> Usuarios en Línea</h6>
+                <button type="button" class="btn-close btn-close-white small" onclick="document.getElementById('btnUserToggle').click()"></button>
+            </div>
+            
+            <div class="card-body p-0">
+                
+                <div class="text-center p-3 bg-light border-bottom">
+                    <h2 class="display-4 fw-bold text-info mb-0">{{ active_sessions }}</h2>
+                    <small class="text-muted">Conectados ahora</small>
+                </div>
 
-        // --- 2. LÓGICA DE COMAS ---
-        const formatNumber = (n) => {
-            let val = n.replace(/\D/g, "").replace(/^0+/, "");
-            if (val === "") return "";
-            if (val.length === 1) return "0.0" + val;
-            if (val.length === 2) return "0." + val;
-            let main = val.substring(0, val.length - 2);
-            let cents = val.substring(val.length - 2);
-            return main.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "." + cents;
-        };
+                <ul class="list-group list-group-flush text-start" style="max-height: 250px; overflow-y: auto;">
+                    {% for usuario in active_users_list %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-secondary bg-opacity-10 rounded-circle p-2 me-2">
+                                    <i class="bi bi-person-fill text-secondary"></i>
+                                </div>
+                                <div>
+                                    <span class="fw-bold d-block text-dark" style="font-size: 0.9rem;">
+                                        {{ usuario.username }}
+                                    </span>
+                                    <small class="text-muted" style="font-size: 0.75rem;">
+                                        {{ usuario.email|default:"Sin email" }}
+                                    </small>
+                                </div>
+                            </div>
+                            <span class="badge bg-success rounded-pill" title="En línea">●</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-center text-muted py-3">
+                            <small>Nadie conectado... espera, ¿y tú? 👻</small>
+                        </li>
+                    {% endfor %}
+                </ul>
 
-        visualInput.addEventListener('input', (e) => {
-            let formatted = formatNumber(e.target.value);
-            e.target.value = formatted;
-            realInput.value = formatted.replace(/,/g, "");
-        });
+            </div>
+            <div class="card-footer bg-light py-1 text-center">
+                <small class="text-muted" style="font-size: 0.7rem;">Anaira ERP Monitor</small>
+            </div>
+        </div>
+    </div>
 
-        // Asegurar valor al enviar
-        document.getElementById('transactionForm').addEventListener('submit', (e) => {
-            if(!realInput.value && visualInput.value) {
-                realInput.value = visualInput.value.replace(/,/g, "");
-            }
-        });
-
-        // --- 3. LÓGICA IA (HÍBRIDA) ---
+    <button class="btn btn-info btn-lg rounded-circle shadow-lg d-flex align-items-center justify-content-center" 
+            type="button" 
+            id="btnUserToggle"
+            data-bs-toggle="collapse" 
+            data-bs-target="#collapseUsers" 
+            style="width: 60px; height: 60px;">
+        <i class="bi bi-person-lines-fill fs-4 text-white"></i>
         
-        // Mostrar nombre archivo
-        aiImageInput.addEventListener('change', function() {
-            if(this.files && this.files[0]) {
-                fileNameDisplay.textContent = "Imagen seleccionada: " + this.files[0].name;
-                aiPrompt.placeholder = "¡Imagen lista! Presione Analizar ->";
-                aiPrompt.disabled = true;
-            }
-        });
-
-        if(btnMagic){
-            btnMagic.addEventListener('click', async () => {
-                const originalIcon = btnMagic.innerHTML;
-                btnMagic.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Leyendo...';
-                btnMagic.disabled = true;
-
-                try {
-                    let response;
-                    
-                    // A. ESCENARIO IMAGEN
-                    if (aiImageInput.files.length > 0) {
-                        const formData = new FormData();
-                        formData.append('image', aiImageInput.files[0]);
-                        const tipoActual = document.querySelector('.bg-danger') ? 'OUT' : 'IN';
-                        formData.append('context', tipoActual);
-
-                        response = await fetch('/api/ai-magic/', {
-                            method: 'POST',
-                            body: formData
-                        });
-
-                    // B. ESCENARIO TEXTO
-                    } else {
-                        const texto = aiPrompt.value;
-                        if(!texto) { alert("Escriba algo o suba una foto"); throw new Error("Vacio"); }
-                        
-                        response = await fetch('/api/ai-magic/', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ prompt: texto })
-                        });
-                    }
-                    
-                    const json = await response.json();
-                    
-                    if(json.status === 'ok') {
-                        const data = json.data;
-                        
-                        // Mapeo Inteligente de campos
-                        if(data.description) document.getElementById('id_description').value = data.description;
-                        if(data.fecha) document.getElementById('id_date').value = data.fecha;
-                        if(data.date) document.getElementById('id_date').value = data.date;
-                        
-                        // Referencias varias
-                        const ref = data.referencia || data.no_boleta || data.numero_cheque || data.serie;
-                        if(ref) document.getElementById('id_reference').value = ref;
-
-                        // Monto
-                        let montoFinal = data.amount || data.monto || data.total;
-                        if(montoFinal) {
-                            montoFinal = montoFinal.toString().replace(/,/g, ""); 
-                            visualInput.value = montoFinal;
-                            visualInput.dispatchEvent(new Event('input')); 
-                        }
-                    } else {
-                        alert("Error IA: " + (json.message || "Desconocido"));
-                    }
-
-                } catch (error) {
-                    if (error.message !== "Vacio") {
-                        console.error(error);
-                        alert('Error al conectar con el cerebro.');
-                    }
-                }
-
-                btnMagic.innerHTML = originalIcon;
-                btnMagic.disabled = false;
-            });
-        }
-    });
-</script>
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+            {{ active_sessions }}
+            <span class="visually-hidden">usuarios</span>
+        </span>
+    </button>
+</div>
 {% endblock %}

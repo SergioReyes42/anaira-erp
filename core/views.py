@@ -13,6 +13,7 @@ from .models import Quotation, QuotationDetail, CompanyProfile, Provider, Purcha
 # --- IMPORTS DE DJANGO ---
 from django.contrib.sessions.models import Session
 from django.utils import timezone
+from django.contrib.auth.models import User
 from django.db.models import Sum
 from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
@@ -114,33 +115,39 @@ def select_company(request): # <--- AQUÍ ESTABA EL ERROR: FALTABA ESTA LÍNEA
 
 @login_required
 def home(request):
-    # 1. Lógica de Usuarios Conectados
-    active_sessions = Session.objects.filter(expire_date__gte=timezone.now()).count()
-
-
-    # 2. Total Ventas (Suma de todo lo vendido)
-    total_ventas = Sale.objects.aggregate(Sum('total'))['total__sum'] or 0
+    # --- LÓGICA DE USUARIOS CONECTADOS ---
+    # 1. Obtener sesiones que no han expirado
+    sessions = Session.objects.filter(expire_date__gte=timezone.now())
     
-    # 2. Total Compras (Inversión en mercadería)
-    total_compras = Purchase.objects.aggregate(Sum('total'))['total__sum'] or 0
+    user_id_list = []
     
-    # 3. Alertas de Stock (Productos con menos de 5 unidades)
-    # Usted puede cambiar el '5' por el número que considere "peligroso"
-    productos_bajos = Product.objects.filter(stock__lte=5).count()
+    # 2. Decodificar cada sesión para ver a quién pertenece
+    for s in sessions:
+        data = s.get_decoded()
+        if '_auth_user_id' in data:
+            user_id_list.append(data['_auth_user_id'])
+            
+    # 3. Traer los objetos Usuario reales (sin repetir)
+    active_users_list = User.objects.filter(id__in=user_id_list).distinct()
     
-    # 4. Total de Clientes
-    total_clientes = Client.objects.count()
+    # Contamos la cantidad
+    active_sessions = active_users_list.count()
+    
+    # --- FIN LÓGICA USUARIOS ---
 
-    # 5. Últimos 5 movimientos (para ver actividad reciente)
-    ultimas_ventas = Sale.objects.order_by('-date')[:5]
-
+    # ... (Aquí va su lógica de ventas, compras, gráficos, etc.) ...
+    # ... Si tenía 'total_ventas', 'ultimas_ventas', etc., déjelas aquí ...
+    # Por ejemplo (resumido):
+    # total_ventas = Sale.objects.aggregate...
+    # total_compras = Purchase.objects.aggregate...
+    
     context = {
         'active_sessions': active_sessions,
-        'total_ventas': total_ventas,
-        'total_compras': total_compras,
-        'productos_bajos': productos_bajos,
-        'total_clientes': total_clientes,
-        'ultimas_ventas': ultimas_ventas,
+        'active_users_list': active_users_list, # <--- Enviamos la lista nueva
+        # ... sus otras variables de contexto ...
+        # 'total_ventas': total_ventas,
+        # 'ultimas_ventas': ultimas_ventas,
+        # etc...
     }
     return render(request, 'core/home.html', context)
 
