@@ -13,7 +13,7 @@ from .models import Quotation, QuotationDetail, CompanyProfile, Provider, Purcha
 # --- IMPORTS DE DJANGO ---
 from django.contrib.sessions.models import Session
 from django.utils import timezone
-from django.contrib.auth.models import User
+from django.contrib.auth.models import get_user_model
 from django.db.models import Sum
 from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
@@ -115,39 +115,36 @@ def select_company(request): # <--- AQUÍ ESTABA EL ERROR: FALTABA ESTA LÍNEA
 
 @login_required
 def home(request):
-    # --- LÓGICA DE USUARIOS CONECTADOS ---
-    # 1. Obtener sesiones que no han expirado
+    # 1. OBTENER LA CLASE DE USUARIO CORRECTA
+    # Esto busca automáticamente si es 'auth.User' o 'accounts.User'
+    User = get_user_model() 
+
+    # 2. LÓGICA DE USUARIOS CONECTADOS
     sessions = Session.objects.filter(expire_date__gte=timezone.now())
     
     user_id_list = []
     
-    # 2. Decodificar cada sesión para ver a quién pertenece
     for s in sessions:
         data = s.get_decoded()
         if '_auth_user_id' in data:
             user_id_list.append(data['_auth_user_id'])
             
-    # 3. Traer los objetos Usuario reales (sin repetir)
+    # Ahora usamos la variable User que definimos arriba (que es la correcta)
     active_users_list = User.objects.filter(id__in=user_id_list).distinct()
-    
-    # Contamos la cantidad
     active_sessions = active_users_list.count()
-    
-    # --- FIN LÓGICA USUARIOS ---
 
-    # ... (Aquí va su lógica de ventas, compras, gráficos, etc.) ...
-    # ... Si tenía 'total_ventas', 'ultimas_ventas', etc., déjelas aquí ...
-    # Por ejemplo (resumido):
-    # total_ventas = Sale.objects.aggregate...
-    # total_compras = Purchase.objects.aggregate...
+    # ... (AQUÍ VA SU LÓGICA DE VENTAS, COMPRAS, ETC.) ...
+    # Asegúrese de mantener sus variables de ventas/compras aquí abajo
+    # total_ventas = ...
+    # total_compras = ...
     
     context = {
+        'active_users_list': active_users_list, 
         'active_sessions': active_sessions,
-        'active_users_list': active_users_list, # <--- Enviamos la lista nueva
-        # ... sus otras variables de contexto ...
+        
+        # ... Sus otras variables ...
         # 'total_ventas': total_ventas,
-        # 'ultimas_ventas': ultimas_ventas,
-        # etc...
+        # etc.
     }
     return render(request, 'core/home.html', context)
 
