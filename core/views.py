@@ -426,36 +426,39 @@ class BankTransactionForm(forms.ModelForm):
 
 @login_required
 def bank_transaction_create(request):
-    # Capturamos si es "IN" (Depósito) o "OUT" (Cheque/Retiro) desde la URL
+    # Capturamos el tipo desde la URL (Ej: ?type=IN)
     tipo_operacion = request.GET.get('type', 'OUT') 
     
     if request.method == 'POST':
         form = BankTransactionForm(request.POST)
         if form.is_valid():
             try:
-                with transaction.atomic(): # Si algo falla, deshace todo (seguridad)
+                with transaction.atomic():
+                    # 1. Preparamos la transacción PERO NO la guardamos todavía (commit=False)
                     nueva_transaccion = form.save(commit=False)
                     
-                    # 1. Obtener la cuenta afectada
+                    # 2. --- AQUÍ LA MAGIA: ASIGNAMOS EL TIPO MANUALMENTE ---
+                    nueva_transaccion.transaction_type = tipo_operacion
+                    # -------------------------------------------------------
+
+                    # 3. Lógica de Saldo (Igual que antes)
                     cuenta = nueva_transaccion.account
                     monto = nueva_transaccion.amount
                     
-                    # 2. Actualizar el Saldo de la Cuenta
-                    if nueva_transaccion.transaction_type == 'IN':
+                    if tipo_operacion == 'IN':
                         cuenta.balance += monto
                         mensaje = f"Depósito de Q{monto} registrado exitosamente."
                     else:
-                        # Validar si hay fondos suficientes
                         if cuenta.balance < monto:
-                            messages.error(request, "¡Fondos Insuficientes para realizar esta operación!")
+                            messages.error(request, "¡Fondos Insuficientes!")
                             return render(request, 'core/treasury/transaction_form.html', {'form': form, 'tipo': tipo_operacion})
                         
                         cuenta.balance -= monto
                         mensaje = f"Débito/Cheque de Q{monto} registrado exitosamente."
                     
-                    # 3. Guardar cambios
-                    cuenta.save() # Guarda el nuevo saldo
-                    nueva_transaccion.save() # Guarda el historial
+                    # 4. Ahora sí guardamos todo
+                    cuenta.save()
+                    nueva_transaccion.save() # Al guardar aquí, ya lleva el tipo "IN" o "OUT"
                     
                     messages.success(request, mensaje)
                     return redirect('bank_list')
@@ -463,9 +466,7 @@ def bank_transaction_create(request):
             except Exception as e:
                 messages.error(request, f"Error al procesar: {str(e)}")
     else:
-        # Pre-llenamos el tipo de transacción según el botón que presionó
-        initial_data = {'transaction_type': 'IN' if tipo_operacion == 'IN' else 'OUT'}
-        form = BankTransactionForm(initial=initial_data)
+        form = BankTransactionForm()
 
     return render(request, 'core/treasury/transaction_form.html', {
         'form': form, 
