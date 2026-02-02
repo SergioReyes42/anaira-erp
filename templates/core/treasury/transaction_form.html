@@ -18,14 +18,20 @@
 
                 <div class="card-body bg-light">
                     
-                    <div class="alert alert-warning border-warning d-flex align-items-center" role="alert">
-                        <i class="bi bi-robot fs-3 me-3"></i>
-                        <div>
-                            <strong>¿Le da pereza llenar el formulario?</strong><br>
-                            <small>Próximamente aquí: "Asistente IA". Solo escriba "Pago de luz Q300" y yo lleno todo.</small>
+                    <div class="card border-primary mb-4 shadow-sm">
+                        <div class="card-body bg-soft-primary p-3">
+                            <label class="form-label fw-bold text-primary mb-2">
+                                <i class="bi bi-stars"></i> Asistente IA
+                            </label>
+                            <div class="input-group">
+                                <input type="text" id="aiPrompt" class="form-control" 
+                                       placeholder="Ej: Pago de luz Q300 hoy...">
+                                <button class="btn btn-primary" type="button" id="btnMagic">
+                                    <i class="bi bi-lightning-fill"></i> Autocompletar
+                                </button>
+                            </div>
                         </div>
                     </div>
-
                     <form method="post" class="bg-white p-4 rounded shadow-sm" id="transactionForm">
                         {% csrf_token %}
 
@@ -72,14 +78,14 @@
                                 <div class="input-group input-group-lg">
                                     <span class="input-group-text">Q</span>
                                     <input type="text" id="montoVisual" class="form-control fw-bold fs-4" placeholder="0.00" required>
-                                    
                                     <input type="hidden" name="amount" id="montoReal">
                                 </div>
                                 <small class="text-muted">Escriba el número, el sistema pone las comas.</small>
                             </div>
                         </div>
 
-<input type="hidden" name="movement_type" value="{{ tipo }}">                        <hr>
+                        <input type="hidden" name="movement_type" value="{{ tipo }}">
+                        <hr>
 
                         <div class="d-flex justify-content-between">
                             <a href="{% url 'bank_list' %}" class="btn btn-outline-secondary">Cancelar</a>
@@ -96,23 +102,22 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // --- 1. VARIABLES ---
         const visualInput = document.getElementById('montoVisual');
         const realInput = document.getElementById('montoReal');
         const form = document.getElementById('transactionForm');
+        const btnMagic = document.getElementById('btnMagic'); // Botón IA
+        const aiPrompt = document.getElementById('aiPrompt'); // Input IA
 
-        // Función para dar formato de moneda
+        // --- 2. LÓGICA DE COMAS (MONEDA) ---
         const formatNumber = (n) => {
             let val = n.replace(/\D/g, "").replace(/^0+/, "");
             if (val === "") return "";
-            
             if (val.length === 1) return "0.0" + val;
             if (val.length === 2) return "0." + val;
-
             let main = val.substring(0, val.length - 2);
             let cents = val.substring(val.length - 2);
-            let formattedMain = main.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-            
-            return formattedMain + "." + cents;
+            return main.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "." + cents;
         };
 
         visualInput.addEventListener('input', (e) => {
@@ -121,12 +126,64 @@
             realInput.value = formatted.replace(/,/g, "");
         });
 
-        // Al enviar, asegurarnos que el realInput tenga valor
+        // Asegurar valor al enviar manual
         form.addEventListener('submit', (e) => {
-            if(!realInput.value) {
+            if(!realInput.value && visualInput.value) {
                 realInput.value = visualInput.value.replace(/,/g, "");
             }
         });
+
+        // --- 3. LÓGICA DE IA (NUEVA) ---
+        if(btnMagic){
+            btnMagic.addEventListener('click', async () => {
+                const texto = aiPrompt.value;
+                if(!texto) return;
+
+                // Efecto visual "Pensando"
+                const originalIcon = btnMagic.innerHTML;
+                btnMagic.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                btnMagic.disabled = true;
+
+                try {
+                    // Llamada al Servidor (API)
+                    const response = await fetch('/api/ai-magic/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: texto })
+                    });
+                    
+                    const json = await response.json();
+                    
+                    if(json.status === 'ok') {
+                        const data = json.data;
+                        
+                        // Llenar campos
+                        document.getElementById('id_description').value = data.description;
+                        document.getElementById('id_date').value = data.date;
+                        
+                        // Llenar Monto y disparar evento para que se pongan las comas
+                        if(data.amount) {
+                            visualInput.value = data.amount;
+                            visualInput.dispatchEvent(new Event('input')); 
+                        }
+
+                        // Alerta inteligente si el tipo no coincide
+                        // (Si la IA dice INGRESO pero estamos en pantalla ROJA)
+                        const pantallaActual = document.querySelector('.bg-danger') ? 'OUT' : 'IN';
+                        if (data.movement_type !== pantallaActual) {
+                            alert("⚠️ OJO: La IA detectó un tipo de movimiento diferente al de esta pantalla. Verifique.");
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error IA:', error);
+                    alert('Error al conectar con el cerebro.');
+                }
+
+                // Restaurar botón
+                btnMagic.innerHTML = originalIcon;
+                btnMagic.disabled = false;
+            });
+        }
     });
 </script>
 {% endblock %}

@@ -41,4 +41,6 @@ urlpatterns = [
     
     # --- 9. GASTOS ---
     path('gastos/manual/', views.gasto_manual, name='gasto_manual'),
+
+    path('api/ai-magic/', views.api_ai_transaction, name='api_ai_magic'),
 ]

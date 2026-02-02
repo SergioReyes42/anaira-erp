@@ -11,6 +11,8 @@ from .models import Quotation, QuotationDetail, CompanyProfile, Provider, Purcha
 
 
 # --- IMPORTS DE DJANGO ---
+from django.contrib.sessions.models import Session
+from django.utils import timezone
 from django.db.models import Sum
 from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
@@ -112,7 +114,11 @@ def select_company(request): # <--- AQUÍ ESTABA EL ERROR: FALTABA ESTA LÍNEA
 
 @login_required
 def home(request):
-    # 1. Total Ventas (Suma de todo lo vendido)
+    # 1. Lógica de Usuarios Conectados
+    active_sessions = Session.objects.filter(expire_date__gte=timezone.now()).count()
+
+
+    # 2. Total Ventas (Suma de todo lo vendido)
     total_ventas = Sale.objects.aggregate(Sum('total'))['total__sum'] or 0
     
     # 2. Total Compras (Inversión en mercadería)
@@ -129,13 +135,14 @@ def home(request):
     ultimas_ventas = Sale.objects.order_by('-date')[:5]
 
     context = {
+        'active_sessions': active_sessions,
         'total_ventas': total_ventas,
         'total_compras': total_compras,
         'productos_bajos': productos_bajos,
         'total_clientes': total_clientes,
         'ultimas_ventas': ultimas_ventas,
     }
-    return render(request, 'home.html', context)
+    return render(request, 'core/home.html', context)
 
 # ==========================================
 # 2. GASTOS Y OCR
@@ -1577,3 +1584,25 @@ def create_client(request):
         return redirect('client_list')
         
     return render(request, 'core/sales/client_form.html')
+
+# Al final de core/views.py
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .ai_brain import analizar_texto_bancario
+
+@csrf_exempt
+def api_ai_transaction(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            prompt = data.get('prompt', '')
+            
+            # Llamamos a nuestro cerebro
+            resultado = analizar_texto_bancario(prompt)
+            
+            return JsonResponse({'status': 'ok', 'data': resultado})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+            
+    return JsonResponse({'status': 'error'}, status=400)
