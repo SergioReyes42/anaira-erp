@@ -32,20 +32,20 @@ class BankAccountForm(forms.ModelForm):
         }
 
 class BankTransactionForm(forms.ModelForm):
+    # 1. Esto se queda (creamos el campo "virtual" para el formulario)
+    transaction_type = forms.CharField(required=False, widget=forms.HiddenInput())
+
     class Meta:
         model = BankTransaction
-        # 1. AGREGAMOS EL CAMPO A LA LISTA (OBLIGATORIO)
-        fields = ['account', 'date', 'reference', 'description', 'amount', 'transaction_type']
+        # 2. AQUÍ EL CAMBIO: ¡Borramos 'transaction_type' de esta lista!
+        # Solo deje los campos que DE VERDAD existen en la base de datos
+        fields = ['account', 'date', 'reference', 'description', 'amount']
         
         widgets = {
             'account': forms.Select(attrs={'class': 'form-select form-select-lg'}),
             'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'reference': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.TextInput(attrs={'class': 'form-control'}),
-            # El monto ya no lleva widget aquí porque lo controla el HTML
-            
-            # 2. LO DEFINIMOS COMO OCULTO (Para que no estorbe visualmente)
-            'transaction_type': forms.HiddenInput(),
         }
 
 class TransferForm(forms.Form):
