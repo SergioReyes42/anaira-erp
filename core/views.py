@@ -429,25 +429,21 @@ def bank_transaction_create(request):
     tipo_operacion = request.GET.get('type', 'OUT') 
     
     if request.method == 'POST':
-        # TRUCO: Hacemos una copia de los datos y le inyectamos el tipo manualmente
-        # Esto soluciona el error aunque el formulario del servidor sea viejo
-        datos_formulario = request.POST.copy()
-        datos_formulario['transaction_type'] = tipo_operacion
-        
-        form = BankTransactionForm(datos_formulario) # Usamos la copia modificada
+        # Nota: Ya no necesitamos el .copy() porque el form tiene required=False
+        form = BankTransactionForm(request.POST)
         
         if form.is_valid():
             try:
                 with transaction.atomic():
                     nueva_transaccion = form.save(commit=False)
-                    nueva_transaccion.transaction_type = tipo_operacion # Aseguramos doble
+                    
+                    # --- AQUÍ LLENAMOS EL DATO OBLIGATORIAMENTE ---
+                    nueva_transaccion.transaction_type = tipo_operacion
+                    # ----------------------------------------------
                     
                     cuenta = nueva_transaccion.account
-                    
-                    # Limpieza de comas en el monto (por si acaso el JS manda comas)
-                    # Aunque Django suele manejarlo, es mejor asegurar si vamos a usar formato visual
-                    # Nota: El JS de abajo limpiará antes de enviar, pero esto es respaldo.
-                    monto = nueva_transaccion.amount
+                    # Como usamos el input visual con JS, el valor llega limpio
+                    monto = nueva_transaccion.amount 
                     
                     if tipo_operacion == 'IN':
                         cuenta.balance += monto

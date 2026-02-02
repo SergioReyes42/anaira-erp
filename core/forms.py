@@ -32,23 +32,24 @@ class BankAccountForm(forms.ModelForm):
         }
 
 class BankTransactionForm(forms.ModelForm):
+    # --- LA LLAVE MAESTRA ---
+    # Esto sobreescribe cualquier regla y hace que el formulario NO pida el tipo
+    transaction_type = forms.CharField(required=False, widget=forms.HiddenInput())
+    # ------------------------
+
     class Meta:
         model = BankTransaction
-        # VERIFIQUE QUE ESTA LISTA SEA EXACTAMENTE ASÍ (Solo 5 cosas):
-        fields = ['account', 'date', 'reference', 'description', 'amount']
+        # Aquí puede dejar la lista como estaba, ya no importa porque la línea de arriba manda.
+        fields = ['account', 'date', 'reference', 'description', 'amount', 'transaction_type']
         
         widgets = {
             'account': forms.Select(attrs={'class': 'form-select form-select-lg'}),
             'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'reference': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.TextInput(attrs={'class': 'form-control'}),
-            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            # Note que aquí ya no ponemos el widget de amount porque lo controlamos con el HTML nuevo
         }
 
-labels = {
-            'account': 'Cuenta',
-            'amount': 'CUANTO BILLETE (PRUEBA)',  # <--- CAMBIO VISIBLE
-        }
 
 class TransferForm(forms.Form):
     from_account = forms.ModelChoiceField(queryset=None, label="Cuenta Origen", widget=forms.Select(attrs={'class': 'form-select'}))
