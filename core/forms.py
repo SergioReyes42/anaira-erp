@@ -2,7 +2,7 @@ from django import forms
 from .models import Product
 from .models import (
     Company, BankAccount, BankMovement, Income, Gasto,
-    BusinessPartner, Product, Employee, Loan, Fleet
+    BusinessPartner, Product, Employee, Loan, Fleet, BankTransaction
 )
 
 # --- 1. SELECCIÓN DE EMPRESA ---
@@ -18,36 +18,32 @@ class BankAccountForm(forms.ModelForm):
     class Meta:
         model = BankAccount
         fields = ['bank_name', 'account_number', 'currency', 'balance']
+        widgets = {
+            'bank_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'account_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'currency': forms.Select(attrs={'class': 'form-select'}),
+            'balance': forms.NumberInput(attrs={'class': 'form-select', 'step': '0.01'}), # Corregí un pequeño typo en widget
+        }
         labels = {
             'bank_name': 'Nombre del Banco',
             'account_number': 'Número de Cuenta',
-            'currency': 'Moneda (GTQ/USD)',
-            'balance': 'Saldo Inicial'
-        }
-        widgets = {
-            'bank_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Banco Industrial'}),
-            'account_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 000-000000-0'}),
-            'currency': forms.TextInput(attrs={'class': 'form-control', 'value': 'GTQ'}),
-            'current_balance': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'currency': 'Moneda',
+            'balance': 'Saldo Inicial',
         }
 
 class BankTransactionForm(forms.ModelForm):
     class Meta:
-        model = BankMovement
-        fields = ['account', 'movement_type', 'amount', 'reference', 'description', 'date', 'evidence']
+        model = BankTransaction
+        # VERIFIQUE QUE ESTA LISTA SEA EXACTAMENTE ASÍ (Solo 5 cosas):
+        fields = ['account', 'date', 'reference', 'description', 'amount']
+        
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'account': forms.Select(attrs={'class': 'form-select'}),
-            'movement_type': forms.HiddenInput(), # Se llena automático
-            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'account': forms.Select(attrs={'class': 'form-select form-select-lg'}),
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'reference': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.TextInput(attrs={'class': 'form-control'}),
-            'evidence': forms.FileInput(attrs={'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }
-    
-    def __init__(self, company, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['account'].queryset = BankAccount.objects.filter(company=company)
 
 class TransferForm(forms.Form):
     from_account = forms.ModelChoiceField(queryset=None, label="Cuenta Origen", widget=forms.Select(attrs={'class': 'form-select'}))
