@@ -426,23 +426,27 @@ class BankTransactionForm(forms.ModelForm):
 
 @login_required
 def bank_transaction_create(request):
-    # Capturamos el tipo desde la URL (Ej: ?type=IN)
     tipo_operacion = request.GET.get('type', 'OUT') 
     
     if request.method == 'POST':
-        form = BankTransactionForm(request.POST)
+        # TRUCO: Hacemos una copia de los datos y le inyectamos el tipo manualmente
+        # Esto soluciona el error aunque el formulario del servidor sea viejo
+        datos_formulario = request.POST.copy()
+        datos_formulario['transaction_type'] = tipo_operacion
+        
+        form = BankTransactionForm(datos_formulario) # Usamos la copia modificada
+        
         if form.is_valid():
             try:
                 with transaction.atomic():
-                    # 1. Preparamos la transacción PERO NO la guardamos todavía (commit=False)
                     nueva_transaccion = form.save(commit=False)
+                    nueva_transaccion.transaction_type = tipo_operacion # Aseguramos doble
                     
-                    # 2. --- AQUÍ LA MAGIA: ASIGNAMOS EL TIPO MANUALMENTE ---
-                    nueva_transaccion.transaction_type = tipo_operacion
-                    # -------------------------------------------------------
-
-                    # 3. Lógica de Saldo (Igual que antes)
                     cuenta = nueva_transaccion.account
+                    
+                    # Limpieza de comas en el monto (por si acaso el JS manda comas)
+                    # Aunque Django suele manejarlo, es mejor asegurar si vamos a usar formato visual
+                    # Nota: El JS de abajo limpiará antes de enviar, pero esto es respaldo.
                     monto = nueva_transaccion.amount
                     
                     if tipo_operacion == 'IN':
@@ -456,9 +460,8 @@ def bank_transaction_create(request):
                         cuenta.balance -= monto
                         mensaje = f"Débito/Cheque de Q{monto} registrado exitosamente."
                     
-                    # 4. Ahora sí guardamos todo
                     cuenta.save()
-                    nueva_transaccion.save() # Al guardar aquí, ya lleva el tipo "IN" o "OUT"
+                    nueva_transaccion.save()
                     
                     messages.success(request, mensaje)
                     return redirect('bank_list')

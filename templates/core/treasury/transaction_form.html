@@ -26,7 +26,7 @@
                         </div>
                     </div>
 
-                    <form method="post" class="bg-white p-4 rounded shadow-sm">
+                    <form method="post" class="bg-white p-4 rounded shadow-sm" id="transactionForm">
                         {% csrf_token %}
 
                         {% if form.errors %}
@@ -71,11 +71,12 @@
                                 <label class="form-label fw-bold text-success">Monto (Q)</label>
                                 <div class="input-group input-group-lg">
                                     <span class="input-group-text">Q</span>
-                                    {{ form.amount }}
+                                    <input type="text" id="montoVisual" class="form-control fw-bold fs-4" placeholder="0.00" required>
+                                    
+                                    <input type="hidden" name="amount" id="montoReal">
                                 </div>
+                                <small class="text-muted">Escriba el número, el sistema pone las comas.</small>
                             </div>
-                            
-                            
                         </div>
 
                         <hr>
@@ -92,4 +93,56 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const visualInput = document.getElementById('montoVisual');
+        const realInput = document.getElementById('montoReal');
+        const form = document.getElementById('transactionForm');
+
+        // Función para dar formato de moneda
+        const formatNumber = (n) => {
+            // Eliminar todo lo que no sea número o punto
+            let val = n.replace(/\D/g, "").replace(/^0+/, "");
+            
+            if (val === "") return "";
+            
+            // Manejar decimales (asumiendo que los últimos 2 son centavos)
+            // Si el usuario escribe "5000", queremos "50.00" -> luego "500.00" -> luego "5,000.00"
+            // Esta lógica es estilo "Cajero Automático"
+            
+            // Si es muy pequeño
+            if (val.length === 1) return "0.0" + val;
+            if (val.length === 2) return "0." + val;
+
+            let main = val.substring(0, val.length - 2);
+            let cents = val.substring(val.length - 2);
+            
+            // Poner comas a la parte entera
+            let formattedMain = main.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            
+            return formattedMain + "." + cents;
+        };
+
+        visualInput.addEventListener('input', (e) => {
+            // 1. Guardar la posición del cursor (opcional, simplificado aquí)
+            
+            // 2. Formatear lo que se ve
+            let formatted = formatNumber(e.target.value);
+            e.target.value = formatted;
+            
+            // 3. Llenar el valor real (sin comas) para Django
+            // "5,000.00" -> "5000.00"
+            realInput.value = formatted.replace(/,/g, "");
+        });
+
+        // Al enviar, asegurarnos que el realInput tenga valor
+        form.addEventListener('submit', (e) => {
+            if(!realInput.value) {
+                // Si el usuario escribió algo manual raro, limpiamos
+                realInput.value = visualInput.value.replace(/,/g, "");
+            }
+        });
+    });
+</script>
 {% endblock %}
