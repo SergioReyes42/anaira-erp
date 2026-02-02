@@ -13,7 +13,7 @@ from .models import Quotation, QuotationDetail, CompanyProfile, Provider, Purcha
 # --- IMPORTS DE DJANGO ---
 from django.contrib.sessions.models import Session
 from django.utils import timezone
-from django.contrib.auth.models import get_user_model
+from django.contrib.auth import get_user_model # ✅ ESTO ES LO CORRECTO
 from django.db.models import Sum
 from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
