@@ -14,7 +14,6 @@ from .models import Quotation, QuotationDetail, CompanyProfile, Provider, Purcha
 from django.contrib.sessions.models import Session
 from django.utils import timezone
 from django.contrib.auth import get_user_model # ✅ ESTO ES LO CORRECTO
-from django.db.models import Sum
 from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
@@ -30,7 +29,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from datetime import date
 from .models import Company, Fleet, BankAccount, Gasto, BankTransaction, JournalEntry, JournalItem
-# from .ai_brain import analizar_documento_ia
+from .ai_brain import analizar_texto_bancario, analizar_documento_ia
 # --- MODELOS ---
 from .models import (
     UserRoleCompany, Branch, Warehouse, Account,
@@ -115,36 +114,46 @@ def select_company(request): # <--- AQUÍ ESTABA EL ERROR: FALTABA ESTA LÍNEA
 
 @login_required
 def home(request):
-    # 1. OBTENER LA CLASE DE USUARIO CORRECTA
-    # Esto busca automáticamente si es 'auth.User' o 'accounts.User'
-    User = get_user_model() 
+    User = get_user_model()
 
-    # 2. LÓGICA DE USUARIOS CONECTADOS
+    # --- 1. LÓGICA DE USUARIOS CONECTADOS ---
     sessions = Session.objects.filter(expire_date__gte=timezone.now())
-    
     user_id_list = []
-    
     for s in sessions:
         data = s.get_decoded()
         if '_auth_user_id' in data:
             user_id_list.append(data['_auth_user_id'])
-            
-    # Ahora usamos la variable User que definimos arriba (que es la correcta)
+    
     active_users_list = User.objects.filter(id__in=user_id_list).distinct()
     active_sessions = active_users_list.count()
 
-    # ... (AQUÍ VA SU LÓGICA DE VENTAS, COMPRAS, ETC.) ...
-    # Asegúrese de mantener sus variables de ventas/compras aquí abajo
-    # total_ventas = ...
-    # total_compras = ...
+    # --- 2. LÓGICA DE NEGOCIO (RECUPERADA) ---
+    # Ventas Totales
+    total_ventas = Sale.objects.aggregate(Sum('total'))['total__sum'] or 0
     
+    # Compras Totales
+    total_compras = Purchase.objects.aggregate(Sum('total'))['total__sum'] or 0
+    
+    # Total Clientes
+    total_clientes = Client.objects.count()
+    
+    # Stock Crítico (Productos con menos de 5 unidades)
+    productos_bajos = Product.objects.filter(stock__lt=5).count()
+    
+    # Últimas 5 ventas para la tabla
+    ultimas_ventas = Sale.objects.order_by('-date')[:5]
+
     context = {
-        'active_users_list': active_users_list, 
+        # Datos de Usuarios
+        'active_users_list': active_users_list,
         'active_sessions': active_sessions,
         
-        # ... Sus otras variables ...
-        # 'total_ventas': total_ventas,
-        # etc.
+        # Datos del Tablero (Dashboard)
+        'total_ventas': total_ventas,
+        'total_compras': total_compras,
+        'total_clientes': total_clientes,
+        'productos_bajos': productos_bajos,
+        'ultimas_ventas': ultimas_ventas,
     }
     return render(request, 'core/home.html', context)
 
