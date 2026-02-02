@@ -24,8 +24,20 @@
                             <strong>¿Le da pereza llenar el formulario?</strong><br>
                             <small>Próximamente aquí: "Asistente IA". Solo escriba "Pago de luz Q300" y yo lleno todo.</small>
                         </div>
-                    </div>
-                    <form method="post" class="bg-white p-4 rounded shadow-sm">
+                    {% if form.errors %}
+    <div class="alert alert-danger">
+        <strong>¡Atención! Corrija lo siguiente:</strong>
+        <ul>
+        {% for field in form %}
+            {% for error in field.errors %}
+                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+        {% endfor %}
+        </ul>
+    </div>
                         {% csrf_token %}
                         
                         <div class="mb-4">
@@ -58,7 +70,7 @@
                             </div>
                             
                             <div class="d-none">
-                                {{ form.transaction_type }}
+                                <input type="hidden" name="transaction_type" value="{{ tipo }}">
                             </div>
                         </div>
 
