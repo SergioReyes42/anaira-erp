@@ -2,42 +2,44 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="card shadow border-danger"> <div class="card-header bg-danger text-white">
+    <div class="card shadow border-danger"> 
+        <div class="card-header bg-danger text-white">
             <h3 class="mb-0"><i class="bi bi-box-seam"></i> Ingreso de Mercadería (Compra)</h3>
         </div>
         <div class="card-body">
-            <form method="post">
-                <div class="card border-primary mb-4 shadow-sm">
-    <div class="card-header bg-soft-primary py-2">
-        <h6 class="mb-0 text-primary fw-bold"><i class="bi bi-robot"></i> Lector de Facturas IA</h6>
-    </div>
-    <div class="card-body p-3">
-        <div class="input-group">
-            <input type="file" id="aiImage" class="d-none" accept="image/*">
             
-            <button class="btn btn-outline-primary" type="button" onclick="document.getElementById('aiImage').click()" title="Subir foto de factura">
-                <i class="bi bi-camera-fill"></i> Foto
-            </button>
-            
-            <input type="text" id="aiPrompt" class="form-control" 
-                   placeholder="Suba una foto o escriba: 'Compra de toners en Office Depot por Q450'">
-            
-            <button class="btn btn-primary" type="button" id="btnMagic">
-                <i class="bi bi-magic"></i> Analizar
-            </button>
-        </div>
-        <div class="d-flex justify-content-between mt-2">
-            <small id="fileNameDisplay" class="text-muted fst-italic"></small>
-            <small class="text-muted"><i class="bi bi-info-circle"></i> Detecta: Proveedor, NIT, Fecha, Serie y Total.</small>
-        </div>
-    </div>
-</div>
+            <form method="post" id="purchaseForm">
                 {% csrf_token %}
-                
+
+                <div class="card border-primary mb-4 shadow-sm">
+                    <div class="card-header bg-soft-primary py-2">
+                        <h6 class="mb-0 text-primary fw-bold"><i class="bi bi-robot"></i> Lector de Facturas IA</h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="input-group">
+                            <input type="file" id="aiImage" class="d-none" accept="image/*">
+                            
+                            <button class="btn btn-outline-primary" type="button" onclick="document.getElementById('aiImage').click()" title="Subir foto de factura">
+                                <i class="bi bi-camera-fill"></i> Foto
+                            </button>
+                            
+                            <input type="text" id="aiPrompt" class="form-control" 
+                                   placeholder="Suba una foto o escriba: 'Compra de toners en Office Depot por Q450'">
+                            
+                            <button class="btn btn-primary" type="button" id="btnMagic">
+                                <i class="bi bi-magic"></i> Analizar
+                            </button>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <small id="fileNameDisplay" class="text-muted fst-italic"></small>
+                            <small class="text-muted"><i class="bi bi-info-circle"></i> Detecta: Proveedor, NIT, Fecha, Serie y Total.</small>
+                        </div>
+                    </div>
+                </div>
                 <div class="row mb-4">
                     <div class="col-md-6">
                         <label class="form-label fw-bold">Proveedor:</label>
-                        <select name="provider" class="form-select" required>
+                        <select name="provider" id="id_provider" class="form-select" required>
                             <option value="">-- Seleccione Proveedor --</option>
                             {% for p in providers %}
                                 <option value="{{ p.id }}">{{ p.name }}</option>
@@ -49,7 +51,7 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold">No. Factura / Referencia:</label>
-                        <input type="text" name="reference" class="form-control" placeholder="Ej: FAC-2026-001" required>
+                        <input type="text" name="reference" id="id_invoice_number" class="form-control" placeholder="Ej: FAC-2026-001" required>
                     </div>
                 </div>
 
@@ -92,12 +94,14 @@
 </div>
 
 <script>
+    // --- 1. LÓGICA DE FILAS (PRODUCTOS) ---
     const productsList = [];
     document.querySelectorAll('#django-data .product-data').forEach(item => {
         productsList.push({ id: item.dataset.id, name: item.dataset.name });
     });
 
-    function addRow() {
+    // Definimos addRow globalmente para que el botón onclick funcione
+    window.addRow = function() {
         const tbody = document.getElementById('productsBody');
         const row = document.createElement('tr');
         
@@ -122,38 +126,34 @@
         `;
         tbody.appendChild(row);
     }
-    window.onload = addRow;
-</script>
-{% endblock %}
-<script>
+
+    // --- 2. LÓGICA DE IA (GEMINI) ---
     document.addEventListener('DOMContentLoaded', function() {
-        // --- VARIABLES ---
+        // Iniciamos con una fila vacía
+        window.addRow();
+
         const btnMagic = document.getElementById('btnMagic');
         const aiPrompt = document.getElementById('aiPrompt');
         const aiImageInput = document.getElementById('aiImage');
         const fileNameDisplay = document.getElementById('fileNameDisplay');
 
-        // --- CAMPOS DEL FORMULARIO (MODIFIQUE LOS ID SI SON DIFERENTES) ---
-        // Django por defecto usa id_nombrecampo
-        const fieldProvider = document.getElementById('id_provider'); // Select de proveedor
-        const fieldDate = document.getElementById('id_date');         // Fecha
-        const fieldRef = document.getElementById('id_invoice_number'); // No. Factura/Serie
-        const fieldTotal = document.getElementById('id_total');       // Total
-        const fieldObs = document.getElementById('id_observation');   // Observaciones (opcional)
+        // Campos
+        const fieldProvider = document.getElementById('id_provider');
+        const fieldRef = document.getElementById('id_invoice_number');
+        const fieldTotal = document.getElementById('id_total'); // Si existiera
+        const fieldObs = document.getElementById('id_observation'); // Si existiera
 
-        // 1. Mostrar nombre de archivo al seleccionar
+        // Mostrar nombre archivo
         aiImageInput.addEventListener('change', function() {
             if(this.files && this.files[0]) {
                 fileNameDisplay.textContent = "📸 Imagen lista: " + this.files[0].name;
-                aiPrompt.placeholder = "¡Presione Analizar para procesar la factura!";
+                aiPrompt.placeholder = "¡Presione Analizar!";
                 aiPrompt.disabled = true;
             }
         });
 
-        // 2. LOGICA DEL BOTÓN MÁGICO
         if(btnMagic){
             btnMagic.addEventListener('click', async () => {
-                // UI: Bloquear y mostrar spinner
                 const originalContent = btnMagic.innerHTML;
                 btnMagic.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando...';
                 btnMagic.disabled = true;
@@ -162,24 +162,20 @@
                     let response;
                     const formData = new FormData();
 
-                    // A. MODO IMAGEN (Prioridad)
+                    // A. IMAGEN
                     if (aiImageInput.files.length > 0) {
                         formData.append('image', aiImageInput.files[0]);
-                        formData.append('context', 'GASTO'); // <--- CLAVE: Le decimos a la IA que es un GASTO
-                        
+                        formData.append('context', 'GASTO');
                         response = await fetch('/api/ai-magic/', { method: 'POST', body: formData });
-
-                    // B. MODO TEXTO
+                    
+                    // B. TEXTO
                     } else {
                         const texto = aiPrompt.value;
-                        if(!texto) { throw new Error("Por favor suba una foto o escriba algo."); }
-                        
-                        // Para texto usamos el mismo endpoint pero JSON
+                        if(!texto) throw new Error("Suba foto o escriba algo.");
                         response = await fetch('/api/ai-magic/', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ prompt: texto }) 
-                            // Nota: El cerebro de texto actual es básico, el fuerte es la IMAGEN
+                            body: JSON.stringify({ prompt: texto })
                         });
                     }
 
@@ -187,30 +183,22 @@
 
                     if(json.status === 'ok') {
                         const data = json.data;
-                        console.log("Datos IA:", data); // Para depurar
+                        console.log("IA Data:", data);
 
-                        // --- MAPEO DE DATOS ---
-
-                        // 1. Fecha
-                        if(data.fecha && fieldDate) fieldDate.value = data.fecha;
-                        
-                        // 2. Serie / Número de Factura
-                        if(data.serie && fieldRef) fieldRef.value = data.serie;
-                        if(data.referencia && fieldRef) fieldRef.value = data.referencia;
-
-                        // 3. Total
-                        if((data.total || data.amount) && fieldTotal) {
-                            let monto = (data.total || data.amount).toString().replace(/,/g, "");
-                            fieldTotal.value = monto;
+                        // Llenar Referencia / Factura
+                        if((data.serie || data.referencia) && fieldRef) {
+                            fieldRef.value = data.serie || data.referencia;
                         }
 
-                        // 4. Proveedor (Lógica Difícil: Dropdown)
-                        // Intentamos buscar el texto del proveedor en el select
+                        // Llenar Total (Si hubiera campo)
+                        if((data.total || data.amount) && fieldTotal) {
+                            fieldTotal.value = (data.total || data.amount).toString().replace(/,/g, "");
+                        }
+
+                        // Llenar Proveedor (Búsqueda en Select)
                         if(data.proveedor && fieldProvider) {
                             let encontrado = false;
                             const busqueda = data.proveedor.toLowerCase();
-                            
-                            // Recorrer opciones para ver si alguna coincide
                             for (let i = 0; i < fieldProvider.options.length; i++) {
                                 const optText = fieldProvider.options[i].text.toLowerCase();
                                 if (optText.includes(busqueda) || busqueda.includes(optText)) {
@@ -219,20 +207,13 @@
                                     break;
                                 }
                             }
-                            // Si no lo encuentra, lo ponemos en observaciones
-                            if(!encontrado && fieldObs) {
-                                fieldObs.value = `Proveedor detectado por IA: ${data.proveedor} (NIT: ${data.nit || 'N/A'}). ` + fieldObs.value;
-                                alert(`⚠️ La IA detectó al proveedor "${data.proveedor}", pero no lo tienes registrado en tu lista. Lo puse en observaciones.`);
+                            if(!encontrado) {
+                                alert(`⚠️ Proveedor detectado: "${data.proveedor}", pero no está en la lista. Registrelo.`);
                             }
-                        }
-                        
-                        // 5. Extras en observación
-                        if(data.nit && fieldObs && !fieldObs.value.includes(data.nit)) {
-                            fieldObs.value += ` NIT: ${data.nit}`;
                         }
 
                     } else {
-                        alert("Error IA: " + json.message);
+                        alert("Error IA: " + (json.message || "Desconocido"));
                     }
 
                 } catch (error) {
@@ -240,10 +221,10 @@
                     alert('Error: ' + error.message);
                 }
 
-                // Restaurar botón
                 btnMagic.innerHTML = originalContent;
                 btnMagic.disabled = false;
             });
         }
     });
 </script>
+{% endblock %}
