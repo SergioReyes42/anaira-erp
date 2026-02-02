@@ -195,15 +195,13 @@
 
                 <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Operaciones</small>
                 
-      <div class="p-2">
-    <a href="{% url 'bank_transaction_create' %}?type=IN" class="btn btn-success w-100 mb-2 text-start">
-        <i class="bi bi-arrow-down-circle"></i> Depósito (IN)
-    </a>
-
-    <a href="{% url 'bank_transaction_create' %}?type=OUT" class="btn btn-danger w-100 text-start">
-        <i class="bi bi-arrow-up-circle"></i> Cheque (OUT)
-    </a>
-</div>
+                <a href="{% url 'bank_transaction_create' %}?type=IN" class="list-group-item list-group-item-action">
+                    <i class="bi bi-arrow-down-circle text-success me-2"></i> Registrar Depósito
+                </a>
+                
+                <a href="{% url 'bank_transaction_create' %}?type=OUT" class="list-group-item list-group-item-action">
+                    <i class="bi bi-arrow-up-circle text-danger me-2"></i> Registrar Cheque
+                </a>
 
                 <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Reportes</small>
                 <a href="{% url 'bank_list' %}" class="list-group-item list-group-item-action">
