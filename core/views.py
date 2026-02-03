@@ -1184,10 +1184,12 @@ def employee_list(request):
 
 @login_required
 def inventory_list(request):
-    productos = Product.objects.filter(is_active=True).order_by('code')
+    # CORRECCIÓN: Usamos .all() porque el modelo Product no tiene campo 'is_active' todavía
+    products = Product.objects.all().order_by('-id')
     
+    # Manejo del formulario de creación rápida (si lo tiene en esa vista)
     if request.method == 'POST':
-        form = ProductForm(request.POST) # Usa el de forms.py
+        form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             messages.success(request, "Producto creado.")
@@ -1196,7 +1198,7 @@ def inventory_list(request):
         form = ProductForm()
 
     return render(request, 'core/inventory/product_list.html', {
-        'productos': productos,
+        'products': products,
         'form': form
     })
 
