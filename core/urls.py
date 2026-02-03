@@ -67,4 +67,5 @@ urlpatterns = [
     path('contabilidad/diario/', views.libro_diario, name='libro_diario'),
     path('contabilidad/mayor/', views.libro_mayor, name='libro_mayor'),
     path('contabilidad/balance/', views.balance_saldos, name='balance_saldos'),
+    
 ]
