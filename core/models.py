@@ -394,7 +394,7 @@ class Quotation(models.Model):
         ('CANCELED', 'Cancelada (Libera Stock)'),
     ]
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     date = models.DateField(default=timezone.now)
     valid_until = models.DateField(blank=True, null=True)
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0)

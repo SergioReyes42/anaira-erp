@@ -47,4 +47,6 @@ urlpatterns = [
     # --- RUTAS DE LOGÍSTICA / PRODUCTOS ---
     path('logistica/productos/', views.product_list, name='product_list'),
     path('logistica/productos/nuevo/', views.product_create, name='product_create'),
+
+    path('ventas/cotizacion/<int:quote_id>/facturar/', views.convert_quote_to_sale, name='convert_quote_to_sale'),
 ]
