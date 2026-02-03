@@ -1692,63 +1692,66 @@ def inventory_kardex(request):
 def convert_quote_to_sale(request, quote_id):
     quote = get_object_or_404(Quotation, id=quote_id)
     
-    # Validación: No facturar doble
     if quote.status == 'BILLED':
         messages.warning(request, "Esta cotización ya fue facturada.")
         return redirect('quotation_list')
 
-    # 1. Asegurar que existe un Perfil de Empresa (Requisito del nuevo modelo)
+    # 1. Datos base
     empresa = CompanyProfile.objects.first()
     if not empresa:
-        # Si no existe, creamos uno de emergencia para no romper el sistema
         empresa = CompanyProfile.objects.create(name="Mi Empresa", nit="CF", phone="0000")
 
-    # 2. Crear la Venta (CORREGIDO: Sin 'user' ni 'description')
+    # 2. Crear la Venta (CORREGIDO: payment_method aparece SOLO UNA VEZ)
     sale = Sale.objects.create(
-        company=empresa,          # Nuevo campo obligatorio
+        company=empresa,
         client=quote.client,
-        quotation_origin=quote,   # Enlace profesional en lugar de texto
+        quotation_origin=quote,
         total=quote.total,
-        payment_method='EFECTIVO' # Valor por defecto
+        payment_method=quote.payment_method  # <--- Usamos el que viene de la cotización
     )
 
-    # 3. Procesar Productos y Rebajar Inventario
+    # 3. Procesar Stock
     for item in quote.details.all():
         product = item.product
-        
-        # A. Rebajamos el Físico (Lo real)
         product.stock -= item.quantity
-        
-        # B. Liberamos el Apartado (IMPORTANTE)
         product.stock_reserved -= item.quantity
-        if product.stock_reserved < 0: product.stock_reserved = 0 
-        
+        if product.stock_reserved < 0: product.stock_reserved = 0
         product.save()
         
-        # C. Crear Detalle de Venta
         SaleDetail.objects.create(
-            sale=sale,
-            product=product,
-            quantity=item.quantity,
-            unit_price=item.unit_price,
-            # El subtotal se calcula solo en el save() del modelo
+            sale=sale, product=product, quantity=item.quantity, unit_price=item.unit_price
         )
-
-        # D. Kardex (Historial)
-        # Nota: Aquí sí usamos 'user' porque InventoryMovement lo tiene
+        
         InventoryMovement.objects.create(
-            product=product,
-            quantity=item.quantity,
-            type='OUT',
-            reference=f"Venta #{sale.id}",
-            user=request.user,
-            date=timezone.now()
+            product=product, quantity=item.quantity, type='OUT', 
+            reference=f"Venta #{sale.id}", user=request.user, date=timezone.now()
         )
 
-    # 4. Cerrar Cotización
-    quote.status = 'BILLED' 
+    # 4. LÓGICA DE COBRO AUTOMÁTICO
+    if sale.payment_method != 'CREDITO':
+        cuenta_destino = BankAccount.objects.filter(company=empresa).first()
+        
+        if cuenta_destino:
+            cuenta_destino.balance += sale.total
+            cuenta_destino.save()
+            
+            BankMovement.objects.create(
+                account=cuenta_destino,
+                movement_type='IN',
+                category='Venta',
+                description=f"Venta #{sale.id} - {sale.client.name}",
+                amount=sale.total,
+                date=timezone.now(),
+                reference=f"Auto-Cobro #{sale.id}"
+            )
+            messages.success(request, f"¡Venta #{sale.id} creada y cobrada (Banco)!")
+        else:
+            messages.warning(request, "Venta creada, pero no se cobró (Falta Cuenta Bancaria).")
+    else:
+        messages.info(request, f"Venta #{sale.id} registrada al CRÉDITO.")
+
+    # 5. Cerrar Cotización
+    quote.status = 'BILLED'
     quote.save()
 
-    messages.success(request, f"¡Venta #{sale.id} generada y stock descontado!")
     return redirect('quotation_list')
-

@@ -393,10 +393,29 @@ class Quotation(models.Model):
         ('BILLED', 'Facturada (Rebaja Stock)'),
         ('CANCELED', 'Cancelada (Libera Stock)'),
     ]
+    # --- NUEVO BLOQUE: OPCIONES DE PAGO ---
+    PAYMENT_CHOICES = [
+        ('EFECTIVO', 'Efectivo'),
+        ('TRANSFERENCIA', 'Transferencia'),
+        ('CHEQUE', 'Cheque'),
+        ('CREDITO', 'Crédito / Por Cobrar'),
+    ]
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     date = models.DateField(default=timezone.now)
     valid_until = models.DateField(blank=True, null=True)
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    observation = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='DRAFT')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # --- NUEVO CAMPO ---
+    payment_method = models.CharField(
+        max_length=50, 
+        choices=PAYMENT_CHOICES, 
+        default='EFECTIVO',
+        verbose_name="Método de Pago"
+    )
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     observation = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='DRAFT')

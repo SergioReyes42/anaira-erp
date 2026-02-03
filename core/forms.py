@@ -222,10 +222,12 @@ class QuotationForm(forms.ModelForm):
 
     class Meta:
         model = Quotation
-        fields = ['client', 'date', 'observation']
+        fields = ['client', 'date', 'payment_method', 'observation']
         widgets = {
             'client': forms.Select(attrs={'class': 'form-select'}),
             'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            # WIDGET NUEVO
+            'payment_method': forms.Select(attrs={'class': 'form-select'}),
             'observation': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
