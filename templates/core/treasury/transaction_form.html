@@ -1,213 +1,62 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Tablero de Control</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary">Hoy</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary">Esta Semana</button>
+<div class="container mt-4 d-flex justify-content-center">
+    <div class="card shadow-lg" style="width: 100%; max-width: 600px;">
+        <div class="card-header text-white {% if movement_type == 'IN' %}bg-success{% else %}bg-danger{% endif %} text-center py-3">
+            <h4 class="mb-0 fw-bold">
+                {% if movement_type == 'IN' %}
+                    <i class="bi bi-arrow-down-circle-fill"></i> REGISTRAR DEPÓSITO
+                {% else %}
+                    <i class="bi bi-arrow-up-circle-fill"></i> REGISTRAR RETIRO
+                {% endif %}
+            </h4>
         </div>
-    </div>
-</div>
-
-<div class="row g-4 mb-4">
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-success shadow h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title mb-0">Ventas Totales</h6>
-                        <h2 class="my-2 fw-bold">Q {{ total_ventas|floatformat:2 }}</h2>
-                        <small class="text-white-50"><i class="bi bi-arrow-up"></i> Ingresos</small>
-                    </div>
-                    <i class="bi bi-cash-coin fs-1 opacity-50"></i>
-                </div>
-            </div>
-            <div class="card-footer bg-transparent border-0 small">
-                <a href="{% url 'quotation_list' %}" class="text-white text-decoration-none stretched-link">Ver detalle</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card text-white bg-primary shadow h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title mb-0">Compras / Inversión</h6>
-                        <h2 class="my-2 fw-bold">Q {{ total_compras|floatformat:2 }}</h2>
-                        <small class="text-white-50"><i class="bi bi-cart4"></i> Salidas</small>
-                    </div>
-                    <i class="bi bi-bag-check fs-1 opacity-50"></i>
-                </div>
-            </div>
-            <div class="card-footer bg-transparent border-0 small">
-                <a href="{% url 'purchase_list' %}" class="text-white text-decoration-none stretched-link">Ver detalle</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card text-dark bg-light shadow h-100 border-start border-4 border-info">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title mb-0 text-muted">Cartera Clientes</h6>
-                        <h2 class="my-2 fw-bold text-info">{{ total_clientes }}</h2>
-                        <small class="text-muted">Activos</small>
-                    </div>
-                    <i class="bi bi-people fs-1 text-info opacity-50"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card text-white bg-danger shadow h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="card-title mb-0">Stock Crítico</h6>
-                        <h2 class="my-2 fw-bold">{{ productos_bajos }}</h2>
-                        <small class="text-white-50">Productos por agotarse</small>
-                    </div>
-                    <i class="bi bi-exclamation-triangle fs-1 opacity-50"></i>
-                </div>
-            </div>
-            <div class="card-footer bg-transparent border-0 small">
-                <a href="/admin/core/product/?stock__lt=5" target="_blank" class="text-white text-decoration-none stretched-link">Revisar Inventario</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-8 mb-4">
-        <div class="card shadow">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 text-gray-800">Últimas Ventas Realizadas</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th># Factura</th>
-                                <th>Cliente</th>
-                                <th>Fecha</th>
-                                <th class="text-end">Monto</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for venta in ultimas_ventas %}
-                            <tr>
-                                <td class="fw-bold">
-                                    <a href="{% url 'invoice_pdf' venta.id %}" target="_blank" class="text-decoration-none">
-                                        {{ venta.id|stringformat:"05d" }}
-                                    </a>
-                                </td>
-                                <td>{{ venta.client.name }}</td>
-                                <td>{{ venta.date|date:"d M Y" }}</td>
-                                <td class="text-end fw-bold text-success">Q {{ venta.total }}</td>
-                                <td><span class="badge bg-success">Pagado</span></td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center text-muted">Aún no hay movimientos.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-4 mb-4">
-        <div class="card shadow">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0">Accesos Rápidos</h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-3">
-                    <a href="{% url 'create_quotation' %}" class="btn btn-outline-primary text-start p-3">
-                        <i class="bi bi-plus-circle-fill me-2 fs-5"></i> Nueva Cotización
-                    </a>
-                    <a href="{% url 'create_purchase' %}" class="btn btn-outline-success text-start p-3">
-                        <i class="bi bi-cart-plus-fill me-2 fs-5"></i> Ingresar Mercadería
-                    </a>
-                    <a href="/admin/core/client/add/" target="_blank" class="btn btn-outline-secondary text-start p-3">
-                        <i class="bi bi-person-plus-fill me-2 fs-5"></i> Registrar Nuevo Cliente
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050">
-    
-    <div class="collapse mb-2" id="collapseUsers">
-        <div class="card shadow border-info" style="width: 300px;">
-            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center py-2">
-                <h6 class="mb-0 small"><i class="bi bi-people-fill"></i> Usuarios en Línea</h6>
-                <button type="button" class="btn-close btn-close-white small" onclick="document.getElementById('btnUserToggle').click()"></button>
-            </div>
-            
-            <div class="card-body p-0">
+        <div class="card-body p-4">
+            <form method="POST">
+                {% csrf_token %}
                 
-                <div class="text-center p-3 bg-light border-bottom">
-                    <h2 class="display-4 fw-bold text-info mb-0">{{ active_sessions }}</h2>
-                    <small class="text-muted">Conectados ahora</small>
+                <div class="row mb-3">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold">Cuenta Bancaria</label>
+                        {{ form.account }}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Fecha</label>
+                        {{ form.date }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Monto (Q)</label>
+                        {{ form.amount }}
+                    </div>
                 </div>
 
-                <ul class="list-group list-group-flush text-start" style="max-height: 250px; overflow-y: auto;">
-                    {% for usuario in active_users_list %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
-                            <div class="d-flex align-items-center">
-                                <div class="bg-secondary bg-opacity-10 rounded-circle p-2 me-2">
-                                    <i class="bi bi-person-fill text-secondary"></i>
-                                </div>
-                                <div>
-                                    <span class="fw-bold d-block text-dark" style="font-size: 0.9rem;">
-                                        {{ usuario.username }}
-                                    </span>
-                                    <small class="text-muted" style="font-size: 0.75rem;">
-                                        {{ usuario.email|default:"Sin email" }}
-                                    </small>
-                                </div>
-                            </div>
-                            <span class="badge bg-success rounded-pill" title="En línea">●</span>
-                        </li>
-                    {% empty %}
-                        <li class="list-group-item text-center text-muted py-3">
-                            <small>Nadie conectado... espera, ¿y tú? 👻</small>
-                        </li>
-                    {% endfor %}
-                </ul>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Categoría / Motivo</label>
+                    {{ form.category }}
+                </div>
 
-            </div>
-            <div class="card-footer bg-light py-1 text-center">
-                <small class="text-muted" style="font-size: 0.7rem;">Anaira ERP Monitor</small>
-            </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Referencia (No. Boleta / Cheque)</label>
+                    {{ form.reference }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Descripción / Nota</label>
+                    {{ form.description }}
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-lg {% if movement_type == 'IN' %}btn-success{% else %}btn-danger{% endif %}">
+                        <i class="bi bi-save"></i> Guardar Operación
+                    </button>
+                    <a href="{% url 'bank_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
         </div>
     </div>
-
-    <button class="btn btn-info btn-lg rounded-circle shadow-lg d-flex align-items-center justify-content-center" 
-            type="button" 
-            id="btnUserToggle"
-            data-bs-toggle="collapse" 
-            data-bs-target="#collapseUsers" 
-            style="width: 60px; height: 60px;">
-        <i class="bi bi-person-lines-fill fs-4 text-white"></i>
-        
-        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-            {{ active_sessions }}
-            <span class="visually-hidden">usuarios</span>
-        </span>
-    </button>
 </div>
 {% endblock %}
