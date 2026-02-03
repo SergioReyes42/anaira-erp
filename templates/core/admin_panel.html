@@ -1,85 +1,161 @@
-{% extends 'core/base.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anaira ERP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <style>
+        /* ESTILOS ORIGINALES DEL SIDEBAR */
+        body { overflow-x: hidden; background-color: #f8f9fa; }
+        #wrapper { display: flex; width: 100%; align-items: stretch; }
+        #sidebar-wrapper { min-width: 250px; max-width: 250px; background-color: #212529; color: white; transition: all 0.3s; }
+        #sidebar-wrapper .sidebar-heading { padding: 0.875rem 1.25rem; font-size: 0.8rem; text-transform: uppercase; color: #adb5bd; font-weight: bold; }
+        #sidebar-wrapper .list-group-item { background-color: transparent; color: #e9ecef; border: none; padding: 10px 20px; }
+        #sidebar-wrapper .list-group-item:hover { background-color: #343a40; color: #fff; text-decoration: none; }
+        #sidebar-wrapper .list-group-item.active { background-color: #0d6efd; color: white; font-weight: bold; }
+        #sidebar-wrapper a { text-decoration: none; color: inherit; display: block; }
+        #page-content-wrapper { width: 100%; padding: 0; min-height: 100vh; }
+        
+        /* Submenús */
+        .collapse-inner { background: #2c3034; padding-left: 15px; font-size: 0.9em; border-left: 3px solid #0d6efd; }
+        .collapse-inner a { padding: 8px 0; display: block; color: #ced4da; }
+        .collapse-inner a:hover { color: #fff; }
+        
+        /* Toggle Menu */
+        #wrapper.toggled #sidebar-wrapper { margin-left: -250px; }
+    </style>
+</head>
+<body>
 
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="fas fa-shield-alt text-warning"></i> Panel de Control del Sistema</h2>
-        <span class="badge bg-danger">Solo Personal Autorizado</span>
+<div class="d-flex" id="wrapper">
+    <div id="sidebar-wrapper">
+        <div class="sidebar-heading text-center py-4 fs-4 border-bottom border-secondary">
+            <i class="fas fa-cubes"></i> Anaira ERP
+        </div>
+        
+        <div class="list-group list-group-flush my-3">
+            
+            <a href="{% url 'home' %}" class="list-group-item list-group-item-action">
+                <i class="fas fa-home me-2"></i> Inicio
+            </a>
+            
+            <a href="{% url 'smart_hub' %}" class="list-group-item list-group-item-action text-info">
+                <i class="bi bi-magic me-2"></i> Smart Scanner
+            </a>
+
+            <hr class="border-secondary mx-3">
+
+            <div class="sidebar-heading">Comercial</div>
+            <a href="#menuVentas" class="list-group-item list-group-item-action" data-bs-toggle="collapse">
+                <i class="fas fa-cash-register me-2"></i> Ventas
+            </a>
+            <div class="collapse collapse-inner" id="menuVentas">
+                <a href="{% url 'create_quotation' %}">Nueva Cotización</a>
+                <a href="{% url 'quotation_list' %}">Historial Cotizaciones</a>
+                <a href="{% url 'client_list' %}">Clientes</a>
+            </div>
+
+            <a href="#menuCompras" class="list-group-item list-group-item-action" data-bs-toggle="collapse">
+                <i class="fas fa-shopping-cart me-2"></i> Compras
+            </a>
+            <div class="collapse collapse-inner" id="menuCompras">
+                <a href="{% url 'create_purchase' %}">Nueva Compra</a>
+                <a href="{% url 'purchase_list' %}">Historial</a>
+                <a href="{% url 'supplier_list' %}">Proveedores</a>
+            </div>
+
+            <div class="sidebar-heading mt-2">Logística</div>
+            <a href="#menuInventario" class="list-group-item list-group-item-action" data-bs-toggle="collapse">
+                <i class="fas fa-boxes me-2"></i> Inventario
+            </a>
+            <div class="collapse collapse-inner" id="menuInventario">
+                <a href="{% url 'product_list' %}">Productos</a>
+                <a href="{% url 'inventory_kardex' %}">Kardex</a>
+            </div>
+
+            <a href="#menuGastos" class="list-group-item list-group-item-action" data-bs-toggle="collapse">
+                <i class="fas fa-gas-pump me-2"></i> Gastos
+            </a>
+            <div class="collapse collapse-inner" id="menuGastos">
+                <a href="{% url 'dashboard_gastos' %}">Dashboard</a>
+                <a href="{% url 'expense_list' %}">Listado</a>
+            </div>
+
+            <div class="sidebar-heading mt-2">Finanzas</div>
+            <a href="#menuFinanzas" class="list-group-item list-group-item-action" data-bs-toggle="collapse">
+                <i class="fas fa-landmark me-2"></i> Tesorería
+            </a>
+            <div class="collapse collapse-inner" id="menuFinanzas">
+                <a href="{% url 'bank_list' %}">Bancos</a>
+                <a href="{% url 'income_list' %}">Ingresos Varios</a>
+            </div>
+
+            <a href="#menuContabilidad" class="list-group-item list-group-item-action" data-bs-toggle="collapse">
+                <i class="fas fa-book me-2"></i> Contabilidad
+            </a>
+            <div class="collapse collapse-inner" id="menuContabilidad">
+                <a href="{% url 'libro_diario' %}">Libro Diario</a>
+                <a href="{% url 'balance_saldos' %}">Balances</a>
+            </div>
+
+            <div class="sidebar-heading mt-2">Personal</div>
+            <a href="#menuRRHH" class="list-group-item list-group-item-action" data-bs-toggle="collapse">
+                <i class="fas fa-users me-2"></i> RRHH
+            </a>
+            <div class="collapse collapse-inner" id="menuRRHH">
+                <a href="{% url 'employee_list' %}">Empleados</a>
+                <a href="{% url 'nomina_create' %}">Nómina</a>
+            </div>
+
+            <hr class="border-secondary mx-3">
+            <a href="{% url 'control_panel' %}" class="list-group-item list-group-item-action text-warning">
+                <i class="fas fa-cogs me-2"></i> Panel de Control
+            </a>
+            
+            <form action="{% url 'logout' %}" method="POST" class="mt-3 px-3">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger w-100 btn-sm">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </button>
+            </form>
+
+        </div>
     </div>
+    <div id="page-content-wrapper">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-4 shadow-sm">
+            <button class="btn btn-dark" id="menu-toggle"><i class="fas fa-bars"></i></button>
+            <div class="ms-auto fw-bold text-secondary">
+                Hola, {{ request.user.username|default:"Usuario" }}
+            </div>
+        </nav>
 
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card shadow h-100 border-left-primary">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Base de Datos (Admin)</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">Administración Django</div>
-                            <p class="text-muted small mt-2">Acceso directo a tablas, usuarios y permisos crudos.</p>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-database fa-2x text-gray-300"></i>
-                        </div>
+        <div class="container-fluid py-4">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
-                    <a href="/admin/" class="btn btn-primary btn-sm mt-3 w-100" target="_blank">Ir al Backend <i class="fas fa-external-link-alt"></i></a>
-                </div>
-            </div>
-        </div>
+                {% endfor %}
+            {% endif %}
 
-        <div class="col-md-4 mb-4">
-            <div class="card shadow h-100 border-left-success">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Configuración</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">Perfil de Empresa</div>
-                            <p class="text-muted small mt-2">Editar nombre, NIT, logo y datos fiscales.</p>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-building fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                    <a href="/admin/core/companyprofile/" class="btn btn-success btn-sm mt-3 w-100" target="_blank">Editar Empresa</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-4">
-            <div class="card shadow h-100 border-left-warning">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Seguridad</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">Usuarios y Claves</div>
-                            <p class="text-muted small mt-2">Crear nuevos usuarios o resetear contraseñas.</p>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-user-lock fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                    <a href="/admin/auth/user/" class="btn btn-warning btn-sm mt-3 w-100" target="_blank">Gestionar Usuarios</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <hr>
-
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Diagnóstico del Sistema</h6>
-        </div>
-        <div class="card-body">
-            <div class="alert alert-info">
-                <strong>Estado del Servidor:</strong> En línea (Railway)<br>
-                <strong>Versión del ERP:</strong> Anaira v2.0 (Core Refactorizado)<br>
-                <strong>Base de Datos:</strong> PostgreSQL
-            </div>
-            <p>Utilice este panel con precaución. Los cambios realizados en el "Backend Django" afectan directamente la base de datos sin validaciones de negocio.</p>
+            {% block content %}
+            {% endblock %}
         </div>
     </div>
 </div>
-{% endblock %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.getElementById("menu-toggle").onclick = function () {
+        document.getElementById("wrapper").classList.toggle("toggled");
+    };
+</script>
+
+</body>
+</html>
