@@ -1,7 +1,8 @@
 import csv
 import os
 import json
-from datetime import datetime
+from datetime import datetime 
+from datetime import timedelta  # <--- AGREGAR ESTO AL PRINCIPIO
 from itertools import chain
 from operator import attrgetter
 from .ai_brain import analizar_documento_ia
@@ -54,7 +55,8 @@ from .forms import (
     SupplierPaymentForm,
     EmployeeForm, 
     LoanForm,
-    ProductForm
+    ProductForm, QuotationForm, Quotation,       # <--- NECESARIO
+    QuotationDetail  # <--- NECESARIO PARA GUARDAR LOS PRODUCTOS
 )
 
 # ==========================================
@@ -1439,58 +1441,64 @@ from django.contrib import messages
 @login_required
 def create_quotation(request):
     if request.method == 'POST':
-        client_id = request.POST.get('client')
-        valid_until = request.POST.get('valid_until')
+        form = QuotationForm(request.POST)
         
-        # 1. Crear la Cabecera
-        cliente = Client.objects.get(id=client_id)
-        cotizacion = Quotation.objects.create(
-            client=cliente,
-            valid_until=valid_until,
-            total=0 # Iniciamos en 0, luego actualizamos
-        )
-        
-        # 2. Guardar los Detalles
-        products = request.POST.getlist('products[]')
-        quantities = request.POST.getlist('quantities[]')
-        
-        total_general = 0
-        
-        for i in range(len(products)):
-            if products[i] and quantities[i]:
-                producto = Product.objects.get(id=products[i])
-                cantidad = int(quantities[i])
-                precio = producto.price
+        if form.is_valid():
+            try:
+                # 1. Pausamos el guardado para agregar datos faltantes
+                quotation = form.save(commit=False)
                 
-                # --- CORRECCIÓN AQUÍ ---
-                # Calculamos el subtotal ANTES de guardar para evitar el error "null value"
-                subtotal_linea = precio * cantidad
+                # 2. CALCULO DE FECHA DE VALIDEZ (Aquí estaba el error)
+                # Obtenemos los días del formulario, o usamos 15 por defecto
+                dias_validez = form.cleaned_data.get('validity_days')
+                if not dias_validez:
+                    dias_validez = 15 
                 
-                QuotationDetail.objects.create(
-                    quotation=cotizacion,
-                    product=producto,
-                    quantity=cantidad,
-                    unit_price=precio,
-                    subtotal=subtotal_linea  # <--- ¡ESTO FALTABA!
-                )
+                # Sumamos los días a la fecha de emisión
+                quotation.valid_until = quotation.date + timedelta(days=int(dias_validez))
                 
-                total_general += subtotal_linea
-        
-        # 3. Actualizar el total final de la cotización
-        cotizacion.total = total_general
-        cotizacion.save()
-        
-        messages.success(request, 'Cotización creada exitosamente')
-        return redirect('quotation_list')
+                # 3. Guardamos la Cotización (Encabezado)
+                quotation.save()
 
+                # 4. Guardamos los Productos (Detalle)
+                products = request.POST.getlist('products[]')
+                quantities = request.POST.getlist('quantities[]')
+                prices = request.POST.getlist('prices[]')
+
+                total = 0
+                for i in range(len(products)):
+                    if products[i] and quantities[i]:
+                        detail = QuotationDetail(
+                            quotation=quotation,
+                            product_id=products[i],
+                            quantity=int(quantities[i]),
+                            unit_price=float(prices[i])
+                        )
+                        detail.save()
+                        total += detail.quantity * detail.unit_price
+                
+                # Actualizamos el total de la cotización
+                quotation.total = total
+                quotation.save()
+                
+                messages.success(request, 'Cotización creada exitosamente.')
+                return redirect('quotation_list')
+                
+            except Exception as e:
+                messages.error(request, f"Error al guardar: {e}")
+                
     else:
-        # Modo GET: Mostrar el formulario
-        clients = Client.objects.all()
-        products = Product.objects.all()
-        return render(request, 'core/sales/quotation_form.html', {
-            'clients': clients,
-            'products': products
-        })
+        form = QuotationForm()
+
+    # Cargamos productos y clientes para los selects
+    products = Product.objects.all()
+    clients = Client.objects.all()
+    
+    return render(request, 'core/sales/quotation_form.html', {
+        'form': form,
+        'products': products,
+        'clients': clients
+    })
     
 @login_required
 def invoice_pdf(request, pk):
@@ -1635,7 +1643,7 @@ def product_list(request):
     return render(request, 'core/inventory/product_list.html', {'products': products})
 
 # 2. CREAR PRODUCTO (Aquí usamos el form con IA que hicimos antes)
-from .forms import ProductForm # <--- Asegúrese de importar esto arriba
+from .forms import ProductForm, QuotationForm # <--- Asegúrese de importar esto arriba
 
 @login_required
 def product_create(request):

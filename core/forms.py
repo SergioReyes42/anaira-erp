@@ -2,7 +2,7 @@ from django import forms
 from .models import Product
 from .models import (
     Company, BankAccount, BankMovement, Income, Gasto,
-    BusinessPartner, Product, Employee, Loan, Fleet, BankTransaction
+    BusinessPartner, Product, Employee, Loan, Fleet, BankTransaction, Quotation
 )
 
 # --- 1. SELECCIÓN DE EMPRESA ---
@@ -231,3 +231,20 @@ class ProductForm(forms.ModelForm):
         model = Product
         fields = ['name', 'code', 'description', 'price', 'cost', 'stock'] 
         # Si tiene imagen, agregue 'image' a la lista de arriba
+
+class QuotationForm(forms.ModelForm):
+    # Campo auxiliar para calcular la fecha (no se guarda directo, se usa en la vista)
+    validity_days = forms.IntegerField(
+        label="Días de Validez", 
+        initial=15,
+        widget=forms.NumberInput(attrs={'class': 'form-control'})
+    )
+
+    class Meta:
+        model = Quotation
+        fields = ['client', 'date', 'observation'] # NO incluya 'valid_until'
+        widgets = {
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'observation': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'client': forms.Select(attrs={'class': 'form-select'}),
+        }
