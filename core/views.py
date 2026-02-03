@@ -1695,16 +1695,22 @@ def convert_quote_to_sale(request, quote_id):
         messages.warning(request, "Esta cotización ya fue facturada.")
         return redirect('quotation_list')
 
-    # 1. Crear la Venta
+    # 1. Asegurar que existe un Perfil de Empresa (Requisito del nuevo modelo)
+    empresa = CompanyProfile.objects.first()
+    if not empresa:
+        # Si no existe, creamos uno de emergencia para no romper el sistema
+        empresa = CompanyProfile.objects.create(name="Mi Empresa", nit="CF", phone="0000")
+
+    # 2. Crear la Venta (CORREGIDO: Sin 'user' ni 'description')
     sale = Sale.objects.create(
+        company=empresa,          # Nuevo campo obligatorio
         client=quote.client,
-        date=timezone.now(),
+        quotation_origin=quote,   # Enlace profesional en lugar de texto
         total=quote.total,
-        user=request.user,
-        description=f"Generado desde Cotización #{quote.id}"
+        payment_method='EFECTIVO' # Valor por defecto
     )
 
-    # 2. Procesar Productos
+    # 3. Procesar Productos y Rebajar Inventario
     for item in quote.details.all():
         product = item.product
         
@@ -1713,11 +1719,21 @@ def convert_quote_to_sale(request, quote_id):
         
         # B. Liberamos el Apartado (IMPORTANTE)
         product.stock_reserved -= item.quantity
-        if product.stock_reserved < 0: product.stock_reserved = 0 # Seguridad
+        if product.stock_reserved < 0: product.stock_reserved = 0 
         
         product.save()
         
-        # C. Kardex (Historial)
+        # C. Crear Detalle de Venta
+        SaleDetail.objects.create(
+            sale=sale,
+            product=product,
+            quantity=item.quantity,
+            unit_price=item.unit_price,
+            # El subtotal se calcula solo en el save() del modelo
+        )
+
+        # D. Kardex (Historial)
+        # Nota: Aquí sí usamos 'user' porque InventoryMovement lo tiene
         InventoryMovement.objects.create(
             product=product,
             quantity=item.quantity,
@@ -1727,10 +1743,10 @@ def convert_quote_to_sale(request, quote_id):
             date=timezone.now()
         )
 
-    # 3. Cerrar Cotización
-    quote.status = 'BILLED' # Asegúrese que su modelo tenga este status o 'APPROVED'
+    # 4. Cerrar Cotización
+    quote.status = 'BILLED' 
     quote.save()
 
     messages.success(request, f"¡Venta #{sale.id} generada y stock descontado!")
-    return redirect('quotation_list') # O a detalle de venta
+    return redirect('quotation_list')
 
