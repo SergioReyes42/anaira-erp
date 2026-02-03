@@ -149,7 +149,7 @@ class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
         # Estos son los campos EXACTOS que definimos en models.py
-        fields = ['code', 'name', 'product_type', 'price', 'cost', 'stock']
+        fields = '__all__' # Usar todos los campos del modelo              #['code', 'name', 'product_type', 'price', 'cost', 'stock']
         widgets = {
             'code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: SERV-001'}),
             'name': forms.TextInput(attrs={'class': 'form-control'}),

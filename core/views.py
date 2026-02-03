@@ -1646,12 +1646,11 @@ from .forms import ProductForm # <--- Asegúrese de importar esto arriba
 @login_required
 def product_create(request):
     if request.method == 'POST':
-        form = ProductForm(request.POST, request.FILES)
+        form = ProductForm(request.POST, request.FILES) # <--- Aquí se llena
         if form.is_valid():
             form.save()
-            messages.success(request, "Producto creado exitosamente.")
             return redirect('product_list')
     else:
-        form = ProductForm()
+        form = ProductForm() # <--- Aquí se crea vacío para mostrarlo
     
     return render(request, 'core/inventory/product_form.html', {'form': form})
