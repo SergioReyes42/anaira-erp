@@ -2,51 +2,69 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # --- 1. HOME / DASHBOARD (LA ENTRADA PRINCIPAL) ---
-    path('', views.home, name='home'), # <--- Aquí estaba el detalle, debe apuntar a 'home'
+    # --- ACCESO Y DASHBOARD ---
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('seleccionar-empresa/', views.select_company, name='select_company'),
+    path('', views.home, name='home'),
 
-    # --- 2. RUTAS DE CLIENTES ---
-    path('clientes/', views.client_list, name='client_list'),
-    path('admin/core/client/add/', views.client_list, name='add_client_shortcut'), # Atajo
-    path('clientes/nuevo/', views.create_client, name='client_create'),
+    # --- GASTOS Y OCR ---
+    path('gastos/dashboard/', views.dashboard_gastos, name='dashboard_gastos'),
+    path('gastos/lista/', views.expense_list, name='expense_list'),
+    path('gastos/movil/', views.mobile_expense, name='mobile_expense'),
+    path('gastos/manual/', views.gasto_manual, name='gasto_manual'),
+    path('api/ocr/', views.api_ocr_process, name='api_ocr_process'),
 
-    # --- 3. VENTAS Y COTIZACIONES ---
-    path('ventas/cotizaciones/', views.quotation_list, name='quotation_list'),
-    path('ventas/cotizaciones/nueva/', views.create_quotation, name='create_quotation'),
-    path('ventas/cotizaciones/<int:pk>/pdf/', views.quotation_pdf, name='quotation_pdf'),
-    path('ventas/convertir/<int:pk>/', views.convertir_a_venta, name='convertir_a_venta'),
-    path('ventas/factura/<int:pk>/', views.invoice_pdf, name='invoice_pdf'),
+    # --- TESORERÍA / BANCOS ---
+    path('bancos/', views.bank_list, name='bank_list'),
+    path('bancos/nueva/', views.bank_create, name='bank_create'),
+    path('bancos/transaccion/', views.bank_transaction_create, name='bank_transaction_create'),
+    path('bancos/<int:bank_id>/detalle/', views.bank_detail, name='bank_detail'),
+    path('bancos/transferencia/', views.transfer_create, name='transfer_create'),
+    
+    # --- INGRESOS ---
+    path('ingresos/', views.income_list, name='income_list'),
+    path('ingresos/nuevo/', views.income_create, name='income_create'),
 
-    # --- 4. COMPRAS (NUEVO) ---
+    # --- PROVEEDORES Y COMPRAS ---
+    path('proveedores/', views.supplier_list, name='supplier_list'),
+    path('proveedores/pagar/', views.pay_supplier, name='pay_supplier'),
     path('compras/', views.purchase_list, name='purchase_list'),
     path('compras/nueva/', views.create_purchase, name='create_purchase'),
 
-    # --- 5. INVENTARIO Y LOGÍSTICA ---
-    path('inventario/', views.inventory_list, name='inventory_list'),
-    
-    # --- 6. TESORERÍA / BANCOS ---
-    path('bancos/', views.bank_list, name='bank_list'),
-    path('bancos/crear/', views.bank_create, name='bank_create'),
-    path('bancos/transaccion/', views.bank_transaction_create, name='bank_transaction_create'),
+    # --- INVENTARIO (Aquí estaba el error) ---
+    path('inventario/smart-hub/', views.smart_hub, name='smart_hub'), # <--- ESTA FALTABA
+    path('inventario/', views.product_list, name='product_list'), # Antes 'inventory_list'
+    path('inventario/nuevo/', views.product_create, name='product_create'),
+    path('inventario/kardex/', views.inventory_kardex, name='inventory_kardex'),
+    path('inventario/movimiento/', views.create_movement, name='create_movement'),
 
-    # --- 7. CONTABILIDAD ---
-    path('contabilidad/diario/', views.journal_list, name='journal_list'),
-    path('contabilidad/mayor/', views.ledger_list, name='ledger_list'),
-    path('contabilidad/balance-saldos/', views.trial_balance, name='trial_balance'),
-    path('contabilidad/estado-resultados/', views.income_statement, name='income_statement'),
-    path('contabilidad/balance-general/', views.balance_sheet, name='balance_sheet'),
-
-    # --- 8. RRHH ---
-    path('rrhh/empleados/', views.employee_list, name='employee_list'),
-    
-    # --- 9. GASTOS ---
-    path('gastos/manual/', views.gasto_manual, name='gasto_manual'),
-
-    path('api/ai-magic/', views.api_ai_transaction, name='api_ai_magic'),
-
-    # --- RUTAS DE LOGÍSTICA / PRODUCTOS ---
-    path('logistica/productos/', views.product_list, name='product_list'),
-    path('logistica/productos/nuevo/', views.product_create, name='product_create'),
-
+    # --- VENTAS Y CLIENTES ---
+    path('clientes/', views.client_list, name='client_list'),
+    path('clientes/nuevo/', views.create_client, name='client_create'),
+    path('ventas/cotizaciones/', views.quotation_list, name='quotation_list'),
+    path('ventas/cotizaciones/nueva/', views.create_quotation, name='create_quotation'),
     path('ventas/cotizacion/<int:quote_id>/facturar/', views.convert_quote_to_sale, name='convert_quote_to_sale'),
+    path('ventas/cotizacion/<int:pk>/pdf/', views.quotation_pdf, name='quotation_pdf'),
+    path('ventas/factura/<int:pk>/pdf/', views.invoice_pdf, name='invoice_pdf'),
+
+    # --- RRHH ---
+    path('rrhh/empleados/', views.employee_list, name='employee_list'),
+    path('rrhh/nomina/generar/', views.nomina_create, name='nomina_create'),
+    path('rrhh/isr/', views.gestion_isr, name='gestion_isr'),
+    path('rrhh/libro-salarios/', views.libro_salarios, name='libro_salarios'),
+    path('rrhh/prestamos/', views.prestamo_list, name='prestamo_list'),
+
+    # --- REPORTES Y ADMIN ---
+    path('reportes/dashboard/', views.reports_dashboard, name='reports_dashboard'),
+    path('reportes/flota/', views.fleet_report, name='fleet_report'),
+    path('reportes/bancos/', views.report_bank_statement, name='report_bank_statement'),
+    path('reportes/inventario/', views.report_inventory, name='report_inventory'),
+    path('admin-panel/', views.admin_control_panel, name='admin_control_panel'),
+    path('export/csv/', views.export_expenses_csv, name='export_expenses_csv'),
+
+    # --- CONTABILIDAD ---
+    path('contabilidad/diario/', views.libro_diario, name='libro_diario'),
+    path('contabilidad/mayor/', views.libro_mayor, name='libro_mayor'),
+    path('contabilidad/balance/', views.balance_saldos, name='balance_saldos'),
 ]
