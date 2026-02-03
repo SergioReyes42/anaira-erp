@@ -195,15 +195,39 @@ class LoanForm(forms.ModelForm):
         self.fields['employee'].queryset = Employee.objects.filter(company=company)
 
 class ProductForm(forms.ModelForm):
+    # Definimos los campos explícitamente para asegurar que aparezcan
+    name = forms.CharField(
+        label="Nombre del Producto", 
+        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_name'})
+    )
+    code = forms.CharField(
+        label="Código / SKU", 
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_code'})
+    )
+    description = forms.CharField(
+        label="Descripción", 
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'id': 'id_description'})
+    )
+    price = forms.DecimalField(
+        label="Precio Venta (Q)", 
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'id': 'id_price'})
+    )
+    cost = forms.DecimalField(
+        label="Costo (Q)", 
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control'})
+    )
+    stock = forms.IntegerField(
+        label="Stock Inicial", 
+        initial=0,
+        widget=forms.NumberInput(attrs={'class': 'form-control'})
+    )
+    # Si su modelo tiene imagen, descomente la siguiente línea:
+    # image = forms.ImageField(label="Imagen", required=False, widget=forms.FileInput(attrs={'class': 'form-control'}))
+
     class Meta:
         model = Product
-        fields = '__all__'
-        widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_name'}),
-            'code': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_code'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'id': 'id_description', 'rows': 3}),
-            'price': forms.NumberInput(attrs={'class': 'form-control'}),
-            'cost': forms.NumberInput(attrs={'class': 'form-control'}),
-            'stock': forms.NumberInput(attrs={'class': 'form-control'}),
-            'image': forms.FileInput(attrs={'class': 'form-control'}),
-        }
+        fields = ['name', 'code', 'description', 'price', 'cost', 'stock'] 
+        # Si tiene imagen, agregue 'image' a la lista de arriba

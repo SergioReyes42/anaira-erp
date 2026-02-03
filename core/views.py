@@ -776,23 +776,17 @@ def product_list(request):
 
 @login_required
 def product_create(request):
-    company_id = request.session.get('company_id')
-    company = get_object_or_404(Company, id=company_id)
-    
-    initial_code = request.GET.get('code', '')
-    
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
-            prod = form.save(commit=False)
-            prod.company = company
-            prod.save()
-            messages.success(request, "Producto creado exitosamente.")
-            return redirect('smart_hub')
+            form.save()
+            return redirect('product_list')
     else:
-        form = ProductForm(initial={'barcode': initial_code, 'sku': initial_code})
-
-    return render(request, 'inventory/product_form.html', {'form': form})
+        # Aquí creamos el formulario vacío para enviarlo
+        form = ProductForm() 
+    
+    # Aquí lo enviamos al HTML. Fíjese en la parte {'form': form}
+    return render(request, 'core/inventory/product_form.html', {'form': form})
 
 @login_required
 def product_detail(request, pk):

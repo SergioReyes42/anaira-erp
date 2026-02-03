@@ -9,6 +9,7 @@
                     <h3 class="mb-0 fw-bold"><i class="bi bi-box-seam"></i> Nuevo Producto</h3>
                     <span class="badge bg-dark text-white">Inventario</span>
                 </div>
+                
                 <div class="card-body">
 
                     <div class="card border-dark mb-4 shadow-sm bg-light">
@@ -37,6 +38,13 @@
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         
+                        {% if not form.fields %}
+                            <div class="alert alert-danger">
+                                <strong>¡Error de Configuración!</strong><br>
+                                No se encontraron campos. Verifique su archivo <code>core/forms.py</code>.
+                            </div>
+                        {% endif %}
+
                         <div class="row">
                             {% for field in form %}
                             <div class="col-md-6 mb-3">
@@ -76,12 +84,11 @@
         const aiImageInput = document.getElementById('aiImage');
         const fileNameDisplay = document.getElementById('fileNameDisplay');
 
-        // BÚSQUEDA INTELIGENTE DE CAMPOS (Inglés o Español)
-        // Django genera IDs como 'id_nombrecampo'. Aquí buscamos ambos por seguridad.
+        // BÚSQUEDA INTELIGENTE DE CAMPOS (Detecta Inglés o Español)
         const fieldName = document.getElementById('id_name') || document.getElementById('id_nombre');
         const fieldDesc = document.getElementById('id_description') || document.getElementById('id_descripcion');
         const fieldCode = document.getElementById('id_code') || document.getElementById('id_codigo');
-        const fieldPrice = document.getElementById('id_price') || document.getElementById('id_precio');
+        const fieldPrice = document.getElementById('id_price') || document.getElementById('id_precio') || document.getElementById('id_precio_venta');
 
         // Mostrar nombre archivo
         aiImageInput.addEventListener('change', function() {
@@ -102,16 +109,16 @@
                     let response;
                     const formData = new FormData();
 
-                    // A. MODO FOTO (Etiqueta/Caja)
+                    // A. MODO FOTO
                     if (aiImageInput.files.length > 0) {
                         formData.append('image', aiImageInput.files[0]);
-                        formData.append('context', 'PRODUCTO'); // Contexto Clave
+                        formData.append('context', 'PRODUCTO');
                         response = await fetch('/api/ai-magic/', { method: 'POST', body: formData });
                     
                     // B. MODO TEXTO
                     } else {
                         const texto = aiPrompt.value;
-                        if(!texto) throw new Error("Suba una foto del producto o escriba sus detalles.");
+                        if(!texto) throw new Error("Suba una foto o escriba detalles.");
                         response = await fetch('/api/ai-magic/', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -123,31 +130,19 @@
 
                     if(json.status === 'ok') {
                         const data = json.data;
-                        console.log("IA Producto:", data);
+                        console.log("IA Data:", data);
 
-                        // 1. LLENAR NOMBRE
+                        // LLENADO INTELIGENTE
                         if(data.nombre && fieldName) {
                             fieldName.value = data.nombre;
                             if(data.marca) fieldName.value = data.marca + " " + data.nombre;
                         }
-
-                        // 2. LLENAR DESCRIPCION
-                        if(data.descripcion && fieldDesc) {
-                            fieldDesc.value = data.descripcion;
-                        }
-
-                        // 3. LLENAR CODIGO
-                        if(data.codigo && fieldCode) {
-                            fieldCode.value = data.codigo;
-                        }
-                        
-                        // 4. PRECIO (Si la IA lo sugiere)
-                        if(data.precio && fieldPrice) {
-                             fieldPrice.value = data.precio;
-                        }
+                        if(data.descripcion && fieldDesc) fieldDesc.value = data.descripcion;
+                        if(data.codigo && fieldCode) fieldCode.value = data.codigo;
+                        if(data.precio && fieldPrice) fieldPrice.value = data.precio;
 
                     } else {
-                        alert("Error IA: " + (json.message || "Desconocido"));
+                        alert("IA dice: " + (json.message || "No pude leer la imagen."));
                     }
 
                 } catch (e) {
