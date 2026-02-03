@@ -165,13 +165,12 @@
             <div class="collapse submenu" id="menuRRHH">
                 <a href="{% url 'employee_list' %}" class="list-group-item list-group-item-action">Empleados</a>
                 <a href="{% url 'nomina_create' %}" class="list-group-item list-group-item-action">Generar Nómina</a>
-                <a href="#" class="list-group-item list-group-item-action">Vacaciones y Ausencias</a>
+                <a href="#" class="list-group-item list-group-item-action">Vacaciones y Ausencias</a>   
             </div>
 
-             <hr class="border-secondary mx-3">
-            <a href="{% url 'control_panel' %}" class="list-group-item list-group-item-action text-warning">
-                <i class="fas fa-cogs me-2"></i> Panel de Control
-            </a>
+             <div class="mt-4 border-top border-secondary pt-2">
+                 <a href="{% url 'control_panel' %}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-gear-fill me-2"></i> Configuración
                 </a>
                  <form action="{% url 'logout' %}" method="post" class="d-inline">
                     {% csrf_token %}
