@@ -168,9 +168,10 @@
                 <a href="#" class="list-group-item list-group-item-action">Vacaciones y Ausencias</a>
             </div>
 
-             <div class="mt-4 border-top border-secondary pt-2">
-                 <a href="{% url 'control_panel' %}" class="list-group-item list-group-item-action">
-                    <i class="bi bi-gear-fill me-2"></i> Configuración
+             <hr class="border-secondary mx-3">
+            <a href="{% url 'control_panel' %}" class="list-group-item list-group-item-action text-warning">
+                <i class="fas fa-cogs me-2"></i> Panel de Control
+            </a>
                 </a>
                  <form action="{% url 'logout' %}" method="post" class="d-inline">
                     {% csrf_token %}
