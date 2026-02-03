@@ -23,10 +23,8 @@ from django.contrib import messages
 # --- CEREBRO IA ---
 from .ai_brain import analizar_texto_bancario, analizar_documento_ia
 
-# --- FORMULARIOS ---
-from .forms import ProductForm, QuotationForm, BankTransactionForm
-
-# --- MODELOS (Todos unificados aquí) ---
+# --- 1. MODELOS (Base de Datos) ---
+# Aquí van Quotation y QuotationDetail porque son TABLAS
 from .models import (
     # Usuarios y Empresa
     UserRoleCompany, Company, CompanyProfile, Branch, Warehouse,
@@ -45,7 +43,8 @@ from .models import (
     Fleet, InventoryMovement, Loan, Payroll, PayrollDetail
 )
 
-# --- FORMULARIOS ---
+# --- 2. FORMULARIOS (Solo Forms) ---
+# Aquí NO deben estar los modelos
 from .forms import (
     CompanySelectForm, 
     MobileExpenseForm, 
@@ -58,10 +57,13 @@ from .forms import (
     SupplierPaymentForm,
     EmployeeForm, 
     LoanForm,
-    ProductForm, Quotation,       # <--- NECESARIO
-    QuotationDetail  # <--- NECESARIO PARA GUARDAR LOS PRODUCTOS
+    ProductForm, 
+    QuotationForm   # <--- Este sí es el Formulario
 )
 
+# ---------------------------------------------------------
+# A PARTIR DE AQUÍ COMIENZAN SUS VISTAS (def home...)
+# ---------------------------------------------------------
 # ==========================================
 # 1. SISTEMA DE ACCESO Y DASHBOARD
 # ==========================================
