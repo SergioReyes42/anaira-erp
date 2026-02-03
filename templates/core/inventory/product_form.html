@@ -33,43 +33,25 @@
                             <small id="fileNameDisplay" class="text-muted ms-2 fst-italic"></small>
                         </div>
                     </div>
+
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         
-                        <div class="row mb-3">
-                            <div class="col-md-8">
-                                <label class="form-label fw-bold">Nombre del Producto *</label>
-                                {{ form.name }} 
+                        <div class="row">
+                            {% for field in form %}
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">
+                                    {{ field.label }} 
+                                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                
+                                {{ field }}
+                                
+                                {% if field.errors %}
+                                    <div class="text-danger small">{{ field.errors }}</div>
+                                {% endif %}
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Código Interno / Barras</label>
-                                {{ form.code }}
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Descripción</label>
-                            {{ form.description }}
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold text-success">Precio de Venta (Q) *</label>
-                                {{ form.price }}
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Costo (Q)</label>
-                                {{ form.cost }}
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold text-primary">Stock Inicial</label>
-                                {{ form.stock }}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Imagen del Producto</label>
-                            {{ form.image }}
+                            {% endfor %}
                         </div>
 
                         <hr>
@@ -94,12 +76,12 @@
         const aiImageInput = document.getElementById('aiImage');
         const fileNameDisplay = document.getElementById('fileNameDisplay');
 
-        // Referencias a los campos (Django suele usar id_nombrecampo)
-        // Ajuste estos IDs si su form.py usa otros nombres
-        const fieldName = document.getElementById('id_name');
-        const fieldDesc = document.getElementById('id_description');
-        const fieldCode = document.getElementById('id_code');
-        // const fieldBrand = document.getElementById('id_brand'); // Si tuviera marca
+        // BÚSQUEDA INTELIGENTE DE CAMPOS (Inglés o Español)
+        // Django genera IDs como 'id_nombrecampo'. Aquí buscamos ambos por seguridad.
+        const fieldName = document.getElementById('id_name') || document.getElementById('id_nombre');
+        const fieldDesc = document.getElementById('id_description') || document.getElementById('id_descripcion');
+        const fieldCode = document.getElementById('id_code') || document.getElementById('id_codigo');
+        const fieldPrice = document.getElementById('id_price') || document.getElementById('id_precio');
 
         // Mostrar nombre archivo
         aiImageInput.addEventListener('change', function() {
@@ -123,7 +105,7 @@
                     // A. MODO FOTO (Etiqueta/Caja)
                     if (aiImageInput.files.length > 0) {
                         formData.append('image', aiImageInput.files[0]);
-                        formData.append('context', 'PRODUCTO'); // <--- Contexto Importante
+                        formData.append('context', 'PRODUCTO'); // Contexto Clave
                         response = await fetch('/api/ai-magic/', { method: 'POST', body: formData });
                     
                     // B. MODO TEXTO
@@ -146,7 +128,7 @@
                         // 1. LLENAR NOMBRE
                         if(data.nombre && fieldName) {
                             fieldName.value = data.nombre;
-                            if(data.marca) fieldName.value = data.marca + " " + data.nombre; // Marca + Nombre queda mejor
+                            if(data.marca) fieldName.value = data.marca + " " + data.nombre;
                         }
 
                         // 2. LLENAR DESCRIPCION
@@ -154,9 +136,14 @@
                             fieldDesc.value = data.descripcion;
                         }
 
-                        // 3. LLENAR CODIGO (Si detectó código de barras en la foto)
+                        // 3. LLENAR CODIGO
                         if(data.codigo && fieldCode) {
                             fieldCode.value = data.codigo;
+                        }
+                        
+                        // 4. PRECIO (Si la IA lo sugiere)
+                        if(data.precio && fieldPrice) {
+                             fieldPrice.value = data.precio;
                         }
 
                     } else {
