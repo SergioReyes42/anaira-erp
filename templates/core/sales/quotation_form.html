@@ -1,266 +1,194 @@
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="card shadow border-primary">
+    <div class="card shadow">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h3 class="mb-0"><i class="bi bi-file-earmark-text"></i> Nueva Cotización</h3>
-            <span class="badge bg-white text-primary">Ventas</span>
+            <h3 class="mb-0">Nueva Cotización</h3>
+            <a href="{% url 'quotation_list' %}" class="btn btn-light btn-sm">Volver</a>
         </div>
+        
         <div class="card-body">
-
-            <div class="card border-info mb-4 shadow-sm bg-light">
-                <div class="card-body p-3">
-                    <label class="form-label fw-bold text-info mb-2">
-                        <i class="bi bi-magic"></i> Asistente de Ventas IA
-                    </label>
-                    <div class="input-group">
-                        <input type="file" id="aiImage" class="d-none" accept="image/*">
-                        
-                        <button class="btn btn-outline-info" type="button" onclick="document.getElementById('aiImage').click()">
-                            <i class="bi bi-whatsapp"></i> Subir Pedido
-                        </button>
-                        
-                        <input type="text" id="aiPrompt" class="form-control" 
-                               placeholder="Ej: 'Juan Perez pide 3 laptops i5 y 2 impresoras Epson'">
-                        
-                        <button class="btn btn-info text-white" type="button" id="btnMagic">
-                            <i class="bi bi-lightning-fill"></i> Autocompletar
-                        </button>
-                    </div>
-                    <small id="fileNameDisplay" class="text-muted ms-2 fst-italic"></small>
-                </div>
-            </div>
-            <form method="post" id="quotationForm">
+            <form method="POST" id="quotationForm">
                 {% csrf_token %}
                 
                 <div class="row mb-4">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Cliente:</label>
-                        <select name="client" id="id_client" class="form-select" required>
-                            <option value="">-- Buscar Cliente --</option>
-                            {% for c in clients %}
-                                <option value="{{ c.id }}">{{ c.name }} ({{ c.nit }})</option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text">
-                            <a href="/admin/core/client/add/" target="_blank" class="text-decoration-none">
-                                <i class="bi bi-person-plus"></i> Nuevo Cliente
-                            </a>
-                        </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Cliente</label>
+                        {{ form.client }}
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label fw-bold">Fecha:</label>
+                        <label class="form-label fw-bold">Fecha</label>
                         {{ form.date }}
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label fw-bold">Validez (Días):</label>
+                        <label class="form-label fw-bold">Método de Pago</label>
+                        {{ form.payment_method }}
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Validez (Días)</label>
                         {{ form.validity_days }}
                     </div>
                 </div>
 
-                <h5 class="mb-3 border-bottom pb-2">Productos a Cotizar</h5>
-                <div class="table-responsive mb-3">
-                    <table class="table table-hover table-bordered">
+                <hr>
+
+                <h5 class="mb-3">Productos</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="tablaProductos">
                         <thead class="table-light">
                             <tr>
-                                <th>Producto / Servicio</th>
-                                <th width="100">Cant.</th>
-                                <th width="150">Precio Unit.</th>
-                                <th width="50"></th>
+                                <th width="40%">Producto</th>
+                                <th width="15%">Stock Actual</th>
+                                <th width="15%">Cantidad</th>
+                                <th width="15%">Precio Unit. (Q)</th>
+                                <th width="15%">Subtotal</th>
+                                <th width="5%"></th>
                             </tr>
                         </thead>
-                        <tbody id="productsBody">
-                            </tbody>
+                        <tbody id="product-rows">
+                            <tr class="product-row" id="empty-row" style="display:none;">
+                                <td>
+                                    <select class="form-select product-select" onchange="updateRow(this)">
+                                        <option value="" data-price="0" data-stock="0">Seleccione...</option>
+                                        {% for product in products %}
+                                            <option value="{{ product.id }}" 
+                                                    data-price="{{ product.price }}" 
+                                                    data-stock="{{ product.available_stock }}">
+                                                {{ product.name }} ({{ product.code }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <input type="hidden" name="products[]" disabled> 
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control stock-display" readonly disabled>
+                                </td>
+                                <td>
+                                    <input type="number" name="quantities[]" class="form-control qty-input" min="1" value="1" oninput="calculateRow(this)" disabled>
+                                </td>
+                                <td>
+                                    <input type="number" name="prices[]" class="form-control price-input" step="0.01" readonly tabindex="-1">
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control subtotal-display" readonly value="0.00">
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-danger btn-sm remove-row" onclick="removeRow(this)">X</button>
+                                </td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
 
-                <button type="button" class="btn btn-outline-primary btn-sm" onclick="addRow()">
-                    <i class="bi bi-plus-lg"></i> Agregar Producto
-                </button>
+                <button type="button" class="btn btn-success mb-3" onclick="addRow()">+ Agregar Producto</button>
 
-                <div class="mt-4 mb-3">
-                    <label class="form-label fw-bold">Observaciones / Condiciones:</label>
-                    <textarea name="observation" id="id_observation" class="form-control" rows="2" placeholder="Ej: Entrega inmediata, pago al contado..."></textarea>
+                <div class="row justify-content-end">
+                    <div class="col-md-4">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text fw-bold">TOTAL GENERAL (Q)</span>
+                            <input type="text" id="grand_total" class="form-control text-end fw-bold fs-4" value="0.00" readonly>
+                        </div>
+                    </div>
                 </div>
 
-                <hr>
+                <div class="mb-3">
+                    <label class="form-label">Observaciones</label>
+                    {{ form.observation }}
+                </div>
 
-                <div class="d-flex justify-content-end gap-2">
-                    <a href="{% url 'quotation_list' %}" class="btn btn-secondary">Cancelar</a>
-                    <button type="submit" class="btn btn-primary btn-lg px-5">
-                        <i class="bi bi-send"></i> Generar Cotización
-                    </button>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">Guardar Cotización</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<div id="product-data" style="display:none;">
-    {% for p in products %}
-    <span class="p-item" data-id="{{ p.id }}" data-name="{{ p.name }}" data-price="{{ p.price }}"></span>
-    {% endfor %}
-</div>
-
 <script>
-    // --- 1. LÓGICA DE PRODUCTOS (TABLA) ---
-    const productsList = [];
-    document.querySelectorAll('#product-data .p-item').forEach(item => {
-        productsList.push({ 
-            id: item.dataset.id, 
-            name: item.dataset.name, 
-            price: item.dataset.price 
-        });
-    });
-
-    window.addRow = function(preSelectedId = null, preQty = 1) {
-        const tbody = document.getElementById('productsBody');
-        const row = document.createElement('tr');
+    // 1. Agregar Fila
+    function addRow() {
+        // Clonar la fila oculta
+        var emptyRow = document.getElementById('empty-row');
+        var newRow = emptyRow.cloneNode(true);
         
-        let options = '<option value="">-- Seleccionar --</option>';
-        productsList.forEach(p => {
-            const selected = (preSelectedId && p.id == preSelectedId) ? 'selected' : '';
-            options += `<option value="${p.id}" ${selected} data-price="${p.price}">${p.name} - Q${p.price}</option>`;
+        newRow.style.display = ''; // Hacerla visible
+        newRow.id = ''; // Quitar ID duplicado
+        
+        // Habilitar los inputs dentro de la nueva fila para que se envíen
+        var inputs = newRow.querySelectorAll('input, select');
+        inputs.forEach(function(input) {
+            input.disabled = false;
         });
 
-        row.innerHTML = `
-            <td>
-                <select name="products[]" class="form-select product-select" onchange="updatePrice(this)" required>
-                    ${options}
-                </select>
-            </td>
-            <td>
-                <input type="number" name="quantities[]" class="form-control text-center" value="${preQty}" min="1" required>
-            </td>
-            <td>
-                <input type="number" step="0.01" name="prices[]" class="form-control price-input" placeholder="0.00" required>
-            </td>
-            <td class="text-center">
-                <button type="button" class="btn btn-outline-danger btn-sm border-0" onclick="this.closest('tr').remove()">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </td>
-        `;
-        tbody.appendChild(row);
+        document.getElementById('product-rows').appendChild(newRow);
+    }
+
+    // 2. Actualizar datos al seleccionar producto
+    function updateRow(selectElement) {
+        var row = selectElement.closest('tr');
+        var selectedOption = selectElement.options[selectElement.selectedIndex];
         
-        // Si ya venía seleccionado, actualizamos el precio visual
-        if(preSelectedId) {
-            const select = row.querySelector('.product-select');
-            updatePrice(select);
+        // Obtener datos del HTML (data-price y data-stock)
+        var price = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+        var stock = parseInt(selectedOption.getAttribute('data-stock')) || 0;
+        var productId = selectedOption.value;
+
+        // Asignar valores a los inputs
+        row.querySelector('.price-input').value = price.toFixed(2); // Precio Automático
+        row.querySelector('.stock-display').value = stock; // Mostrar Stock
+        
+        // Asignar el ID al input oculto que se envía al servidor
+        // (Esto arregla el bug de que "no envía nada")
+        row.querySelector('input[name="products[]"]').value = productId;
+
+        // Alerta visual de stock bajo
+        var stockInput = row.querySelector('.stock-display');
+        if (stock <= 0) {
+            stockInput.style.backgroundColor = '#ffcccc'; // Rojo
+            stockInput.style.fontWeight = 'bold';
+            stockInput.value = "AGOTADO";
+        } else {
+            stockInput.style.backgroundColor = '#e8f5e9'; // Verde
         }
-    };
 
-    window.updatePrice = function(selectInfo) {
-        const price = selectInfo.options[selectInfo.selectedIndex].getAttribute('data-price');
-        const row = selectInfo.closest('tr');
-        const priceInput = row.querySelector('.price-input');
-        if(price) priceInput.value = price;
-    };
+        calculateRow(selectElement);
+    }
 
-    // Iniciar con una fila vacía
-    document.addEventListener('DOMContentLoaded', () => addRow());
+    // 3. Calcular Subtotal
+    function calculateRow(element) {
+        var row = element.closest('tr');
+        var qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+        var price = parseFloat(row.querySelector('.price-input').value) || 0;
+        
+        var subtotal = qty * price;
+        row.querySelector('.subtotal-display').value = subtotal.toFixed(2);
+        
+        calculateGrandTotal();
+    }
 
-
-    // --- 2. LÓGICA DE IA (VENTAS) ---
-    document.addEventListener('DOMContentLoaded', function() {
-        const btnMagic = document.getElementById('btnMagic');
-        const aiPrompt = document.getElementById('aiPrompt');
-        const aiImageInput = document.getElementById('aiImage');
-        const fieldClient = document.getElementById('id_client');
-        const fieldObs = document.getElementById('id_observation');
-        const fileNameDisplay = document.getElementById('fileNameDisplay');
-
-        // Mostrar nombre de archivo
-        aiImageInput.addEventListener('change', function() {
-            if(this.files[0]) {
-                fileNameDisplay.textContent = "📎 " + this.files[0].name;
-                aiPrompt.placeholder = "¡Listo para analizar!";
-                aiPrompt.disabled = true;
+    // 4. Calcular Total General
+    function calculateGrandTotal() {
+        var total = 0;
+        document.querySelectorAll('.subtotal-display').forEach(function(input) {
+            // Ignorar la fila oculta base
+            if(input.closest('tr').id !== 'empty-row'){
+                total += parseFloat(input.value) || 0;
             }
         });
+        document.getElementById('grand_total').value = total.toFixed(2);
+    }
 
-        if(btnMagic) {
-            btnMagic.addEventListener('click', async () => {
-                const originalText = btnMagic.innerHTML;
-                btnMagic.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Pensando...';
-                btnMagic.disabled = true;
+    // 5. Eliminar Fila
+    function removeRow(btn) {
+        var row = btn.closest('tr');
+        row.remove();
+        calculateGrandTotal();
+    }
 
-                try {
-                    let response;
-                    const formData = new FormData();
-
-                    // A. MODO IMAGEN (WhatsApp, Correo, Foto)
-                    if (aiImageInput.files.length > 0) {
-                        formData.append('image', aiImageInput.files[0]);
-                        formData.append('context', 'COTIZACION'); // <--- Contexto Clave
-                        response = await fetch('/api/ai-magic/', { method: 'POST', body: formData });
-                    
-                    // B. MODO TEXTO
-                    } else {
-                        const texto = aiPrompt.value;
-                        if(!texto) throw new Error("Escriba el pedido o suba una imagen.");
-                        // Usamos un truco simple: enviamos el texto como prompt JSON normal
-                        // La IA de texto actual es básica, pero servirá para probar conexión
-                         response = await fetch('/api/ai-magic/', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ prompt: texto })
-                        });
-                    }
-
-                    const json = await response.json();
-
-                    if(json.status === 'ok') {
-                        const data = json.data;
-                        console.log("IA Ventas:", data);
-
-                        // 1. BUSCAR CLIENTE
-                        if(data.cliente && fieldClient) {
-                            let encontrado = false;
-                            const busqueda = data.cliente.toLowerCase();
-                            
-                            for (let i = 0; i < fieldClient.options.length; i++) {
-                                const optText = fieldClient.options[i].text.toLowerCase();
-                                if (optText.includes(busqueda) || busqueda.includes(optText)) {
-                                    fieldClient.selectedIndex = i;
-                                    encontrado = true;
-                                    break;
-                                }
-                            }
-                            if(!encontrado) {
-                                alert(`⚠️ Cliente IA: "${data.cliente}". No lo encontré, verifica la lista.`);
-                            }
-                        }
-
-                        // 2. LLENAR OBSERVACIONES (Lo que pidió)
-                        if(data.productos && Array.isArray(data.productos)) {
-                            const pedidoTexto = data.productos.join(", ");
-                            if(fieldObs) {
-                                fieldObs.value = "Pedido detectado: " + pedidoTexto + ".\n" + fieldObs.value;
-                            }
-                        } else if (data.description) {
-                             if(fieldObs) fieldObs.value = data.description;
-                        }
-
-                        // 3. EXTRAS
-                        if(data.observaciones && fieldObs) {
-                            fieldObs.value += "\nNota del cliente: " + data.observaciones;
-                        }
-
-                    } else {
-                        alert("Algo falló: " + (json.message || "Error desconocido"));
-                    }
-
-                } catch (e) {
-                    console.error(e);
-                    alert("Error: " + e.message);
-                }
-
-                btnMagic.innerHTML = originalText;
-                btnMagic.disabled = false;
-            });
-        }
+    // Iniciar con una fila vacía
+    document.addEventListener('DOMContentLoaded', function() {
+        addRow();
     });
 </script>
 {% endblock %}
