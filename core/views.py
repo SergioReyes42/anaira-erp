@@ -1445,27 +1445,27 @@ from django.contrib import messages
 # --- 2. CREAR COTIZACIÓN (CORREGIDO: CÁLCULO DE SUBTOTAL) ---
 @login_required
 def create_quotation(request):
-    # 1. LOGICA PARA GUARDAR (POST)
+    # 1. SI ES UN ENVÍO DE DATOS (GUARDAR)
     if request.method == 'POST':
         form = QuotationForm(request.POST)
         
         try:
-            # --- INICIO DEL BLOQUE ATÓMICO ---
-            # Si algo falla aquí adentro, Django limpia la conexión automáticamente
+            # EL ESCUDO: Si falla algo aquí adentro, Django deshace todo y no bloquea la BD
             with transaction.atomic():
                 if form.is_valid():
-                    # a) Preparamos la cotización sin guardar aún
+                    # a) Preparamos el objeto (sin guardar todavía)
                     quotation = form.save(commit=False)
                     
-                    # b) Calculamos fecha de vencimiento (Evita el error NULL)
-                    dias = form.cleaned_data.get('validity_days') 
-                    if not dias: dias = 15 # Valor por defecto si viene vacío
+                    # b) CÁLCULO DE FECHA (El arreglo del error NULL)
+                    dias = form.cleaned_data.get('validity_days')
+                    if not dias: 
+                        dias = 15 # Valor por defecto seguro
                     
-                    # Aseguramos que quotation.date tenga valor
-                    fecha_emision = quotation.date or timezone.now().date()
-                    quotation.valid_until = fecha_emision + timedelta(days=int(dias))
+                    # Si la cotización no tiene fecha, usamos hoy
+                    fecha_base = quotation.date or timezone.now().date()
+                    quotation.valid_until = fecha_base + timedelta(days=int(dias))
                     
-                    # c) Guardamos encabezado
+                    # c) Guardamos el encabezado
                     quotation.save()
 
                     # d) Guardamos los productos (Detalle)
@@ -1476,7 +1476,7 @@ def create_quotation(request):
                     total = 0
                     if products:
                         for i in range(len(products)):
-                            # Evitamos guardar filas vacías
+                            # Solo guardamos si hay producto y cantidad
                             if products[i] and quantities[i]:
                                 detail = QuotationDetail(
                                     quotation=quotation,
@@ -1495,18 +1495,16 @@ def create_quotation(request):
                     return redirect('quotation_list')
                 else:
                     messages.error(request, f"Formulario inválido: {form.errors}")
-            # --- FIN DEL BLOQUE ATÓMICO ---
-
+        
         except Exception as e:
-            # Como usamos 'atomic', si llegamos aquí la conexión ya está limpia
-            # y podemos volver a renderizar la página sin el error de transacción
+            # Si algo falló, el 'atomic' ya limpió la BD, así que podemos mostrar el error
             messages.error(request, f"Ocurrió un error al guardar: {str(e)}")
 
-    # 2. LOGICA PARA MOSTRAR EL FORMULARIO (GET o Error)
+    # 2. SI ES SOLO VER LA PÁGINA (O SI HUBO ERROR)
     else:
         form = QuotationForm()
 
-    # Recuperamos las listas para los Selects
+    # Cargamos las listas fuera del bloque de riesgo
     products = Product.objects.all()
     clients = Client.objects.all()
     
