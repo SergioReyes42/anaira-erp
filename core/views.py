@@ -1633,3 +1633,25 @@ def api_ai_transaction(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
             
     return JsonResponse({'status': 'error'}, status=400)
+
+# 1. LISTADO DE PRODUCTOS
+@login_required
+def product_list(request):
+    products = Product.objects.all().order_by('-id')
+    return render(request, 'core/inventory/product_list.html', {'products': products})
+
+# 2. CREAR PRODUCTO (Aquí usamos el form con IA que hicimos antes)
+from .forms import ProductForm # <--- Asegúrese de importar esto arriba
+
+@login_required
+def product_create(request):
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Producto creado exitosamente.")
+            return redirect('product_list')
+    else:
+        form = ProductForm()
+    
+    return render(request, 'core/inventory/product_form.html', {'form': form})

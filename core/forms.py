@@ -193,3 +193,17 @@ class LoanForm(forms.ModelForm):
     def __init__(self, company, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['employee'].queryset = Employee.objects.filter(company=company)
+
+class ProductForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = '__all__'
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_name'}),
+            'code': forms.TextInput(attrs={'class': 'form-control', 'id': 'id_code'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'id': 'id_description', 'rows': 3}),
+            'price': forms.NumberInput(attrs={'class': 'form-control'}),
+            'cost': forms.NumberInput(attrs={'class': 'form-control'}),
+            'stock': forms.NumberInput(attrs={'class': 'form-control'}),
+            'image': forms.FileInput(attrs={'class': 'form-control'}),
+        }

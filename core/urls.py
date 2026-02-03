@@ -43,4 +43,8 @@ urlpatterns = [
     path('gastos/manual/', views.gasto_manual, name='gasto_manual'),
 
     path('api/ai-magic/', views.api_ai_transaction, name='api_ai_magic'),
+
+    # --- RUTAS DE LOGÍSTICA / PRODUCTOS ---
+    path('logistica/productos/', views.product_list, name='product_list'),
+    path('logistica/productos/nuevo/', views.product_create, name='product_create'),
 ]
