@@ -41,16 +41,15 @@ class BankAccountForm(forms.ModelForm):
 
 class BankTransactionForm(forms.ModelForm):
     class Meta:
-        model = BankTransaction
-        fields = '__all__'
+        model = BankMovement
+        fields = ['account', 'category', 'description', 'amount', 'reference', 'date']
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'account': forms.Select(attrs={'class': 'form-select'}),
-            'movement_type': forms.Select(attrs={'class': 'form-select'}),
-            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'category': forms.Select(attrs={'class': 'form-select'}),
             'description': forms.TextInput(attrs={'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control'}),
             'reference': forms.TextInput(attrs={'class': 'form-control'}),
-            'evidence': forms.FileInput(attrs={'class': 'form-control'}),
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
 
 class TransferForm(forms.Form):

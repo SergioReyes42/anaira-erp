@@ -21,6 +21,7 @@ urlpatterns = [
     path('bancos/transaccion/', views.bank_transaction_create, name='bank_transaction_create'),
     path('bancos/<int:bank_id>/detalle/', views.bank_detail, name='bank_detail'),
     path('bancos/transferencia/', views.transfer_create, name='transfer_create'),
+    path('ventas/cotizacion/<int:quote_id>/imprimir/', views.quotation_print, name='quotation_print'),
     
     # --- INGRESOS ---
     path('ingresos/', views.income_list, name='income_list'),

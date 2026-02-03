@@ -437,47 +437,35 @@ def bank_create(request):
 
 @login_required
 def bank_transaction_create(request):
-    tipo_operacion = request.GET.get('type', 'OUT') 
+    # Detectamos si es IN (Depósito) o OUT (Retiro) desde la URL (?type=IN)
+    movement_type = request.GET.get('type', 'IN') 
     
     if request.method == 'POST':
         form = BankTransactionForm(request.POST)
-        
         if form.is_valid():
-            try:
-                with transaction.atomic():
-                    nueva_transaccion = form.save(commit=False)
-                    # NO necesitamos asignar manualmente, el form ya lo trae del HTML
-                    
-                    cuenta = nueva_transaccion.account
-                    monto = nueva_transaccion.amount 
-                    
-                    # 1. AQUÍ EL CAMBIO: Usamos .movement_type
-                    if nueva_transaccion.movement_type == 'IN':
-                        cuenta.balance += monto
-                        mensaje = f"Depósito de Q{monto} registrado exitosamente."
-                    else:
-                        if cuenta.balance < monto:
-                            messages.error(request, "¡Fondos Insuficientes!")
-                            # Pasamos el tipo para que no se pierda si falla
-                            return render(request, 'core/treasury/transaction_form.html', {'form': form, 'tipo': tipo_operacion})
-                        
-                        cuenta.balance -= monto
-                        mensaje = f"Débito/Cheque de Q{monto} registrado exitosamente."
-                    
-                    cuenta.save()
-                    nueva_transaccion.save()
-                    messages.success(request, mensaje)
-                    return redirect('bank_list')
-                    
-            except Exception as e:
-                messages.error(request, f"Error al procesar: {str(e)}")
+            movement = form.save(commit=False)
+            movement.movement_type = movement_type # Asignamos el tipo automáticamente
+            
+            # Lógica de saldo
+            account = movement.account
+            if movement_type == 'IN':
+                account.balance += movement.amount
+                msg = "Depósito registrado correctamente."
+            else:
+                account.balance -= movement.amount
+                msg = "Retiro/Cheque registrado correctamente."
+            
+            account.save()
+            movement.save()
+            
+            messages.success(request, msg)
+            return redirect('bank_list')
     else:
-        # 2. AQUÍ TAMBIÉN: Pre-llenamos 'movement_type'
-        form = BankTransactionForm(initial={'movement_type': tipo_operacion})
+        form = BankTransactionForm(initial={'date': timezone.now()})
 
-    return render(request, 'core/treasury/transaction_form.html', {
-        'form': form, 
-        'tipo': tipo_operacion
+        return render(request, 'core/finance/transaction_form.html', {
+            'form': form,
+        'movement_type': movement_type
     })
 
 # =========================================================
@@ -1761,3 +1749,15 @@ def admin_control_panel(request):
     if not request.user.is_staff:
         return redirect('home')
     return render(request, 'core/admin_panel.html')
+
+@login_required
+def quotation_print(request, quote_id):
+    quote = get_object_or_404(Quotation, id=quote_id)
+    # Buscamos la primera empresa configurada (o la activa si tuviéramos lógica multi-empresa)
+    company = CompanyProfile.objects.first()
+    
+    return render(request, 'core/sales/quotation_print.html', {
+        'quote': quote,
+        'company': company, # <--- ¡Aquí va el logo dinámico!
+        'details': quote.details.all()
+    })
