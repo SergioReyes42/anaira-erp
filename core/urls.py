@@ -60,7 +60,7 @@ urlpatterns = [
     path('reportes/flota/', views.fleet_report, name='fleet_report'),
     path('reportes/bancos/', views.report_bank_statement, name='report_bank_statement'),
     path('reportes/inventario/', views.report_inventory, name='report_inventory'),
-    path('admin-panel/', views.admin_control_panel, name='admin_control_panel'),
+    path('admin-panel/', views.admin_control_panel, name='control_panel'),
     path('export/csv/', views.export_expenses_csv, name='export_expenses_csv'),
 
     # --- CONTABILIDAD ---

@@ -1755,3 +1755,9 @@ def convert_quote_to_sale(request, quote_id):
     quote.save()
 
     return redirect('quotation_list')
+
+@login_required
+def admin_control_panel(request):
+    if not request.user.is_staff:
+        return redirect('home')
+    return render(request, 'core/admin_panel.html')
