@@ -1445,57 +1445,68 @@ from django.contrib import messages
 # --- 2. CREAR COTIZACIÓN (CORREGIDO: CÁLCULO DE SUBTOTAL) ---
 @login_required
 def create_quotation(request):
+    # 1. LOGICA PARA GUARDAR (POST)
     if request.method == 'POST':
         form = QuotationForm(request.POST)
         
-        if form.is_valid():
-            try:
-                # 1. Pausamos el guardado para agregar datos faltantes
-                quotation = form.save(commit=False)
-                
-                # 2. CALCULO DE FECHA DE VALIDEZ (Aquí estaba el error)
-                # Obtenemos los días del formulario, o usamos 15 por defecto
-                dias_validez = form.cleaned_data.get('validity_days')
-                if not dias_validez:
-                    dias_validez = 15 
-                
-                # Sumamos los días a la fecha de emisión
-                quotation.valid_until = quotation.date + timedelta(days=int(dias_validez))
-                
-                # 3. Guardamos la Cotización (Encabezado)
-                quotation.save()
+        try:
+            # --- INICIO DEL BLOQUE ATÓMICO ---
+            # Si algo falla aquí adentro, Django limpia la conexión automáticamente
+            with transaction.atomic():
+                if form.is_valid():
+                    # a) Preparamos la cotización sin guardar aún
+                    quotation = form.save(commit=False)
+                    
+                    # b) Calculamos fecha de vencimiento (Evita el error NULL)
+                    dias = form.cleaned_data.get('validity_days') 
+                    if not dias: dias = 15 # Valor por defecto si viene vacío
+                    
+                    # Aseguramos que quotation.date tenga valor
+                    fecha_emision = quotation.date or timezone.now().date()
+                    quotation.valid_until = fecha_emision + timedelta(days=int(dias))
+                    
+                    # c) Guardamos encabezado
+                    quotation.save()
 
-                # 4. Guardamos los Productos (Detalle)
-                products = request.POST.getlist('products[]')
-                quantities = request.POST.getlist('quantities[]')
-                prices = request.POST.getlist('prices[]')
+                    # d) Guardamos los productos (Detalle)
+                    products = request.POST.getlist('products[]')
+                    quantities = request.POST.getlist('quantities[]')
+                    prices = request.POST.getlist('prices[]')
 
-                total = 0
-                for i in range(len(products)):
-                    if products[i] and quantities[i]:
-                        detail = QuotationDetail(
-                            quotation=quotation,
-                            product_id=products[i],
-                            quantity=int(quantities[i]),
-                            unit_price=float(prices[i])
-                        )
-                        detail.save()
-                        total += detail.quantity * detail.unit_price
-                
-                # Actualizamos el total de la cotización
-                quotation.total = total
-                quotation.save()
-                
-                messages.success(request, 'Cotización creada exitosamente.')
-                return redirect('quotation_list')
-                
-            except Exception as e:
-                messages.error(request, f"Error al guardar: {e}")
-                
+                    total = 0
+                    if products:
+                        for i in range(len(products)):
+                            # Evitamos guardar filas vacías
+                            if products[i] and quantities[i]:
+                                detail = QuotationDetail(
+                                    quotation=quotation,
+                                    product_id=products[i],
+                                    quantity=int(quantities[i]),
+                                    unit_price=float(prices[i])
+                                )
+                                detail.save()
+                                total += detail.quantity * detail.unit_price
+                    
+                    # e) Actualizamos el total final
+                    quotation.total = total
+                    quotation.save()
+                    
+                    messages.success(request, '¡Cotización creada correctamente!')
+                    return redirect('quotation_list')
+                else:
+                    messages.error(request, f"Formulario inválido: {form.errors}")
+            # --- FIN DEL BLOQUE ATÓMICO ---
+
+        except Exception as e:
+            # Como usamos 'atomic', si llegamos aquí la conexión ya está limpia
+            # y podemos volver a renderizar la página sin el error de transacción
+            messages.error(request, f"Ocurrió un error al guardar: {str(e)}")
+
+    # 2. LOGICA PARA MOSTRAR EL FORMULARIO (GET o Error)
     else:
         form = QuotationForm()
 
-    # Cargamos productos y clientes para los selects
+    # Recuperamos las listas para los Selects
     products = Product.objects.all()
     clients = Client.objects.all()
     
