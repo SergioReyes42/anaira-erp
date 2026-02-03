@@ -463,7 +463,7 @@ def bank_transaction_create(request):
     else:
         form = BankTransactionForm(initial={'date': timezone.now()})
 
-        return render(request, 'core/finance/transaction_form.html', {
+        return render(request, 'core/treasury/transaction_form.html', {
             'form': form,
         'movement_type': movement_type
     })
