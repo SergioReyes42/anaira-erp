@@ -4,53 +4,78 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Cotizaciones</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{% url 'create_quotation' %}" class="btn btn-primary">
+        <a href="{% url 'create_quotation' %}" class="btn btn-primary shadow-sm">
             <i class="bi bi-plus-lg"></i> Nueva Cotización
         </a>
     </div>
 </div>
 
-<div class="card shadow-sm">
+<div class="card shadow-sm border-0">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0 align-middle">
-                <thead class="bg-light">
+                <thead class="bg-light text-dark">
                     <tr>
                         <th class="ps-4">#</th>
                         <th>Fecha</th>
                         <th>Cliente</th>
                         <th>Total</th>
+                        <th>Estado</th>
                         <th class="text-end pe-4">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for c in quotations %}
+                    {% for q in quotations %}
                     <tr>
-                        <td class="ps-4 fw-bold">#{{ c.id|stringformat:"05d" }}</td>
-                        <td>{{ c.date|date:"d/m/Y" }}</td>
-                        <td>{{ c.client.name }}</td>
-                        <td class="fw-bold text-success">Q {{ c.total }}</td>
+                        <td class="ps-4 fw-bold text-secondary">#{{ q.id|stringformat:"05d" }}</td>
+                        <td>{{ q.date|date:"d/m/Y" }}</td>
+                        <td>
+                            <div class="fw-bold">{{ q.client.name }}</div>
+                            <small class="text-muted">{{ q.user.username }}</small>
+                        </td>
+                        <td class="fw-bold text-success">Q {{ q.total }}</td>
+                        
+                        <td>
+                            {% if q.status == 'DRAFT' %}
+                                <span class="badge bg-warning text-dark border border-warning">
+                                    <i class="bi bi-hourglass-split"></i> Apartado
+                                </span>
+                            {% elif q.status == 'BILLED' %}
+                                <span class="badge bg-success border border-success">
+                                    <i class="bi bi-check-circle"></i> Facturada
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ q.get_status_display }}</span>
+                            {% endif %}
+                        </td>
                         
                         <td class="text-end pe-4">
-                            <a href="{% url 'quotation_pdf' c.id %}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Imprimir Cotización">
+                            <a href="#" class="btn btn-sm btn-outline-secondary me-1" title="Imprimir PDF">
                                 <i class="bi bi-printer"></i>
                             </a>
 
-                            {% if not c.sale %}
-                                <a href="{% url 'convertir_a_venta' c.id %}" class="btn btn-sm btn-success" title="Convertir a Venta" onclick="return confirm('¿Confirmar Venta?');">
-                                    <i class="bi bi-cash-coin"></i> Vender
+                            {% if q.status == 'DRAFT' %}
+                                <a href="{% url 'convert_quote_to_sale' q.id %}" 
+                                   class="btn btn-sm btn-success fw-bold shadow-sm"
+                                   title="Convertir a Venta y Rebajar Inventario"
+                                   onclick="return confirm('¿Confirmar venta? Esto rebajará el inventario y liberará el apartado.')">
+                                    <i class="bi bi-cash-coin"></i> Facturar
                                 </a>
                             {% else %}
-                                <a href="{% url 'invoice_pdf' c.sale.id %}" target="_blank" class="btn btn-sm btn-primary" title="Imprimir Factura">
-                                    <i class="bi bi-receipt"></i> Factura
-                                </a>
+                                <button class="btn btn-sm btn-secondary" disabled>
+                                    <i class="bi bi-lock-fill"></i> Procesada
+                                </button>
                             {% endif %}
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">
-                            No hay cotizaciones registradas.
+                        <td colspan="6" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                <h5>No hay cotizaciones registradas</h5>
+                                <p>Cree la primera para apartar inventario.</p>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

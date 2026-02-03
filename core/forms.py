@@ -1,11 +1,17 @@
 from django import forms
-from .models import Product
 from .models import (
-    Company, BankAccount, BankMovement, Income, Gasto,
-    BusinessPartner, Product, Employee, Loan, Fleet, BankTransaction, Quotation
+    Company, CompanyProfile,
+    BankAccount, BankTransaction, BankMovement, 
+    Income, Gasto, Fleet,
+    BusinessPartner, Provider, 
+    Product, 
+    Employee, Loan, 
+    Quotation, Client
 )
 
-# --- 1. SELECCIÓN DE EMPRESA ---
+# ==========================================
+# 1. SELECCIÓN DE EMPRESA
+# ==========================================
 class CompanySelectForm(forms.Form):
     company = forms.ModelChoiceField(
         queryset=Company.objects.all(),
@@ -13,7 +19,9 @@ class CompanySelectForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
-# --- 2. BANCOS Y TESORERÍA ---
+# ==========================================
+# 2. BANCOS Y TESORERÍA
+# ==========================================
 class BankAccountForm(forms.ModelForm):
     class Meta:
         model = BankAccount
@@ -21,8 +29,8 @@ class BankAccountForm(forms.ModelForm):
         widgets = {
             'bank_name': forms.TextInput(attrs={'class': 'form-control'}),
             'account_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'currency': forms.Select(attrs={'class': 'form-select'}),
-            'balance': forms.NumberInput(attrs={'class': 'form-select', 'step': '0.01'}), # Corregí un pequeño typo en widget
+            'currency': forms.TextInput(attrs={'class': 'form-control'}), # O Select si tiene choices
+            'balance': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }
         labels = {
             'bank_name': 'Nombre del Banco',
@@ -34,16 +42,15 @@ class BankAccountForm(forms.ModelForm):
 class BankTransactionForm(forms.ModelForm):
     class Meta:
         model = BankTransaction
-        # 1. CAMBIAMOS EL NOMBRE EN LA LISTA:
-        fields = ['account', 'date', 'reference', 'description', 'amount', 'movement_type']
-        
+        fields = '__all__'
         widgets = {
-            'account': forms.Select(attrs={'class': 'form-select form-select-lg'}),
-            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'reference': forms.TextInput(attrs={'class': 'form-control'}),
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'account': forms.Select(attrs={'class': 'form-select'}),
+            'movement_type': forms.Select(attrs={'class': 'form-select'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'description': forms.TextInput(attrs={'class': 'form-control'}),
-            # 2. CAMBIAMOS EL NOMBRE AQUÍ TAMBIÉN:
-            'movement_type': forms.HiddenInput(),
+            'reference': forms.TextInput(attrs={'class': 'form-control'}),
+            'evidence': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
 class TransferForm(forms.Form):
@@ -56,40 +63,39 @@ class TransferForm(forms.Form):
 
     def __init__(self, company, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['from_account'].queryset = BankAccount.objects.filter(company=company)
-        self.fields['to_account'].queryset = BankAccount.objects.filter(company=company)
+        # Filtramos cuentas solo de la empresa activa
+        if company:
+            # Nota: Ajustar filtro según cómo relacione BankAccount con Company en models
+            self.fields['from_account'].queryset = BankAccount.objects.filter(company__name=company.name) 
+            self.fields['to_account'].queryset = BankAccount.objects.filter(company__name=company.name)
 
-# --- 3. GASTOS E INGRESOS ---
+# ==========================================
+# 3. GASTOS E INGRESOS
+# ==========================================
 class GastoForm(forms.ModelForm):
     class Meta:
         model = Gasto
-        # Agregamos 'amount_untaxed', 'iva' y 'vehicle'
         fields = ['fecha', 'proveedor', 'descripcion', 'total', 'amount_untaxed', 'iva', 'categoria', 'bank_account', 'vehicle', 'imagen']
         widgets = {
             'fecha': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'proveedor': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'total': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'id': 'inputTotal', 'oninput': 'calcularIVA()'}), # OJO AL ID
+            'total': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'id': 'inputTotal', 'oninput': 'calcularIVA()'}),
             
-            # Estos serán de solo lectura (readonly) porque se calculan solos
+            # Campos de solo lectura (cálculo automático JS)
             'amount_untaxed': forms.NumberInput(attrs={'class': 'form-control', 'readonly': 'readonly', 'id': 'inputBase'}),
             'iva': forms.NumberInput(attrs={'class': 'form-control', 'readonly': 'readonly', 'id': 'inputIVA'}),
             
             'categoria': forms.TextInput(attrs={'class': 'form-control'}),
             'bank_account': forms.Select(attrs={'class': 'form-select'}),
-            'vehicle': forms.Select(attrs={'class': 'form-select'}), # Lista de vehículos
+            'vehicle': forms.Select(attrs={'class': 'form-select'}),
             'imagen': forms.FileInput(attrs={'class': 'form-control'}),
         }
     
-    # Agregamos esto para filtrar solo vehículos de la empresa
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Verificamos si existe el modelo Fleet antes de filtrar
-        try:
-            from .models import Fleet
-            self.fields['vehicle'].queryset = Fleet.objects.all()
-        except ImportError:
-            pass
+        # Cargamos los vehículos disponibles
+        self.fields['vehicle'].queryset = Fleet.objects.all()
 
 class MobileExpenseForm(forms.ModelForm):
     class Meta:
@@ -118,7 +124,9 @@ class IncomeForm(forms.ModelForm):
             'evidence': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
-# --- 4. PROVEEDORES ---
+# ==========================================
+# 4. PROVEEDORES (COMPRAS)
+# ==========================================
 class SupplierForm(forms.ModelForm):
     class Meta:
         model = BusinessPartner
@@ -141,25 +149,31 @@ class SupplierPaymentForm(forms.Form):
 
     def __init__(self, company, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['provider'].queryset = BusinessPartner.objects.filter(company=company, partner_type__in=['P', 'A'])
-        self.fields['my_account'].queryset = BankAccount.objects.filter(company=company)
+        if company:
+            self.fields['provider'].queryset = BusinessPartner.objects.filter(company=company, partner_type__in=['P', 'A'])
+            # Filtro de cuentas bancarias según lógica de negocio
+            # self.fields['my_account'].queryset = BankAccount.objects.filter(...) 
 
-# --- 5. INVENTARIO ---
+# ==========================================
+# 5. INVENTARIO (PRODUCTOS)
+# ==========================================
 class ProductForm(forms.ModelForm):
+    # Definimos widgets explícitos para mejor control visual
+    name = forms.CharField(label="Nombre del Producto", widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_name'}))
+    code = forms.CharField(label="Código / SKU", required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_code'}))
+    description = forms.CharField(label="Descripción", required=False, widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}))
+    price = forms.DecimalField(label="Precio Venta (Q)", widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    cost = forms.DecimalField(label="Costo (Q)", required=False, widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    stock = forms.IntegerField(label="Stock Inicial", initial=0, widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    image = forms.ImageField(label="Imagen", required=False, widget=forms.FileInput(attrs={'class': 'form-control'}))
+
     class Meta:
         model = Product
-        # Estos son los campos EXACTOS que definimos en models.py
-        fields = '__all__' # Usar todos los campos del modelo              #['code', 'name', 'product_type', 'price', 'cost', 'stock']
-        widgets = {
-            'code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: SERV-001'}),
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'product_type': forms.Select(attrs={'class': 'form-select'}),
-            'price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'cost': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'stock': forms.NumberInput(attrs={'class': 'form-control'}),
-        }
+        fields = ['name', 'code', 'description', 'price', 'cost', 'stock', 'image']
 
-# --- 6. RRHH ---
+# ==========================================
+# 6. RECURSOS HUMANOS
+# ==========================================
 class EmployeeForm(forms.ModelForm):
     class Meta:
         model = Employee
@@ -190,49 +204,16 @@ class LoanForm(forms.ModelForm):
             'reason': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
-    def __init__(self, company, *args, **kwargs):
+    def __init__(self, company=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['employee'].queryset = Employee.objects.filter(company=company)
+        if company:
+            self.fields['employee'].queryset = Employee.objects.filter(company=company)
 
-class ProductForm(forms.ModelForm):
-    # Definimos los campos explícitamente para asegurar que aparezcan
-    name = forms.CharField(
-        label="Nombre del Producto", 
-        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_name'})
-    )
-    code = forms.CharField(
-        label="Código / SKU", 
-        required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_code'})
-    )
-    description = forms.CharField(
-        label="Descripción", 
-        required=False,
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'id': 'id_description'})
-    )
-    price = forms.DecimalField(
-        label="Precio Venta (Q)", 
-        widget=forms.NumberInput(attrs={'class': 'form-control', 'id': 'id_price'})
-    )
-    cost = forms.DecimalField(
-        label="Costo (Q)", 
-        required=False,
-        widget=forms.NumberInput(attrs={'class': 'form-control'})
-    )
-    stock = forms.IntegerField(
-        label="Stock Inicial", 
-        initial=0,
-        widget=forms.NumberInput(attrs={'class': 'form-control'})
-    )
-    # Si su modelo tiene imagen, descomente la siguiente línea:
-    # image = forms.ImageField(label="Imagen", required=False, widget=forms.FileInput(attrs={'class': 'form-control'}))
-
-    class Meta:
-        model = Product
-        fields = ['name', 'code', 'description', 'price', 'cost', 'stock'] 
-        # Si tiene imagen, agregue 'image' a la lista de arriba
-
+# ==========================================
+# 7. VENTAS Y CLIENTES
+# ==========================================
 class QuotationForm(forms.ModelForm):
+    # Campo auxiliar para calcular fecha de vencimiento
     validity_days = forms.IntegerField(
         label="Días de Validez", 
         initial=15,
@@ -241,11 +222,24 @@ class QuotationForm(forms.ModelForm):
 
     class Meta:
         model = Quotation
-        # HE QUITADO 'observation' DE AQUÍ PORQUE CAUSABA EL ERROR
-        fields = ['client', 'date'] 
-        
+        fields = ['client', 'date', 'observation']
         widgets = {
-            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'client': forms.Select(attrs={'class': 'form-select'}),
-            # HE QUITADO EL WIDGET DE observation TAMBIÉN
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'observation': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+class ClientForm(forms.ModelForm):
+    class Meta:
+        model = Client
+        fields = ['nit', 'name', 'address', 'phone', 'email', 'contact_name', 'credit_days', 'credit_limit']
+        widgets = {
+            'nit': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 123456-7'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre de la empresa'}),
+            'address': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'contact_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'credit_days': forms.NumberInput(attrs={'class': 'form-control'}),
+            'credit_limit': forms.NumberInput(attrs={'class': 'form-control'}),
         }

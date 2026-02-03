@@ -4,12 +4,13 @@ from .models import (
     Client, 
     Product, 
     Quotation, 
-    QuotationDetail, 
+    QuotationDetail,
+    InventoryMovement, 
     Sale, 
     SaleDetail,
-    Provider,       # <--- NUEVO
-    Purchase,       # <--- NUEVO
-    PurchaseDetail  # <--- NUEVO
+    Provider, 
+    Purchase, 
+    PurchaseDetail
 )
 
 # --- 1. EMPRESA ---
@@ -31,9 +32,15 @@ class ProviderAdmin(admin.ModelAdmin):
 # --- 3. PRODUCTOS ---
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'price', 'stock', 'product_type')
-    search_fields = ('name',)
-    list_filter = ('product_type',)
+    # Campos seguros que sí existen en el modelo
+    list_display = ('name', 'code', 'stock', 'stock_reserved', 'price')
+    search_fields = ('name', 'code')
+    list_filter = ('stock',) 
+
+@admin.register(InventoryMovement)
+class InventoryMovementAdmin(admin.ModelAdmin):
+    list_display = ('product', 'type', 'quantity', 'date', 'user')
+    list_filter = ('type', 'date')
 
 # --- 4. VENTAS Y COTIZACIONES ---
 class QuotationDetailInline(admin.TabularInline):
@@ -42,9 +49,11 @@ class QuotationDetailInline(admin.TabularInline):
 
 @admin.register(Quotation)
 class QuotationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'client', 'date', 'total')
-    inlines = [QuotationDetailInline]
+    list_display = ('id', 'client', 'date', 'total', 'status')
+    list_filter = ('status', 'date')
+    inlines = [QuotationDetailInline] # Agregado para ver detalles dentro de la cotización
 
+# Configuración de Ventas (Sale)
 class SaleDetailInline(admin.TabularInline):
     model = SaleDetail
     extra = 0
@@ -54,7 +63,7 @@ class SaleAdmin(admin.ModelAdmin):
     list_display = ('id', 'client', 'date', 'total')
     inlines = [SaleDetailInline]
 
-# --- 5. COMPRAS (NUEVO MÓDULO) ---
+# --- 5. COMPRAS ---
 class PurchaseDetailInline(admin.TabularInline):
     model = PurchaseDetail
     extra = 1
@@ -65,11 +74,11 @@ class PurchaseAdmin(admin.ModelAdmin):
     list_filter = ('date', 'provider')
     inlines = [PurchaseDetailInline]
     
-    # Esto ayuda a que, al guardar en el admin, calcule el total automáticamente
+    # Recálculo automático del total al guardar desde el Admin
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
-        # Recalcular el total de la compra sumando los detalles
         obj = form.instance
+        # Sumamos los subtotales de los detalles
         total = sum(item.subtotal for item in obj.details.all())
         obj.total = total
         obj.save()

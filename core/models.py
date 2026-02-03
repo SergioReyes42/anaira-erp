@@ -1,13 +1,16 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from django.contrib.auth import get_user_model
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from datetime import date
 
+User = get_user_model()
 
 # ==========================================
 # 1. ESTRUCTURA EMPRESARIAL Y SEGURIDAD
 # ==========================================
-
-
 
 class Company(models.Model):
     name = models.CharField(max_length=255, verbose_name="Nombre de la Empresa")
@@ -16,10 +19,7 @@ class Company(models.Model):
     address = models.TextField(verbose_name="Dirección Legal", blank=True, null=True)
     phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True, null=True)
     email = models.EmailField(verbose_name="Correo Electrónico", blank=True, null=True)
-    
-    # Logo
     logo = models.ImageField(upload_to='company_logos/', blank=True, null=True)
-    
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -36,6 +36,23 @@ class Company(models.Model):
 
     def __str__(self): 
         return self.name
+
+class CompanyProfile(models.Model):
+    """Datos de la Empresa Dueña del Sistema (Tenant) - Usado en Ventas/Compras"""
+    name = models.CharField(max_length=100, verbose_name="Nombre Empresa", default="Mi Empresa")
+    logo = models.ImageField(upload_to='company_logos/', blank=True, null=True, verbose_name="Logo")
+    nit = models.CharField(max_length=20, verbose_name="NIT", blank=True)
+    address = models.CharField(max_length=200, verbose_name="Dirección", blank=True)
+    phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True)
+    email = models.EmailField(verbose_name="Email", blank=True)
+    website = models.URLField(verbose_name="Sitio Web", blank=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Perfil de Empresa"
+        verbose_name_plural = "Perfil de Empresa"
 
 class Role(models.Model):
     name = models.CharField(max_length=80, unique=True)
@@ -92,26 +109,24 @@ class JournalEntry(models.Model):
 
 class JournalItem(models.Model):
     entry = models.ForeignKey(JournalEntry, related_name='items', on_delete=models.CASCADE)
-    account_name = models.CharField(max_length=100, verbose_name="Nombre Cuenta") # Ej: Caja, IVA
+    account_name = models.CharField(max_length=100, verbose_name="Nombre Cuenta") 
     debit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Debe")
     credit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Haber")
 
     def __str__(self):
         return f"{self.account_name} | D:{self.debit} H:{self.credit}"
 
+
 # ==========================================
 # 3. TESORERÍA (BANCOS Y SOCIOS)
 # ==========================================
+
 class BankAccount(models.Model):
-    company = models.ForeignKey('CompanyProfile', on_delete=models.CASCADE, verbose_name="Empresa")
+    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
     bank_name = models.CharField(max_length=50, verbose_name="Nombre del Banco")
     account_number = models.CharField(max_length=50, verbose_name="Número de Cuenta")
     currency = models.CharField(max_length=3, default='GTQ', verbose_name="Moneda")
-    
-    # --- ESTE ES EL CAMPO QUE FALTABA ---
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Saldo Actual")
-    # ------------------------------------
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -126,10 +141,7 @@ class BankTransaction(models.Model):
         ('IN', 'Entrada / Depósito'),
         ('OUT', 'Salida / Retiro'),
     )
-    
-    # Aquí usamos 'BankAccount' que acabamos de definir arriba
     account = models.ForeignKey(BankAccount, on_delete=models.CASCADE)
-    
     date = models.DateField(verbose_name="Fecha")
     movement_type = models.CharField(max_length=3, choices=MOVEMENT_CHOICES, default='OUT')
     amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto")
@@ -156,24 +168,21 @@ class BankMovement(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.pk: 
-            if self.movement_type == 'IN': self.account.current_balance += self.amount
-            else: self.account.current_balance -= self.amount
+            if self.movement_type == 'IN': self.account.balance += self.amount
+            else: self.account.balance -= self.amount
             self.account.save()
         super().save(*args, **kwargs)
 
 class BusinessPartner(models.Model):
-    """Socios de Negocio: Clientes y Proveedores"""
+    """Socios de Negocio: Clientes y Proveedores (Legacy)"""
     TYPES = (('C', 'Cliente'), ('P', 'Proveedor'), ('A', 'Ambos'))
-    
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     name = models.CharField(max_length=200, verbose_name="Razón Social / Nombre")
     tax_id = models.CharField(max_length=20, verbose_name="NIT") 
     nit = models.CharField(max_length=20, blank=True, null=True, verbose_name="NIT (Opcional)")
-    
-    # Tipo de Socio
     type = models.CharField(max_length=10, choices=TYPES, default='CLIENTE', verbose_name="Tipo Texto")
     partner_type = models.CharField(max_length=1, choices=TYPES, default='P', verbose_name="Tipo Código")
-
+    
     # Datos Bancarios
     bank_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Banco del Proveedor")
     bank_account = models.CharField(max_length=50, blank=True, null=True, verbose_name="No. Cuenta Proveedor")
@@ -221,14 +230,10 @@ class Gasto(models.Model):
     total = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Total")
     imagen = models.ImageField(upload_to='gastos/', null=True, blank=True, verbose_name="Factura")
 
-    # AGREGUE O VERIFIQUE ESTOS CAMPOS:
     amount_untaxed = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Base (Sin IVA)")
     iva = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="IVA Crédito")
     
-    # Relación con el vehículo (Opcional, solo si es gasto de flota)
-    vehicle = models.ForeignKey('Fleet', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Vehículo / Placa")
-    
-    # Vinculaciones
+    vehicle = models.ForeignKey(Fleet, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Vehículo / Placa")
     bank_account = models.ForeignKey(BankAccount, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Cuenta de Pago")
     account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Cuenta Contable (NIC/NIIF)", related_name="gastos")
     usuario_registra = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
@@ -253,57 +258,43 @@ class Gasto(models.Model):
 
 
 # ==========================================
-# 5. LOGÍSTICA E INVENTARIO
+# 5. LOGÍSTICA E INVENTARIO (UNIFICADO)
 # ==========================================
 
 class Product(models.Model):
-    TYPE_CHOICES = (
-        ('SERVICE', 'Servicio'),
-        ('PRODUCT', 'Producto Físico'),
-    )
+    name = models.CharField(max_length=200, verbose_name="Nombre Producto")
+    code = models.CharField(max_length=50, blank=True, null=True, verbose_name="Código/SKU")
+    description = models.TextField(blank=True, null=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Precio Venta")
+    cost = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo")
+    image = models.ImageField(upload_to='products/', blank=True, null=True)
     
-    code = models.CharField(max_length=50, verbose_name="Código Interno", unique=True)
-    name = models.CharField(max_length=200, verbose_name="Nombre del Producto/Servicio")
-    product_type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='SERVICE')
-    
-    price = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Precio de Venta")
-    cost = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Costo (Referencia)")
-    
-    # Stock simple (luego lo haremos avanzado con Kardex)
-    stock = models.IntegerField(default=0, verbose_name="Existencia Actual")
-    
-    is_active = models.BooleanField(default=True, verbose_name="Activo")
+    # --- STOCK Y APARTADOS ---
+    stock = models.IntegerField(default=0, verbose_name="Stock Físico")
+    stock_reserved = models.IntegerField(default=0, verbose_name="Apartado en Cotizaciones")
 
     def __str__(self):
-        return f"[{self.code}] {self.name}"
+        return f"{self.name} (Disp: {self.available_stock})"
+
+    @property
+    def available_stock(self):
+        return self.stock - self.stock_reserved
 
 class InventoryMovement(models.Model):
-    MOVEMENT_TYPES = [
-        ('IN', 'Entrada (Compra/Ajuste)'),
-        ('OUT', 'Salida (Venta/Consumo)'),
-    ]
-
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='core_movements')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Producto")
-    movement_type = models.CharField(max_length=3, choices=MOVEMENT_TYPES, verbose_name="Tipo")
-    quantity = models.IntegerField(verbose_name="Cantidad")
+    TYPE_CHOICES = [('IN', 'Entrada'), ('OUT', 'Salida')]
     
-    # Dinero
-    unit_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Costo Unitario (Q)")
-    total_cost = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Costo Total")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField()
+    type = models.CharField(max_length=3, choices=TYPE_CHOICES)
+    date = models.DateTimeField(default=timezone.now)
+    reference = models.CharField(max_length=200)
     
-    # Referencias
-    reference = models.CharField(max_length=100, verbose_name="Referencia (Fac/Vale)")
-    description = models.CharField(max_length=255, blank=True)
-    date = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='core_movement_users')
-
-    def save(self, *args, **kwargs):
-        self.total_cost = float(self.quantity) * float(self.unit_cost)
-        super().save(*args, **kwargs)
+    # ** SOLUCIÓN AL ERROR DE CHOQUE **
+    # Agregamos related_name para que no choque con usuarios de otras apps
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='inventory_history')
 
     def __str__(self):
-        return f"{self.movement_type} - {self.product.name} ({self.quantity})"
+        return f"{self.type} {self.quantity} - {self.product.name}"
 
 
 # ==========================================
@@ -313,20 +304,17 @@ class InventoryMovement(models.Model):
 class Employee(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='core_employees')
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Usuario de Sistema")
-    
     first_name = models.CharField(max_length=100, verbose_name="Nombres")
     last_name = models.CharField(max_length=100, verbose_name="Apellidos")
     dpi = models.CharField(max_length=20, blank=True, verbose_name="DPI")
     nit = models.CharField(max_length=20, blank=True, verbose_name="NIT")
     address = models.CharField(max_length=200, blank=True, verbose_name="Dirección")
     phone = models.CharField(max_length=20, blank=True, verbose_name="Teléfono")
-    
     position = models.CharField(max_length=100, verbose_name="Cargo / Puesto")
     department = models.CharField(max_length=100, blank=True, verbose_name="Departamento")
     date_hired = models.DateField(verbose_name="Fecha de Contratación")
     base_salary = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Salario Base (Q)")
     bonus = models.DecimalField(max_digits=10, decimal_places=2, default=250.00, verbose_name="Bonificación Decreto")
-    
     igss_number = models.CharField(max_length=20, blank=True, verbose_name="No. Afiliación IGSS")
     is_active = models.BooleanField(default=True, verbose_name="Activo")
 
@@ -350,7 +338,6 @@ class Loan(models.Model):
         return f"Préstamo {self.employee.first_name} - Q{self.balance}"
 
 class Payroll(models.Model):
-    # Enlazamos con related_name para evitar choque
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='core_payrolls')
     month = models.IntegerField(verbose_name="Mes")
     year = models.IntegerField(verbose_name="Año")
@@ -364,21 +351,12 @@ class Payroll(models.Model):
 class PayrollDetail(models.Model):
     payroll = models.ForeignKey(Payroll, on_delete=models.CASCADE)
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
-    
-    # NOTA: Se eliminó el campo 'company' para evitar el conflicto "Reverse accessor clashes".
-    # El detalle ya está ligado a la empresa a través de 'payroll.company'.
-    
-    # Ingresos
     base_salary = models.DecimalField(max_digits=10, decimal_places=2)
     bonus = models.DecimalField(max_digits=10, decimal_places=2)
-    
-    # Deducciones
     igss_deduction = models.DecimalField(max_digits=10, decimal_places=2)
     loan_deduction = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     isr_deduction = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     other_deductions = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    
-    # Totales
     total_income = models.DecimalField(max_digits=10, decimal_places=2)
     total_deductions = models.DecimalField(max_digits=10, decimal_places=2)
     net_salary = models.DecimalField(max_digits=10, decimal_places=2)
@@ -386,110 +364,79 @@ class PayrollDetail(models.Model):
     def __str__(self):
         return f"Detalle {self.employee.first_name} - {self.payroll}"
 
-# core/models.py (Pegar al final)
-class CompanyProfile(models.Model):
-    """Datos de la Empresa Dueña del Sistema (Tenant)"""
-    name = models.CharField(max_length=100, verbose_name="Nombre Empresa", default="Mi Empresa")
-    logo = models.ImageField(upload_to='company_logos/', blank=True, null=True, verbose_name="Logo")
-    nit = models.CharField(max_length=20, verbose_name="NIT", blank=True)
-    address = models.CharField(max_length=200, verbose_name="Dirección", blank=True)
-    phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True)
-    email = models.EmailField(verbose_name="Email", blank=True)
-    website = models.URLField(verbose_name="Sitio Web", blank=True)
 
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = "Perfil de Empresa"
-        verbose_name_plural = "Perfil de Empresa"
+# ==========================================
+# 7. CLIENTES, VENTAS Y COMPRAS (AGRUPADO)
+# ==========================================
 
 class Client(models.Model):
-    # Datos Fiscales
     name = models.CharField(max_length=200, verbose_name="Razón Social / Nombre")
     nit = models.CharField(max_length=20, verbose_name="NIT", unique=True)
     address = models.CharField(max_length=255, verbose_name="Dirección Fiscal", blank=True)
-    
-    # Datos de Contacto
     phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True)
     email = models.EmailField(verbose_name="Email Facturación", blank=True)
     contact_name = models.CharField(max_length=100, verbose_name="Nombre de Contacto", blank=True)
-    
-    # Datos Comerciales (Para el futuro Libro Negro y Créditos)
     credit_days = models.IntegerField(default=0, verbose_name="Días de Crédito")
     credit_limit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Límite de Crédito")
-    
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True, verbose_name="Activo")
+    
+    # Campo opcional si quieres ligar cliente a una empresa especifica
+    company = models.ForeignKey(CompanyProfile, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} ({self.nit})"
-from datetime import date   
+
 class Quotation(models.Model):
-    STATUS_CHOICES = (
-        ('DRAFT', 'Borrador'),
-        ('SENT', 'Enviada'),
-        ('ACCEPTED', 'Aceptada'),
-        ('REJECTED', 'Rechazada'),
-    )
-    
-    # Relación con Cliente (Asegúrese que la clase Client exista arriba)
-    client = models.ForeignKey('Client', on_delete=models.CASCADE, verbose_name="Cliente")
-    date = models.DateField(default=date.today, verbose_name="Fecha Emisión")
-    valid_until = models.DateField(verbose_name="Válida Hasta")
-    total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Total")
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='DRAFT', verbose_name="Estado")
-    notes = models.TextField(blank=True, verbose_name="Notas / Condiciones")
-    
+    STATUS_CHOICES = [
+        ('DRAFT', 'Borrador (Aparta Stock)'),
+        ('BILLED', 'Facturada (Rebaja Stock)'),
+        ('CANCELED', 'Cancelada (Libera Stock)'),
+    ]
+    client = models.ForeignKey(Client, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    date = models.DateField(default=timezone.now)
+    valid_until = models.DateField(blank=True, null=True)
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    observation = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='DRAFT')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"COT-{self.id}"
+        return f"Cotización #{self.id} - {self.client.name}"
 
 class QuotationDetail(models.Model):
     quotation = models.ForeignKey(Quotation, related_name='details', on_delete=models.CASCADE)
-    # Relación con Producto (Asegúrese que la clase Product exista arriba)
-    product = models.ForeignKey('Product', on_delete=models.CASCADE)
-    quantity = models.IntegerField(default=1, verbose_name="Cantidad")
-    unit_price = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Precio Unitario")
-    subtotal = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Subtotal")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField()
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
-        return f"Detalle Cot-{self.quotation.id}"
-    
-# --- AGREGAR AL FINAL DE core/models.py ---
+        return f"{self.quantity} x {self.product.name}"
 
 class Sale(models.Model):
     """Registro de una Venta completada (Facturada)"""
     company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
     client = models.ForeignKey(Client, on_delete=models.CASCADE, verbose_name="Cliente")
     date = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Venta")
-    
-    # Relación con la cotización original (Opcional, por si la venta vino de una cotización)
     quotation_origin = models.OneToOneField(Quotation, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Cotización Origen")
-    
     payment_method = models.CharField(max_length=50, choices=[
         ('EFECTIVO', 'Efectivo'),
         ('TRANSFERENCIA', 'Transferencia'),
         ('CHEQUE', 'Cheque'),
         ('CREDITO', 'Crédito / Por Cobrar'),
     ], default='EFECTIVO', verbose_name="Método de Pago")
-    
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    
-    # Correlativo de Factura (Para control interno o SAT)
     invoice_number = models.CharField(max_length=50, blank=True, verbose_name="No. Factura/Recibo")
 
     def __str__(self):
         return f"Venta #{self.id} - {self.client.name}"
-
+    
     class Meta:
         verbose_name = "Venta"
         verbose_name_plural = "Ventas"
 
-
 class SaleDetail(models.Model):
-    """Productos dentro de la venta"""
     sale = models.ForeignKey(Sale, related_name='details', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(verbose_name="Cantidad")
@@ -502,11 +449,9 @@ class SaleDetail(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
-    
-# ==========================================
-#         PROVEEDORES Y COMPRAS
-# ==========================================
-# 1. TABLA DE PROVEEDORES
+
+# --- PROVEEDORES Y COMPRAS ---
+
 class Provider(models.Model):
     company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
     name = models.CharField(max_length=100, verbose_name="Razón Social / Nombre")
@@ -515,31 +460,25 @@ class Provider(models.Model):
     phone = models.CharField(max_length=20, blank=True, verbose_name="Teléfono")
     email = models.EmailField(blank=True, verbose_name="Email")
     
-    def __str__(self):
-        return self.name
-
+    def __str__(self): return self.name
     class Meta:
         verbose_name = "Proveedor"
         verbose_name_plural = "Proveedores"
 
-# 2. TABLA DE COMPRAS (Cabecera)
 class Purchase(models.Model):
     company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE, verbose_name="Proveedor")
     date = models.DateField(auto_now_add=True, verbose_name="Fecha de Compra")
     reference = models.CharField(max_length=50, blank=True, verbose_name="No. Factura Proveedor")
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Total Compra")
-    
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Compra #{self.id} - {self.provider.name}"
-
     class Meta:
         verbose_name = "Compra"
         verbose_name_plural = "Compras"
 
-# 3. DETALLE DE COMPRA (Productos)
 class PurchaseDetail(models.Model):
     purchase = models.ForeignKey(Purchase, related_name='details', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Producto")
@@ -553,16 +492,14 @@ class PurchaseDetail(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
-    
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
+# SEÑALES (Signals)
 @receiver(post_save, sender=PurchaseDetail)
 def update_inventory_on_purchase(sender, instance, created, **kwargs):
     """
     Automáticamente suma al stock cuando se crea un detalle de compra.
     """
-    if created: # Solo si es un registro NUEVO (para no sumar doble si edita)
+    if created: 
         producto = instance.product
         producto.stock += instance.quantity
         producto.save()
