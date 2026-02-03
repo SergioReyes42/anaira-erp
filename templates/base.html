@@ -105,6 +105,10 @@
                 <a href="{% url 'gasto_manual' %}" class="list-group-item list-group-item-action">
                     Registrar Gasto (IA) <span class="badge bg-primary badge-sidebar">New</span>
                 </a>
+                <a href="#" class="list-group-item list-group-item-action">Gastos Operativos</a>
+                <a href="#" class="list-group-item list-group-item-action">Órdenes de Compra</a>
+                <a href="#" class="list-group-item list-group-item-action">Proveedores</a>
+                <a href="#" class="list-group-item list-group-item-action">Importaciones / Aduana</a>
             </div>
 
             <a href="#menuLogistica" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
@@ -116,6 +120,9 @@
                 <a href="{% url 'inventory_kardex' %}" class="list-group-item list-group-item-action">Kardex de Inventario</a>
                 
                 <a href="{% url 'product_create' %}" class="list-group-item list-group-item-action">Crear Producto</a>
+                <a href="#" class="list-group-item list-group-item-action">Gestión de Bodegas</a>
+                <a href="#" class="list-group-item list-group-item-action">Producción / Fórmulas</a>
+                <a href="#" class="list-group-item list-group-item-action">Despachos</a>
             </div>
 
             <a href="#menuFinanzas" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
@@ -123,8 +130,20 @@
             </a>
             <div class="collapse submenu" id="menuFinanzas">
                 <a href="{% url 'bank_list' %}" class="list-group-item list-group-item-action text-white fw-bold">Panel de Bancos</a>
-                <a href="{% url 'bank_transaction_create' %}?type=IN" class="list-group-item list-group-item-action">Registrar Ingreso</a>
-                <a href="{% url 'bank_transaction_create' %}?type=OUT" class="list-group-item list-group-item-action">Registrar Egreso</a>
+                <a href="{% url 'bank_transaction_create' %}?type=IN" class="list-group-item list-group-item-action">Registrar Deposito</a>
+                <a href="{% url 'bank_transaction_create' %}?type=OUT" class="list-group-item list-group-item-action">Registrar Retiro</a>
+                <a href="{% url 'bank_create' %}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-plus-circle me-2"></i> Crear Nueva Cuenta
+                </a>
+                <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Reportes</small>
+                <a href="{% url 'bank_list' %}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-file-earmark-spreadsheet me-2"></i> Estados de Cuenta
+                </a>
+                <div class="dropdown-divider border-secondary mt-2"></div>            
+                <a href="#" class="list-group-item list-group-item-action">Cuentas por Cobrar</a>
+                <a href="#" class="list-group-item list-group-item-action">Notas de Crédito/Débito</a>
+                <a href="#" class="list-group-item list-group-item-action">Cuentas por Pagar</a>
+                <a href="#" class="list-group-item list-group-item-action">Programación de Pagos</a>
             </div>
 
             <a href="#menuConta" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
@@ -137,6 +156,7 @@
                 <div class="dropdown-divider border-secondary"></div>
                 <a href="{% url 'estado_resultados' %}" class="list-group-item list-group-item-action">Estado de Resultados</a>
                 <a href="{% url 'balance_general' %}" class="list-group-item list-group-item-action">Balance General</a>
+                <a href="#" class="list-group-item list-group-item-action">Impuestos (IVA/ISR)</a>
             </div>
 
             <a href="#menuRRHH" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
@@ -145,6 +165,7 @@
             <div class="collapse submenu" id="menuRRHH">
                 <a href="{% url 'employee_list' %}" class="list-group-item list-group-item-action">Empleados</a>
                 <a href="{% url 'nomina_create' %}" class="list-group-item list-group-item-action">Generar Nómina</a>
+                <a href="#" class="list-group-item list-group-item-action">Vacaciones y Ausencias</a>
             </div>
 
              <div class="mt-4 border-top border-secondary pt-2">
