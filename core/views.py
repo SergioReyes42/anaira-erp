@@ -1,6 +1,7 @@
 import csv
 import os
 import json
+from .forms import ProductForm, QuotationForm # <--- Asegúrese de importar esto arriba
 from datetime import datetime 
 from datetime import timedelta  # <--- AGREGAR ESTO AL PRINCIPIO
 from itertools import chain
@@ -55,7 +56,7 @@ from .forms import (
     SupplierPaymentForm,
     EmployeeForm, 
     LoanForm,
-    ProductForm, QuotationForm, Quotation,       # <--- NECESARIO
+    ProductForm, Quotation,       # <--- NECESARIO
     QuotationDetail  # <--- NECESARIO PARA GUARDAR LOS PRODUCTOS
 )
 
@@ -1643,7 +1644,6 @@ def product_list(request):
     return render(request, 'core/inventory/product_list.html', {'products': products})
 
 # 2. CREAR PRODUCTO (Aquí usamos el form con IA que hicimos antes)
-from .forms import ProductForm, QuotationForm # <--- Asegúrese de importar esto arriba
 
 @login_required
 def product_create(request):
