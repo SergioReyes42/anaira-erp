@@ -233,7 +233,6 @@ class ProductForm(forms.ModelForm):
         # Si tiene imagen, agregue 'image' a la lista de arriba
 
 class QuotationForm(forms.ModelForm):
-    # Campo auxiliar para calcular la fecha (no se guarda directo, se usa en la vista)
     validity_days = forms.IntegerField(
         label="Días de Validez", 
         initial=15,
@@ -242,9 +241,11 @@ class QuotationForm(forms.ModelForm):
 
     class Meta:
         model = Quotation
-        fields = ['client', 'date', 'observation'] # NO incluya 'valid_until'
+        # HE QUITADO 'observation' DE AQUÍ PORQUE CAUSABA EL ERROR
+        fields = ['client', 'date'] 
+        
         widgets = {
             'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'observation': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'client': forms.Select(attrs={'class': 'form-select'}),
+            # HE QUITADO EL WIDGET DE observation TAMBIÉN
         }
