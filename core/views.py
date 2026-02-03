@@ -1,46 +1,48 @@
 import csv
 import os
 import json
-from .forms import ProductForm, QuotationForm # <--- Asegúrese de importar esto arriba
-from datetime import datetime 
-from datetime import timedelta  # <--- AGREGAR ESTO AL PRINCIPIO
+from datetime import datetime, date, timedelta
 from itertools import chain
 from operator import attrgetter
-from .ai_brain import analizar_documento_ia
-from .models import Client
-from .models import Product
-from .models import Quotation, QuotationDetail, CompanyProfile, Provider, Purchase, PurchaseDetail
-
 
 # --- IMPORTS DE DJANGO ---
 from django.contrib.sessions.models import Session
 from django.utils import timezone
-from django.contrib.auth import get_user_model # ✅ ESTO ES LO CORRECTO
+from django.contrib.auth import get_user_model, login, logout
 from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum, Q, Count
 from django.conf import settings
-from .models import BankAccount
-from .forms import BankTransactionForm
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from datetime import date
-from .models import Company, Fleet, BankAccount, Gasto, BankTransaction, JournalEntry, JournalItem
+
+# --- CEREBRO IA ---
 from .ai_brain import analizar_texto_bancario, analizar_documento_ia
-# --- MODELOS ---
+
+# --- FORMULARIOS ---
+from .forms import ProductForm, QuotationForm, BankTransactionForm
+
+# --- MODELOS (Todos unificados aquí) ---
 from .models import (
-    UserRoleCompany, Branch, Warehouse, Account,
+    # Usuarios y Empresa
+    UserRoleCompany, Company, CompanyProfile, Branch, Warehouse,
+    
+    # Terceros
+    Client, Provider, BusinessPartner, Employee,
+    
+    # Ventas y Compras
+    Product, Quotation, QuotationDetail, Purchase, PurchaseDetail,
+    
     # Finanzas
-    Gasto, Income, BankAccount, BankMovement, BusinessPartner,
-    # Inventario
-    Product, InventoryMovement,
-    # RRHH
-    Employee, Loan, Payroll, PayrollDetail
+    Account, BankAccount, BankTransaction, BankMovement, 
+    Gasto, Income, JournalEntry, JournalItem,
+    
+    # Otros
+    Fleet, InventoryMovement, Loan, Payroll, PayrollDetail
 )
 
 # --- FORMULARIOS ---
