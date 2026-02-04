@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 600px;">
+    <div class="card shadow">
+        <div class="card-header text-white {% if movement_type == 'IN' %}bg-success{% else %}bg-danger{% endif %}">
+            <h4 class="mb-0">
+                {% if movement_type == 'IN' %}
+                    <i class="bi bi-arrow-down-circle"></i> Registrar Depósito (Ingreso)
+                {% else %}
+                    <i class="bi bi-arrow-up-circle"></i> Registrar Retiro (Egreso)
+                {% endif %}
+            </h4>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label class="fw-bold">Cuenta Bancaria</label>
+                    {{ form.account }}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="fw-bold">Fecha</label>
+                        {{ form.date }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="fw-bold">Monto (Q)</label>
+                        {{ form.amount }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="fw-bold">Categoría</label>
+                    {{ form.category }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="fw-bold">Referencia (Boleta/Cheque)</label>
+                    {{ form.reference }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="fw-bold">Descripción</label>
+                    {{ form.description }}
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 btn-lg">Guardar Transacción</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
