@@ -1,4 +1,5 @@
 from django.contrib import admin
+from .models import StockMovement # Agregue esto al import
 from django.contrib.admin.sites import AlreadyRegistered
 
 # --- IMPORTACIÓN MASIVA DE MODELOS ---
@@ -95,3 +96,10 @@ class InventoryAdmin(admin.ModelAdmin):
     # CORREGIDO: Solo filtramos por bodega
     list_filter = ('warehouse',) 
     search_fields = ('product__name', 'product__code', 'warehouse__name')
+
+@admin.register(StockMovement)
+class StockMovementAdmin(admin.ModelAdmin):
+    list_display = ('date', 'product', 'warehouse', 'movement_type', 'quantity', 'user')
+    list_filter = ('movement_type', 'warehouse', 'date')
+    search_fields = ('product__name', 'product__code')
+    readonly_fields = ('date',) # El historial no se debe editar, solo ver

@@ -4,6 +4,8 @@ import json
 from datetime import datetime, date, timedelta
 from itertools import chain
 from operator import attrgetter
+from django.db.models import Q
+from .models import Inventory, Branch, Employee
 
 # --- IMPORTS DE DJANGO ---
 from django.http import JsonResponse, HttpResponse
@@ -1765,3 +1767,42 @@ def validate_price_unlock(request):
             return JsonResponse({'success': False, 'message': 'PIN Incorrecto'})
     
     return JsonResponse({'success': False}, status=400)
+
+@login_required
+def dashboard_inventario(request):
+    query = request.GET.get('q', '') # Esto captura lo que escribes en el buscador
+    
+    # 1. IDENTIFICAR LA SUCURSAL DEL USUARIO
+    my_branch = None
+    try:
+        # Buscamos si el usuario actual es un empleado y tiene sucursal
+        if hasattr(request.user, 'employee'):
+            my_branch = request.user.employee.branch
+    except:
+        pass # Si falla, my_branch se queda como None
+
+    # 2. PREPARAR LAS CONSULTAS (AQUÍ ESTÁ LA LÓGICA QUE PREGUNTASTE)
+    local_inventory = []
+    global_inventory = []
+
+    if query:
+        # A) Primero buscamos en TU Sucursal (inventario_local)
+        if my_branch:
+            local_inventory = Inventory.objects.filter(
+                warehouse__branch=my_branch, 
+                product__name__icontains=query
+            ).select_related('product', 'warehouse')
+
+        # B) Luego buscamos en TODO lo demás, EXCLUYENDO tu sucursal
+        global_inventory = Inventory.objects.filter(
+            product__name__icontains=query
+        ).exclude(
+            warehouse__branch=my_branch 
+        ).select_related('product', 'warehouse')
+
+    return render(request, 'core/inventory/dashboard.html', {
+        'my_branch': my_branch,
+        'local_stock': local_inventory,
+        'global_stock': global_inventory,
+        'search_query': query
+    })

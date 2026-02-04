@@ -624,3 +624,38 @@ def update_inventory_on_purchase(sender, instance, created, **kwargs):
         producto.stock += instance.quantity
         producto.save()
 
+class StockMovement(models.Model):
+    MOVEMENT_TYPES = [
+        ('IN_PURCHASE', 'Entrada por Compra'),
+        ('OUT_SALE', 'Salida por Venta'),
+        ('TRANSFER_OUT', 'Salida por Traslado'),
+        ('TRANSFER_IN', 'Entrada por Traslado'),
+        ('ADJUST_ADD', 'Ajuste (Entrada)'),
+        ('ADJUST_SUB', 'Ajuste (Salida)'),
+    ]
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Producto")
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, verbose_name="Bodega Afectada")
+    quantity = models.IntegerField(verbose_name="Cantidad")
+    movement_type = models.CharField(max_length=20, choices=MOVEMENT_TYPES, verbose_name="Tipo de Movimiento")
+    
+    # Referencias cruzadas (Opcionales, para saber de dónde vino el movimiento)
+    related_purchase = models.ForeignKey('Purchase', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Ref. Compra")
+    related_sale = models.ForeignKey('Sale', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Ref. Venta")
+    
+    # Para traslados, saber de dónde vino o a dónde fue
+    related_transfer_id = models.IntegerField(null=True, blank=True, help_text="ID del grupo de traslado")
+    
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Fecha y Hora")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="Responsable")
+    comments = models.CharField(max_length=200, blank=True, null=True, verbose_name="Comentario/Razón")
+
+    def __str__(self):
+        return f"{self.get_movement_type_display()}: {self.quantity} de {self.product.code}"
+
+    class Meta:
+        verbose_name = "Movimiento de Kardex"
+        verbose_name_plural = "Kardex (Historial)"
+        ordering = ['-date']
+    
+    

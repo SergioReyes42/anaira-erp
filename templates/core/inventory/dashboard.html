@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4"><i class="bi bi-search"></i> Monitor de Existencias</h2>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="d-flex gap-2">
+                <input type="text" name="q" class="form-control form-control-lg" placeholder="Escanee código o escriba nombre..." value="{{ search_query }}" autofocus>
+                <button type="submit" class="btn btn-primary btn-lg px-4">Buscar</button>
+            </form>
+        </div>
+    </div>
+
+    {% if search_query %}
+        
+        <div class="card border-success mb-4 shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-shop"></i> Disponible en Mi Sucursal ({{ my_branch.name }})</h5>
+            </div>
+            <div class="card-body">
+                {% if local_stock %}
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th>Ubicación</th>
+                                <th class="text-center">Cantidad</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in local_stock %}
+                            <tr>
+                                <td class="fw-bold">{{ item.product.name }} <br> <small class="text-muted">{{ item.product.code }}</small></td>
+                                <td><span class="badge bg-secondary">{{ item.warehouse.name }}</span></td>
+                                <td class="text-center fs-5 fw-bold text-success">{{ item.quantity }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-success">Facturar</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="alert alert-warning text-center mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> No tenemos este producto en nuestras bodegas locales.
+                        <strong>Revise el stock global abajo.</strong>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <h5 class="text-muted ms-2"><i class="bi bi-globe"></i> Existencia en Otras Sucursales / Bodega Central</h5>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Sucursal / Bodega</th>
+                            <th>Producto</th>
+                            <th class="text-center">Stock</th>
+                            <th>Contacto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in global_stock %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.warehouse.branch.name }}</strong><br>
+                                <small class="text-muted">{{ item.warehouse.name }}</small>
+                            </td>
+                            <td>{{ item.product.name }}</td>
+                            <td class="text-center fw-bold">{{ item.quantity }}</td>
+                            <td>
+                                <a href="tel:{{ item.warehouse.branch.phone }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-telephone"></i> Llamar
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted p-3">No se encontró en ninguna otra bodega.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    {% endif %}
+</div>
+{% endblock %}
