@@ -1386,20 +1386,18 @@ def create_quotation(request):
                 quotation = form.save(commit=False)
                 quotation.user = request.user
                 
-                # --- CORRECCIÓN CRÍTICA: ASIGNAR EMPRESA ---
-                # Buscamos la empresa activa en la sesión
+                # Asignar Empresa (Si es multi-empresa)
                 company_id = request.session.get('company_id')
                 if company_id:
                     quotation.company = CompanyProfile.objects.get(id=company_id)
                 else:
-                    # Si no hay empresa seleccionada, usamos la primera que encuentre (seguridad)
                     quotation.company = CompanyProfile.objects.first()
 
                 # Calcular validez
                 days = int(request.POST.get('validity_days', 15))
                 quotation.valid_until = quotation.date + timedelta(days=days)
                 
-                quotation.save() # Guardamos el encabezado primero
+                quotation.save() 
 
                 # 2. Guardar Productos
                 product_ids = request.POST.getlist('products[]')
@@ -1409,25 +1407,29 @@ def create_quotation(request):
                 total_general = 0
 
                 for p_id, qty, price in zip(product_ids, quantities, prices):
+                    # Validación para no procesar filas vacías
                     if p_id and qty.strip() and price.strip(): 
                         product = Product.objects.get(id=p_id)
                         cantidad = int(qty)
                         precio_unitario = float(price)
-                        subtotal = cantidad * precio_unitario
+                        
+                        # Calculamos subtotal solo para sumar al Total General
+                        subtotal_fila = cantidad * precio_unitario
                         
                         QuotationDetail.objects.create(
                             quotation=quotation,
                             product=product,
                             quantity=cantidad,
-                            unit_price=precio_unitario,
-                            subtotal=subtotal
+                            unit_price=precio_unitario
+                            # --- CORRECCIÓN AQUÍ ---
+                            # Borramos la línea 'subtotal=subtotal' porque la base de datos no la tiene.
                         )
                         
                         # Apartar stock
                         product.stock_reserved += cantidad
                         product.save()
                         
-                        total_general += subtotal
+                        total_general += subtotal_fila
 
                 # 3. Guardar total final
                 quotation.total = total_general
@@ -1440,7 +1442,6 @@ def create_quotation(request):
                 print(f"Error detallado: {e}") 
                 messages.error(request, f"Error interno: {str(e)}")
         else:
-            # EL CHISMOSO: Esto le dirá exactamente qué campo falta
             messages.error(request, f"Faltan datos obligatorios: {form.errors.as_text()}")
     else:
         form = QuotationForm()
