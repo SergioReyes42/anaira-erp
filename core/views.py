@@ -1380,125 +1380,71 @@ from django.contrib import messages
 
 # --- 2. CREAR COTIZACIÓN (CORREGIDO: CÁLCULO DE SUBTOTAL) ---
 @login_required
+@transaction.atomic
 def create_quotation(request):
-    # Variables iniciales
-    clients = Client.objects.all()
-    products = Product.objects.all()
-
     if request.method == 'POST':
         form = QuotationForm(request.POST)
-        
-        try:
-            # --- EL ESCUDO ATÓMICO ---
-            with transaction.atomic():
-                if form.is_valid():
-                    # 1. Preparamos el encabezado (Quotation)
-                    quotation = form.save(commit=False)
-                    quotation.user = request.user # Asignamos el vendedor
-                    
-                    # 2. Cálculo de Fecha (Evita error NULL)
-                    dias = form.cleaned_data.get('validity_days')
-                    if not dias: dias = 15
-                    
-                    fecha_base = quotation.date or timezone.now().date()
-                    quotation.valid_until = fecha_base + timedelta(days=int(dias))
-                    
-                    # Guardamos el encabezado primero para tener ID
-                    quotation.save()
+        if form.is_valid():
+            try:
+                # 1. Guardar encabezado (Cliente, Fecha, Forma de Pago)
+                quotation = form.save(commit=False)
+                quotation.user = request.user
+                
+                # Calcular validez
+                days = int(request.POST.get('validity_days', 15))
+                quotation.valid_until = quotation.date + timedelta(days=days)
+                quotation.save()
 
-                    # 3. Procesar Productos y VALIDAR APARTADOS
-                    product_ids = request.POST.getlist('products[]')
-                    quantities = request.POST.getlist('quantities[]')
-                    prices = request.POST.getlist('prices[]')
+                # 2. Guardar Productos (El Detalle)
+                product_ids = request.POST.getlist('products[]')
+                quantities = request.POST.getlist('quantities[]')
+                prices = request.POST.getlist('prices[]')
 
-                    total = 0
-                    
-                    if product_ids:
-                        for i in range(len(product_ids)):
-                            if product_ids[i] and quantities[i]:
-                                prod_id = product_ids[i]
-                                qty_requested = int(quantities[i])
-                                price = float(prices[i])
-                                
-                                # A. Bloqueamos el producto para evitar errores de concurrencia
-                                product = Product.objects.select_for_update().get(id=prod_id)
-                                
-                                # B. Calculamos lo que realmente está libre
-                                # (Stock Físico - Stock Apartado en otras cotizaciones)
-                                stock_libre = product.stock - product.stock_reserved
-                                
-                                # --- EL DETECTIVE DE STOCK ---
-                                if qty_requested > stock_libre:
-                                    # ¡ALERTA! Alguien se llevó el stock. Investigamos quién.
-                                    culprits = QuotationDetail.objects.filter(
-                                        product=product,
-                                        quotation__status='DRAFT' # Solo cotizaciones vivas
-                                    ).exclude(quotation=quotation).select_related('quotation__user', 'quotation__client')
-                                    
-                                    # Construimos el mensaje de chisme (HTML)
-                                    msg = f"""
-                                    <div class="text-start">
-                                        <strong>⚠️ STOCK INSUFICIENTE EN: {product.name}</strong><br>
-                                        En Bodega: {product.stock} | Libres: {stock_libre}<br>
-                                        Solicitado: {qty_requested}<br>
-                                        <hr class="my-1">
-                                        <strong>🚫 ESTÁN APARTADOS POR:</strong><br>
-                                        <ul class="mb-0 ps-3">
-                                    """
-                                    
-                                    found_some = False
-                                    for item in culprits:
-                                        msg += f"<li>👮‍♂️ <b>{item.quotation.user.username.upper()}</b> tiene {item.quantity} para <b>{item.quotation.client.name}</b></li>"
-                                        found_some = True
-                                    
-                                    if not found_some:
-                                         msg += "<li>(Stock físico agotado sin apartados previos)</li>"
+                total_general = 0
 
-                                    msg += "</ul></div>"
-                                    
-                                    # Lanzamos la alerta roja
-                                    messages.error(request, mark_safe(msg))
-                                    
-                                    # IMPORTANTE: Cancelamos todo lo que hicimos (Rollback)
-                                    transaction.set_rollback(True)
-                                    # Redirigimos al usuario a la lista para que intente de nuevo
-                                    return redirect('quotation_list')
+                # Recorremos las listas juntas
+                for p_id, qty, price in zip(product_ids, quantities, prices):
+                    if p_id and qty: # Solo si hay producto y cantidad
+                        product = Product.objects.get(id=p_id)
+                        cantidad = int(qty)
+                        precio_unitario = float(price)
+                        subtotal = cantidad * precio_unitario
+                        
+                        # Crear detalle
+                        QuotationDetail.objects.create(
+                            quotation=quotation,
+                            product=product,
+                            quantity=cantidad,
+                            unit_price=precio_unitario,
+                            subtotal=subtotal
+                        )
+                        
+                        # Apartar stock (Lógica de Reserva)
+                        product.stock_reserved += cantidad
+                        product.save()
+                        
+                        total_general += subtotal
 
-                                # --- SI PASA LA PRUEBA: APARTAMOS ---
-                                # 1. Aumentamos el contador de apartados del producto
-                                product.stock_reserved += qty_requested
-                                product.save()
+                # 3. Actualizar Total Final
+                quotation.total = total_general
+                quotation.save()
 
-                                # 2. Guardamos el detalle de la cotización
-                                detail = QuotationDetail(
-                                    quotation=quotation,
-                                    product=product,
-                                    quantity=qty_requested,
-                                    unit_price=price
-                                )
-                                detail.save()
-                                total += detail.quantity * detail.unit_price
-
-                    # 4. Actualizamos el total final
-                    quotation.total = total
-                    quotation.save()
-                    
-                    messages.success(request, '¡Cotización creada y stock apartado correctamente!')
-                    return redirect('quotation_list')
-
-                else:
-                    messages.error(request, f"Formulario inválido: {form.errors}")
-        
-        except Exception as e:
-            messages.error(request, f"Ocurrió un error inesperado: {str(e)}")
-
+                messages.success(request, f"Cotización #{quotation.id} creada exitosamente.")
+                return redirect('quotation_list')
+            
+            except Exception as e:
+                # Si algo falla, el @transaction.atomic deshace todo para no dejar basura
+                messages.error(request, f"Error al guardar los productos: {str(e)}")
+        else:
+            messages.error(request, "Error en el formulario. Verifique los datos del cliente.")
     else:
         form = QuotationForm()
 
+    # Cargamos productos para el select del HTML
+    products = Product.objects.filter(stock__gt=0) 
     return render(request, 'core/sales/quotation_form.html', {
         'form': form,
-        'products': products,
-        'clients': clients
+        'products': products
     })
     
 @login_required
