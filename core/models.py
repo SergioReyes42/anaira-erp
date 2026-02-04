@@ -518,8 +518,7 @@ class Purchase(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="Comprador")
     
     # AQUÍ ESTÁ LA CLAVE: Supplier ya fue leído arriba, así que esto funciona
-    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, verbose_name="Proveedor")
-    
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, verbose_name="Proveedor", null=True, blank=True)    
     date = models.DateField(default=timezone.now, verbose_name="Fecha de Compra")
     document_reference = models.CharField(max_length=50, verbose_name="No. Factura Proveedor", blank=True, null=True)
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
