@@ -91,35 +91,35 @@ def logout_view(request):
 
 @login_required
 def select_company(request):
-    # Lógica de Seguridad:
+    # 1. Filtramos qué empresas puede ver el usuario
     if request.user.is_superuser:
-        # El Superusuario ve TODAS las empresas
         companies = CompanyProfile.objects.all()
     else:
-        # Los mortales solo ven las empresas donde están en la lista "allowed_users"
         companies = CompanyProfile.objects.filter(allowed_users=request.user)
 
+    # 2. Si el usuario eligió una empresa (dio click al botón)
     if request.method == 'POST':
         company_id = request.POST.get('company_id')
         if company_id:
             company = get_object_or_404(CompanyProfile, id=company_id)
             
-            # Doble chequeo de seguridad por si intentan hackear el HTML
+            # Seguridad: Verificar permiso nuevamente
             if not request.user.is_superuser and request.user not in company.allowed_users.all():
-                messages.error(request, "No tiene permiso para acceder a esta empresa.")
+                messages.error(request, "Acceso Denegado.")
                 return redirect('select_company')
 
-            # Guardamos la empresa en la sesión
+            # Guardar en sesión
             request.session['company_id'] = company.id
             request.session['company_name'] = company.name
-            
-            # Opcional: Guardar logo en sesión para mostrarlo fácil
             if company.logo:
                 request.session['company_logo'] = company.logo.url
             
-            messages.success(request, f"Empresa cambiada a: {company.name}")
+            messages.success(request, f"Bienvenido a {company.name}")
             return redirect('home')
 
+    # 3. ESTA LÍNEA ES LA CLAVE DEL ERROR ANTERIOR
+    # Debe estar alineada con el 'def', NO dentro del 'if'
+    
         return render(request, 'core/seleccion_nueva.html', {'companies': companies})
 
 @login_required
