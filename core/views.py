@@ -1467,8 +1467,17 @@ def invoice_pdf(request, pk):
 
 @login_required
 def purchase_list(request):
-    # Mostramos las compras ordenadas por fecha (la más reciente arriba)
-    purchases = Purchase.objects.all().order_by('-date')
+    # Filtramos compras por empresa
+    if request.user.is_superuser:
+        purchases = Purchase.objects.all().order_by('-date')
+    else:
+        # Si es usuario normal, solo ve las de su empresa permitida (o la de sesión)
+        company_id = request.session.get('company_id')
+        if company_id:
+            purchases = Purchase.objects.filter(company_id=company_id).order_by('-date')
+        else:
+            purchases = Purchase.objects.none()
+
     return render(request, 'core/purchases/purchase_list.html', {'purchases': purchases})
 
 @login_required

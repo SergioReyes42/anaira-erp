@@ -72,4 +72,5 @@ urlpatterns = [
     path('contabilidad/balance-general/', views.balance_sheet, name='balance_general'),
 
     path('api/validate-unlock/', views.validate_price_unlock, name='validate_price_unlock'),
+
 ]
