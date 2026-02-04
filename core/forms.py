@@ -6,7 +6,7 @@ from .models import (
     BusinessPartner, Provider, 
     Product, 
     Employee, Loan, 
-    Quotation, Client
+    Quotation, Client, Warehouse, Supplier, Sale
 )
 from .models import Purchase
 
@@ -129,15 +129,15 @@ class IncomeForm(forms.ModelForm):
 # ==========================================
 class SupplierForm(forms.ModelForm):
     class Meta:
-        model = BusinessPartner
-        fields = ['name', 'tax_id', 'email', 'phone', 'bank_name', 'bank_account']
+        model = Supplier
+        fields = '__all__'
+        exclude = ['company']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'tax_id': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'nit': forms.TextInput(attrs={'class': 'form-control'}),
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'bank_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'bank_account': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
 
 class SupplierPaymentForm(forms.Form):
@@ -158,18 +158,20 @@ class SupplierPaymentForm(forms.Form):
 # 5. INVENTARIO (PRODUCTOS)
 # ==========================================
 class ProductForm(forms.ModelForm):
-    # Definimos widgets explícitos para mejor control visual
-    name = forms.CharField(label="Nombre del Producto", widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_name'}))
-    code = forms.CharField(label="Código / SKU", required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_code'}))
-    description = forms.CharField(label="Descripción", required=False, widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}))
-    price = forms.DecimalField(label="Precio Venta (Q)", widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    cost = forms.DecimalField(label="Costo (Q)", required=False, widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    stock = forms.IntegerField(label="Stock Inicial", initial=0, widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    image = forms.ImageField(label="Imagen", required=False, widget=forms.FileInput(attrs={'class': 'form-control'}))
-
     class Meta:
         model = Product
-        fields = ['name', 'code', 'description', 'price', 'cost', 'stock', 'image']
+        fields = ['code', 'name', 'category', 'brand', 'cost', 'price', 'stock', 'min_stock', 'image']
+        widgets = {
+            'code': forms.TextInput(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'category': forms.Select(attrs={'class': 'form-select'}),
+            'brand': forms.Select(attrs={'class': 'form-select'}),
+            'cost': forms.NumberInput(attrs={'class': 'form-control'}),
+            'price': forms.NumberInput(attrs={'class': 'form-control'}),
+            'stock': forms.NumberInput(attrs={'class': 'form-control'}),
+            'min_stock': forms.NumberInput(attrs={'class': 'form-control'}),
+            'image': forms.FileInput(attrs={'class': 'form-control'}),
+        }
 
 # ==========================================
 # 6. RECURSOS HUMANOS
@@ -233,32 +235,57 @@ class QuotationForm(forms.ModelForm):
             # 2. QUITAMOS EL WIDGET DE DESCRIPTION TAMBIÉN
         }
 
+class SaleForm(forms.ModelForm):
+    class Meta:
+        model = Sale
+        fields = ['client', 'payment_method'] 
+        widgets = {
+            'client': forms.Select(attrs={'class': 'form-select select2'}),
+            'payment_method': forms.Select(attrs={'class': 'form-select'}),
+        }
+
 class ClientForm(forms.ModelForm):
     class Meta:
         model = Client
-        fields = ['nit', 'name', 'address', 'phone', 'email', 'contact_name', 'credit_days', 'credit_limit']
+        fields = ['name', 'nit', 'phone', 'email', 'address']
         widgets = {
-            'nit': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 123456-7'}),
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre de la empresa'}),
-            'address': forms.TextInput(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'nit': forms.TextInput(attrs={'class': 'form-control'}),
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'contact_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'credit_days': forms.NumberInput(attrs={'class': 'form-control'}),
-            'credit_limit': forms.NumberInput(attrs={'class': 'form-control'}),
+            'address': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
 class PurchaseForm(forms.ModelForm):
-    class Meta:
-        model = Purchase
-        fields = ['supplier', 'date', 'document_reference', 'payment_method', 'payment_reference'] 
+    class PurchaseForm(forms.ModelForm):
+        class Meta:
+            model = Purchase
+        # 1. LISTA DE CAMPOS PERMITIDOS (¡Warehouse debe estar aquí!)
+        fields = [
+            'supplier', 
+            'date', 
+            'document_reference', 
+            'payment_method', 
+            'payment_reference', 
+            'warehouse'  # <--- CONFIRMADO
+        ]
+        
+        # 2. CAMPOS EXCLUIDOS (Warehouse NO debe estar aquí)
         exclude = ['user', 'company', 'created_at', 'status', 'total', 'branch']
         
+        # 3. ESTILOS VISUALES (WIDGETS)
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'warehouse': forms.Select(attrs={'class': 'form-select border-success'}),
             'supplier': forms.Select(attrs={'class': 'form-select'}),
+            'warehouse': forms.Select(attrs={'class': 'form-select border-success fw-bold'}), # Estilo verde para destacar
             'document_reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Factura #123'}),
-            'payment_method': forms.Select(attrs={'class': 'form-select', 'id': 'paymentMethod'}),
-            'payment_reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Banco Industrial / Tarjeta ... 1234', 'id': 'paymentRef'}),
-            
+            'payment_method': forms.Select(attrs={'class': 'form-select'}),
+            'payment_reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Banco Industrial / Tarjeta'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtramos para que solo salgan bodegas activas
+        if 'warehouse' in self.fields:
+            self.fields['warehouse'].queryset = Warehouse.objects.filter(active=True)
+            self.fields['warehouse'].empty_label = "--- Seleccione Bodega ---"
