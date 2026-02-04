@@ -5,6 +5,8 @@ from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from datetime import date
+from django.db import models
+from django.contrib.auth.models import User
 
 User = get_user_model()
 
@@ -38,21 +40,23 @@ class Company(models.Model):
         return self.name
 
 class CompanyProfile(models.Model):
-    """Datos de la Empresa Dueña del Sistema (Tenant) - Usado en Ventas/Compras"""
-    name = models.CharField(max_length=100, verbose_name="Nombre Empresa", default="Mi Empresa")
+    name = models.CharField(max_length=200, verbose_name="Nombre de la Empresa")
+    nit = models.CharField(max_length=20, verbose_name="NIT")
+    address = models.TextField(verbose_name="Dirección", blank=True, null=True)
+    phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True, null=True)
     logo = models.ImageField(upload_to='company_logos/', blank=True, null=True, verbose_name="Logo")
-    nit = models.CharField(max_length=20, verbose_name="NIT", blank=True)
-    address = models.CharField(max_length=200, verbose_name="Dirección", blank=True)
-    phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True)
-    email = models.EmailField(verbose_name="Email", blank=True)
-    website = models.URLField(verbose_name="Sitio Web", blank=True)
+    
+    # --- CAMPO NUEVO: CONTROL DE ACCESO ---
+    allowed_users = models.ManyToManyField(
+        User, 
+        related_name='allowed_companies', 
+        blank=True, 
+        verbose_name="Usuarios Autorizados",
+        help_text="Seleccione los usuarios que pueden acceder a esta empresa."
+    )
 
     def __str__(self):
         return self.name
-
-    class Meta:
-        verbose_name = "Perfil de Empresa"
-        verbose_name_plural = "Perfil de Empresa"
 
 class Role(models.Model):
     name = models.CharField(max_length=80, unique=True)
