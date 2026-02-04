@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin.sites import AlreadyRegistered
+# Importamos SOLO lo que estamos seguros que existe para que no falle
 from .models import (
     Product, 
     Client, 
@@ -9,20 +10,16 @@ from .models import (
     Quotation, 
     QuotationDetail, 
     BankAccount, 
-    BankMovement,
-    Employee,      # Agregado por si acaso
-    Supplier       # Agregado por si acaso
+    BankMovement
 )
 
-# --- 1. CONFIGURACIÓN DE LA EMPRESA (Con Logo y NIT) ---
-# Usamos un decorador seguro para CompanyProfile
+# --- 1. CONFIGURACIÓN DE LA EMPRESA (Para subir el Logo) ---
 try:
     @admin.register(CompanyProfile)
     class CompanyProfileAdmin(admin.ModelAdmin):
         list_display = ('name', 'nit', 'phone')
         
-        # Esto oculta el botón "Agregar" si ya existe una empresa
-        # para obligarlo a editar la existente y no crear duplicados.
+        # Evita crear duplicados (solo editar)
         def has_add_permission(self, request):
             if self.model.objects.exists():
                 return False
@@ -30,8 +27,7 @@ try:
 except AlreadyRegistered:
     pass
 
-# --- 2. REGISTRO SEGURO DE OTROS MODELOS ---
-# Esta lista incluye todos los modelos clave de su sistema
+# --- 2. REGISTRO SEGURO DE LOS DEMÁS MODELOS ---
 models_to_register = [
     Product, 
     Client, 
@@ -40,15 +36,13 @@ models_to_register = [
     Quotation, 
     QuotationDetail, 
     BankAccount, 
-    BankMovement,
-    Employee,
-    Supplier
+    BankMovement
 ]
 
 for model in models_to_register:
     try:
         admin.site.register(model)
     except AlreadyRegistered:
-        pass  # Si ya estaba registrado, ignoramos el error y seguimos
+        pass  # Si ya estaba, lo ignora
     except Exception:
-        pass  # Si el modelo no existe o tiene otro problema, no detenemos el servidor
+        pass  # Si algo sale mal, no detiene el servidor
