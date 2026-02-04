@@ -91,24 +91,24 @@ def logout_view(request):
 
 @login_required
 def select_company(request):
-    # 1. Filtramos qué empresas puede ver el usuario
+    # 1. Filtramos las empresas (GET)
     if request.user.is_superuser:
         companies = CompanyProfile.objects.all()
     else:
         companies = CompanyProfile.objects.filter(allowed_users=request.user)
 
-    # 2. Si el usuario eligió una empresa (dio click al botón)
+    # 2. Procesamos la selección (POST)
     if request.method == 'POST':
         company_id = request.POST.get('company_id')
         if company_id:
             company = get_object_or_404(CompanyProfile, id=company_id)
             
-            # Seguridad: Verificar permiso nuevamente
+            # Verificación de Seguridad
             if not request.user.is_superuser and request.user not in company.allowed_users.all():
                 messages.error(request, "Acceso Denegado.")
                 return redirect('select_company')
 
-            # Guardar en sesión
+            # Guardamos en la sesión
             request.session['company_id'] = company.id
             request.session['company_name'] = company.name
             if company.logo:
@@ -117,9 +117,10 @@ def select_company(request):
             messages.success(request, f"Bienvenido a {company.name}")
             return redirect('home')
 
-    # 3. ESTA LÍNEA ES LA CLAVE DEL ERROR ANTERIOR
-    # Debe estar alineada con el 'def', NO dentro del 'if'
-    
+    # --- ¡OJO AQUÍ! ---
+    # Esta línea NO debe tener sangría extra. 
+    # Debe estar alineada con el 'def' del inicio, NO dentro del 'if'.
+
         return render(request, 'core/seleccion_nueva.html', {'companies': companies})
 
 @login_required

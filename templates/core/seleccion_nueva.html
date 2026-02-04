@@ -2,66 +2,38 @@
 
 {% block content %}
 <div class="container mt-5">
+    <h2 class="text-center mb-4"><i class="bi bi-building"></i> Seleccione su Empresa</h2>
+    
     <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="text-center mb-5">
-                <h2 class="fw-bold text-primary"><i class="bi bi-building"></i> Seleccione una Empresa</h2>
-                <p class="text-muted">Tiene acceso a las siguientes organizaciones:</p>
-            </div>
-
-            <div class="row">
-                {% for company in companies %}
-                <div class="col-md-4 mb-4">
-                    <form method="POST">
-                        {% csrf_token %}
-                        <input type="hidden" name="company_id" value="{{ company.id }}">
-                        
-                        <button type="submit" class="card h-100 shadow-sm border-0 w-100 text-start btn-company-card">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3 d-flex align-items-center justify-content-center" style="height: 100px;">
-                                    {% if company.logo %}
-                                        <img src="{{ company.logo.url }}" alt="{{ company.name }}" style="max-height: 80px; max-width: 100%;">
-                                    {% else %}
-                                        <i class="bi bi-building text-secondary" style="font-size: 4rem;"></i>
-                                    {% endif %}
-                                </div>
-                                
-                                <h5 class="card-title fw-bold text-dark">{{ company.name }}</h5>
-                                <p class="card-text text-muted small">NIT: {{ company.nit }}</p>
-                                
-                                <div class="mt-3">
-                                    <span class="btn btn-outline-primary btn-sm rounded-pill px-4">Ingresar <i class="bi bi-arrow-right"></i></span>
-                                </div>
-                            </div>
-                        </button>
-                    </form>
-                </div>
-                {% empty %}
-                <div class="col-12 text-center">
-                    <div class="alert alert-warning py-5">
-                        <i class="bi bi-exclamation-triangle fs-1"></i>
-                        <h4 class="mt-3">No tiene empresas asignadas</h4>
-                        <p>Por favor, contacte al administrador del sistema para que le habilite el acceso.</p>
+        {% for company in companies %}
+        <div class="col-md-4 mb-3">
+            <form method="POST" class="h-100">
+                {% csrf_token %}
+                <input type="hidden" name="company_id" value="{{ company.id }}">
+                
+                <button type="submit" class="card h-100 w-100 shadow-sm btn btn-light text-start p-0 border-0">
+                    <div class="card-body text-center">
+                        {% if company.logo %}
+                            <img src="{{ company.logo.url }}" style="max-height: 80px; max-width: 100%;" class="mb-3">
+                        {% else %}
+                            <i class="bi bi-briefcase fs-1 text-secondary d-block mb-3"></i>
+                        {% endif %}
+                        <h5 class="card-title fw-bold text-primary">{{ company.name }}</h5>
+                        <p class="card-text text-muted small">NIT: {{ company.nit }}</p>
                     </div>
-                </div>
-                {% endfor %}
-            </div>
-            
+                    <div class="card-footer bg-primary text-white text-center w-100">
+                        Ingresar <i class="bi bi-arrow-right"></i>
+                    </div>
+                </button>
+            </form>
         </div>
+        {% empty %}
+        <div class="col-12 text-center">
+            <div class="alert alert-warning">
+                No tiene empresas asignadas. Contacte al administrador.
+            </div>
+        </div>
+        {% endfor %}
     </div>
 </div>
-
-<style>
-    /* Efecto Hover para las tarjetas */
-    .btn-company-card {
-        transition: transform 0.2s, box-shadow 0.2s;
-        cursor: pointer;
-        background: white;
-    }
-    .btn-company-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
-        border: 1px solid #0d6efd !important;
-    }
-</style>
 {% endblock %}
