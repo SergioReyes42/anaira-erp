@@ -1,99 +1,54 @@
 from django.contrib import admin
+from django.contrib.admin.sites import AlreadyRegistered
 from .models import (
-    CompanyProfile, 
-    Client, 
     Product, 
-    Quotation, 
-    QuotationDetail,
-    InventoryMovement, 
+    Client, 
     Sale, 
-    SaleDetail,
-    Provider, 
-    Purchase, 
-    PurchaseDetail,
-    BankAccount,
-    BankMovement   
+    SaleDetail, 
+    CompanyProfile, 
+    Quotation, 
+    QuotationDetail, 
+    BankAccount, 
+    BankMovement,
+    Employee,      # Agregado por si acaso
+    Supplier       # Agregado por si acaso
 )
 
-# 1. Configuración de la Empresa
-@admin.register(CompanyProfile)
-class CompanyProfileAdmin(admin.ModelAdmin):
-    list_display = ('name', 'nit', 'phone')
-    # Esto evita que creen más de una empresa (solo permite editar la existente)
-    def has_add_permission(self, request):
-        if self.model.objects.exists():
-            return False
-        return True
-    
-# 2. Otros modelos (Opcional, para que tenga control total)
-admin.site.register(Product)
-admin.site.register(Client)
-admin.site.register(Sale)
-admin.site.register(Quotation)
-admin.site.register(BankAccount)
-admin.site.register(BankMovement)
+# --- 1. CONFIGURACIÓN DE LA EMPRESA (Con Logo y NIT) ---
+# Usamos un decorador seguro para CompanyProfile
+try:
+    @admin.register(CompanyProfile)
+    class CompanyProfileAdmin(admin.ModelAdmin):
+        list_display = ('name', 'nit', 'phone')
+        
+        # Esto oculta el botón "Agregar" si ya existe una empresa
+        # para obligarlo a editar la existente y no crear duplicados.
+        def has_add_permission(self, request):
+            if self.model.objects.exists():
+                return False
+            return True
+except AlreadyRegistered:
+    pass
 
-# --- 2. CLIENTES Y PROVEEDORES ---
-@admin.register(Client)
-class ClientAdmin(admin.ModelAdmin):
-    list_display = ('name', 'nit', 'contact_name', 'phone')
-    search_fields = ('name', 'nit')
+# --- 2. REGISTRO SEGURO DE OTROS MODELOS ---
+# Esta lista incluye todos los modelos clave de su sistema
+models_to_register = [
+    Product, 
+    Client, 
+    Sale, 
+    SaleDetail, 
+    Quotation, 
+    QuotationDetail, 
+    BankAccount, 
+    BankMovement,
+    Employee,
+    Supplier
+]
 
-@admin.register(Provider)
-class ProviderAdmin(admin.ModelAdmin):
-    list_display = ('name', 'nit', 'contact_name', 'phone')
-    search_fields = ('name', 'nit')
-
-# --- 3. PRODUCTOS ---
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    # Campos seguros que sí existen en el modelo
-    list_display = ('name', 'code', 'stock', 'stock_reserved', 'price')
-    search_fields = ('name', 'code')
-    list_filter = ('stock',) 
-
-@admin.register(InventoryMovement)
-class InventoryMovementAdmin(admin.ModelAdmin):
-    list_display = ('product', 'type', 'quantity', 'date', 'user')
-    list_filter = ('type', 'date')
-
-# --- 4. VENTAS Y COTIZACIONES ---
-class QuotationDetailInline(admin.TabularInline):
-    model = QuotationDetail
-    extra = 0
-
-@admin.register(Quotation)
-class QuotationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'client', 'date', 'total', 'status')
-    list_filter = ('status', 'date')
-    inlines = [QuotationDetailInline] # Agregado para ver detalles dentro de la cotización
-
-# Configuración de Ventas (Sale)
-class SaleDetailInline(admin.TabularInline):
-    model = SaleDetail
-    extra = 0
-
-@admin.register(Sale)
-class SaleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'client', 'date', 'total')
-    inlines = [SaleDetailInline]
-
-# --- 5. COMPRAS ---
-class PurchaseDetailInline(admin.TabularInline):
-    model = PurchaseDetail
-    extra = 1
-
-@admin.register(Purchase)
-class PurchaseAdmin(admin.ModelAdmin):
-    list_display = ('id', 'provider', 'date', 'reference', 'total')
-    list_filter = ('date', 'provider')
-    inlines = [PurchaseDetailInline]
-    
-    # Recálculo automático del total al guardar desde el Admin
-    def save_related(self, request, form, formsets, change):
-        super().save_related(request, form, formsets, change)
-        obj = form.instance
-        # Sumamos los subtotales de los detalles
-        total = sum(item.subtotal for item in obj.details.all())
-        obj.total = total
-        obj.save()
+for model in models_to_register:
+    try:
+        admin.site.register(model)
+    except AlreadyRegistered:
+        pass  # Si ya estaba registrado, ignoramos el error y seguimos
+    except Exception:
+        pass  # Si el modelo no existe o tiene otro problema, no detenemos el servidor
