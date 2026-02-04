@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin.sites import AlreadyRegistered
-from .models import Branch, Warehouse, Inventory # Agregue estos
-# Importamos SOLO lo que estamos seguros que existe para que no falle
+
+# --- IMPORTACIÓN MASIVA DE MODELOS ---
 from .models import (
     Product, 
     Client, 
@@ -11,50 +11,48 @@ from .models import (
     Quotation, 
     QuotationDetail, 
     BankAccount, 
-    BankMovement, Branch, Warehouse, Inventory  # <--- AGREGUE ESTOS 3
+    BankMovement,
+    Supplier, 
+    Purchase, 
+    PurchaseDetail,
+    # Los nuevos:
+    Branch, 
+    Warehouse, 
+    Inventory
 )
-from .models import Supplier, Purchase, PurchaseDetail
 
-# --- 1. ADMIN DE TENANTS (Multi-Empresa) ---
-# Intentamos registrar Tenant genéricamente por si el nombre varía
+# --- 1. ADMIN DE TENANTS (Opcional si usa multi-tenant) ---
 try:
-    from .models import Tenant
+    from .models import Tenant, Domain
+    
     @admin.register(Tenant)
     class TenantAdmin(admin.ModelAdmin):
         list_display = ('schema_name', 'name', 'created_on')
         search_fields = ('schema_name', 'name')
-except ImportError:
-    pass  # Si no existe el modelo Tenant en core, no hace nada.
-except AlreadyRegistered:
-    pass
 
-try:
-    from .models import Domain
     @admin.register(Domain)
     class DomainAdmin(admin.ModelAdmin):
         list_display = ('domain', 'tenant', 'is_primary')
+        
 except ImportError:
-    pass
+    pass 
 except AlreadyRegistered:
     pass
 
-
-# --- 2. PERFIL DE EMPRESA (Ahora Multi-Empresa) ---
+# --- 2. PERFIL DE EMPRESA ---
 try:
     @admin.register(CompanyProfile)
     class CompanyProfileAdmin(admin.ModelAdmin):
         list_display = ('name', 'nit', 'phone')
-        # Esto pone un filtro horizontal muy cómodo para seleccionar muchos usuarios
         filter_horizontal = ('allowed_users',) 
         
         def has_add_permission(self, request):
-            # Ahora SÍ permitimos agregar (True) porque usted dijo que es Multi-Empresa
             return True 
 except AlreadyRegistered:
     pass
 
-
-# --- 3. REGISTRO AUTOMÁTICO DEL RESTO ---
+# --- 3. REGISTRO AUTOMÁTICO (Modelos Simples) ---
+# Aquí ponemos SOLO los que NO tienen configuración personalizada abajo
 models_to_register = [
     Product, 
     Client, 
@@ -64,10 +62,10 @@ models_to_register = [
     QuotationDetail, 
     BankAccount, 
     BankMovement,
-    # --- LOS NUEVOS ---
     Supplier,
     Purchase,
     PurchaseDetail
+    # OJO: Aquí YA NO están Branch, Warehouse ni Inventory
 ]
 
 for model in models_to_register:
@@ -75,21 +73,24 @@ for model in models_to_register:
         admin.site.register(model)
     except AlreadyRegistered:
         pass
-    except Exception:
-        pass
 
-# ...
-admin.site.register(Branch)
-admin.site.register(Warehouse)
-admin.site.register(Inventory)
+
+# --- 4. REGISTRO DE SUCURSALES Y BODEGAS (Con filtros) ---
+
+@admin.register(Branch)
+class BranchAdmin(admin.ModelAdmin):
+    list_display = ('name', 'code', 'company', 'address')
+    search_fields = ('name', 'code')
+    list_filter = ('company',)
 
 @admin.register(Warehouse)
 class WarehouseAdmin(admin.ModelAdmin):
     list_display = ('name', 'branch', 'active')
     list_filter = ('branch', 'active')
+    search_fields = ('name',)
 
 @admin.register(Inventory)
 class InventoryAdmin(admin.ModelAdmin):
     list_display = ('product', 'warehouse', 'quantity', 'location')
-    list_filter = ('warehouse',)
-    search_fields = ('product__name', 'warehouse__name')
+    list_filter = ('warehouse', 'product__category') # Agregué categoría por si tiene
+    search_fields = ('product__name', 'product__code', 'warehouse__name')
