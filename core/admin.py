@@ -13,21 +13,43 @@ from .models import (
     BankMovement
 )
 
-# --- 1. CONFIGURACIÓN DE LA EMPRESA (Para subir el Logo) ---
+# --- 1. ADMIN DE TENANTS (Multi-Empresa) ---
+# Intentamos registrar Tenant genéricamente por si el nombre varía
+try:
+    from .models import Tenant
+    @admin.register(Tenant)
+    class TenantAdmin(admin.ModelAdmin):
+        list_display = ('schema_name', 'name', 'created_on')
+        search_fields = ('schema_name', 'name')
+except ImportError:
+    pass  # Si no existe el modelo Tenant en core, no hace nada.
+except AlreadyRegistered:
+    pass
+
+try:
+    from .models import Domain
+    @admin.register(Domain)
+    class DomainAdmin(admin.ModelAdmin):
+        list_display = ('domain', 'tenant', 'is_primary')
+except ImportError:
+    pass
+except AlreadyRegistered:
+    pass
+
+
+# --- 2. PERFIL DE EMPRESA (Ahora Multi-Empresa) ---
 try:
     @admin.register(CompanyProfile)
     class CompanyProfileAdmin(admin.ModelAdmin):
         list_display = ('name', 'nit', 'phone')
+        search_fields = ('name', 'nit')
+        # ELIMINAMOS la restricción has_add_permission para permitir múltiples empresas
         
-        # Evita crear duplicados (solo editar)
-        def has_add_permission(self, request):
-            if self.model.objects.exists():
-                return False
-            return True
 except AlreadyRegistered:
     pass
 
-# --- 2. REGISTRO SEGURO DE LOS DEMÁS MODELOS ---
+
+# --- 3. REGISTRO AUTOMÁTICO DEL RESTO ---
 models_to_register = [
     Product, 
     Client, 
@@ -43,6 +65,6 @@ for model in models_to_register:
     try:
         admin.site.register(model)
     except AlreadyRegistered:
-        pass  # Si ya estaba, lo ignora
+        pass
     except Exception:
-        pass  # Si algo sale mal, no detiene el servidor
+        pass
