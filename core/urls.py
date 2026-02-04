@@ -70,4 +70,6 @@ urlpatterns = [
     path('contabilidad/balance/', views.balance_saldos, name='balance_saldos'),
     path('contabilidad/estado-resultados/', views.income_statement, name='estado_resultados'),
     path('contabilidad/balance-general/', views.balance_sheet, name='balance_general'),
+
+    path('api/validate-unlock/', views.validate_price_unlock, name='validate_price_unlock'),
 ]

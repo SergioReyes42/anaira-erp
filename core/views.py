@@ -6,6 +6,7 @@ from itertools import chain
 from operator import attrgetter
 
 # --- IMPORTS DE DJANGO ---
+from django.http import JsonResponse
 from django.db import models
 from django.contrib.sessions.models import Session
 from django.utils import timezone
@@ -1702,3 +1703,22 @@ def quotation_print(request, quote_id):
         'company': company, # <--- ¡Aquí va el logo dinámico!
         'details': quote.details.all()
     })
+
+# --- Vista para verificar PIN de autorización ---
+@login_required
+def validate_price_unlock(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        pin = data.get('pin', '')
+        
+        # AQUÍ DEFINIMOS EL PIN MAESTRO PARA LOS SUPERVISORES
+        # Puede cambiar "2026" por la clave que usted quiera darles.
+        MASTER_PIN = "2026" 
+        
+        # También validamos si la contraseña es la del superusuario actual
+        if pin == MASTER_PIN or request.user.check_password(pin):
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'message': 'PIN Incorrecto'})
+    
+    return JsonResponse({'success': False}, status=400)

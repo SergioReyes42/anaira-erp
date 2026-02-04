@@ -2,35 +2,38 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white">
+    <div class="card shadow border-0">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h4 class="mb-0"><i class="bi bi-cart-plus"></i> Nueva Cotización</h4>
+            <span class="badge bg-light text-primary">Folio Automático</span>
         </div>
-        <div class="card-body">
+        <div class="card-body bg-light">
             <form method="POST" id="quotationForm">
                 {% csrf_token %}
 
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Cliente</label>
-                        {{ form.client }}
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">Fecha</label>
-                        {{ form.date }}
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">Validez (Días)</label>
-                        <input type="number" name="validity_days" class="form-control" value="15" min="1">
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-secondary">Cliente</label>
+                                {{ form.client }}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold text-secondary">Fecha</label>
+                                {{ form.date }}
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold text-secondary">Validez (Días)</label>
+                                <input type="number" name="validity_days" class="form-control" value="15" min="1">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <hr>
-
-                <h5 class="mb-3">Detalle de Productos</h5>
-                <div class="table-responsive">
-                    <table class="table table-bordered" id="productsTable">
-                        <thead class="table-light">
+                <h5 class="mb-3 ps-2 border-start border-4 border-primary">Detalle de Productos</h5>
+                <div class="table-responsive bg-white rounded shadow-sm p-2">
+                    <table class="table table-borderless align-middle" id="productsTable">
+                        <thead class="table-light border-bottom">
                             <tr>
                                 <th style="width: 40%;">Producto</th>
                                 <th style="width: 15%;">Cantidad</th>
@@ -41,9 +44,9 @@
                         </thead>
                         <tbody id="productsBody">
                             <tr>
-                                <td>
+                                <td class="p-2">
                                     <select name="products[]" class="form-select product-select" required onchange="updatePrice(this)">
-                                        <option value="" data-price="0">Seleccione un producto...</option>
+                                        <option value="" data-price="0">Buscar producto...</option>
                                         {% for product in products %}
                                             <option value="{{ product.id }}" data-price="{{ product.price }}">
                                                 {{ product.code }} - {{ product.name }} (Stock: {{ product.stock }})
@@ -51,80 +54,120 @@
                                         {% endfor %}
                                     </select>
                                 </td>
-                                <td>
-                                    <input type="number" name="quantities[]" class="form-control qty-input" value="1" min="1" onchange="calculateRow(this)" onkeyup="calculateRow(this)">
+                                <td class="p-2">
+                                    <input type="number" name="quantities[]" class="form-control qty-input text-center" value="1" min="1" onchange="calculateRow(this)" onkeyup="calculateRow(this)">
                                 </td>
-                                <td>
-                                    <input type="number" name="prices[]" class="form-control price-input" step="0.01" readonly>
+                                <td class="p-2">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">Q</span>
+                                        <input type="number" name="prices[]" class="form-control price-input text-end" step="0.01" readonly onchange="calculateRow(this)" onkeyup="calculateRow(this)">
+                                        <button class="btn btn-outline-secondary btn-lock" type="button" onclick="requestUnlock(this)" title="Solicitar cambio de precio">
+                                            <i class="bi bi-lock-fill"></i>
+                                        </button>
+                                    </div>
                                 </td>
-                                <td>
-                                    <input type="text" class="form-control subtotal-display" value="0.00" readonly>
+                                <td class="p-2">
+                                    <input type="text" class="form-control subtotal-display text-end fw-bold bg-white" value="0.00" readonly>
                                 </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn btn-danger btn-sm" onclick="removeRow(this)"><i class="bi bi-trash"></i></button>
+                                <td class="text-center p-2">
+                                    <button type="button" class="btn btn-outline-danger btn-sm rounded-circle" onclick="removeRow(this)"><i class="bi bi-trash"></i></button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                    
+                    <div class="p-3">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addRow()">
+                            <i class="bi bi-plus-lg"></i> Agregar otro producto
+                        </button>
+                    </div>
                 </div>
 
-                <button type="button" class="btn btn-secondary mb-3" onclick="addRow()">
-                    <i class="bi bi-plus-circle"></i> Agregar otro producto
-                </button>
-
-                <div class="row justify-content-end">
+                <div class="row justify-content-end mt-4">
                     <div class="col-md-4">
-                        <div class="input-group input-group-lg">
-                            <span class="input-group-text fw-bold">TOTAL Q.</span>
-                            <input type="text" id="totalGeneral" class="form-control text-end fw-bold text-success" value="0.00" readonly>
+                        <div class="card bg-primary text-white">
+                            <div class="card-body d-flex justify-content-between align-items-center">
+                                <span class="h5 mb-0">TOTAL Q.</span>
+                                <input type="text" id="totalGeneral" class="form-control-plaintext text-white text-end h4 mb-0 fw-bold" value="0.00" readonly>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="d-grid gap-2 mt-4">
-                    <button type="submit" class="btn btn-success btn-lg"><i class="bi bi-save"></i> Guardar Cotización</button>
-                    <a href="{% url 'quotation_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                <div class="d-grid gap-2 mt-5 d-md-flex justify-content-md-end">
+                    <a href="{% url 'quotation_list' %}" class="btn btn-light border px-4">Cancelar</a>
+                    <button type="submit" class="btn btn-success px-5 btn-lg shadow"><i class="bi bi-save me-2"></i> Guardar Cotización</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
+<div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fs-6"><i class="bi bi-shield-lock"></i> Autorización Requerida</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <p class="small text-muted mb-2">Ingrese PIN de Supervisor para modificar el precio.</p>
+        <input type="password" id="adminPin" class="form-control text-center fs-4 letter-spacing-2" placeholder="****" maxlength="8">
+        <div id="pinError" class="text-danger small mt-2 d-none">PIN Incorrecto</div>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-danger w-100" onclick="verifyPin()">Desbloquear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+    .letter-spacing-2 { letter-spacing: 5px; }
+    /* Estilo para cuando el input está desbloqueado */
+    .price-input.unlocked {
+        background-color: #fff3cd !important; /* Un amarillo suave para indicar edición */
+        border-color: #ffc107;
+    }
+</style>
+
 <script>
-    // 1. Función para actualizar el precio al elegir producto
+    let currentRowToUnlock = null;
+
+    // 1. ACTUALIZAR PRECIO AUTOMÁTICAMENTE (Arreglado)
     function updatePrice(selectElement) {
-        // Buscamos la opción seleccionada
         let selectedOption = selectElement.options[selectElement.selectedIndex];
-        // Obtenemos el precio del atributo data-price
         let price = selectedOption.getAttribute('data-price');
         
-        // Buscamos el input de precio en la misma fila
+        // Encontrar la fila
         let row = selectElement.closest('tr');
+        // Buscar el input de precio dentro del input-group
         let priceInput = row.querySelector('.price-input');
         
-        // Asignamos el valor
-        priceInput.value = price;
+        // Asignar precio
+        if (price) {
+            priceInput.value = parseFloat(price).toFixed(2);
+        } else {
+            priceInput.value = "0.00";
+        }
         
-        // Recalculamos el subtotal
+        // Calcular
         calculateRow(selectElement);
     }
 
-    // 2. Función para calcular subtotal de la fila
+    // 2. CALCULAR FILA
     function calculateRow(element) {
         let row = element.closest('tr');
         let qty = parseFloat(row.querySelector('.qty-input').value) || 0;
         let price = parseFloat(row.querySelector('.price-input').value) || 0;
         
         let subtotal = qty * price;
-        
-        // Actualizamos el campo visual de subtotal
         row.querySelector('.subtotal-display').value = subtotal.toFixed(2);
         
-        // Recalculamos el total general
         calculateTotal();
     }
 
-    // 3. Función para sumar todo
+    // 3. CALCULAR TOTAL GENERAL
     function calculateTotal() {
         let total = 0;
         document.querySelectorAll('.subtotal-display').forEach(input => {
@@ -133,31 +176,105 @@
         document.getElementById('totalGeneral').value = total.toFixed(2);
     }
 
-    // 4. Función para agregar nueva fila
+    // 4. AGREGAR FILA
     function addRow() {
         let tableBody = document.getElementById('productsBody');
+        // Clonamos la primera fila
         let newRow = tableBody.rows[0].cloneNode(true);
         
-        // Limpiar valores de la nueva fila
+        // Limpiamos valores
         newRow.querySelector('.qty-input').value = 1;
-        newRow.querySelector('.price-input').value = '';
+        
+        let priceInput = newRow.querySelector('.price-input');
+        priceInput.value = '';
+        priceInput.readOnly = true; // Asegurar que nazca bloqueado
+        priceInput.classList.remove('unlocked');
+        
+        // Restaurar icono de candado
+        let lockBtn = newRow.querySelector('.btn-lock');
+        lockBtn.innerHTML = '<i class="bi bi-lock-fill"></i>';
+        lockBtn.disabled = false;
+
         newRow.querySelector('.subtotal-display').value = '0.00';
         newRow.querySelector('select').value = '';
         
         tableBody.appendChild(newRow);
     }
 
-    // 5. Función para eliminar fila
+    // 5. ELIMINAR FILA
     function removeRow(btn) {
         let row = btn.closest('tr');
         let tableBody = document.getElementById('productsBody');
-        
         if (tableBody.rows.length > 1) {
             row.remove();
             calculateTotal();
         } else {
             alert("Debe haber al menos un producto.");
         }
+    }
+
+    // --- LÓGICA DE SEGURIDAD (CANDADO) ---
+
+    function requestUnlock(btn) {
+        // Guardamos qué botón se presionó para saber qué fila desbloquear
+        let row = btn.closest('tr');
+        let priceInput = row.querySelector('.price-input');
+        
+        // Si ya está desbloqueado, no hacemos nada (o podríamos bloquear de nuevo)
+        if (!priceInput.readOnly) return;
+
+        currentRowToUnlock = row;
+        
+        // Limpiar y mostrar modal
+        document.getElementById('adminPin').value = '';
+        document.getElementById('pinError').classList.add('d-none');
+        
+        var authModal = new bootstrap.Modal(document.getElementById('authModal'));
+        authModal.show();
+    }
+
+    function verifyPin() {
+        let pin = document.getElementById('adminPin').value;
+        let errorMsg = document.getElementById('pinError');
+
+        // Llamada al Backend para validar
+        fetch('/api/validate-unlock/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ pin: pin })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // PIN CORRECTO: Desbloquear
+                let priceInput = currentRowToUnlock.querySelector('.price-input');
+                let lockBtn = currentRowToUnlock.querySelector('.btn-lock');
+                
+                priceInput.readOnly = false;
+                priceInput.classList.add('unlocked'); // Efecto visual amarillo
+                
+                lockBtn.innerHTML = '<i class="bi bi-unlock-fill"></i>'; // Icono abierto
+                lockBtn.classList.remove('btn-outline-secondary');
+                lockBtn.classList.add('btn-success');
+                lockBtn.disabled = true; // Ya no se puede clickear
+                
+                // Cerrar modal
+                let modalEl = document.getElementById('authModal');
+                let modal = bootstrap.Modal.getInstance(modalEl);
+                modal.hide();
+            } else {
+                // PIN INCORRECTO
+                errorMsg.classList.remove('d-none');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            errorMsg.textContent = "Error de conexión";
+            errorMsg.classList.remove('d-none');
+        });
     }
 </script>
 {% endblock %}
