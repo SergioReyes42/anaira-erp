@@ -42,9 +42,12 @@ try:
     @admin.register(CompanyProfile)
     class CompanyProfileAdmin(admin.ModelAdmin):
         list_display = ('name', 'nit', 'phone')
-        search_fields = ('name', 'nit')
-        # ELIMINAMOS la restricción has_add_permission para permitir múltiples empresas
+        # Esto pone un filtro horizontal muy cómodo para seleccionar muchos usuarios
+        filter_horizontal = ('allowed_users',) 
         
+        def has_add_permission(self, request):
+            # Ahora SÍ permitimos agregar (True) porque usted dijo que es Multi-Empresa
+            return True 
 except AlreadyRegistered:
     pass
 

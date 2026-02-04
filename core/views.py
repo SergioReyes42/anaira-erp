@@ -90,40 +90,37 @@ def logout_view(request):
     return redirect('login')
 
 @login_required
-def select_company(request): # <--- AQUÍ ESTABA EL ERROR: FALTABA ESTA LÍNEA
-    """
-    Vista para seleccionar la empresa activa y guardar sus datos (Logo, NIT, Nombre) en la sesión.
-    """
-    # 1. Obtener listado de empresas
-    companies = Company.objects.all()
+def select_company(request):
+    # Lógica de Seguridad:
+    if request.user.is_superuser:
+        # El Superusuario ve TODAS las empresas
+        companies = CompanyProfile.objects.all()
+    else:
+        # Los mortales solo ven las empresas donde están en la lista "allowed_users"
+        companies = CompanyProfile.objects.filter(allowed_users=request.user)
 
     if request.method == 'POST':
         company_id = request.POST.get('company_id')
-        
-        # 2. Obtener la empresa seleccionada de la Base de Datos
-        company = get_object_or_404(Company, id=company_id)
-        
-        # 3. GUARDAR DATOS EN LA SESIÓN (Esto actualiza el Dashboard)
-        request.session['company_id'] = company.id
-        
-        # Guardar Nombre
-        request.session['company_name'] = getattr(company, 'name', getattr(company, 'nombre', 'Empresa'))
-        
-        # Guardar NIT
-        if hasattr(company, 'nit') and company.nit:
-            request.session['company_nit'] = company.nit
-        else:
-            request.session['company_nit'] = None
-
-        # --- GUARDAR EL LOGO ---
-        if hasattr(company, 'logo') and company.logo:
-            request.session['company_logo'] = company.logo.url
-        else:
-            request.session['company_logo'] = None 
+        if company_id:
+            company = get_object_or_404(CompanyProfile, id=company_id)
             
-        return redirect('home')
+            # Doble chequeo de seguridad por si intentan hackear el HTML
+            if not request.user.is_superuser and request.user not in company.allowed_users.all():
+                messages.error(request, "No tiene permiso para acceder a esta empresa.")
+                return redirect('select_company')
 
-    return render(request, 'core/seleccion_nueva.html', {'companies': companies})
+            # Guardamos la empresa en la sesión
+            request.session['company_id'] = company.id
+            request.session['company_name'] = company.name
+            
+            # Opcional: Guardar logo en sesión para mostrarlo fácil
+            if company.logo:
+                request.session['company_logo'] = company.logo.url
+            
+            messages.success(request, f"Empresa cambiada a: {company.name}")
+            return redirect('home')
+
+        return render(request, 'core/seleccion_nueva.html', {'companies': companies})
 
 @login_required
 def home(request):
