@@ -251,10 +251,11 @@ class PurchaseForm(forms.ModelForm):
     class Meta:
         model = Purchase
         fields = ['supplier', 'date', 'document_reference', 'payment_method', 'payment_reference'] 
-        exclude = ['user', 'company', 'created_at', 'status', 'total']
+        exclude = ['user', 'company', 'created_at', 'status', 'total', 'branch']
         
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'warehouse': forms.Select(attrs={'class': 'form-select border-success'}),
             'supplier': forms.Select(attrs={'class': 'form-select'}),
             'document_reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Factura #123'}),
             'payment_method': forms.Select(attrs={'class': 'form-select', 'id': 'paymentMethod'}),
