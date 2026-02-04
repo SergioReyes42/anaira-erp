@@ -24,8 +24,8 @@ from django.contrib import messages
 from django.utils.safestring import mark_safe # Para que el HTML de la alerta funcione
 from django.db.models import F
 
-from .forms import QuotationForm
-from .models import Client, Product, Quotation, QuotationDetail
+from .forms import QuotationForm, PurchaseForm
+from .models import Product, Client, Sale, SaleDetail, CompanyProfile, Quotation, QuotationDetail, Supplier, Purchase, PurchaseDetail
 
 # --- CEREBRO IA ---
 from .ai_brain import analizar_texto_bancario, analizar_documento_ia
