@@ -101,10 +101,29 @@ except AlreadyRegistered:
 try:
     @admin.register(Employee)
     class EmployeeAdmin(admin.ModelAdmin):
-        list_display = ('first_name', 'last_name', 'position', 'branch', 'user')
-        list_filter = ('branch', 'department')
-        search_fields = ('first_name', 'last_name', 'dpi')
+    # 1. Quitamos 'user' y ponemos 'get_role' (nuestra función personalizada)
+        list_display = ('first_name', 'last_name', 'position', 'branch', 'get_role') 
+    
+    list_filter = ('branch', 'department')
+    search_fields = ('first_name', 'last_name', 'dpi')
+    
+    # 2. Creamos la función mágica para obtener el Rol
+    @admin.display(description='Rol de Sistema')
+    def get_role(self, obj):
+        if obj.user:
+            # Busca los grupos (roles) asignados al usuario
+            groups = obj.user.groups.values_list('name', flat=True)
+            if groups:
+                return ", ".join(groups) # Ej: "Administrador, Ventas"
+            
+            # Si es superusuario y no tiene grupo, le ponemos una etiqueta especial
+            if obj.user.is_superuser:
+                return "SUPER ADMINISTRADOR"
+                
+            return "Sin Rol Asignado"
+        return "Sin Usuario"
         # autocomplete_fields = ['user'] # Descomentar si tiene muchos usuarios
+
 except AlreadyRegistered:
     pass
 
