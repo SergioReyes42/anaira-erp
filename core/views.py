@@ -32,6 +32,7 @@ from .ai_brain import analizar_texto_bancario, analizar_documento_ia
 
 # --- 1. MODELOS (Base de Datos) ---
 # Aquí van Quotation y QuotationDetail porque son TABLAS
+
 from .models import (
     # Usuarios y Empresa
     UserRoleCompany, Company, CompanyProfile, Branch, Warehouse,
@@ -52,6 +53,7 @@ from .models import (
 
 # --- 2. FORMULARIOS (Solo Forms) ---
 # Aquí NO deben estar los modelos
+from .models import Purchase, PurchaseDetail, Supplier, PurchaseForm
 from .forms import (
     CompanySelectForm, 
     MobileExpenseForm, 
@@ -1470,59 +1472,82 @@ def purchase_list(request):
     return render(request, 'core/purchases/purchase_list.html', {'purchases': purchases})
 
 @login_required
+@transaction.atomic
 def create_purchase(request):
     if request.method == 'POST':
-        provider_id = request.POST.get('provider')
-        reference = request.POST.get('reference')
+        # Nota: Asumo que creará un PurchaseForm similar al de cotización
+        form = PurchaseForm(request.POST) 
         
-        # 1. Crear Cabecera de Compra
-        proveedor = Provider.objects.get(id=provider_id)
-        nueva_compra = Purchase.objects.create(
-            company=CompanyProfile.objects.first(), # Asignamos a la empresa principal
-            provider=proveedor,
-            reference=reference,
-            total=0 # Se calcula abajo
-        )
-        
-        # 2. Guardar Detalles
-        products = request.POST.getlist('products[]')
-        quantities = request.POST.getlist('quantities[]')
-        costs = request.POST.getlist('costs[]') # Precio de Costo
-        
-        total_compra = 0
-        
-        for i in range(len(products)):
-            if products[i] and quantities[i]:
-                producto = Product.objects.get(id=products[i])
-                cantidad = int(quantities[i])
-                costo = float(costs[i])
+        if form.is_valid():
+            try:
+                # 1. Crear Encabezado de Compra
+                purchase = form.save(commit=False)
+                purchase.user = request.user
                 
-                # Al crear esto, la "Señal" automática que hicimos antes 
-                # aumentará el stock sola. No hay que programarlo aquí.
-                PurchaseDetail.objects.create(
-                    purchase=nueva_compra,
-                    product=producto,
-                    quantity=cantidad,
-                    cost_price=costo
-                )
+                # Asignar Empresa
+                company_id = request.session.get('company_id')
+                if company_id:
+                    purchase.company = CompanyProfile.objects.get(id=company_id)
+                else:
+                    purchase.company = CompanyProfile.objects.first()
                 
-                total_compra += (cantidad * costo)
-        
-        # 3. Actualizar Total
-        nueva_compra.total = total_compra
-        nueva_compra.save()
-        
-        messages.success(request, f'Compra #{nueva_compra.id} registrada y Stock actualizado.')
-        return redirect('purchase_list')
+                purchase.save()
 
+                # 2. Procesar Productos
+                product_ids = request.POST.getlist('products[]')
+                quantities = request.POST.getlist('quantities[]')
+                costs = request.POST.getlist('costs[]') # Ojo: Aquí le llamamos "costos"
+
+                total_compra = 0
+
+                for p_id, qty, cost in zip(product_ids, quantities, costs):
+                    if p_id and qty.strip() and cost.strip():
+                        product = Product.objects.get(id=p_id)
+                        cantidad = int(qty)
+                        costo_unitario = float(cost)
+                        subtotal = cantidad * costo_unitario
+
+                        # Crear Detalle
+                        PurchaseDetail.objects.create(
+                            purchase=purchase,
+                            product=product,
+                            quantity=cantidad,
+                            unit_cost=costo_unitario
+                            # No guardamos subtotal si la base de datos no lo tiene
+                        )
+
+                        # --- LA MAGIA: SUMAR AL INVENTARIO ---
+                        product.stock += cantidad 
+                        
+                        # Actualizamos el último costo para referencia futura
+                        product.cost = costo_unitario 
+                        product.save()
+
+                        total_compra += subtotal
+
+                # 3. Guardar Total
+                purchase.total = total_compra
+                purchase.save()
+
+                messages.success(request, f"Compra #{purchase.id} registrada. Stock actualizado.")
+                return redirect('purchase_list') # Asegúrese de tener esta URL
+
+            except Exception as e:
+                messages.error(request, f"Error al procesar la compra: {str(e)}")
+        else:
+             messages.error(request, f"Error en formulario: {form.errors.as_text()}")
+    
     else:
-        # Modo GET: Mostrar formulario
-        providers = Provider.objects.all()
-        products = Product.objects.all()
-        return render(request, 'core/purchases/purchase_form.html', {
-            'providers': providers,
-            'products': products
-        })
+        form = PurchaseForm()
+
+    suppliers = Supplier.objects.all() # Necesita tener proveedores creados
+    products = Product.objects.all()
+    
+    return render(request, 'core/purchases/purchase_form.html', {
+        'form': form,
+        'suppliers': suppliers,
+        'products': products
+    })
 
 @login_required
 def create_client(request):

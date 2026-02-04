@@ -12,6 +12,7 @@ from .models import (
     BankAccount, 
     BankMovement
 )
+from .models import Supplier, Purchase, PurchaseDetail
 
 # --- 1. ADMIN DE TENANTS (Multi-Empresa) ---
 # Intentamos registrar Tenant genéricamente por si el nombre varía
@@ -61,7 +62,11 @@ models_to_register = [
     Quotation, 
     QuotationDetail, 
     BankAccount, 
-    BankMovement
+    BankMovement,
+    # --- LOS NUEVOS ---
+    Supplier,
+    Purchase,
+    PurchaseDetail
 ]
 
 for model in models_to_register:
