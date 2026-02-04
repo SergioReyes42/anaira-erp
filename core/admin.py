@@ -92,5 +92,6 @@ class WarehouseAdmin(admin.ModelAdmin):
 @admin.register(Inventory)
 class InventoryAdmin(admin.ModelAdmin):
     list_display = ('product', 'warehouse', 'quantity', 'location')
-    list_filter = ('warehouse', 'product__category') # Agregué categoría por si tiene
+    # CORREGIDO: Solo filtramos por bodega
+    list_filter = ('warehouse',) 
     search_fields = ('product__name', 'product__code', 'warehouse__name')
