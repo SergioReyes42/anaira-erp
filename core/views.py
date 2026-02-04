@@ -1433,7 +1433,7 @@ def create_quotation(request):
                 print(f"Error detallado: {e}") 
                 messages.error(request, f"Error al guardar: Verifique que no haya filas vacías.")
         else:
-            messages.error(request, "Error en el formulario principal.")
+                messages.error(request, f"Error en el formulario: {form.errors.as_text()}")    
     else:
         form = QuotationForm()
 
