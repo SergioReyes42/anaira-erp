@@ -10,13 +10,28 @@ from .models import (
     SaleDetail,
     Provider, 
     Purchase, 
-    PurchaseDetail
+    PurchaseDetail,
+    BankAccount,
+    BankMovement   
 )
 
-# --- 1. EMPRESA ---
+# 1. Configuración de la Empresa
 @admin.register(CompanyProfile)
 class CompanyProfileAdmin(admin.ModelAdmin):
     list_display = ('name', 'nit', 'phone')
+    # Esto evita que creen más de una empresa (solo permite editar la existente)
+    def has_add_permission(self, request):
+        if self.model.objects.exists():
+            return False
+        return True
+    
+# 2. Otros modelos (Opcional, para que tenga control total)
+admin.site.register(Product)
+admin.site.register(Client)
+admin.site.register(Sale)
+admin.site.register(Quotation)
+admin.site.register(BankAccount)
+admin.site.register(BankMovement)
 
 # --- 2. CLIENTES Y PROVEEDORES ---
 @admin.register(Client)
