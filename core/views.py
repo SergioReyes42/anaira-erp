@@ -1385,9 +1385,21 @@ def create_quotation(request):
                 # 1. Guardar encabezado
                 quotation = form.save(commit=False)
                 quotation.user = request.user
+                
+                # --- CORRECCIÓN CRÍTICA: ASIGNAR EMPRESA ---
+                # Buscamos la empresa activa en la sesión
+                company_id = request.session.get('company_id')
+                if company_id:
+                    quotation.company = CompanyProfile.objects.get(id=company_id)
+                else:
+                    # Si no hay empresa seleccionada, usamos la primera que encuentre (seguridad)
+                    quotation.company = CompanyProfile.objects.first()
+
+                # Calcular validez
                 days = int(request.POST.get('validity_days', 15))
                 quotation.valid_until = quotation.date + timedelta(days=days)
-                quotation.save()
+                
+                quotation.save() # Guardamos el encabezado primero
 
                 # 2. Guardar Productos
                 product_ids = request.POST.getlist('products[]')
@@ -1397,14 +1409,10 @@ def create_quotation(request):
                 total_general = 0
 
                 for p_id, qty, price in zip(product_ids, quantities, prices):
-                    # --- AQUÍ ESTÁ EL BLINDAJE ---
-                    # Solo procesamos si hay ID, Cantidad Y Precio (y no están vacíos)
                     if p_id and qty.strip() and price.strip(): 
                         product = Product.objects.get(id=p_id)
-                        
-                        # Convertimos de forma segura
                         cantidad = int(qty)
-                        precio_unitario = float(price) # Ahora sí, seguro que no es ''
+                        precio_unitario = float(price)
                         subtotal = cantidad * precio_unitario
                         
                         QuotationDetail.objects.create(
@@ -1429,11 +1437,11 @@ def create_quotation(request):
                 return redirect('quotation_list')
             
             except Exception as e:
-                # Esto nos dirá exactamente qué pasó si falla otra cosa
                 print(f"Error detallado: {e}") 
-                messages.error(request, f"Error al guardar: Verifique que no haya filas vacías.")
+                messages.error(request, f"Error interno: {str(e)}")
         else:
-                messages.error(request, f"Error en el formulario: {form.errors.as_text()}")    
+            # EL CHISMOSO: Esto le dirá exactamente qué campo falta
+            messages.error(request, f"Faltan datos obligatorios: {form.errors.as_text()}")
     else:
         form = QuotationForm()
 

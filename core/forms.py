@@ -221,14 +221,14 @@ class QuotationForm(forms.ModelForm):
 
     class Meta:
         model = Quotation
-        fields = ['client', 'date', 'validity_days', 'total'] # O '__all__'
-        # IMPORTANTE: Excluir 'user' y 'company' porque se llenan solos
-        exclude = ['user', 'company', 'created_at', 'status'] 
+        fields = ['client', 'date', 'validity_days', 'total', 'description'] 
+        exclude = ['user', 'company', 'created_at', 'status']
         
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'client': forms.Select(attrs={'class': 'form-select'}),
-            # etc...
+            # Agregamos un widget para que la descripción se vea bonita (Textarea)
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Notas o condiciones especiales...'}),
         }
 
 class ClientForm(forms.ModelForm):
