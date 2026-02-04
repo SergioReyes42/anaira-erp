@@ -1386,31 +1386,31 @@ def create_quotation(request):
         form = QuotationForm(request.POST)
         if form.is_valid():
             try:
-                # 1. Guardar encabezado (Cliente, Fecha, Forma de Pago)
+                # 1. Guardar encabezado
                 quotation = form.save(commit=False)
                 quotation.user = request.user
-                
-                # Calcular validez
                 days = int(request.POST.get('validity_days', 15))
                 quotation.valid_until = quotation.date + timedelta(days=days)
                 quotation.save()
 
-                # 2. Guardar Productos (El Detalle)
+                # 2. Guardar Productos
                 product_ids = request.POST.getlist('products[]')
                 quantities = request.POST.getlist('quantities[]')
                 prices = request.POST.getlist('prices[]')
 
                 total_general = 0
 
-                # Recorremos las listas juntas
                 for p_id, qty, price in zip(product_ids, quantities, prices):
-                    if p_id and qty: # Solo si hay producto y cantidad
+                    # --- AQUÍ ESTÁ EL BLINDAJE ---
+                    # Solo procesamos si hay ID, Cantidad Y Precio (y no están vacíos)
+                    if p_id and qty.strip() and price.strip(): 
                         product = Product.objects.get(id=p_id)
+                        
+                        # Convertimos de forma segura
                         cantidad = int(qty)
-                        precio_unitario = float(price)
+                        precio_unitario = float(price) # Ahora sí, seguro que no es ''
                         subtotal = cantidad * precio_unitario
                         
-                        # Crear detalle
                         QuotationDetail.objects.create(
                             quotation=quotation,
                             product=product,
@@ -1419,13 +1419,13 @@ def create_quotation(request):
                             subtotal=subtotal
                         )
                         
-                        # Apartar stock (Lógica de Reserva)
+                        # Apartar stock
                         product.stock_reserved += cantidad
                         product.save()
                         
                         total_general += subtotal
 
-                # 3. Actualizar Total Final
+                # 3. Guardar total final
                 quotation.total = total_general
                 quotation.save()
 
@@ -1433,15 +1433,15 @@ def create_quotation(request):
                 return redirect('quotation_list')
             
             except Exception as e:
-                # Si algo falla, el @transaction.atomic deshace todo para no dejar basura
-                messages.error(request, f"Error al guardar los productos: {str(e)}")
+                # Esto nos dirá exactamente qué pasó si falla otra cosa
+                print(f"Error detallado: {e}") 
+                messages.error(request, f"Error al guardar: Verifique que no haya filas vacías.")
         else:
-            messages.error(request, "Error en el formulario. Verifique los datos del cliente.")
+            messages.error(request, "Error en el formulario principal.")
     else:
         form = QuotationForm()
 
-    # Cargamos productos para el select del HTML
-    products = Product.objects.filter(stock__gt=0) 
+    products = Product.objects.filter(stock__gt=0)
     return render(request, 'core/sales/quotation_form.html', {
         'form': form,
         'products': products
