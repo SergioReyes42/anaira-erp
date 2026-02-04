@@ -19,7 +19,9 @@ from .models import (
     # Los nuevos:
     Branch, 
     Warehouse, 
-    Inventory
+    Inventory,
+    Employee,  # <--- AGREGUE ESTO A LOS IMPORTS
+    StockMovement
 )
 
 # --- 1. ADMIN DE TENANTS (Opcional si usa multi-tenant) ---
@@ -103,3 +105,18 @@ class StockMovementAdmin(admin.ModelAdmin):
     list_filter = ('movement_type', 'warehouse', 'date')
     search_fields = ('product__name', 'product__code')
     readonly_fields = ('date',) # El historial no se debe editar, solo ver
+
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    list_display = ('first_name', 'last_name', 'position', 'branch', 'user')
+    list_filter = ('branch', 'department')
+    search_fields = ('first_name', 'last_name', 'dpi')
+    # Esto ayuda a buscar el usuario más rápido
+    autocomplete_fields = ['user'] 
+
+@admin.register(StockMovement)
+class StockMovementAdmin(admin.ModelAdmin):
+    list_display = ('date', 'product', 'warehouse', 'movement_type', 'quantity', 'user')
+    list_filter = ('movement_type', 'warehouse', 'date')
+    search_fields = ('product__name', 'product__code')
+    readonly_fields = ('date',)

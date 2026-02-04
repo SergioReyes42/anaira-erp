@@ -73,4 +73,6 @@ urlpatterns = [
 
     path('api/validate-unlock/', views.validate_price_unlock, name='validate_price_unlock'),
 
+    path('inventario/monitor/', views.dashboard_inventario, name='inventory_dashboard'),
+
 ]
