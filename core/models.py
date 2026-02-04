@@ -513,21 +513,35 @@ class Purchase(models.Model):
         ('RECEIVED', 'Recibido / Inventario Cargado'),
         ('CANCELLED', 'Cancelada'),
     ]
+    
+    # --- NUEVOS MÉTODOS DE PAGO ---
+    PAYMENT_METHODS = [
+        ('CASH', 'Efectivo'),
+        ('TRANSFER', 'Transferencia Bancaria'),
+        ('CARD', 'Tarjeta de Crédito/Débito'),
+        ('CHECK', 'Cheque'),
+        ('CREDIT', 'Crédito (Por Pagar)'),
+    ]
 
     company = models.ForeignKey('CompanyProfile', on_delete=models.CASCADE, verbose_name="Empresa")
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="Comprador")
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, verbose_name="Proveedor", null=True, blank=True)
     
-    # AQUÍ ESTÁ LA CLAVE: Supplier ya fue leído arriba, así que esto funciona
-    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, verbose_name="Proveedor", null=True, blank=True)    
     date = models.DateField(default=timezone.now, verbose_name="Fecha de Compra")
     document_reference = models.CharField(max_length=50, verbose_name="No. Factura Proveedor", blank=True, null=True)
+    
+    # --- CAMPOS NUEVOS ---
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='CASH', verbose_name="Método de Pago")
+    payment_reference = models.CharField(max_length=100, verbose_name="Cuenta / Referencia / Tarjeta", blank=True, null=True, help_text="Ej: Banco Industrial, Tarjeta terminación 4099")
+    
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='RECEIVED', verbose_name="Estado")
     description = models.TextField(blank=True, null=True, verbose_name="Observaciones")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Compra #{self.id} - {self.supplier.name}"
+        supplier_name = self.supplier.name if self.supplier else "Desconocido"
+        return f"Compra #{self.id} - {supplier_name}"
 
     class Meta:
         verbose_name = "Compra"

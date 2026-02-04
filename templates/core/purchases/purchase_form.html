@@ -11,11 +11,12 @@
             </div>
             
             <div class="card-body bg-light">
-                <div class="row mb-4">
+                
+                <div class="row mb-3">
                     <div class="col-md-5">
                         <label class="form-label fw-bold">Proveedor</label>
                         {{ form.supplier }}
-                        <small class="text-muted"><a href="/admin/core/supplier/add/" target="_blank">+ Nuevo Proveedor</a></small>
+                        <small class="text-muted"><a href="/admin/core/supplier/add/" target="_blank" class="text-decoration-none">+ Nuevo Proveedor</a></small>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-bold">Fecha de Compra</label>
@@ -27,12 +28,29 @@
                     </div>
                 </div>
 
+                <div class="row mb-4 p-3 bg-white border rounded mx-1 shadow-sm">
+                    <h6 class="text-primary ps-0 border-bottom pb-2 mb-3"><i class="bi bi-credit-card"></i> Información de Pago</h6>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small">Método de Pago</label>
+                        {{ form.payment_method }}
+                    </div>
+                    
+                    <div class="col-md-8">
+                        <label class="form-label fw-bold small">Referencia / Cuenta de Origen</label>
+                        {{ form.payment_reference }}
+                        <div class="form-text text-muted small">
+                            Ej: Banco Industrial, Transferencia #9988, Visa terminación 1234.
+                        </div>
+                    </div>
+                </div>
+
                 <hr>
 
-                <h5 class="mb-3">Productos a Ingresar</h5>
+                <h5 class="mb-3 ps-2 border-start border-4 border-dark">Productos a Ingresar</h5>
                 <div class="table-responsive bg-white p-2 rounded shadow-sm">
                     <table class="table table-bordered align-middle" id="productsTable">
-                        <thead class="table-secondary">
+                        <thead class="table-secondary text-center">
                             <tr>
                                 <th style="width: 40%;">Producto</th>
                                 <th style="width: 15%;">Cantidad</th>
@@ -60,7 +78,7 @@
                                     <input type="number" name="costs[]" class="form-control cost-input text-end" step="0.01" placeholder="0.00" required onchange="calculateRow(this)" onkeyup="calculateRow(this)">
                                 </td>
                                 <td>
-                                    <input type="text" class="form-control subtotal-display text-end bg-light" value="0.00" readonly>
+                                    <input type="text" class="form-control subtotal-display text-end bg-light fw-bold" value="0.00" readonly>
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRow(this)"><i class="bi bi-trash"></i></button>
@@ -76,16 +94,18 @@
 
                 <div class="row justify-content-end mt-4">
                     <div class="col-md-4">
-                        <div class="input-group input-group-lg">
-                            <span class="input-group-text fw-bold bg-dark text-white">TOTAL Q.</span>
-                            <input type="text" id="totalGeneral" class="form-control text-end fw-bold" value="0.00" readonly>
+                        <div class="card bg-dark text-white">
+                            <div class="card-body d-flex justify-content-between align-items-center">
+                                <span class="h5 mb-0">TOTAL Q.</span>
+                                <input type="text" id="totalGeneral" class="form-control-plaintext text-white text-end h4 mb-0 fw-bold" value="0.00" readonly>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="d-grid gap-2 mt-4 d-md-flex justify-content-md-end">
-                    <a href="{% url 'purchase_list' %}" class="btn btn-outline-secondary px-4">Cancelar</a>
-                    <button type="submit" class="btn btn-success px-5 btn-lg"><i class="bi bi-save-fill"></i> Procesar Compra e Inventario</button>
+                <div class="d-grid gap-2 mt-5 d-md-flex justify-content-md-end">
+                    <a href="{% url 'purchase_list' %}" class="btn btn-light border px-4">Cancelar</a>
+                    <button type="submit" class="btn btn-success px-5 btn-lg shadow"><i class="bi bi-save-fill"></i> Procesar Compra e Inventario</button>
                 </div>
             </div>
         </div>
@@ -129,6 +149,9 @@
         if (tableBody.rows.length > 1) {
             row.remove();
             calculateTotal();
+        } else {
+            // Opcional: Alerta si intenta borrar la última fila
+            // alert("Debe haber al menos un producto.");
         }
     }
 </script>

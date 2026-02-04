@@ -250,11 +250,14 @@ class ClientForm(forms.ModelForm):
 class PurchaseForm(forms.ModelForm):
     class Meta:
         model = Purchase
-        fields = ['supplier', 'date', 'document_reference'] # Ajuste según sus campos reales
-        exclude = ['user', 'company', 'created_at', 'total']
+        fields = ['supplier', 'date', 'document_reference', 'payment_method', 'payment_reference'] 
+        exclude = ['user', 'company', 'created_at', 'status', 'total']
         
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'supplier': forms.Select(attrs={'class': 'form-select'}),
             'document_reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Factura #123'}),
+            'payment_method': forms.Select(attrs={'class': 'form-select', 'id': 'paymentMethod'}),
+            'payment_reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Banco Industrial / Tarjeta ... 1234', 'id': 'paymentRef'}),
+            
         }
