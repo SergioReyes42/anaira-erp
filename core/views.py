@@ -6,42 +6,38 @@ from itertools import chain
 from operator import attrgetter
 
 # --- IMPORTS DE DJANGO ---
-from django.http import JsonResponse
-from django.db import models
+from django.http import JsonResponse, HttpResponse
+from django.db import models, transaction
 from django.contrib.sessions.models import Session
 from django.utils import timezone
 from django.contrib.auth import get_user_model, login, logout
 from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import AuthenticationForm
-from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import Sum, Q, Count
+from django.db.models import Sum, Q, Count, F
 from django.conf import settings
-from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.utils.safestring import mark_safe # Para que el HTML de la alerta funcione
-from django.db.models import F
+from django.utils.safestring import mark_safe 
 
-from .forms import QuotationForm, PurchaseForm
-from .models import Product, Client, Sale, SaleDetail, CompanyProfile, Quotation, QuotationDetail, Supplier, Purchase, PurchaseDetail
-
-# --- CEREBRO IA ---
+# --- CEREBRO IA (Si lo está usando) ---
 from .ai_brain import analizar_texto_bancario, analizar_documento_ia
 
-# --- 1. MODELOS (Base de Datos) ---
-# Aquí van Quotation y QuotationDetail porque son TABLAS
-
+# ==========================================
+# 1. MODELOS (Tablas de Base de Datos)
+# ==========================================
 from .models import (
     # Usuarios y Empresa
     UserRoleCompany, Company, CompanyProfile, Branch, Warehouse,
     
     # Terceros
-    Client, Provider, BusinessPartner, Employee,
+    Client, Supplier, Provider, BusinessPartner, Employee,
     
     # Ventas y Compras
-    Product, Quotation, QuotationDetail, Purchase, PurchaseDetail,
+    Product, Sale, SaleDetail, 
+    Quotation, QuotationDetail, 
+    Purchase, PurchaseDetail, 
     
     # Finanzas
     Account, BankAccount, BankTransaction, BankMovement, 
@@ -51,10 +47,17 @@ from .models import (
     Fleet, InventoryMovement, Loan, Payroll, PayrollDetail
 )
 
-# --- 2. FORMULARIOS (Solo Forms) ---
-# Aquí NO deben estar los modelos
-from .models import Purchase, PurchaseDetail, Supplier, PurchaseForm
+# ==========================================
+# 2. FORMULARIOS (Pantallas / HTML)
+# ==========================================
 from .forms import (
+    # Compras y Ventas (AQUÍ ES DONDE DEBE ESTAR PurchaseForm)
+    QuotationForm, 
+    PurchaseForm,  # <--- ¡CORRECTO! Aquí sí existe
+    ClientForm,
+    ProductForm,
+    
+    # Finanzas y Admin
     CompanySelectForm, 
     MobileExpenseForm, 
     GastoForm,
@@ -65,11 +68,8 @@ from .forms import (
     SupplierForm,
     SupplierPaymentForm,
     EmployeeForm, 
-    LoanForm,
-    ProductForm, 
-    QuotationForm, ClientForm   # <--- ¡AGREGUE ESTO AQUÍ!   # <--- Este sí es el Formulario
+    LoanForm
 )
-
 # ---------------------------------------------------------
 # A PARTIR DE AQUÍ COMIENZAN SUS VISTAS (def home...)
 # ---------------------------------------------------------
