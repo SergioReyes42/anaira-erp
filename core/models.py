@@ -560,20 +560,3 @@ def update_inventory_on_purchase(sender, instance, created, **kwargs):
         producto.stock += instance.quantity
         producto.save()
 
-class Supplier(models.Model):
-    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa", null=True, blank=True)
-    name = models.CharField(max_length=200, verbose_name="Razón Social / Nombre")
-    nit = models.CharField(max_length=20, verbose_name="NIT / RUT", blank=True, null=True)
-    phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True, null=True)
-    email = models.EmailField(verbose_name="Correo Electrónico", blank=True, null=True)
-    address = models.TextField(verbose_name="Dirección", blank=True, null=True)
-    contact_name = models.CharField(max_length=100, verbose_name="Nombre de Contacto", blank=True, null=True)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.name
-    
-    class Meta:
-        verbose_name = "Proveedor"
-        verbose_name_plural = "Proveedores"
