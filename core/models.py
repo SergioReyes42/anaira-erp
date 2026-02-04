@@ -437,6 +437,51 @@ class QuotationDetail(models.Model):
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
 
+# 1. MODELO SUCURSAL (Punto de Venta / Facturación)
+class Branch(models.Model):
+    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
+    name = models.CharField(max_length=100, verbose_name="Nombre Sucursal")
+    code = models.CharField(max_length=20, verbose_name="Código/Prefijo", help_text="Ej: Z9, CENT, SUR")
+    address = models.CharField(max_length=200, verbose_name="Dirección")
+    phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True, null=True)
+    
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+    class Meta:
+        verbose_name = "Sucursal"
+        verbose_name_plural = "Sucursales"
+
+# 2. MODELO BODEGA (Almacenamiento Físico)
+class Warehouse(models.Model):
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="Sucursal", related_name="warehouses")
+    name = models.CharField(max_length=100, verbose_name="Nombre Bodega")
+    active = models.BooleanField(default=True, verbose_name="Activa")
+    
+    def __str__(self):
+        return f"{self.branch.code} - {self.name}"
+
+    class Meta:
+        verbose_name = "Bodega"
+        verbose_name_plural = "Bodegas"
+
+# 3. MODELO INVENTARIO DETALLADO (Stock por Bodega)
+# Este es el nuevo corazón del stock. Reemplaza al campo simple 'stock' del producto.
+class Inventory(models.Model):
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, verbose_name="Bodega")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Producto")
+    quantity = models.IntegerField(default=0, verbose_name="Existencia Actual")
+    min_stock = models.IntegerField(default=5, verbose_name="Stock Mínimo en esta Bodega")
+    location = models.CharField(max_length=50, verbose_name="Ubicación/Estante", blank=True, null=True)
+
+    class Meta:
+        unique_together = ('warehouse', 'product') # No puede haber duplicados de producto en la misma bodega
+        verbose_name = "Inventario por Bodega"
+        verbose_name_plural = "Inventarios por Bodega"
+
+    def __str__(self):
+        return f"{self.product.name} en {self.warehouse.name}: {self.quantity}"
+
 class Sale(models.Model):
     """Registro de una Venta completada (Facturada)"""
     company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
@@ -451,6 +496,10 @@ class Sale(models.Model):
     ], default='EFECTIVO', verbose_name="Método de Pago")
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     invoice_number = models.CharField(max_length=50, blank=True, verbose_name="No. Factura/Recibo")
+
+    # NUEVOS CAMPOS
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, verbose_name="Sucursal de Facturación")
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, verbose_name="Bodega de Despacho")
 
     def __str__(self):
         return f"Venta #{self.id} - {self.client.name}"
@@ -529,6 +578,8 @@ class Purchase(models.Model):
     
     date = models.DateField(default=timezone.now, verbose_name="Fecha de Compra")
     document_reference = models.CharField(max_length=50, verbose_name="No. Factura Proveedor", blank=True, null=True)
+
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, verbose_name="Bodega de Entrada")
     
     # --- CAMPOS NUEVOS ---
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='CASH', verbose_name="Método de Pago")
