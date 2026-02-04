@@ -6,9 +6,9 @@ from .models import (
     BusinessPartner, Provider, 
     Product, 
     Employee, Loan, 
-    Quotation, Client, Warehouse, Supplier, Sale
+    Quotation, Client, Warehouse, Supplier, Sale,
+    Purchase # Aseguramos que Purchase esté importado
 )
-from .models import Purchase
 
 # ==========================================
 # 1. SELECCIÓN DE EMPRESA
@@ -30,7 +30,7 @@ class BankAccountForm(forms.ModelForm):
         widgets = {
             'bank_name': forms.TextInput(attrs={'class': 'form-control'}),
             'account_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'currency': forms.TextInput(attrs={'class': 'form-control'}), # O Select si tiene choices
+            'currency': forms.TextInput(attrs={'class': 'form-control'}),
             'balance': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }
         labels = {
@@ -63,9 +63,7 @@ class TransferForm(forms.Form):
 
     def __init__(self, company, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filtramos cuentas solo de la empresa activa
         if company:
-            # Nota: Ajustar filtro según cómo relacione BankAccount con Company en models
             self.fields['from_account'].queryset = BankAccount.objects.filter(company__name=company.name) 
             self.fields['to_account'].queryset = BankAccount.objects.filter(company__name=company.name)
 
@@ -81,11 +79,8 @@ class GastoForm(forms.ModelForm):
             'proveedor': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'total': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'id': 'inputTotal', 'oninput': 'calcularIVA()'}),
-            
-            # Campos de solo lectura (cálculo automático JS)
             'amount_untaxed': forms.NumberInput(attrs={'class': 'form-control', 'readonly': 'readonly', 'id': 'inputBase'}),
             'iva': forms.NumberInput(attrs={'class': 'form-control', 'readonly': 'readonly', 'id': 'inputIVA'}),
-            
             'categoria': forms.TextInput(attrs={'class': 'form-control'}),
             'bank_account': forms.Select(attrs={'class': 'form-select'}),
             'vehicle': forms.Select(attrs={'class': 'form-select'}),
@@ -94,7 +89,6 @@ class GastoForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Cargamos los vehículos disponibles
         self.fields['vehicle'].queryset = Fleet.objects.all()
 
 class MobileExpenseForm(forms.ModelForm):
@@ -125,7 +119,7 @@ class IncomeForm(forms.ModelForm):
         }
 
 # ==========================================
-# 4. PROVEEDORES (COMPRAS)
+# 4. PROVEEDORES
 # ==========================================
 class SupplierForm(forms.ModelForm):
     class Meta:
@@ -151,25 +145,28 @@ class SupplierPaymentForm(forms.Form):
         super().__init__(*args, **kwargs)
         if company:
             self.fields['provider'].queryset = BusinessPartner.objects.filter(company=company, partner_type__in=['P', 'A'])
-            # Filtro de cuentas bancarias según lógica de negocio
-            # self.fields['my_account'].queryset = BankAccount.objects.filter(...) 
 
 # ==========================================
 # 5. INVENTARIO (PRODUCTOS)
 # ==========================================
+# NOTA IMPORTANTE: Se han comentado los campos 'category', 'brand' y 'min_stock'
+# porque causaban error ya que NO existen en el modelo Product actual.
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['code', 'name', 'category', 'brand', 'cost', 'price', 'stock', 'min_stock', 'image']
+        fields = ['code', 'name', 'cost', 'price', 'stock', 'image'] # Solo campos existentes
+        # fields originales (si agrega los campos al modelo, descomente esta línea):
+        # fields = ['code', 'name', 'category', 'brand', 'cost', 'price', 'stock', 'min_stock', 'image']
+        
         widgets = {
             'code': forms.TextInput(attrs={'class': 'form-control'}),
             'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'category': forms.Select(attrs={'class': 'form-select'}),
-            'brand': forms.Select(attrs={'class': 'form-select'}),
+            # 'category': forms.Select(attrs={'class': 'form-select'}),
+            # 'brand': forms.Select(attrs={'class': 'form-select'}),
             'cost': forms.NumberInput(attrs={'class': 'form-control'}),
             'price': forms.NumberInput(attrs={'class': 'form-control'}),
             'stock': forms.NumberInput(attrs={'class': 'form-control'}),
-            'min_stock': forms.NumberInput(attrs={'class': 'form-control'}),
+            # 'min_stock': forms.NumberInput(attrs={'class': 'form-control'}),
             'image': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
@@ -215,7 +212,6 @@ class LoanForm(forms.ModelForm):
 # 7. VENTAS Y CLIENTES
 # ==========================================
 class QuotationForm(forms.ModelForm):
-    # Campo auxiliar para calcular fecha de vencimiento
     validity_days = forms.IntegerField(
         label="Días de Validez", 
         initial=15,
@@ -224,15 +220,11 @@ class QuotationForm(forms.ModelForm):
 
     class Meta:
         model = Quotation
-        # 1. QUITAMOS 'description' DE AQUÍ:
         fields = ['client', 'date', 'validity_days', 'total'] 
-        
         exclude = ['user', 'company', 'created_at', 'status']
-        
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'client': forms.Select(attrs={'class': 'form-select'}),
-            # 2. QUITAMOS EL WIDGET DE DESCRIPTION TAMBIÉN
         }
 
 class SaleForm(forms.ModelForm):
@@ -256,28 +248,29 @@ class ClientForm(forms.ModelForm):
             'address': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
+# ==========================================
+# 8. COMPRAS (CORREGIDO)
+# ==========================================
 class PurchaseForm(forms.ModelForm):
-    class PurchaseForm(forms.ModelForm):
-        class Meta:
-            model = Purchase
-        # 1. LISTA DE CAMPOS PERMITIDOS (¡Warehouse debe estar aquí!)
+    class Meta:
+        model = Purchase
+        # AQUI ESTA LA MAGIA: Incluimos 'warehouse' para que aparezca el select
         fields = [
             'supplier', 
             'date', 
             'document_reference', 
             'payment_method', 
             'payment_reference', 
-            'warehouse'  # <--- CONFIRMADO
+            'warehouse' 
         ]
         
-        # 2. CAMPOS EXCLUIDOS (Warehouse NO debe estar aquí)
         exclude = ['user', 'company', 'created_at', 'status', 'total', 'branch']
         
-        # 3. ESTILOS VISUALES (WIDGETS)
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'supplier': forms.Select(attrs={'class': 'form-select'}),
-            'warehouse': forms.Select(attrs={'class': 'form-select border-success fw-bold'}), # Estilo verde para destacar
+            # Estilo verde y negrita para destacar el campo de Bodega
+            'warehouse': forms.Select(attrs={'class': 'form-select border-success fw-bold'}),
             'document_reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Factura #123'}),
             'payment_method': forms.Select(attrs={'class': 'form-select'}),
             'payment_reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Banco Industrial / Tarjeta'}),
@@ -285,7 +278,7 @@ class PurchaseForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filtramos para que solo salgan bodegas activas
+        # Cargamos solo las bodegas activas
         if 'warehouse' in self.fields:
             self.fields['warehouse'].queryset = Warehouse.objects.filter(active=True)
             self.fields['warehouse'].empty_label = "--- Seleccione Bodega ---"
