@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from datetime import date
-from django.db import models, Supplier
+from django.db import models
 from django.contrib.auth.models import User
 
 User = get_user_model()
@@ -488,25 +488,43 @@ class Provider(models.Model):
         verbose_name = "Proveedor"
         verbose_name_plural = "Proveedores"
 
+# 1. PRIMERO EL PROVEEDOR
+class Supplier(models.Model):
+    company = models.ForeignKey('CompanyProfile', on_delete=models.CASCADE, verbose_name="Empresa", null=True, blank=True)
+    name = models.CharField(max_length=200, verbose_name="Razón Social / Nombre")
+    nit = models.CharField(max_length=20, verbose_name="NIT / RUT", blank=True, null=True)
+    phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True, null=True)
+    email = models.EmailField(verbose_name="Correo Electrónico", blank=True, null=True)
+    address = models.TextField(verbose_name="Dirección", blank=True, null=True)
+    contact_name = models.CharField(max_length=100, verbose_name="Nombre de Contacto", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = "Proveedor"
+        verbose_name_plural = "Proveedores"
+
+# 2. LUEGO LA COMPRA (Ahora sí reconoce a Supplier)
 class Purchase(models.Model):
-    # Estados de la compra
     STATUS_CHOICES = [
         ('DRAFT', 'Borrador'),
         ('RECEIVED', 'Recibido / Inventario Cargado'),
         ('CANCELLED', 'Cancelada'),
     ]
 
-    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
+    company = models.ForeignKey('CompanyProfile', on_delete=models.CASCADE, verbose_name="Empresa")
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="Comprador")
+    
+    # AQUÍ ESTÁ LA CLAVE: Supplier ya fue leído arriba, así que esto funciona
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, verbose_name="Proveedor")
     
     date = models.DateField(default=timezone.now, verbose_name="Fecha de Compra")
     document_reference = models.CharField(max_length=50, verbose_name="No. Factura Proveedor", blank=True, null=True)
-    
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='RECEIVED', verbose_name="Estado")
     description = models.TextField(blank=True, null=True, verbose_name="Observaciones")
-    
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -516,17 +534,15 @@ class Purchase(models.Model):
         verbose_name = "Compra"
         verbose_name_plural = "Compras"
 
+# 3. FINALMENTE EL DETALLE (Usa a Purchase)
 class PurchaseDetail(models.Model):
     purchase = models.ForeignKey(Purchase, related_name='details', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Producto")
     quantity = models.PositiveIntegerField(verbose_name="Cantidad")
     unit_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Costo Unitario")
-    
-    # Aquí SÍ agregamos subtotal para guardar el histórico exacto
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
 
     def save(self, *args, **kwargs):
-        # Calculamos subtotal automáticamente antes de guardar
         self.subtotal = self.quantity * self.unit_cost
         super().save(*args, **kwargs)
 
