@@ -1,332 +1,42 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anaira ERP v2.0 | Sistema de Gestión</title>
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+{% extends 'base.html' %}
 
-    <style>
-        /* ESTILOS GENERALES */
-        body { 
-            font-family: 'Roboto', sans-serif; 
-            background-color: #f4f6f9; 
-            overflow-x: hidden; 
-        }
+{% block content %}
+<div class="container-fluid">
+    <h3 class="mb-4 text-dark fw-bold">Panel de Configuración</h3>
 
-        /* --- SIDEBAR (Menú Lateral) --- */
-        #wrapper { display: flex; width: 100%; align-items: stretch; transition: all 0.3s; }
-        
-        #sidebar-wrapper {
-            min-width: 280px; 
-            max-width: 280px;
-            background: #1e293b; /* Azul Oscuro Profundo (Slate 900) */
-            color: #fff;
-            min-height: 100vh;
-            transition: margin-left 0.3s ease;
-            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
-            z-index: 1000;
-        }
-
-        #sidebar-wrapper.toggled { margin-left: -280px; }
-
-        /* Cabecera del Sidebar */
-        .sidebar-heading { 
-            padding: 1.5rem; 
-            font-size: 1.4rem; 
-            font-weight: 700; 
-            text-align: center;
-            background-color: #0f172a; /* Más oscuro */
-            border-bottom: 1px solid #334155;
-            letter-spacing: 1px;
-        }
-
-        /* Links del Menú Principal */
-        .list-group-item {
-            background-color: transparent;
-            color: #cbd5e1; /* Gris claro */
-            border: none;
-            padding: 12px 25px;
-            font-size: 0.95rem;
-            font-weight: 500;
-            border-left: 4px solid transparent;
-            transition: all 0.2s;
-        }
-
-        .list-group-item:hover {
-            background-color: #334155;
-            color: #fff;
-            cursor: pointer;
-        }
-
-        /* Flecha del desplegable */
-        .dropdown-toggle::after {
-            float: right;
-            margin-top: 8px;
-            transition: transform 0.2s;
-        }
-        /* Rotar flecha cuando está abierto */
-        .collapsed .dropdown-toggle::after { transform: rotate(-90deg); }
-
-        /* --- SUBMENÚS --- */
-        .submenu { 
-            background-color: #0f172a; /* Fondo más oscuro para submenús */
-            box-shadow: inset 0 3px 6px rgba(0,0,0,0.2);
-        }
-        
-        /* Links del Submenú (Indentados) */
-        .submenu .list-group-item {
-            padding-left: 3.5rem; /* Sangría nivel 1 */
-            font-size: 0.9rem;
-            color: #94a3b8;
-        }
-        .submenu .list-group-item:hover {
-            color: #38bdf8; /* Celeste al pasar mouse */
-            background-color: #1e293b;
-        }
-        
-        /* Sub-Submenú (Nivel 2 - Si fuera necesario) */
-        .sub-submenu .list-group-item {
-            padding-left: 5rem;
-            font-size: 0.85rem;
-        }
-
-        /* --- CONTENIDO PRINCIPAL --- */
-        #page-content-wrapper { width: 100%; }
-        
-        .navbar { 
-            background: #ffffff; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08); 
-            padding: 10px 20px;
-        }
-
-        /* Botón Hamburguesa */
-        #menu-toggle {
-            color: #1e293b;
-            border-color: #cbd5e1;
-        }
-        #menu-toggle:hover { background-color: #e2e8f0; }
-
-        /* Badges/Notificaciones en menú */
-        .badge-sidebar {
-            float: right;
-            font-size: 0.75rem;
-            margin-top: 2px;
-        }
-    </style>
-</head>
-<body>
-
-<div class="d-flex" id="wrapper">
-
-    <div id="sidebar-wrapper">
-        <div class="sidebar-heading text-white">
-            <i class="bi bi-layers-fill text-primary"></i> ANAIRA ERP
-        </div>
-        
-        <div class="list-group list-group-flush pt-3">
-            
-            <a href="/" class="list-group-item list-group-item-action">
-                <i class="bi bi-grid-1x2-fill me-2 text-info"></i> Mi Tablero
-            </a>
-
-            <a href="#menuVentas" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
-                <i class="bi bi-cart-fill me-2 text-warning"></i> Ventas & CRM
-            </a>
-            <div class="collapse submenu" id="menuVentas">
-                <a href="{% url 'quotation_list' %}" class="list-group-item list-group-item-action">Cotizaciones</a>
-                <a href="#" class="list-group-item list-group-item-action">Pedidos de Venta</a>
-                <a href="#" class="list-group-item list-group-item-action">Facturación Electrónica</a>
-                <div class="dropdown-divider border-secondary"></div>
-                
-                <a href="{% url 'client_list' %}" class="list-group-item list-group-item-action fw-bold text-white">
-                    <i class="bi bi-people-fill me-2"></i> Directorio Clientes
-                </a>
-                
-                <a href="#" class="list-group-item list-group-item-action">Seguimiento / CRM</a>
-                <a href="#" class="list-group-item list-group-item-action text-danger">
-                    <i class="bi bi-exclamation-triangle me-1"></i> Libro Negro (Mora)
-                </a>
-            </div>
-
-            <a href="#menuCompras" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
-                <i class="bi bi-bag-check-fill me-2 text-success"></i> Compras
-            </a>
-            
-            <div class="collapse submenu" id="menuCompras">
-                <a href="{% url 'purchase_list' %}" class="list-group-item list-group-item-action fw-bold text-white">
-                    <i class="bi bi-cart4 me-2"></i> Historial de Compras
-                </a>
-
-                <a href="{% url 'gasto_manual' %}" class="list-group-item list-group-item-action">
-                    Registrar Gasto (IA) <span class="badge bg-primary badge-sidebar">New</span>
-                </a>
-                <a href="#" class="list-group-item list-group-item-action">Gastos Operativos</a>
-                <a href="#" class="list-group-item list-group-item-action">Órdenes de Compra</a>
-                <a href="#" class="list-group-item list-group-item-action">Proveedores</a>
-                <a href="#" class="list-group-item list-group-item-action">Importaciones / Aduana</a>
-            </div>
-
-            <a href="#menuLogistica" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
-                <i class="bi bi-box-seam-fill me-2 text-white"></i> Logística
-            </a>
-            <div class="collapse submenu" id="menuLogistica">
-                <a href="{% url 'product_list' %}" class="list-group-item list-group-item-action fw-bold text-white">
-                    <i class="bi bi-tags-fill me-2"></i> Catálogo de Productos
-                </a>
-                
-                <a href="{% url 'inventory_list' %}" class="list-group-item list-group-item-action">Kardex de Inventario</a>
-                <a href="#" class="list-group-item list-group-item-action">Gestión de Bodegas</a>
-                <a href="#" class="list-group-item list-group-item-action">Producción / Fórmulas</a>
-                <a href="#" class="list-group-item list-group-item-action">Despachos</a>
-            </div>
-
-            <a href="#menuFinanzas" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
-                <i class="bi bi-cash-coin me-2 text-warning"></i> Tesorería
-            </a>
-            <div class="collapse submenu" id="menuFinanzas">
-                <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Gestión Bancaria</small>
-                
-                <a href="{% url 'bank_list' %}" class="list-group-item list-group-item-action text-white fw-bold">
-                    <i class="bi bi-bank me-2"></i> Panel de Bancos
-                </a>
-                <a href="{% url 'bank_create' %}" class="list-group-item list-group-item-action">
-                    <i class="bi bi-plus-circle me-2"></i> Crear Nueva Cuenta
-                </a>
-
-                <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Operaciones</small>
-                
-                <a href="{% url 'bank_transaction_create' %}?type=IN" class="list-group-item list-group-item-action">
-                    <i class="bi bi-arrow-down-circle text-success me-2"></i> Registrar Depósito
-                </a>
-                
-                <a href="{% url 'bank_transaction_create' %}?type=OUT" class="list-group-item list-group-item-action">
-                    <i class="bi bi-arrow-up-circle text-danger me-2"></i> Registrar Cheque
-                </a>
-
-                <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Reportes</small>
-                <a href="{% url 'bank_list' %}" class="list-group-item list-group-item-action">
-                    <i class="bi bi-file-earmark-spreadsheet me-2"></i> Estados de Cuenta
-                </a>
-
-                <div class="dropdown-divider border-secondary mt-2"></div>
-                
-                <a href="#" class="list-group-item list-group-item-action">Cuentas por Cobrar</a>
-                <a href="#" class="list-group-item list-group-item-action">Notas de Crédito/Débito</a>
-                <a href="#" class="list-group-item list-group-item-action">Cuentas por Pagar</a>
-                <a href="#" class="list-group-item list-group-item-action">Programación de Pagos</a>
-            </div>
-
-            <a href="#menuConta" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
-                <i class="bi bi-journal-text me-2 text-primary"></i> Contabilidad
-            </a>
-            <div class="collapse submenu" id="menuConta">
-                <a href="{% url 'journal_list' %}" class="list-group-item list-group-item-action">Libro Diario</a>
-                <a href="{% url 'ledger_list' %}" class="list-group-item list-group-item-action">Libro Mayor</a>
-                <a href="{% url 'trial_balance' %}" class="list-group-item list-group-item-action">Balance de Saldos</a>
-                <div class="dropdown-divider border-secondary"></div>
-                <a href="{% url 'income_statement' %}" class="list-group-item list-group-item-action">Estado de Resultados</a>
-                <a href="{% url 'balance_sheet' %}" class="list-group-item list-group-item-action">Balance General</a>
-                <a href="#" class="list-group-item list-group-item-action">Impuestos (IVA/ISR)</a>
-            </div>
-
-            <a href="#menuRRHH" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
-                <i class="bi bi-people-fill me-2 text-danger"></i> RRHH
-            </a>
-            <div class="collapse submenu" id="menuRRHH">
-                <a href="{% url 'employee_list' %}" class="list-group-item list-group-item-action">Empleados</a>
-                <a href="#" class="list-group-item list-group-item-action">Generar Nómina</a>
-                <a href="#" class="list-group-item list-group-item-action">Vacaciones y Ausencias</a>
-            </div>
-
-             <div class="mt-4 border-top border-secondary pt-2">
-                 <a href="#" class="list-group-item list-group-item-action">
-                    <i class="bi bi-gear-fill me-2"></i> Configuración
-                </a>
-                 <a href="#" class="list-group-item list-group-item-action text-danger">
-                    <i class="bi bi-power me-2"></i> Cerrar Sesión
-                </a>
-             </div>
-
-        </div>
-    </div>
-    <div id="page-content-wrapper">
-        
-        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
-            <div class="container-fluid">
-                
-                <button class="btn btn-outline-dark btn-sm me-3" id="menu-toggle">
-                    <i class="bi bi-list fs-5"></i>
-                </button>
-
-                <span class="navbar-brand fw-bold fs-6 text-uppercase text-secondary">
-                    {% if request.session.company_name %}
-                        <i class="bi bi-building-fill me-2"></i>{{ request.session.company_name }}
-                    {% else %}
-                        SISTEMA ERP
-                    {% endif %}
-                </span>
-
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav ms-auto mt-2 mt-lg-0 align-items-center">
-                        <li class="nav-item dropdown me-3">
-                            <a class="nav-link position-relative" href="#" id="navbarDropdownNotif" role="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-bell fs-5"></i>
-                                <span class="position-absolute top-25 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
-                                    3
-                                </span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="navbarDropdownNotif">
-                                <li><a class="dropdown-item small" href="#">Stock bajo en Bodega 1</a></li>
-                                <li><a class="dropdown-item small" href="#">Factura pendiente de pago</a></li>
-                            </ul>
-                        </li>
-
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-2" style="width:32px; height:32px; font-weight:bold;">
-                                    {{ request.user.username|make_list|first|upper|default:"U" }}
-                                </div>
-                                <span class="d-none d-sm-inline">{{ request.user.username|default:"Usuario" }}</span>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Mi Perfil</a>
-                                <a class="dropdown-item" href="#"><i class="bi bi-shield-lock me-2"></i> Seguridad</a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-danger" href="#"><i class="bi bi-box-arrow-right me-2"></i> Salir</a>
-                            </div>
-                        </li>
-                    </ul>
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-database-fill-gear text-primary display-4 mb-3"></i>
+                    <h5 class="card-title">Backend Django</h5>
+                    <p class="card-text text-muted small">Acceso directo a tablas y usuarios crudos.</p>
+                    <a href="/admin/" class="btn btn-outline-primary btn-sm w-100" target="_blank">Entrar al Admin</a>
                 </div>
             </div>
-        </nav>
-
-        <div class="container-fluid px-4 py-4">
-            {% block content %}
-            {% endblock %}
         </div>
 
-        <footer class="bg-light text-center text-muted py-3 border-top mt-auto" style="font-size: 0.8rem;">
-            &copy; {% now "Y" %} Corporación Sermaworld | Anaira ERP v2.0
-        </footer>
-
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-building-gear text-success display-4 mb-3"></i>
+                    <h5 class="card-title">Datos Empresa</h5>
+                    <p class="card-text text-muted small">Logo, NIT, Dirección y Teléfonos.</p>
+                    <a href="/admin/core/companyprofile/" class="btn btn-outline-success btn-sm w-100" target="_blank">Editar Perfil</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-people-fill text-warning display-4 mb-3"></i>
+                    <h5 class="card-title">Usuarios</h5>
+                    <p class="card-text text-muted small">Crear vendedores y resetear claves.</p>
+                    <a href="/admin/auth/user/" class="btn btn-outline-warning btn-sm w-100" target="_blank">Gestionar Accesos</a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-    var el = document.getElementById("wrapper");
-    var toggleButton = document.getElementById("menu-toggle");
-
-    toggleButton.onclick = function () {
-        el.classList.toggle("toggled");
-    };
-</script>
-
-</body>
-</html>
+{% endblock %}
