@@ -250,8 +250,8 @@ class ClientForm(forms.ModelForm):
 class PurchaseForm(forms.ModelForm):
     class Meta:
         model = Purchase
-        fields = ['supplier', 'date', 'document_reference', 'total'] # Ajuste según sus campos reales
-        exclude = ['user', 'company', 'created_at']
+        fields = ['supplier', 'date', 'document_reference'] # Ajuste según sus campos reales
+        exclude = ['user', 'company', 'created_at', 'total']
         
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
