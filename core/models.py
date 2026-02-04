@@ -304,30 +304,46 @@ class InventoryMovement(models.Model):
 # ==========================================
 # 6. RECURSOS HUMANOS (EMPLEADOS Y NÓMINA)
 # ==========================================
+# 1. MODELO SUCURSAL (Punto de Venta / Facturación)
+class Branch(models.Model):
+    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
+    name = models.CharField(max_length=100, verbose_name="Nombre Sucursal")
+    code = models.CharField(max_length=20, verbose_name="Código/Prefijo", help_text="Ej: Z9, CENT, SUR")
+    address = models.CharField(max_length=200, verbose_name="Dirección")
+    phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True, null=True)
+    
+    def __str__(self):
+        return f"{self.code} - {self.name}"
 
+    class Meta:
+        verbose_name = "Sucursal"
+        verbose_name_plural = "Sucursales"
 class Employee(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='core_employees')
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Usuario de Sistema")
+    # Campos existentes
     first_name = models.CharField(max_length=100, verbose_name="Nombres")
     last_name = models.CharField(max_length=100, verbose_name="Apellidos")
-    dpi = models.CharField(max_length=20, blank=True, verbose_name="DPI")
-    nit = models.CharField(max_length=20, blank=True, verbose_name="NIT")
-    address = models.CharField(max_length=200, blank=True, verbose_name="Dirección")
-    phone = models.CharField(max_length=20, blank=True, verbose_name="Teléfono")
-    position = models.CharField(max_length=100, verbose_name="Cargo / Puesto")
-    department = models.CharField(max_length=100, blank=True, verbose_name="Departamento")
-    date_hired = models.DateField(verbose_name="Fecha de Contratación")
-    base_salary = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Salario Base (Q)")
-    bonus = models.DecimalField(max_digits=10, decimal_places=2, default=250.00, verbose_name="Bonificación Decreto")
-    igss_number = models.CharField(max_length=20, blank=True, verbose_name="No. Afiliación IGSS")
-    is_active = models.BooleanField(default=True, verbose_name="Activo")
+    dpi = models.CharField(max_length=20, verbose_name="DPI", unique=True)
+    nit = models.CharField(max_length=20, verbose_name="NIT", blank=True, null=True)
+    address = models.CharField(max_length=200, verbose_name="Dirección")
+    phone = models.CharField(max_length=20, verbose_name="Teléfono")
+    position = models.CharField(max_length=100, verbose_name="Puesto")
+    department = models.CharField(max_length=100, verbose_name="Departamento")
+    date_hired = models.DateField(verbose_name="Fecha Contratación")
+    base_salary = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Salario Base")
+    bonus = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Bonificación")
+    igss_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="No. IGSS")
+    
+    # --- NUEVOS CAMPOS (LOS QUE FALTAN) ---
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Usuario de Sistema")
+    branch = models.ForeignKey('Branch', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Sucursal Asignada")
+    company = models.ForeignKey('CompanyProfile', on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
-    @property
-    def total_income(self):
-        return self.base_salary + self.bonus
+    class Meta:
+        verbose_name = "Empleado"
+        verbose_name_plural = "Empleados"
 
 class Loan(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, verbose_name="Empleado")
@@ -437,20 +453,7 @@ class QuotationDetail(models.Model):
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
 
-# 1. MODELO SUCURSAL (Punto de Venta / Facturación)
-class Branch(models.Model):
-    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
-    name = models.CharField(max_length=100, verbose_name="Nombre Sucursal")
-    code = models.CharField(max_length=20, verbose_name="Código/Prefijo", help_text="Ej: Z9, CENT, SUR")
-    address = models.CharField(max_length=200, verbose_name="Dirección")
-    phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True, null=True)
-    
-    def __str__(self):
-        return f"{self.code} - {self.name}"
 
-    class Meta:
-        verbose_name = "Sucursal"
-        verbose_name_plural = "Sucursales"
 
 # 2. MODELO BODEGA (Almacenamiento Físico)
 class Warehouse(models.Model):
