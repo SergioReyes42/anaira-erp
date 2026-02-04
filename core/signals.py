@@ -71,3 +71,92 @@ def create_accounting_entry_for_expense(sender, instance, created, **kwargs):
             
         except Exception as e:
             print(f"❌ Error contabilidad: {e}")
+
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+from django.db import transaction
+from .models import PurchaseDetail, SaleDetail, Inventory, StockMovement, Warehouse
+
+# --- 1. AUTOMATIZACIÓN DE COMPRAS (ENTRADAS) ---
+@receiver(post_save, sender=PurchaseDetail)
+def update_stock_on_purchase(sender, instance, created, **kwargs):
+    """
+    Cuando se guarda un detalle de compra (ej: 10 Laptops),
+    sumamos al inventario y creamos el registro en el Kardex.
+    """
+    if created: # Solo si es nuevo registro
+        purchase = instance.purchase
+        warehouse = purchase.warehouse # La bodega que seleccionó en el formulario
+        
+        if not warehouse:
+            return # Si no hay bodega, no hacemos nada
+
+        # 1. Buscamos o Creamos el Inventario
+        inventory, _ = Inventory.objects.get_or_create(
+            product=instance.product,
+            warehouse=warehouse,
+            defaults={'quantity': 0}
+        )
+
+        # 2. Sumamos la cantidad
+        inventory.quantity += instance.quantity
+        inventory.save()
+
+        # 3. Escribimos en el Kardex (Historial)
+        StockMovement.objects.create(
+            product=instance.product,
+            warehouse=warehouse,
+            quantity=instance.quantity,
+            movement_type='IN_PURCHASE',
+            related_purchase=purchase,
+            user=purchase.user, # Asumiendo que Purchase tiene campo user
+            comments=f"Compra #{purchase.document_reference or purchase.id}"
+        )
+
+# --- 2. AUTOMATIZACIÓN DE VENTAS (SALIDAS) ---
+@receiver(post_save, sender=SaleDetail)
+def update_stock_on_sale(sender, instance, created, **kwargs):
+    """
+    Cuando se vende algo, restamos del inventario de la sucursal del vendedor.
+    """
+    if created:
+        sale = instance.sale
+        
+        # LOGICA INTELIGENTE: ¿De qué bodega sacamos el producto?
+        # Intentamos obtener la bodega asociada a la sucursal del empleado/usuario
+        warehouse = None
+        
+        # Opcion A: Si la Venta tiene un campo 'warehouse' explicito
+        if hasattr(sale, 'warehouse') and sale.warehouse:
+            warehouse = sale.warehouse
+        
+        # Opcion B: Buscamos la bodega activa de la sucursal del cliente/usuario
+        # (Aquí asumimos por simplicidad que tomamos la primera bodega de la sucursal del usuario)
+        elif hasattr(sale.user, 'employee') and sale.user.employee.branch:
+            branch = sale.user.employee.branch
+            warehouse = Warehouse.objects.filter(branch=branch, active=True).first()
+
+        if not warehouse:
+            # Si no encontramos bodega, no podemos restar (o usamos una bodega por defecto)
+            return 
+
+        # 1. Actualizamos Inventario
+        inventory, _ = Inventory.objects.get_or_create(
+            product=instance.product,
+            warehouse=warehouse,
+            defaults={'quantity': 0}
+        )
+        
+        inventory.quantity -= instance.quantity
+        inventory.save()
+
+        # 2. Kardex
+        StockMovement.objects.create(
+            product=instance.product,
+            warehouse=warehouse,
+            quantity=instance.quantity,
+            movement_type='OUT_SALE',
+            related_sale=sale,
+            user=sale.user,
+            comments=f"Venta al cliente {sale.client}"
+        )
