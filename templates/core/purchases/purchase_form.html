@@ -13,17 +13,25 @@
             <div class="card-body bg-light">
                 
                 <div class="row mb-3">
-                    <div class="col-md-5">
+                    <div class="col-md-4">
                         <label class="form-label fw-bold">Proveedor</label>
                         {{ form.supplier }}
                         <small class="text-muted"><a href="/admin/core/supplier/add/" target="_blank" class="text-decoration-none">+ Nuevo Proveedor</a></small>
                     </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-success"><i class="bi bi-building"></i> Bodega Destino</label>
+                        {{ form.warehouse }}
+                        <div class="form-text text-muted small">¿Dónde se guardará?</div>
+                    </div>
+
                     <div class="col-md-3">
                         <label class="form-label fw-bold">Fecha de Compra</label>
                         {{ form.date }}
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">No. Factura / Referencia</label>
+                    
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Referencia</label>
                         {{ form.document_reference }}
                     </div>
                 </div>
@@ -39,9 +47,6 @@
                     <div class="col-md-8">
                         <label class="form-label fw-bold small">Referencia / Cuenta de Origen</label>
                         {{ form.payment_reference }}
-                        <div class="form-text text-muted small">
-                            Ej: Banco Industrial, Transferencia #9988, Visa terminación 1234.
-                        </div>
                     </div>
                 </div>
 
@@ -66,7 +71,7 @@
                                         <option value="">Buscar producto...</option>
                                         {% for product in products %}
                                             <option value="{{ product.id }}">
-                                                {{ product.code }} - {{ product.name }} (Stock Actual: {{ product.stock }})
+                                                {{ product.code }} - {{ product.name }} (Stock Global: {{ product.stock }})
                                             </option>
                                         {% endfor %}
                                     </select>
@@ -105,7 +110,7 @@
 
                 <div class="d-grid gap-2 mt-5 d-md-flex justify-content-md-end">
                     <a href="{% url 'purchase_list' %}" class="btn btn-light border px-4">Cancelar</a>
-                    <button type="submit" class="btn btn-success px-5 btn-lg shadow"><i class="bi bi-save-fill"></i> Procesar Compra e Inventario</button>
+                    <button type="submit" class="btn btn-success px-5 btn-lg shadow"><i class="bi bi-save-fill"></i> Procesar Compra</button>
                 </div>
             </div>
         </div>
@@ -134,12 +139,10 @@
     function addRow() {
         let tableBody = document.getElementById('productsBody');
         let newRow = tableBody.rows[0].cloneNode(true);
-        
         newRow.querySelector('.qty-input').value = 1;
         newRow.querySelector('.cost-input').value = ''; 
         newRow.querySelector('.subtotal-display').value = '0.00';
         newRow.querySelector('select').value = '';
-        
         tableBody.appendChild(newRow);
     }
 
@@ -149,9 +152,6 @@
         if (tableBody.rows.length > 1) {
             row.remove();
             calculateTotal();
-        } else {
-            // Opcional: Alerta si intenta borrar la última fila
-            // alert("Debe haber al menos un producto.");
         }
     }
 </script>
