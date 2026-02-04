@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin.sites import AlreadyRegistered
+from .models import Branch, Warehouse, Inventory # Agregue estos
 # Importamos SOLO lo que estamos seguros que existe para que no falle
 from .models import (
     Product, 
@@ -10,7 +11,7 @@ from .models import (
     Quotation, 
     QuotationDetail, 
     BankAccount, 
-    BankMovement
+    BankMovement, Branch, Warehouse, Inventory  # <--- AGREGUE ESTOS 3
 )
 from .models import Supplier, Purchase, PurchaseDetail
 
@@ -76,3 +77,19 @@ for model in models_to_register:
         pass
     except Exception:
         pass
+
+# ...
+admin.site.register(Branch)
+admin.site.register(Warehouse)
+admin.site.register(Inventory)
+
+@admin.register(Warehouse)
+class WarehouseAdmin(admin.ModelAdmin):
+    list_display = ('name', 'branch', 'active')
+    list_filter = ('branch', 'active')
+
+@admin.register(Inventory)
+class InventoryAdmin(admin.ModelAdmin):
+    list_display = ('product', 'warehouse', 'quantity', 'location')
+    list_filter = ('warehouse',)
+    search_fields = ('product__name', 'warehouse__name')
