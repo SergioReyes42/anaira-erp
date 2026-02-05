@@ -1709,7 +1709,7 @@ def convert_quote_to_sale(request, quote_id):
         InventoryMovement.objects.create(
             product=product,
             quantity=item.quantity,
-            movement_type='OUT', # Salida
+            type='OUT', # Salida
             reference=f"Venta #{sale.id}",
             description=f"Salida por venta a {sale.client}",
             user=request.user,
@@ -1726,9 +1726,13 @@ def convert_quote_to_sale(request, quote_id):
                 account=cuenta_destino,
                 movement_type='IN',
                 category='Venta',
-                description=f"Venta #{sale.id}",
                 amount=sale.total,
                 date=timezone.now()
+            
+            reference=f"Venta #{sale.id} - {sale.client}", 
+            
+            user=request.user,
+            date=timezone.now()
             )
             messages.success(request, f"¡Venta #{sale.id} procesada! Stock descontado y Dinero ingresado.")
         else:
