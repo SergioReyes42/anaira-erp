@@ -1667,36 +1667,32 @@ def inventory_kardex(request):
 def convert_quote_to_sale(request, quote_id):
     quotation = get_object_or_404(Quotation, pk=quote_id)
     
-    # Validación: No facturar dos veces
+    # 1. Validación de seguridad
     if quotation.status == 'BILLED':
         messages.warning(request, "Esta cotización ya fue facturada.")
         return redirect('quotation_list')
 
-    # 1. RESOLVER LA EMPRESA (Corrección del IntegrityError)
-    # Intentamos obtener la empresa del empleado, si no, tomamos la primera del sistema (Fallback)
+    # 2. Definir Empresa
     empresa = None
     if hasattr(request.user, 'employee') and request.user.employee.company:
         empresa = request.user.employee.company
     else:
         empresa = CompanyProfile.objects.first()
-        
-    # Si no existe ninguna empresa en el sistema, la creamos para evitar errores
-    if not empresa:
-        empresa = CompanyProfile.objects.create(name="Mi Empresa Default", nit="CF", phone="0000")
+        if not empresa:
+            empresa = CompanyProfile.objects.create(name="Empresa Default", nit="CF", phone="0000")
 
-    # 2. CREAR LA VENTA (Con los campos user y company)
+    # 3. Crear la Venta
     sale = Sale.objects.create(
         client=quotation.client,
         total=quotation.total,
-        payment_method='Efectivo', # Puede cambiar esto según su lógica de UI
-        user=request.user,         # <--- Quién vendió
-        company=empresa            # <--- ¡ESTA LÍNEA ARREGLA EL ERROR 500! 🏢
+        payment_method='Efectivo', 
+        user=request.user,
+        company=empresa
     )
 
-    # 3. PROCESAR DETALLES (El descuento de stock lo hace signals.py automáticamente)
+    # 4. PROCESAR PRODUCTOS Y DESCONTAR INVENTARIO (MANO DURA) 📉
     for item in quotation.details.all():
-        # Creamos el detalle de venta.
-        # ALERTA: Al crearse esto, signals.py detecta el movimiento y descuenta el stock solo.
+        # A) Crear el detalle de venta
         SaleDetail.objects.create(
             sale=sale, 
             product=item.product, 
@@ -1704,40 +1700,44 @@ def convert_quote_to_sale(request, quote_id):
             unit_price=item.unit_price
         )
         
-        # NOTA: He comentado la lógica manual de abajo para evitar DESCUENTO DOBLE
-        # product = item.product
-        # product.stock -= item.quantity   <-- Esto ya lo hace signals.py
-        # product.save()
+        # B) DESCUENTO DIRECTO DEL STOCK (Aquí obligamos la resta)
+        product = item.product
+        product.stock -= item.quantity
+        product.save()
 
-    # 4. LÓGICA DE COBRO AUTOMÁTICO (Su código bancario original)
+        # C) REGISTRO EN KARDEX (Para que quede historial)
+        InventoryMovement.objects.create(
+            product=product,
+            quantity=item.quantity,
+            movement_type='OUT', # Salida
+            reference=f"Venta #{sale.id}",
+            description=f"Salida por venta a {sale.client}",
+            user=request.user,
+            date=timezone.now()
+        )
+
+    # 5. COBRO BANCARIO (Su código original)
     if sale.payment_method != 'CREDITO':
-        # Buscamos la cuenta de banco de ESTA empresa específica
         cuenta_destino = BankAccount.objects.filter(company=empresa).first()
-        
         if cuenta_destino:
             cuenta_destino.balance += sale.total
             cuenta_destino.save()
-            
             BankMovement.objects.create(
                 account=cuenta_destino,
                 movement_type='IN',
                 category='Venta',
-                description=f"Venta #{sale.id} - {sale.client}",
+                description=f"Venta #{sale.id}",
                 amount=sale.total,
-                date=timezone.now(),
-                reference=f"Auto-Cobro #{sale.id}"
+                date=timezone.now()
             )
-            messages.success(request, f"¡Venta #{sale.id} creada y cobrada en Banco!")
+            messages.success(request, f"¡Venta #{sale.id} procesada! Stock descontado y Dinero ingresado.")
         else:
-            messages.warning(request, "Venta creada, pero no se cobró (Falta Cuenta Bancaria en esta Empresa).")
-    else:
-        messages.info(request, f"Venta #{sale.id} registrada al CRÉDITO.")
+            messages.warning(request, "Venta procesada y Stock descontado, pero NO se cobró (Falta Banco).")
 
-    # 5. CERRAR COTIZACIÓN
+    # 6. Cerrar Cotización
     quotation.status = 'BILLED'
     quotation.save()
 
-    messages.success(request, f"¡Venta #{sale.id} realizada con éxito!")
     return redirect('quotation_list')
 
 @login_required
