@@ -1724,13 +1724,13 @@ def convert_quote_to_sale(request, quote_id):
             cuenta_destino.save()
             BankMovement.objects.create(
                 account=cuenta_destino,
-                type='IN',
+                type='OUT',
                 category='Venta',
 
-                reference=f"Venta #{sale.id} - {sale.client}", 
+               reference=f"Venta #{sale.id} - {sale.client} (Salida por Venta)", 
             
-                user=request.user,
-                date=timezone.now()
+            user=request.user,
+            date=timezone.now()
 
 
             
