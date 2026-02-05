@@ -1,4 +1,5 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} 
+{% load humanize %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -111,7 +112,7 @@
                                 </td>
                                 <td>{{ venta.client.name }}</td>
                                 <td>{{ venta.date|date:"d M Y" }}</td>
-                                <td class="text-end fw-bold text-success">Q {{ venta.total }}</td>
+                                <td class="text-end fw-bold text-success">Q. {{ venta.total | intcomma }}</td>
                                 <td><span class="badge bg-success">Pagado</span></td>
                             </tr>
                             {% empty %}
