@@ -5,7 +5,7 @@ from datetime import datetime, date, timedelta
 from itertools import chain
 from operator import attrgetter
 from django.db.models import Q
-from .models import Inventory, Branch, Employee
+from .models import Quotation, Sale, SaleDetail, CompanyProfile, BankAccount, BankMovement, Inventory
 
 # --- IMPORTS DE DJANGO ---
 from django.http import JsonResponse, HttpResponse
@@ -1667,42 +1667,51 @@ def inventory_kardex(request):
 def convert_quote_to_sale(request, quote_id):
     quotation = get_object_or_404(Quotation, pk=quote_id)
     
+    # Validación: No facturar dos veces
     if quotation.status == 'BILLED':
         messages.warning(request, "Esta cotización ya fue facturada.")
         return redirect('quotation_list')
 
-    # 1. Datos base
-    empresa = CompanyProfile.objects.first()
+    # 1. RESOLVER LA EMPRESA (Corrección del IntegrityError)
+    # Intentamos obtener la empresa del empleado, si no, tomamos la primera del sistema (Fallback)
+    empresa = None
+    if hasattr(request.user, 'employee') and request.user.employee.company:
+        empresa = request.user.employee.company
+    else:
+        empresa = CompanyProfile.objects.first()
+        
+    # Si no existe ninguna empresa en el sistema, la creamos para evitar errores
     if not empresa:
-        empresa = CompanyProfile.objects.create(name="Mi Empresa", nit="CF", phone="0000")
+        empresa = CompanyProfile.objects.create(name="Mi Empresa Default", nit="CF", phone="0000")
 
-    # 2. Crear la Venta (CORREGIDO: payment_method aparece SOLO UNA VEZ)
+    # 2. CREAR LA VENTA (Con los campos user y company)
     sale = Sale.objects.create(
         client=quotation.client,
         total=quotation.total,
-        payment_method='Efectivo', # O el que corresponda
-        user=request.user  # <--- ¡ESTA ES LA LÍNEA MÁGICA!
+        payment_method='Efectivo', # Puede cambiar esto según su lógica de UI
+        user=request.user,         # <--- Quién vendió
+        company=empresa            # <--- ¡ESTA LÍNEA ARREGLA EL ERROR 500! 🏢
     )
 
-    # 3. Procesar Stock
+    # 3. PROCESAR DETALLES (El descuento de stock lo hace signals.py automáticamente)
     for item in quotation.details.all():
-        product = item.product
-        product.stock -= item.quantity
-        product.stock_reserved -= item.quantity
-        if product.stock_reserved < 0: product.stock_reserved = 0
-        product.save()
-        
+        # Creamos el detalle de venta.
+        # ALERTA: Al crearse esto, signals.py detecta el movimiento y descuenta el stock solo.
         SaleDetail.objects.create(
-            sale=sale, product=product, quantity=item.quantity, unit_price=item.unit_price
+            sale=sale, 
+            product=item.product, 
+            quantity=item.quantity, 
+            unit_price=item.unit_price
         )
         
-        InventoryMovement.objects.create(
-            product=product, quantity=item.quantity, type='OUT', 
-            reference=f"Venta #{sale.id}", user=request.user, date=timezone.now()
-        )
+        # NOTA: He comentado la lógica manual de abajo para evitar DESCUENTO DOBLE
+        # product = item.product
+        # product.stock -= item.quantity   <-- Esto ya lo hace signals.py
+        # product.save()
 
-    # 4. LÓGICA DE COBRO AUTOMÁTICO
+    # 4. LÓGICA DE COBRO AUTOMÁTICO (Su código bancario original)
     if sale.payment_method != 'CREDITO':
+        # Buscamos la cuenta de banco de ESTA empresa específica
         cuenta_destino = BankAccount.objects.filter(company=empresa).first()
         
         if cuenta_destino:
@@ -1713,22 +1722,22 @@ def convert_quote_to_sale(request, quote_id):
                 account=cuenta_destino,
                 movement_type='IN',
                 category='Venta',
-                description=f"Venta #{sale.id} - {sale.client.name}",
+                description=f"Venta #{sale.id} - {sale.client}",
                 amount=sale.total,
                 date=timezone.now(),
                 reference=f"Auto-Cobro #{sale.id}"
             )
-            messages.success(request, f"¡Venta #{sale.id} creada y cobrada (Banco)!")
+            messages.success(request, f"¡Venta #{sale.id} creada y cobrada en Banco!")
         else:
-            messages.warning(request, "Venta creada, pero no se cobró (Falta Cuenta Bancaria).")
+            messages.warning(request, "Venta creada, pero no se cobró (Falta Cuenta Bancaria en esta Empresa).")
     else:
         messages.info(request, f"Venta #{sale.id} registrada al CRÉDITO.")
 
-    # 5. Cerrar Cotización
+    # 5. CERRAR COTIZACIÓN
     quotation.status = 'BILLED'
     quotation.save()
 
-    return redirect('quotation_list')
+    return redirect('sale_detail', pk=sale.pk) # O redirect('quotation_list')
 
 @login_required
 def admin_control_panel(request):
