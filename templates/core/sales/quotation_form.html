@@ -91,12 +91,14 @@
                 <div class="row justify-content-end mt-4">
                     <div class="col-md-4">
     <div class="card bg-primary text-white">
-        <div class="card-body d-flex justify-content-between align-items-center">
-            <span class="h5 mb-0">TOTAL Q.</span>
-                    <input type="text" name="total" id="totalGeneral" class="form-control-plaintext text-white text-end h4 mb-0 fw-bold" value="0.00" readonly>        </div>
+    <div class="card-body d-flex justify-content-between align-items-center">
+        <span class="h5 mb-0">TOTAL Q.</span>
+        
+        <input type="hidden" name="total" id="totalHidden" value="0.00">
+
+        <input type="text" id="totalVisual" class="form-control-plaintext text-white text-end h4 mb-0 fw-bold" value="0.00" readonly>
     </div>
 </div>
-                </div>
 
                 <div class="d-grid gap-2 mt-5 d-md-flex justify-content-md-end">
                     <a href="{% url 'quotation_list' %}" class="btn btn-light border px-4">Cancelar</a>
@@ -192,8 +194,11 @@
             total += limpiarNumero(input.value);
         });
         
-        // Ponemos el total final con comas
-        document.getElementById('totalGeneral').value = formatoGT.format(total);
+        // 1. Llenamos el VISIBLE con formato bonito (Q 1,250.00)
+        document.getElementById('totalVisual').value = formatoGT.format(total);
+        
+        // 2. Llenamos el OCULTO con formato crudo (1250.00) para que Django no falle
+        document.getElementById('totalHidden').value = total.toFixed(2);
     }
 
     function addRow() {
