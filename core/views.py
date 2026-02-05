@@ -1737,7 +1737,8 @@ def convert_quote_to_sale(request, quote_id):
     quotation.status = 'BILLED'
     quotation.save()
 
-    return redirect('sale_detail', pk=sale.pk) # O redirect('quotation_list')
+    messages.success(request, f"¡Venta #{sale.id} realizada con éxito!")
+    return redirect('quotation_list')
 
 @login_required
 def admin_control_panel(request):
