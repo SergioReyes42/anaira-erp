@@ -9,5 +9,13 @@ class CoreConfig(AppConfig):
 
     def ready(self):
         import core.signals  # Esto activa las señales
+
+class CoreConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'core'
+
+    def ready(self):
+        # Esta línea importa las señales y activa la automatización
+        import core.signals
         
 # FIN core/apps.py

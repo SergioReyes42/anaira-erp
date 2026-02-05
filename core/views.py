@@ -1665,9 +1665,9 @@ def inventory_kardex(request):
 @login_required
 @transaction.atomic
 def convert_quote_to_sale(request, quote_id):
-    quote = get_object_or_404(Quotation, id=quote_id)
+    quotation = get_object_or_404(Quotation, pk=quote_id)
     
-    if quote.status == 'BILLED':
+    if quotation.status == 'BILLED':
         messages.warning(request, "Esta cotización ya fue facturada.")
         return redirect('quotation_list')
 
@@ -1678,15 +1678,14 @@ def convert_quote_to_sale(request, quote_id):
 
     # 2. Crear la Venta (CORREGIDO: payment_method aparece SOLO UNA VEZ)
     sale = Sale.objects.create(
-        company=empresa,
-        client=quote.client,
-        quotation_origin=quote,
-        total=quote.total,
-        payment_method=quote.payment_method  # <--- Usamos el que viene de la cotización
+        client=quotation.client,
+        total=quotation.total,
+        payment_method='Efectivo', # O el que corresponda
+        user=request.user  # <--- ¡ESTA ES LA LÍNEA MÁGICA!
     )
 
     # 3. Procesar Stock
-    for item in quote.details.all():
+    for item in quotation.details.all():
         product = item.product
         product.stock -= item.quantity
         product.stock_reserved -= item.quantity
@@ -1726,8 +1725,8 @@ def convert_quote_to_sale(request, quote_id):
         messages.info(request, f"Venta #{sale.id} registrada al CRÉDITO.")
 
     # 5. Cerrar Cotización
-    quote.status = 'BILLED'
-    quote.save()
+    quotation.status = 'BILLED'
+    quotation.save()
 
     return redirect('quotation_list')
 

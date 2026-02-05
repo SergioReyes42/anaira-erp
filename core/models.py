@@ -497,6 +497,7 @@ class Sale(models.Model):
         ('CHEQUE', 'Cheque'),
         ('CREDITO', 'Crédito / Por Cobrar'),
     ], default='EFECTIVO', verbose_name="Método de Pago")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Vendedor")
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     invoice_number = models.CharField(max_length=50, blank=True, verbose_name="No. Factura/Recibo")
 
