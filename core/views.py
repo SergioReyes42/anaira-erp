@@ -1724,15 +1724,16 @@ def convert_quote_to_sale(request, quote_id):
             cuenta_destino.save()
             BankMovement.objects.create(
                 account=cuenta_destino,
-                movement_type='IN',
+                type='IN',
                 category='Venta',
-                amount=sale.total,
+
+                reference=f"Venta #{sale.id} - {sale.client}", 
+            
+                user=request.user,
                 date=timezone.now()
+
+
             
-            reference=f"Venta #{sale.id} - {sale.client}", 
-            
-            user=request.user,
-            date=timezone.now()
             )
             messages.success(request, f"¡Venta #{sale.id} procesada! Stock descontado y Dinero ingresado.")
         else:
