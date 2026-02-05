@@ -28,6 +28,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    # --- HERRAMIENTAS EXTRAS ---
+    'django.contrib.humanize',  # <--- AGREGUE ESTA LÍNEA
+    'widget_tweaks',            # (Si ya lo tenía)
     
     # Sus apps
     "core",
@@ -73,7 +77,15 @@ AUTH_USER_MODEL = "accounts.User"
 LANGUAGE_CODE = 'es'
 TIME_ZONE = 'America/Guatemala'
 USE_I18N = True
-USE_TZ = True
+USE_L10N = True
+
+USE_THOUSAND_SEPARATOR = True
+THOUSAND_SEPARATOR = ','
+DECIMAL_SEPARATOR = '.'
+NUMBER_GROUPING = 3  # Agrupa de 3 en 3 (ej: 1,000,000)
+
+DECIMAL_SEPARATOR_INPUT = ['.']
+THOUSAND_SEPARATOR_INPUT = [',']
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
