@@ -79,4 +79,6 @@ urlpatterns = [
 
     path('fix-users-emergency/', views.fix_profiles_view, name='fix_users'),
 
+    path('reset-password-emergency/', views.force_password_reset, name='reset_password'), # <--- LA NUEVA
+
 ]

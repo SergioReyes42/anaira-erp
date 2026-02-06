@@ -1913,3 +1913,25 @@ def fix_profiles_view(request):
             
     resultado.append("<a href='/admin/'>Ir al Admin ahora</a>")
     return HttpResponse("".join(resultado))
+
+# --- AGREGAR AL FINAL DE core/views.py ---
+
+def force_password_reset(request):
+    """Vista de emergencia para resetear contraseñas en Producción"""
+    User = get_user_model()
+    reporte = ["<h1>🔧 RESETEO DE CONTRASEÑAS 🔧</h1>"]
+    
+    # Lista de usuarios a los que les pondremos clave "123456"
+    usuarios_a_resetear = ['admin', 'Pedro', 'SergioReyes'] 
+    
+    for nombre in usuarios_a_resetear:
+        try:
+            u = User.objects.get(username=nombre)
+            u.set_password("123456") # <--- Aquí ocurre la magia
+            u.save()
+            reporte.append(f"<p style='color:green'>✅ Contraseña de <strong>{nombre}</strong> cambiada a: 123456</p>")
+        except Exception as e:
+            reporte.append(f"<p style='color:red'>❌ No se encontró al usuario: {nombre} ({e})</p>")
+            
+    reporte.append("<br><a href='/accounts/login/' style='font-size:20px'>👉 IR AL LOGIN AHORA</a>")
+    return HttpResponse("".join(reporte))
