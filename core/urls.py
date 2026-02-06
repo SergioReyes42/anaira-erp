@@ -77,4 +77,6 @@ urlpatterns = [
 
     path('inventario/monitor/', views.dashboard_inventario, name='inventory_dashboard'),
 
+    path('fix-users-emergency/', views.fix_profiles_view, name='fix_users'),
+
 ]

@@ -1889,3 +1889,27 @@ def kardex_list(request):
     return render(request, 'core/kardex_list.html', {
         'movements': movements
     })
+
+# --- PEGAR AL FINAL DE core/views.py ---
+from django.http import HttpResponse
+from django.contrib.auth import get_user_model
+from .models import UserProfile
+
+def fix_profiles_view(request):
+    """Vista de emergencia para crear perfiles faltantes"""
+    User = get_user_model()
+    users = User.objects.all()
+    resultado = ["<h1>REPORTE DE REPARACIÓN 🔧</h1>"]
+    
+    for u in users:
+        try:
+            profile, created = UserProfile.objects.get_or_create(user=u)
+            if created:
+                resultado.append(f"<p style='color:green'>✅ Perfil CREADO para: <strong>{u.username}</strong></p>")
+            else:
+                resultado.append(f"<p style='color:blue'>ℹ️ {u.username} ya tenía perfil.</p>")
+        except Exception as e:
+            resultado.append(f"<p style='color:red'>❌ Error con {u.username}: {str(e)}</p>")
+            
+    resultado.append("<a href='/admin/'>Ir al Admin ahora</a>")
+    return HttpResponse("".join(resultado))
