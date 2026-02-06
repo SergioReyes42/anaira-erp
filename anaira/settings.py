@@ -171,3 +171,5 @@ CSRF_TRUSTED_ORIGINS = [
 # Configuración de Inteligencia Artificial (Google Gemini)
 # Pegue aquí la llave que copió en el Paso 1
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+
+# Forzando reinicio del servidor - Intento 1
