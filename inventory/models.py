@@ -6,8 +6,8 @@ from core.models import Company, Warehouse # Importamos del Core para no duplica
 # 1. CLASIFICACIÓN Y MARCAS
 # ==========================================
 class Category(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100, verbose_name="Nombre de Categoría")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE) 
+    name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True, verbose_name="Descripción")
     is_active = models.BooleanField(default=True)
 
@@ -18,14 +18,16 @@ class Category(models.Model):
     def __str__(self): return self.name
 
 class Brand(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100, verbose_name="Marca")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='products')    
+    name = models.CharField(max_length=200, verbose_name="Nombre del Producto")
+    code = models.CharField(max_length=50, verbose_name="Código Interno")
     
     class Meta:
         verbose_name = "Marca"
         verbose_name_plural = "Marcas"
         
-    def __str__(self): return self.name
+    def __str__(self):
+        return f"{self.code} - {self.name}"
 
 # ==========================================
 # 2. MAESTRO DE PRODUCTOS
