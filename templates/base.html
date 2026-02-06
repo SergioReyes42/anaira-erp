@@ -148,7 +148,30 @@
                             <i class="bi bi-speedometer2"></i> Monitor de Existencias
                         </a>
                     </li>
+                <div class="col-md-4 mb-4">
+    <div class="card h-100 shadow-sm border-0">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="bi bi-box-seam"></i> Logística de Bodegas</h5>
+        </div>
+        <div class="card-body">
+            <div class="d-grid gap-2">
+                <a href="{% url 'create_transfer' %}" class="btn btn-warning fw-bold text-dark">
+                    <i class="bi bi-arrow-left-right"></i> Nuevo Traslado
+                </a>
+
+                <a href="{% url 'kardex_list' %}" class="btn btn-outline-dark">
+                    <i class="bi bi-journal-text"></i> Ver Kardex (Historial)
+                </a>
                 
+                <hr>
+
+                <a href="/admin/core/warehouse/" target="_blank" class="btn btn-light text-muted border">
+                    <i class="bi bi-building-gear"></i> Administrar Bodegas (Admin)
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
                 
                 <a href="{% url 'product_create' %}" class="list-group-item list-group-item-action">
                     <i class="bi bi-plus-square me-1"></i> Crear Producto
