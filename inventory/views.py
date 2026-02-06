@@ -14,6 +14,10 @@ from core.models import Company, Warehouse
 # ==========================================
 @login_required
 def product_list(request):
+    # --- LÍNEA DE PRUEBA (BORRAR DESPUÉS) ---
+    raise Exception("¡HOLA! SI LEES ESTO, EL ARCHIVO NUEVO SÍ CARGÓ")
+    # ----------------------------------------
+    
     company_id = request.session.get('company_id')
     if not company_id: return redirect('select_company')
     
