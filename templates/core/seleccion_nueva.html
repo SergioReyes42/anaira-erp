@@ -1,39 +1,35 @@
-{% extends 'base.html' %}
+{% extends 'base_login.html' %} {% block content %}
+<div class="container d-flex justify-content-center align-items-center vh-100">
+    <div class="card shadow-lg border-0" style="width: 400px;">
+        <div class="card-header bg-dark text-white text-center py-3">
+            <h5 class="mb-0">🏢 Seleccionar Empresa</h5>
+        </div>
+        <div class="card-body p-4">
+            <p class="text-center text-muted mb-4">
+                Hola <strong>{{ request.user.username }}</strong>,<br>
+                ¿En dónde trabajarás hoy?
+            </p>
 
-{% block content %}
-<div class="container mt-5">
-    <h2 class="text-center mb-4"><i class="bi bi-building"></i> Seleccione su Empresa</h2>
-    
-    <div class="row justify-content-center">
-        {% for company in companies %}
-        <div class="col-md-4 mb-3">
-            <form method="POST" class="h-100">
+            <form method="post">
                 {% csrf_token %}
-                <input type="hidden" name="company_id" value="{{ company.id }}">
-                
-                <button type="submit" class="card h-100 w-100 shadow-sm btn btn-light text-start p-0 border-0">
-                    <div class="card-body text-center">
-                        {% if company.logo %}
-                            <img src="{{ company.logo.url }}" style="max-height: 80px; max-width: 100%;" class="mb-3">
-                        {% else %}
-                            <i class="bi bi-briefcase fs-1 text-secondary d-block mb-3"></i>
-                        {% endif %}
-                        <h5 class="card-title fw-bold text-primary">{{ company.name }}</h5>
-                        <p class="card-text text-muted small">NIT: {{ company.nit }}</p>
-                    </div>
-                    <div class="card-footer bg-primary text-white text-center w-100">
-                        Ingresar <i class="bi bi-arrow-right"></i>
-                    </div>
-                </button>
+                <div class="d-grid gap-3">
+                    {% for comp in companies %}
+                    <button type="submit" name="company_id" value="{{ comp.id }}" 
+                            class="btn btn-outline-primary btn-lg text-start d-flex align-items-center justify-content-between">
+                        <span>
+                            <i class="bi bi-building me-2"></i> {{ comp.name }}
+                        </span>
+                        <i class="bi bi-arrow-right"></i>
+                    </button>
+                    {% endfor %}
+                </div>
             </form>
         </div>
-        {% empty %}
-        <div class="col-12 text-center">
-            <div class="alert alert-warning">
-                No tiene empresas asignadas. Contacte al administrador.
-            </div>
+        <div class="card-footer text-center bg-white border-0 py-3">
+            <a href="{% url 'logout' %}" class="text-decoration-none text-danger small">
+                <i class="bi bi-box-arrow-left"></i> Cerrar Sesión
+            </a>
         </div>
-        {% endfor %}
     </div>
 </div>
 {% endblock %}

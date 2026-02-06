@@ -98,35 +98,56 @@ def logout_view(request):
     return redirect('login')
 
 @login_required
+@login_required
 def select_company(request):
-    # 1. Filtramos empresas (GET)
-    if request.user.is_superuser:
-        companies = CompanyProfile.objects.all()
-    else:
-        companies = CompanyProfile.objects.filter(allowed_users=request.user)
+    """Vista para elegir en qué empresa trabajar"""
+    
+    # 1. Verificar si el usuario tiene perfil y empresas
+    if not hasattr(request.user, 'profile'):
+        # Si no tiene perfil, lo mandamos al inicio o mostramos error
+        return render(request, 'core/error_no_companies.html', {})
+        
+    companies = request.user.profile.allowed_companies.filter(active=True)
 
-    # 2. Procesamos selección (POST)
+    # 2. Si no tiene ninguna empresa asignada, avisar
+    if not companies.exists():
+        return render(request, 'core/error_no_companies.html', {})
+
+    # 3. Lógica POST (Cuando el usuario presiona el botón "Entrar")
     if request.method == 'POST':
         company_id = request.POST.get('company_id')
         if company_id:
-            company = get_object_or_404(CompanyProfile, id=company_id)
-            
-            # Seguridad
-            if not request.user.is_superuser and request.user not in company.allowed_users.all():
-                messages.error(request, "Acceso Denegado.")
-                return redirect('select_company')
+            try:
+                selected = companies.get(id=company_id)
+                
+                # Guardamos la elección en la SESIÓN (Memoria temporal)
+                request.session['company_id'] = selected.id
+                request.session['company_name'] = selected.name
+                request.session['company_logo'] = selected.logo.url if selected.logo else ''
+                
+                # Guardamos en la BD para recordar la última
+                request.user.profile.active_company = selected
+                request.user.profile.save()
+                
+                # REDIRECCIÓN FINAL AL DASHBOARD
+                return redirect('home') 
+            except Exception as e:
+                # Si algo falla (ej: hackearon el ID), recargamos
+                print(f"Error seleccionando empresa: {e}")
 
-            # Guardar en sesión
-            request.session['company_id'] = company.id
-            request.session['company_name'] = company.name
-            if company.logo:
-                request.session['company_logo'] = company.logo.url
-            
-            messages.success(request, f"Bienvenido a {company.name}")
-            return redirect('home')
+    # 4. Lógica GET (Mostrar la pantalla)
+    
+    # TRUCO PRO: Si el usuario solo tiene 1 empresa, lo metemos directo sin preguntar
+    if companies.count() == 1:
+        unique_company = companies.first()
+        request.session['company_id'] = unique_company.id
+        request.session['company_name'] = unique_company.name
+        return redirect('home')
 
-# 👇👇👇 ESTA LÍNEA ES LA CLAVE - TIENE QUE ESTAR PEGADA A LA IZQUIERDA 👇👇👇
-        return render(request, 'core/seleccion_nueva.html', {'companies': companies})
+    # AQUÍ ESTABA EL ERROR: Faltaba retornar el HTML al final
+    return render(request, 'core/select_company.html', {
+        'companies': companies
+    })
 
 @login_required
 def home(request):
