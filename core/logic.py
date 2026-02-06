@@ -1,5 +1,6 @@
 # core/logic.py
 from gettext import translation
+from django.db import transaction  # <--- ESTE ES EL QUE LE FALTA
 from django.db.models import F
 from .models import Inventory, Warehouse, StockMovement
 
@@ -69,7 +70,7 @@ def gestionar_salida_stock(user, product, quantity, reference="Venta"):
 
     return True, f"Despachado de {bodega_seleccionada.name}"
 
-@translation.atomic
+@transaction.atomic
 def realizar_traslado_entre_bodegas(user, product, bodega_origen, bodega_destino, cantidad, comentario=""):
     """
     Mueve mercadería de una bodega a otra.
