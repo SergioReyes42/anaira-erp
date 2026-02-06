@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load widget_tweaks %}
 
 {% block content %}
 <div class="container mt-4">
@@ -22,7 +23,7 @@
                     </div>
                 </div>
 
-                <div class="row mb-4 p-3 bg-light rounded align-items-center">
+                <div class="row mb-4 p-4 bg-light rounded align-items-center border">
                     <div class="col-md-5 text-center">
                         <label class="form-label text-danger fw-bold">DESDE (Origen)</label>
                         <select name="warehouse_from" class="form-select border-danger" required>
@@ -31,10 +32,11 @@
                             <option value="{{ w.id }}">{{ w.branch.code }} - {{ w.name }}</option>
                             {% endfor %}
                         </select>
+                        <small class="text-muted">La mercadería saldrá de aquí</small>
                     </div>
 
                     <div class="col-md-2 text-center">
-                        <i class="bi bi-arrow-right-circle-fill display-5 text-muted"></i>
+                        <i class="bi bi-arrow-right-circle-fill display-4 text-warning"></i>
                     </div>
 
                     <div class="col-md-5 text-center">
@@ -45,13 +47,14 @@
                             <option value="{{ w.id }}">{{ w.branch.code }} - {{ w.name }}</option>
                             {% endfor %}
                         </select>
+                        <small class="text-muted">La mercadería entrará aquí</small>
                     </div>
                 </div>
 
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <label class="form-label fw-bold">Cantidad a Mover</label>
-                        <input type="number" name="quantity" class="form-control form-control-lg" min="1" required>
+                        <input type="number" name="quantity" class="form-control form-control-lg text-center fw-bold" min="1" required placeholder="0">
                     </div>
                     <div class="col-md-8">
                         <label class="form-label">Comentarios / Razón</label>
@@ -59,15 +62,20 @@
                     </div>
                 </div>
 
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-warning btn-lg fw-bold">
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-warning btn-lg fw-bold shadow-sm">
                         <i class="bi bi-check-circle-fill"></i> CONFIRMAR TRASLADO
                     </button>
-                    <a href="{% url 'inventory_list' %}" class="btn btn-light">Cancelar</a>
+                    <a href="{% url 'inventory_list' %}" class="btn btn-outline-secondary">Cancelar</a>
                 </div>
 
             </form>
         </div>
     </div>
 </div>
+
+<style>
+    .border-danger { border: 2px solid #dc3545 !important; }
+    .border-success { border: 2px solid #198754 !important; }
+</style>
 {% endblock %}
