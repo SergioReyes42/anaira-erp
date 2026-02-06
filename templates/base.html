@@ -132,62 +132,56 @@
                 </a>
             </div>
 
-            <a href="#menuLogistica" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
-                <i class="bi bi-box-seam-fill me-2 text-white"></i> Logística
-            </a>
-            <div class="collapse submenu" id="menuLogistica">
-                <a href="{% url 'product_list' %}" class="list-group-item list-group-item-action fw-bold text-white">
-                    <i class="bi bi-tags-fill me-1"></i> Catálogo de Productos
-                </a>
-                
-                <a href="{% url 'inventory_kardex' %}" class="list-group-item list-group-item-action">
-                    <i class="bi bi-arrow-left-right me-1"></i> Kardex de Inventario
-                </a>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'inventory_dashboard' %}">
-                            <i class="bi bi-speedometer2"></i> Monitor de Existencias
-                        </a>
-                    </li>
-                    <li class="nav-item mt-3">
-    <span class="text-uppercase text-muted fw-bold small ps-3">
-        Logística & Bodegas
-    </span>
-</li>
-
-<li class="nav-item">
-    <a class="nav-link text-white" href="{% url 'create_transfer' %}">
-        <i class="bi bi-arrow-left-right text-warning me-2"></i>
-        Nuevo Traslado
+            <li class="nav-item">
+    <a class="nav-link text-white" data-bs-toggle="collapse" href="#menuLogistica" aria-expanded="true" aria-controls="menuLogistica">
+        <i class="bi bi-box-seam-fill me-2 text-warning"></i>
+        <span class="fw-bold">LOGÍSTICA</span>
+        <i class="bi bi-chevron-down ms-auto small"></i>
     </a>
-</li>
 
-<li class="nav-item">
-    <a class="nav-link text-white" href="{% url 'kardex_list' %}">
-        <i class="bi bi-journal-text text-info me-2"></i>
-        Ver Kardex
-    </a>
-</li>
+    <div class="collapse show" id="menuLogistica">
+        <ul class="nav flex-column ms-3 border-start border-secondary ps-2">
+            
+            <li class="nav-item">
+                <a class="nav-link text-white" href="{% url 'inventory_list' %}"> <i class="bi bi-speedometer2 me-2"></i> Monitor de Existencias
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-info" href="{% url 'kardex_list' %}">
+                    <i class="bi bi-journal-text me-2"></i> Ver Kardex (Historial)
+                </a>
+            </li>
 
-<li class="nav-item">
-    <a class="nav-link text-white-50 small" href="/admin/core/warehouse/" target="_blank">
-        <i class="bi bi-gear me-2"></i>
-        Gestión Bodegas
-    </a>
+            <hr class="sidebar-divider my-1 border-light opacity-25">
+
+            <li class="nav-item">
+                <a class="nav-link text-warning fw-bold" href="{% url 'create_transfer' %}">
+                    <i class="bi bi-arrow-left-right me-2"></i> Nuevo Traslado
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link text-white-50" href="#"> 
+                    <i class="bi bi-truck me-2"></i> Despachos
+                </a>
+            </li>
+
+            <hr class="sidebar-divider my-1 border-light opacity-25">
+
+            <li class="nav-item">
+                <a class="nav-link text-white-50" href="#"> <i class="bi bi-plus-circle me-2"></i> Crear Producto
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link text-white-50" href="/admin/core/warehouse/" target="_blank">
+                    <i class="bi bi-building-gear me-2"></i> Gestión de Bodegas
+                </a>
+            </li>
+            
+        </ul>
+    </div>
 </li>
-                
-                <a href="{% url 'product_create' %}" class="list-group-item list-group-item-action">
-                    <i class="bi bi-plus-square me-1"></i> Crear Producto
-                </a>
-                <a href="#" class="list-group-item list-group-item-action">
-                    <i class="bi bi-building-lock me-1"></i> Gestión de Bodegas
-                </a>
-                <a href="#" class="list-group-item list-group-item-action">
-                    <i class="bi bi-gear-wide-connected me-1"></i> Producción / Fórmulas
-                </a>
-                <a href="#" class="list-group-item list-group-item-action">
-                    <i class="bi bi-truck-front me-1"></i> Despachos
-                </a>
-            </div>
 
             <a href="#menuFinanzas" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
                 <i class="bi bi-cash-coin me-2 text-warning"></i> Tesorería
