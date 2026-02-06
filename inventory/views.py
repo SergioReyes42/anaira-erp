@@ -160,3 +160,7 @@ def create_movement(request):
         'products': products,
         'warehouses': warehouses
     })
+
+# ---------------------------------------------------------
+# FORZANDO ACTUALIZACIÓN DE RAILWAY - V2
+# ---------------------------------------------------------
