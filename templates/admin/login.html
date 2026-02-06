@@ -34,7 +34,16 @@
             </div>
             <button type="submit">Ingresar</button>
         </form>
+        <form method="post">
+    {% csrf_token %}
 
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <strong>Error:</strong> Usuario o contraseña incorrectos.
+            <br>
+            <small>Verifique mayúsculas y minúsculas.</small>
+        </div>
+    {% endif %}
         <div class="footer-text">
             © Anaira Systems. Seguridad y Control Empresarial.
         </div>
