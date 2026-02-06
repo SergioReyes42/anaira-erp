@@ -145,9 +145,8 @@ def select_company(request):
         return redirect('home')
 
     # AQUÍ ESTABA EL ERROR: Faltaba retornar el HTML al final
-    return render(request, 'core/seleccion_nueva.html', {
-        'companies': companies
-    })
+    return render(request, 'core/seleccion_nueva.html', {'companies': companies}
+                  )
 
 @login_required
 def home(request):
@@ -1956,3 +1955,5 @@ def force_password_reset(request):
             
     reporte.append("<br><a href='/accounts/login/' style='font-size:20px'>👉 IR AL LOGIN AHORA</a>")
     return HttpResponse("".join(reporte))
+
+# Actualización forzosa del servidor
