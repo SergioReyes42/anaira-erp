@@ -1,5 +1,5 @@
 {% load static %}
-{% load auth_extras %}  ```
+{% load auth_extras %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -132,6 +132,7 @@
                     <i class="bi bi-globe-americas me-1"></i> Importaciones / Aduana
                 </a>
             </div>
+
             {% if request.user.is_superuser or request.user|has_group:"Bodega" %}
             <a href="#menuLogistica" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
                 <i class="bi bi-box-seam-fill me-2 text-warning"></i>Logistica
@@ -146,6 +147,7 @@
                 </a>
                 <a href="{% url 'inventory_dashboard' %}" class="list-group-item list-group-item-action">
                     <i class="bi bi-speedometer2"></i> Monitor de Existencias
+                </a>
                 
                  <a href="{% url 'create_transfer' %}" class="list-group-item list-group-item-action">
                     <i class="bi bi-arrow-left-right me-1"></i> Traslados a Bodegas
@@ -164,8 +166,7 @@
                     <i class="bi bi-truck-front me-1"></i> Despachos
                 </a>
             </div>
-
-            <a href="#menuFinanzas" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
+            {% endif %} <a href="#menuFinanzas" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
                 <i class="bi bi-cash-coin me-2 text-warning"></i> Tesorería
             </a>
             <div class="collapse submenu" id="menuFinanzas">
@@ -201,7 +202,8 @@
                     <i class="bi bi-calendar-event me-1"></i> Programación de Pagos
                 </a>
             </div>
-{% if request.user.is_superuser or request.user|has_group:"Contadores" %}
+
+            {% if request.user.is_superuser or request.user|has_group:"Contadores" %}
             <a href="#menuConta" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
                 <i class="bi bi-journal-text me-2 text-primary"></i> Contabilidad
             </a>
@@ -226,8 +228,7 @@
                     <i class="bi bi-percent me-1"></i> Impuestos (IVA/ISR)
                 </a>
             </div>
-{% endif %}
-            <a href="#menuRRHH" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
+            {% endif %} <a href="#menuRRHH" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
                 <i class="bi bi-people-fill me-2 text-danger"></i> RRHH
             </a>
             <div class="collapse submenu" id="menuRRHH">
@@ -256,7 +257,6 @@
 
         </div>
     </div>
-    
     <div id="page-content-wrapper">
         <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
             <div class="container-fluid">
@@ -309,7 +309,7 @@
 
         <footer class="bg-light text-center text-muted py-3 border-top mt-auto" style="font-size: 0.8rem;">
             &copy; {% now "Y" %} ©Copyrigh Corporación Sermaworld | Todos Los Derechos Reservados | Desarrollado por Ing Sergio Marroquin 
-                                                            |  Anaira ERP v2.0 |
+                                                                    |  Anaira ERP v2.0 |
         </footer>
     </div>
 </div>
