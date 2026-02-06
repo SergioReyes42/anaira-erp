@@ -21,7 +21,7 @@ class Company(models.Model):
     address = models.TextField(verbose_name="Dirección Legal", blank=True, null=True)
     phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True, null=True)
     email = models.EmailField(verbose_name="Correo Electrónico", blank=True, null=True)
-    logo = models.ImageField(upload_to='company_logos/', blank=True, null=True)
+    logo = models.ImageField(upload_to='logos/', blank=True, null=True)    
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -30,7 +30,9 @@ class Company(models.Model):
         settings.AUTH_USER_MODEL, 
         through='UserRoleCompany', 
         related_name='companies_assigned'
+    
     )
+    active = models.BooleanField(default=True, verbose_name="Activa")
 
     class Meta:
         verbose_name = "Empresa"
@@ -38,6 +40,30 @@ class Company(models.Model):
 
     def __str__(self): 
         return self.name
+
+class UserProfile(models.Model):
+    """Extensión del usuario para manejar Multi-Empresa"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    
+    # Aquí definimos a qué empresas tiene permiso de entrar
+    allowed_companies = models.ManyToManyField(Company, verbose_name="Empresas Permitidas")
+    
+    # Aquí guardamos en cuál está trabajando actualmente
+    active_company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True, related_name='active_users')
+
+    def __str__(self):
+        return f"Perfil de {self.user.username}"
+
+# --- SEÑALES MAGICAS ---
+# Esto crea el perfil automáticamente cuando usted crea un usuario en el Admin
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    instance.profile.save()
 
 class CompanyProfile(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nombre de la Empresa")
@@ -661,5 +687,6 @@ class StockMovement(models.Model):
         verbose_name = "Movimiento de Kardex"
         verbose_name_plural = "Kardex (Historial)"
         ordering = ['-date']
-    
+
+
     

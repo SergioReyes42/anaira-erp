@@ -1,5 +1,8 @@
 from django.contrib import admin
 from django.contrib.admin.sites import AlreadyRegistered
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import User
+from .models import UserProfile, Company
 
 # --- IMPORTACIÓN DE MODELOS ---
 from .models import (
@@ -62,6 +65,39 @@ try:
 except AlreadyRegistered:
     pass
 
+# Registrar Company si no estaba
+@admin.register(Company)
+class CompanyAdmin(admin.ModelAdmin):
+    list_display = ('name', 'tax_id', 'active')
+
+# 1. Definimos el Inline (el perfil dentro del usuario)
+class UserProfileInline(admin.StackedInline):
+    model = UserProfile
+    can_delete = False
+    verbose_name_plural = 'Perfil Multi-Empresa'
+    filter_horizontal = ('allowed_companies',)
+
+# 2. Definimos el nuevo Administrador de Usuarios
+class UserAdmin(BaseUserAdmin):
+    inlines = (UserProfileInline,)
+    # Agregamos las columnas extra para ver info rápido en la lista
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'get_companies')
+    
+    def get_companies(self, obj):
+        # Esto es solo visual para ver las empresas en la lista
+        if hasattr(obj, 'profile'):
+            return ", ".join([c.name for c in obj.profile.allowed_companies.all()])
+        return "-"
+    get_companies.short_description = 'Empresas Asignadas'
+
+# 3. EL BLOQUE BLINDADO (Aquí estaba el error)
+try:
+    admin.site.unregister(User)
+except admin.sites.NotRegistered:
+    pass  # Si ya estaba des-registrado, ignoramos el error
+
+# Re-registrar User
+admin.site.register(User, UserAdmin)
 
 # ========================================================
 # 3. MODELOS AVANZADOS (Con Filtros y Buscadores)
