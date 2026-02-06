@@ -1871,7 +1871,7 @@ def create_transfer(request):
 
         if exito:
             messages.success(request, mensaje)
-            return redirect('inventory_list') # O a donde quiera volver
+            return redirect('product_list') # O a donde quiera volver
         else:
             messages.error(request, f"Error: {mensaje}")
 
