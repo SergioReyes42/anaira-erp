@@ -38,6 +38,17 @@
                                 <input type="password" name="password" class="form-control" required>
                             </div>
                             <button type="submit" class="btn btn-primary w-100 fw-bold">ENTRAR AL SISTEMA</button>
+<form method="post">
+    {% csrf_token %}
+
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <strong>Error:</strong> Usuario o contraseña incorrectos.
+            <br>
+            <small>Verifique mayúsculas y minúsculas.</small>
+        </div>
+    {% endif %}
+                            
                         </form>
                     </div>
                 </div>
