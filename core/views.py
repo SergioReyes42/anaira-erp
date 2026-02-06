@@ -97,7 +97,7 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
-@login_required
+
 @login_required
 def select_company(request):
     """Vista para elegir en qué empresa trabajar"""
@@ -145,7 +145,7 @@ def select_company(request):
         return redirect('home')
 
     # AQUÍ ESTABA EL ERROR: Faltaba retornar el HTML al final
-    return render(request, 'core/select_company.html', {
+    return render(request, 'core/seleccion_nueva.html', {
         'companies': companies
     })
 
