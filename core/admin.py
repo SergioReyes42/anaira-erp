@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.contrib.admin.sites import AlreadyRegistered
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from .models import UserProfile, Company
+from django.contrib.auth import get_user_model
+from .models import UserProfile, Company, Branch, Warehouse
 
 # --- IMPORTACIÓN DE MODELOS ---
 from .models import (
@@ -24,6 +25,8 @@ from .models import (
     Employee,      
     StockMovement   
 )
+# 1. OBTENER EL USUARIO REAL (Sea quien sea)
+User = get_user_model()
 
 # ========================================================
 # 1. ADMIN DE TENANTS (Multi-Empresa / Multi-Inquilino)
@@ -66,38 +69,39 @@ except AlreadyRegistered:
     pass
 
 # Registrar Company si no estaba
-@admin.register(Company)
-class CompanyAdmin(admin.ModelAdmin):
-    list_display = ('name', 'tax_id', 'active')
-
-# 1. Definimos el Inline (el perfil dentro del usuario)
+# 2. Configurar el Inline (La cajita del perfil)
 class UserProfileInline(admin.StackedInline):
     model = UserProfile
     can_delete = False
     verbose_name_plural = 'Perfil Multi-Empresa'
-    filter_horizontal = ('allowed_companies',)
+    filter_horizontal = ('allowed_companies',) # Esto pone el selector fácil
 
-# 2. Definimos el nuevo Administrador de Usuarios
+# 3. Configurar el Admin del Usuario
 class UserAdmin(BaseUserAdmin):
-    inlines = (UserProfileInline,)
-    # Agregamos las columnas extra para ver info rápido en la lista
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'get_companies')
+    inlines = (UserProfileInline,) # <--- AQUÍ ESTÁ LA CLAVE
     
-    def get_companies(self, obj):
-        # Esto es solo visual para ver las empresas en la lista
-        if hasattr(obj, 'profile'):
-            return ", ".join([c.name for c in obj.profile.allowed_companies.all()])
+    # Agregamos columnas para ver info rápida en la lista
+    list_display = ('username', 'email', 'first_name', 'is_staff', 'get_active_company')
+    
+    def get_active_company(self, obj):
+        # Muestra la empresa activa si tiene perfil
+        if hasattr(obj, 'profile') and obj.profile.active_company:
+            return obj.profile.active_company.name
         return "-"
-    get_companies.short_description = 'Empresas Asignadas'
+    get_active_company.short_description = 'Empresa Actual'
 
-# 3. EL BLOQUE BLINDADO (Aquí estaba el error)
+# 4. RE-REGISTRAR EL USUARIO (Blindado)
 try:
     admin.site.unregister(User)
 except admin.sites.NotRegistered:
-    pass  # Si ya estaba des-registrado, ignoramos el error
+    pass
 
-# Re-registrar User
 admin.site.register(User, UserAdmin)
+
+# Re-registrar
+admin.site.register(Company)
+admin.site.register(Branch)
+admin.site.register(Warehouse)
 
 # ========================================================
 # 3. MODELOS AVANZADOS (Con Filtros y Buscadores)
