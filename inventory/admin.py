@@ -29,3 +29,4 @@ class InventoryMovementAdmin(admin.ModelAdmin):
     list_display = ('date', 'movement_type', 'reference', 'company', 'user')
     list_filter = ('movement_type', 'date')
     inlines = [MovementDetailInline]
+    
