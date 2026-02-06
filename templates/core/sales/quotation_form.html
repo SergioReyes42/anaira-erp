@@ -189,10 +189,14 @@
 
     function calculateTotal() {
         let total = 0;
+        
+        // Sumamos todos los subtotales
         document.querySelectorAll('.subtotal-display').forEach(input => {
-            // Limpiamos las comas antes de sumar
+            // Usamos la función limpiarNumero que creamos antes
             total += limpiarNumero(input.value);
         });
+        
+        // --- AQUÍ ESTÁ EL TRUCO ---
         
         // 1. Llenamos el VISIBLE con formato bonito (Q 1,250.00)
         document.getElementById('totalVisual').value = formatoGT.format(total);

@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-warning text-dark">
+            <h4 class="mb-0"><i class="bi bi-arrow-left-right"></i> Nuevo Traslado de Bodega</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">Producto a Mover</label>
+                        <select name="product" class="form-select select2" required>
+                            <option value="">Seleccione producto...</option>
+                            {% for p in products %}
+                            <option value="{{ p.id }}">{{ p.code }} - {{ p.name }} (Global: {{ p.stock }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-4 p-3 bg-light rounded align-items-center">
+                    <div class="col-md-5 text-center">
+                        <label class="form-label text-danger fw-bold">DESDE (Origen)</label>
+                        <select name="warehouse_from" class="form-select border-danger" required>
+                            <option value="">Seleccione Bodega Salida...</option>
+                            {% for w in warehouses %}
+                            <option value="{{ w.id }}">{{ w.branch.code }} - {{ w.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 text-center">
+                        <i class="bi bi-arrow-right-circle-fill display-5 text-muted"></i>
+                    </div>
+
+                    <div class="col-md-5 text-center">
+                        <label class="form-label text-success fw-bold">HACIA (Destino)</label>
+                        <select name="warehouse_to" class="form-select border-success" required>
+                            <option value="">Seleccione Bodega Entrada...</option>
+                            {% for w in warehouses %}
+                            <option value="{{ w.id }}">{{ w.branch.code }} - {{ w.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Cantidad a Mover</label>
+                        <input type="number" name="quantity" class="form-control form-control-lg" min="1" required>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Comentarios / Razón</label>
+                        <input type="text" name="comments" class="form-control form-control-lg" placeholder="Ej: Reabastecimiento semanal">
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-warning btn-lg fw-bold">
+                        <i class="bi bi-check-circle-fill"></i> CONFIRMAR TRASLADO
+                    </button>
+                    <a href="{% url 'inventory_list' %}" class="btn btn-light">Cancelar</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

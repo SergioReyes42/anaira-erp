@@ -1,11 +1,13 @@
 import csv
 import os
 import json
+from .logic import gestionar_salida_stock  # <--- NUEVO IMPORT
 from datetime import datetime, date, timedelta
 from itertools import chain
 from operator import attrgetter
 from django.db.models import Q
 from .models import Quotation, Sale, SaleDetail, CompanyProfile, BankAccount, BankMovement, Inventory
+from .logic import realizar_traslado_entre_bodegas # <--- IMPORTANTE
 
 # --- IMPORTS DE DJANGO ---
 from django.http import JsonResponse, HttpResponse
@@ -1690,15 +1692,32 @@ def convert_quote_to_sale(request, quote_id):
         company=empresa
     )
 
-    # 4. PROCESAR PRODUCTOS Y DESCONTAR INVENTARIO (MANO DURA) 📉
+    errores_stock = []
+
+    # 4. PROCESAR PRODUCTOS CON INTELIGENCIA DE BODEGAS 🧠
     for item in quotation.details.all():
-        # A) Crear el detalle de venta
+        # Crear detalle de venta visual
         SaleDetail.objects.create(
-            sale=sale, 
-            product=item.product, 
-            quantity=item.quantity, 
-            unit_price=item.unit_price
+            sale=sale, product=item.product, 
+            quantity=item.quantity, unit_price=item.unit_price
         )
+        
+        # --- AQUÍ LLAMAMOS A LA IA DE BODEGAS ---
+        exito, mensaje = gestionar_salida_stock(
+            user=request.user,
+            product=item.product,
+            quantity=item.quantity,
+            reference=f"Venta #{sale.id}"
+        )
+        
+        if not exito:
+            errores_stock.append(mensaje)
+
+    # Si hubo errores de stock, avisamos (aunque la venta ya se creó, queda como pendiente de regularizar)
+    if errores_stock:
+        messages.warning(request, f"Venta creada, pero hubo alertas de stock: {'; '.join(errores_stock)}")
+    else:
+        messages.success(request, f"¡Venta #{sale.id} exitosa! Inventario descontado correctamente.")
         
         # B) DESCUENTO DIRECTO DEL STOCK (Aquí obligamos la resta)
         product = item.product
@@ -1814,4 +1833,49 @@ def dashboard_inventario(request):
         'local_stock': local_inventory,
         'global_stock': global_inventory,
         'search_query': query
+    })
+
+@login_required
+def create_transfer(request):
+    # 1. Cargar datos para los selectores
+    products = Product.objects.all()
+    warehouses = Warehouse.objects.filter(active=True)
+
+    if request.method == 'POST':
+        # 2. Recibir datos del formulario
+        product_id = request.POST.get('product')
+        origen_id = request.POST.get('warehouse_from')
+        destino_id = request.POST.get('warehouse_to')
+        cantidad = int(request.POST.get('quantity'))
+        notas = request.POST.get('comments')
+
+        # Validaciones básicas
+        if origen_id == destino_id:
+            messages.error(request, "La bodega de origen y destino no pueden ser la misma.")
+            return redirect('create_transfer')
+
+        # Obtener objetos reales
+        producto = get_object_or_404(Product, id=product_id)
+        bodega_origen = get_object_or_404(Warehouse, id=origen_id)
+        bodega_destino = get_object_or_404(Warehouse, id=destino_id)
+
+        # 3. LLAMAR A LA LÓGICA (El archivo logic.py que creamos antes)
+        exito, mensaje = realizar_traslado_entre_bodegas(
+            user=request.user,
+            product=producto,
+            bodega_origen=bodega_origen,
+            bodega_destino=bodega_destino,
+            cantidad=cantidad,
+            comentario=notas
+        )
+
+        if exito:
+            messages.success(request, mensaje)
+            return redirect('inventory_list') # O a donde quiera volver
+        else:
+            messages.error(request, f"Error: {mensaje}")
+
+    return render(request, 'core/transfer_form.html', {
+        'products': products,
+        'warehouses': warehouses
     })
