@@ -40,6 +40,7 @@ urlpatterns = [
     path('inventario/kardex/', views.inventory_kardex, name='inventory_kardex'),
     path('inventario/movimiento/', views.create_movement, name='create_movement'),
     path('inventario/traslado/', views.create_transfer, name='create_transfer'),
+    path('inventario/kardex/', views.kardex_list, name='kardex_list'),
 
     # --- VENTAS Y CLIENTES ---
     path('clientes/', views.client_list, name='client_list'),

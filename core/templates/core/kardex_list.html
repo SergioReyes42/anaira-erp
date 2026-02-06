@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0"><i class="bi bi-journal-text"></i> Kardex General (Historial)</h4>
+            <a href="{% url 'workspace' %}" class="btn btn-outline-light btn-sm">Volver</a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Fecha/Hora</th>
+                            <th>Tipo Movimiento</th>
+                            <th>Producto</th>
+                            <th>Bodega</th>
+                            <th class="text-center">Cantidad</th>
+                            <th>Usuario</th>
+                            <th>Comentario / Ref</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in movements %}
+                        <tr>
+                            <td class="small">{{ m.date|date:"d/M/Y H:i" }}</td>
+                            <td>
+                                {% if m.quantity > 0 %}
+                                    <span class="badge bg-success">ENTRADA</span>
+                                {% else %}
+                                    {% if 'TRANSFER' in m.movement_type %}
+                                        <span class="badge bg-warning text-dark">TRASLADO</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">SALIDA</span>
+                                    {% endif %}
+                                {% endif %}
+                                <small class="d-block text-muted">{{ m.get_movement_type_display }}</small>
+                            </td>
+                            <td class="fw-bold text-primary">{{ m.product.name }}</td>
+                            <td>{{ m.warehouse.name }}</td>
+                            <td class="text-center fw-bold {% if m.quantity < 0 %}text-danger{% else %}text-success{% endif %}">
+                                {{ m.quantity }}
+                            </td>
+                            <td><i class="bi bi-person"></i> {{ m.user.username }}</td>
+                            <td class="small text-muted">{{ m.comments|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">No hay movimientos registrados aún.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

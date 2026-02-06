@@ -8,6 +8,7 @@ from operator import attrgetter
 from django.db.models import Q
 from .models import Quotation, Sale, SaleDetail, CompanyProfile, BankAccount, BankMovement, Inventory
 from .logic import realizar_traslado_entre_bodegas # <--- IMPORTANTE
+from .models import StockMovement
 
 # --- IMPORTS DE DJANGO ---
 from django.http import JsonResponse, HttpResponse
@@ -1878,4 +1879,13 @@ def create_transfer(request):
     return render(request, 'core/inventory_transfer.html', {
         'products': products,
         'warehouses': warehouses
+    })
+
+@login_required
+def kardex_list(request):
+    # Traemos los movimientos optimizados (select_related evita consultas lentas)
+    movements = StockMovement.objects.select_related('product', 'warehouse', 'user').order_by('-date')[:100] # Últimos 100 para empezar
+    
+    return render(request, 'core/kardex_list.html', {
+        'movements': movements
     })
