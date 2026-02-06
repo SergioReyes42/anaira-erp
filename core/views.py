@@ -1875,7 +1875,7 @@ def create_transfer(request):
         else:
             messages.error(request, f"Error: {mensaje}")
 
-    return render(request, 'core/transfer_form.html', {
+    return render(request, 'core/inventory_transfer.html', {
         'products': products,
         'warehouses': warehouses
     })
