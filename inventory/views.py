@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from .models import Product, StockMovement  # Importamos los modelos, NO los definimos aquí
 from core.models import Company
 from django.http import HttpResponse
+from .forms import StockMovementForm
 
 # ========================================================
 # 1. VISTA PRINCIPAL (LISTA DE PRODUCTOS)
@@ -64,4 +65,21 @@ def movement_list(request):
 
 @login_required
 def create_movement(request):
-    return HttpResponse("<h3>📝 Registrar Movimiento: En construcción</h3><a href='/inventario/'>Volver</a>")
+    company_id = request.session.get('company_id')
+    if not company_id:
+        return redirect('select_company')
+
+    if request.method == 'POST':
+        # Si enviaron datos, los procesamos
+        form = StockMovementForm(request.POST, company_id=company_id)
+        if form.is_valid():
+            movement = form.save(commit=False)
+            movement.company_id = company_id  # Asignamos la empresa automáticamente
+            movement.user = request.user      # Asignamos el usuario actual
+            movement.save()                   # Al guardar, el modelo actualiza el stock solo
+            return redirect('movement_list')  # Volver a la lista
+    else:
+        # Si apenas entraron, mostramos el formulario vacío
+        form = StockMovementForm(company_id=company_id)
+
+    return render(request, 'inventory/movement_form.html', {'form': form})

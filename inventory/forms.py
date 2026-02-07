@@ -1,19 +1,30 @@
 from django import forms
-from .models import Product
+from .models import StockMovement, Product
 
-class ProductForm(forms.ModelForm):
+class StockMovementForm(forms.ModelForm):
     class Meta:
-        model = Product
-        # Estos son los campos que el usuario va a llenar.
-        # Note que NO incluimos 'company' porque eso se pone automático.
-        fields = ['code', 'name', 'category', 'cost_price', 'selling_price', 'min_stock']
-        
-        # Esto es solo estética para que se vea bien en HTML
+        model = StockMovement
+        fields = ['product', 'movement_type', 'quantity', 'reference', 'description']
         widgets = {
-            'code': forms.TextInput(attrs={'class': 'form-control'}),
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'category': forms.Select(attrs={'class': 'form-select'}),
-            'cost_price': forms.NumberInput(attrs={'class': 'form-control'}),
-            'selling_price': forms.NumberInput(attrs={'class': 'form-control'}),
-            'min_stock': forms.NumberInput(attrs={'class': 'form-control'}),
+            'product': forms.Select(attrs={'class': 'form-select'}),
+            'movement_type': forms.Select(attrs={'class': 'form-select'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej. Factura #123'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Comentarios opcionales...'}),
         }
+        labels = {
+            'product': 'Seleccione Producto',
+            'movement_type': 'Tipo de Movimiento',
+            'quantity': 'Cantidad',
+            'reference': 'Referencia (Opcional)',
+            'description': 'Notas',
+        }
+
+    def __init__(self, *args, **kwargs):
+        # Capturamos el ID de la empresa para filtrar los productos
+        company_id = kwargs.pop('company_id', None)
+        super().__init__(*args, **kwargs)
+        
+        if company_id:
+            # FILTRO DE SEGURIDAD: Solo mostrar productos de esta empresa
+            self.fields['product'].queryset = Product.objects.filter(company_id=company_id)
