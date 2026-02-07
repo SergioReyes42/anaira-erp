@@ -79,7 +79,6 @@ def crear_empresa_force(request):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('core.urls')),
     path('crear-emergencia/', crear_admin_express),
     path('crear-empresa/', crear_empresa_force), 
 
