@@ -8,28 +8,44 @@ from django.utils import timezone
 from .forms import ProductForm 
 from .models import Product, Category, Stock, InventoryMovement, MovementDetail
 from core.models import Company, Warehouse
+from django.http import HttpResponse # <--- IMPORTANTE: AGREGAR ESTO ARRIBA
 
 # ==========================================
 # 1. LISTADO DE PRODUCTOS (Blindado por Empresa)
 # ==========================================
 @login_required
 def product_list(request):
-    company_id = request.session.get('company_id')
-    if not company_id: return redirect('select_company')
-    
-    # DEBUG: Imprimir en los logs de Railway
-    print(f"👀 USUARIO: {request.user.username} | EMPRESA ID: {company_id}")
+    # --- ESCUDO DE DIAGNÓSTICO (ESTO NOS DIRÁ EL ERROR) ---
+    try:
+        company_id = request.session.get('company_id')
+        if not company_id:
+            return redirect('select_company')
 
-    products = Product.objects.filter(company_id=company_id).order_by('name')
-    
-    # También pasamos el nombre de la empresa al HTML para verlo en el título
-    company_name = request.session.get('company_name', 'Sin Empresa')
-    
-    return render(request, 'inventory/product_list.html', {
-        'products': products,
-        'current_company_name': company_name # <--- Nueva variable
-    })
+        # Buscamos la empresa para sacar el nombre
+        current_company = Company.objects.filter(id=company_id).first()
+        current_company_name = current_company.name if current_company else "Sin Nombre"
 
+        # Filtramos los productos
+        products = Product.objects.filter(company_id=company_id)
+
+        context = {
+            'products': products,
+            'current_company_name': current_company_name
+        }
+        return render(request, 'inventory/product_list.html', context)
+
+    except Exception as e:
+        # SI ALGO FALLA, ESTO LE DIRÁ QUÉ FUE EN LUGAR DEL TREN
+        import traceback
+        return HttpResponse(f"""
+            <div style='padding: 20px; font-family: monospace; background: #fff0f0; border: 2px solid red;'>
+                <h1 style='color: red;'>💥 ERROR DETECTADO</h1>
+                <h3 style='color: #333;'>El servidor intentó cargar, pero falló en esto:</h3>
+                <p style='font-size: 18px; font-weight: bold;'>{e}</p>
+                <hr>
+                <pre>{traceback.format_exc()}</pre>
+            </div>
+        """)
 # ==========================================
 # 2. CREACIÓN DE PRODUCTOS (¡Ahora con Forms!)
 # ==========================================
