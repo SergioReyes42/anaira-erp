@@ -1,0 +1,31 @@
+<div class="table-responsive">
+    <table class="table table-sm table-hover mb-0" style="font-size: 0.9rem;">
+        <thead class="table-light">
+            <tr>
+                <th style="width: 50%;">Producto</th>
+                <th>Código</th>
+                <th class="text-end">Existencia</th>
+                <th>Ubicación</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in stocks %}
+            <tr>
+                <td>
+                    {% if item.quantity <= 5 %}
+                        <i class="bi bi-exclamation-circle-fill text-danger me-1" title="Stock Bajo"></i>
+                    {% endif %}
+                    {{ item.product.name }}
+                </td>
+                <td class="text-muted small">{{ item.product.sku }}</td>
+                <td class="text-end fw-bold {% if item.quantity == 0 %}text-danger{% else %}text-success{% endif %}">
+                    {{ item.quantity }}
+                </td>
+                <td class="small text-muted">{{ item.location|default:"--" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted small">Sin existencias</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

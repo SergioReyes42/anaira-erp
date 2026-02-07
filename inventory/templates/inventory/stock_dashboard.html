@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    
+    <div class="d-flex justify-content-between align-items-center my-4">
+        <div>
+            <h2 class="fw-bold text-dark"><i class="bi bi-speedometer2 me-2 text-info"></i>Monitor de Existencias</h2>
+            <p class="text-muted">Vista jerárquica por Sucursales y Bodegas</p>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="bg-white p-2 px-4 rounded shadow-sm border text-center">
+                <small class="text-muted d-block fw-bold">PRODUCTOS</small>
+                <span class="fs-4 text-primary">{{ total_products }}</span>
+            </div>
+            <div class="bg-white p-2 px-4 rounded shadow-sm border text-center">
+                <small class="text-muted d-block fw-bold">TOTAL UNIDADES</small>
+                <span class="fs-4 text-success">{{ total_global_stock }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="accordion shadow-sm" id="accordionBranches">
+        {% for branch in branches %}
+        <div class="accordion-item border-0 mb-3 rounded overflow-hidden">
+            <h2 class="accordion-header" id="heading{{ branch.id }}">
+                <button class="accordion-button {% if not forloop.first %}collapsed{% endif %} fw-bold bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ branch.id }}">
+                    <i class="bi bi-shop me-2 text-primary"></i> {{ branch.name }} 
+                    <span class="badge bg-light text-dark ms-2 border">{{ branch.code }}</span>
+                </button>
+            </h2>
+            <div id="collapse{{ branch.id }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" data-bs-parent="#accordionBranches">
+                <div class="accordion-body bg-light">
+                    
+                    <div class="row">
+                        {% for warehouse in branch.warehouses.all %} <div class="col-md-12 mb-3">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0 fw-bold text-dark">
+                                            <i class="bi bi-box-seam me-2"></i>{{ warehouse.name }}
+                                        </h6>
+                                        <span class="badge bg-secondary">Bodega Principal</span>
+                                    </div>
+                                    
+                                    <div class="card-body p-0">
+                                        {% if warehouse.stocks_v2.all %}
+                                            {% include "inventory/partials/stock_table.html" with stocks=warehouse.stocks_v2.all %}
+                                        {% endif %}
+
+                                        {% for sub1 in warehouse.sub_warehouses.all %}
+                                            <div class="ms-4 mt-3 border-start border-4 border-info ps-3">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <i class="bi bi-arrow-return-right me-2 text-muted"></i>
+                                                    <h6 class="fw-bold text-info mb-0">{{ sub1.name }}</h6>
+                                                </div>
+                                                
+                                                <div class="bg-white rounded p-2 border mb-2">
+                                                    {% if sub1.stocks_v2.all %}
+                                                        {% include "inventory/partials/stock_table.html" with stocks=sub1.stocks_v2.all %}
+                                                    {% else %}
+                                                        <small class="text-muted fst-italic ms-2">Vacío</small>
+                                                    {% endif %}
+                                                </div>
+
+                                                {% for sub2 in sub1.sub_warehouses.all %}
+                                                    <div class="ms-4 mt-2 border-start border-2 border-warning ps-3">
+                                                        <div class="d-flex align-items-center mb-1">
+                                                            <i class="bi bi-arrow-return-right me-2 text-muted"></i>
+                                                            <small class="fw-bold text-warning text-uppercase">{{ sub2.name }}</small>
+                                                        </div>
+                                                        <div class="bg-white rounded p-1 border">
+                                                            {% include "inventory/partials/stock_table.html" with stocks=sub2.stocks_v2.all %}
+                                                        </div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="p-3 text-muted">No hay bodegas configuradas en esta sucursal.</div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
