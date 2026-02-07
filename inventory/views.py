@@ -15,7 +15,7 @@ from core.models import Company, Warehouse
 @login_required
 def product_list(request):
     # --- PRUEBA DE VIDA (ESTO ROMPERÁ LA PÁGINA) ---
-    raise Exception("🛑 ¡SERVIDOR ACTUALIZADO! (Ahora borra esta línea)")
+    # raise Exception("🛑 ¡SERVIDOR ACTUALIZADO! (Ahora borra esta línea)")
     # -----------------------------------------------
 
     company_id = request.session.get('company_id')
