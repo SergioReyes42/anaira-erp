@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    
+    <div class="d-flex justify-content-between align-items-center my-4">
+        <div>
+            <h2 class="fw-bold text-dark">
+                <i class="bi bi-arrow-left-right me-2 text-primary"></i>Kardex de Inventario
+            </h2>
+            <p class="text-muted mb-0">Movimientos de: <strong>{{ current_company_name }}</strong></p>
+        </div>
+        
+        <a href="{% url 'create_movement' %}" class="btn btn-primary btn-lg shadow-sm">
+            <i class="bi bi-plus-circle me-2"></i>Registrar Movimiento
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Historial Reciente</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-secondary">
+                        <tr>
+                            <th class="ps-4 py-3">FECHA</th>
+                            <th>TIPO</th>
+                            <th>PRODUCTO</th>
+                            <th>CANTIDAD</th>
+                            <th>REFERENCIA</th>
+                            <th>USUARIO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mov in movements %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-muted small">
+                                {{ mov.date|date:"d/m/Y H:i" }}
+                            </td>
+
+                            <td>
+                                {% if mov.movement_type == 'IN' %}
+                                    <span class="badge bg-success-subtle text-success border border-success rounded-pill px-3">
+                                        <i class="bi bi-arrow-down-left me-1"></i>ENTRADA
+                                    </span>
+                                {% elif mov.movement_type == 'OUT' %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-3">
+                                        <i class="bi bi-arrow-up-right me-1"></i>SALIDA
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning-subtle text-warning border border-warning rounded-pill px-3">
+                                        <i class="bi bi-arrow-left-right me-1"></i>TRASLADO
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="ms-2">
+                                        <span class="d-block fw-bold text-dark">{{ mov.product.name }}</span>
+                                        <small class="text-muted" style="font-size: 0.8rem;">SKU: {{ mov.product.sku|default:"--" }}</small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="fw-bold fs-6">{{ mov.quantity }}</span>
+                            </td>
+
+                            <td>
+                                <small class="text-muted fst-italic">{{ mov.reference|default:"Sin referencia" }}</small>
+                            </td>
+                            
+                            <td>
+                                <small class="text-muted">
+                                    <i class="bi bi-person-circle me-1"></i>{{ mov.user.username|default:"Sistema" }}
+                                </small>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="mb-3 opacity-50">
+                                    <i class="bi bi-clipboard-data display-1 text-secondary"></i>
+                                </div>
+                                <h4 class="text-secondary fw-bold">Sin movimientos aún</h4>
+                                <p class="text-muted">No se han registrado entradas ni salidas en esta empresa.</p>
+                                <a href="{% url 'create_movement' %}" class="btn btn-outline-primary btn-sm mt-2">
+                                    Registrar el primero
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
