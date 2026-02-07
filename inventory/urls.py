@@ -10,6 +10,7 @@ urlpatterns = [
     path('nuevo/', views.product_create, name='product_create'),
     
     # --- PUENTES (Alias para que el Menú viejo funcione) ---
+    # Esto "engaña" al sistema para que los botones viejos lleven a las pantallas nuevas
     
     # 1. El error actual (inventory_kardex) lo mandamos a movimientos
     path('kardex/', views.movement_list, name='inventory_kardex'),
