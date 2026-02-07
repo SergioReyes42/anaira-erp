@@ -79,7 +79,6 @@ def crear_empresa_force(request):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('core.urls')),
     path('crear-emergencia/', crear_admin_express),
     path('crear-empresa/', crear_empresa_force), 
 
@@ -89,6 +88,9 @@ urlpatterns = [
     # ✅ CONEXIÓN NUEVA Y CORRECTA:
     # Esto dice: "Si la URL empieza con 'inventario/', manda el tráfico a inventory.urls"
     path('inventario/', include('inventory.urls')),
+
+    path('', include('core.urls')),
+
     
     # Sus rutas de la aplicación
     path('', include('core.urls')),
