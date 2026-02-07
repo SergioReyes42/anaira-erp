@@ -85,6 +85,10 @@ urlpatterns = [
 
     # --- ESTA ES LA LÍNEA QUE FALTA (LA PUERTA DE LOGIN) ---
     path('accounts/', include('django.contrib.auth.urls')),
+
+    # ✅ CONEXIÓN NUEVA Y CORRECTA:
+    # Esto dice: "Si la URL empieza con 'inventario/', manda el tráfico a inventory.urls"
+    path('inventario/', include('inventory.urls')),
     
     # Sus rutas de la aplicación
     path('', include('core.urls')),
