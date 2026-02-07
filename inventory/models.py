@@ -83,6 +83,10 @@ class StockMovement(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='movements_v2')
     
+    # === NUEVO CAMPO PARA OPCIÓN A ===
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, verbose_name="Bodega", null=True, blank=True)
+    # =================================
+
     movement_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     quantity = models.IntegerField(verbose_name="Cantidad")
     date = models.DateTimeField(auto_now_add=True)
@@ -107,14 +111,31 @@ class StockMovement(models.Model):
 
     def __str__(self): return f"{self.get_movement_type_display()} - {self.product.name}"
     
+  # === LÓGICA INTELIGENTE (OPCIÓN A) ===
     def save(self, *args, **kwargs):
-        if not self.pk:
+        # 1. Guardamos el movimiento primero
+        super().save(*args, **kwargs) 
+
+        # 2. Si definimos una bodega, actualizamos el STOCK ESPECÍFICO
+        if self.warehouse:
+            stock_record, created = Stock.objects.get_or_create(
+                product=self.product,
+                warehouse=self.warehouse,
+                defaults={'quantity': 0}
+            )
+            
             if 'IN' in self.movement_type:
-                self.product.stock_quantity += self.quantity
+                stock_record.quantity += self.quantity
             elif 'OUT' in self.movement_type:
-                self.product.stock_quantity -= self.quantity
-            self.product.save()
-        super().save(*args, **kwargs)
+                stock_record.quantity -= self.quantity
+            
+            stock_record.save()
+
+        # 3. SIEMPRE actualizamos el stock global del producto (Suma de todo)
+        # Esto mantiene el producto actualizado para vistas rápidas
+        total_real = self.product.stocks_v2.aggregate(total=models.Sum('quantity'))['total'] or 0
+        self.product.stock_quantity = total_real
+        self.product.save()
 
 class MovementDetail(models.Model):
     movement = models.ForeignKey(StockMovement, on_delete=models.CASCADE, related_name='details')

@@ -1956,4 +1956,23 @@ def force_password_reset(request):
     reporte.append("<br><a href='/accounts/login/' style='font-size:20px'>👉 IR AL LOGIN AHORA</a>")
     return HttpResponse("".join(reporte))
 
+class Warehouse(models.Model):
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='warehouses', verbose_name="Sucursal")
+    name = models.CharField(max_length=100, verbose_name="Nombre Bodega")
+    
+    # === ESTA ES LA LÍNEA QUE FALTA EN RAILWAY ===
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sub_warehouses', verbose_name="Bodega Padre")
+    # =============================================
+
+    is_main = models.BooleanField(default=False, verbose_name="¿Principal?")
+    active = models.BooleanField(default=True, verbose_name="Activa")
+    
+    def __str__(self):
+        if self.parent:
+            return f"{self.branch.name} | {self.parent.name} > {self.name}"
+        return f"{self.branch.name} | {self.name}"
+
+    class Meta:
+        verbose_name = "Bodega"
+        verbose_name_plural = "Bodegas"
 # Actualización forzosa del servidor
