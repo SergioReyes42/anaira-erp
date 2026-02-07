@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.db.models import Prefetch, Sum  # <--- AQUÍ ESTABA EL ERROR
@@ -124,3 +124,28 @@ def stock_list(request):
 @login_required
 def smart_hub(request):
     return HttpResponse("<h3>🤖 Smart Hub: En construcción</h3><a href='/inventario/'>Volver</a>")
+
+# ========================================================
+# 5. KARDEX ESPECÍFICO POR PRODUCTO
+# ========================================================
+@login_required
+def product_kardex(request, product_id):
+    company_id = request.session.get('company_id')
+    if not company_id:
+        return redirect('select_company')
+
+    # Buscamos el producto específico (y aseguramos que sea de la empresa)
+    product = get_object_or_404(Product, id=product_id, company_id=company_id)
+
+    # Filtramos SOLO los movimientos de este producto
+    movimientos = StockMovement.objects.filter(
+        product=product
+    ).select_related('user').order_by('-date')
+
+    context = {
+        'movements': movimientos,
+        'current_company_name': product.company.name,
+        'subtitle': f"Historial de: {product.name} ({product.sku})" # Para que sepa qué está viendo
+    }
+    # Reutilizamos la misma plantilla de lista de movimientos
+    return render(request, 'inventory/movement_list.html', context)
