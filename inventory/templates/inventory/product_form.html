@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 800px;">
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-primary text-white py-3">
+            <h4 class="mb-0"><i class="bi bi-box-seam me-2"></i>Nuevo Producto</h4>
+        </div>
+        <div class="card-body p-4">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="fw-bold">{{ form.sku.label }}</label>
+                        {{ form.sku }}
+                    </div>
+                    <div class="col-md-8">
+                        <label class="fw-bold">{{ form.name.label }}</label>
+                        {{ form.name }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="fw-bold">{{ form.category.label }}</label>
+                        {{ form.category }}
+                        <div class="form-text text-muted">¿No aparece? Crea categorías en el Admin primero.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="fw-bold">{{ form.brand.label }}</label>
+                        {{ form.brand }}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="fw-bold text-success">{{ form.sale_price.label }}</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Q</span>
+                            {{ form.sale_price }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="fw-bold text-muted">{{ form.cost_price.label }}</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Q</span>
+                            {{ form.cost_price }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="fw-bold">{{ form.product_type.label }}</label>
+                        {{ form.product_type }}
+                    </div>
+
+                    <div class="col-12">
+                        <label class="fw-bold">{{ form.image.label }}</label>
+                        {{ form.image }}
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'product_list' %}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary px-5">
+                        <i class="bi bi-save me-1"></i>Guardar Producto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
