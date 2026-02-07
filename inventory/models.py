@@ -1,124 +1,123 @@
 from django.db import models
 from django.conf import settings
-from core.models import Company, Warehouse # Importamos del Core para no duplicar
+from core.models import Company, Warehouse 
 
 # ==========================================
 # 1. CLASIFICACIÓN Y MARCAS
 # ==========================================
 class Category(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE) 
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, verbose_name="Nombre de Categoría")
+    description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
-    class Meta:
-        verbose_name = "Categoría"
-        verbose_name_plural = "Categorías"
-
     def __str__(self): return self.name
+    class Meta: verbose_name_plural = "Categorías"
 
 class Brand(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='products')    
-    name = models.CharField(max_length=200, verbose_name="Nombre del Producto")
-    code = models.CharField(max_length=50, verbose_name="Código Interno")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, verbose_name="Marca")
     
-    class Meta:
-        verbose_name = "Marca"
-        verbose_name_plural = "Marcas"
-        
-    def __str__(self):
-        return f"{self.code} - {self.name}"
+    def __str__(self): return self.name
+    class Meta: verbose_name = "Marca"
 
 # ==========================================
 # 2. MAESTRO DE PRODUCTOS
 # ==========================================
 class Product(models.Model):
-    TYPE_CHOICES = [('PRODUCT', 'Producto Almacenable'), ('SERVICE', 'Servicio'), ('CONSUMABLE', 'Consumible')]
+    TYPE_CHOICES = [('PRODUCT', 'Producto Almacenable'), ('SERVICE', 'Servicio')]
 
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    # Le ponemos un related_name único para que no choque con el Product viejo
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='inventory_products_v2')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
     
     sku = models.CharField(max_length=50, verbose_name="Código Interno / SKU")
-    barcode = models.CharField(max_length=100, blank=True, null=True, verbose_name="Código de Barras")
     name = models.CharField(max_length=255, verbose_name="Nombre del Producto")
     description = models.TextField(blank=True, null=True)
-    
     product_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='PRODUCT')
     
-    # Precios y Costos
-    cost_price = models.DecimalField(max_digits=12, decimal_places=4, default=0.00, verbose_name="Costo Promedio")
-    sale_price = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Precio de Venta")
-    wholesale_price = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Precio Mayorista")
-    
-    # Control de Stock Global (Referencial)
-    min_stock = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Stock Mínimo")
-    max_stock = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Stock Máximo")
+    cost_price = models.DecimalField(max_digits=12, decimal_places=4, default=0.00)
+    sale_price = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     
     image = models.ImageField(upload_to='products/', blank=True, null=True)
-    is_active = models.BooleanField(default=True)
+    stock_quantity = models.IntegerField(default=0, verbose_name="Existencia Total (Ref)")
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('company', 'sku')
         verbose_name = "Producto"
         verbose_name_plural = "Productos"
 
     def __str__(self): return f"[{self.sku}] {self.name}"
+    
+    @property
+    def total_stock(self):
+        return self.stock_quantity
 
 # ==========================================
-# 3. EXISTENCIAS (STOCK) POR BODEGA
+# 3. STOCK DETALLADO
 # ==========================================
 class Stock(models.Model):
-    """Controla cuánto hay de cada producto en cada bodega específica"""
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stocks')
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='stocks')
-    quantity = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Cantidad Disponible")
-    location_in_warehouse = models.CharField(max_length=50, blank=True, null=True, verbose_name="Ubicación (Pasillo/Estante)")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stocks_v2')
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name='stocks_v2')
+    quantity = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    location = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
         unique_together = ('product', 'warehouse')
         verbose_name = "Existencia en Bodega"
-        verbose_name_plural = "Existencias"
 
-    def __str__(self):
-        return f"{self.product.name} en {self.warehouse.name}: {self.quantity}"
+    def __str__(self): return f"{self.product.name} en {self.warehouse.name}: {self.quantity}"
 
 # ==========================================
-# 4. MOVIMIENTOS DE INVENTARIO (KARDEX)
+# 4. KARDEX (AQUÍ ESTABA EL ERROR)
 # ==========================================
-class InventoryMovement(models.Model):
+class StockMovement(models.Model):
     TYPE_CHOICES = [
-        ('IN_PURCHASE', 'Entrada por Compra'),
-        ('IN_ADJUSTMENT', 'Entrada por Ajuste'),
-        ('IN_RETURN', 'Devolución de Cliente'),
-        ('OUT_SALE', 'Salida por Venta'),
-        ('OUT_ADJUSTMENT', 'Salida por Ajuste/Pérdida'),
-        ('OUT_CONSUMPTION', 'Salida por Consumo Interno'),
-        ('TRANSFER', 'Traslado entre Bodegas'),
+        ('IN', 'Entrada'),
+        ('OUT', 'Salida'),
+        ('TRANSFER', 'Traslado'),
     ]
 
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    movement_type = models.CharField(max_length=20, choices=TYPE_CHOICES, verbose_name="Tipo de Movimiento")
-    date = models.DateTimeField(auto_now_add=True, verbose_name="Fecha y Hora")
-    reference = models.CharField(max_length=100, help_text="No. Factura, Orden, etc.", verbose_name="Referencia")
-    description = models.CharField(max_length=255, blank=True, verbose_name="Comentario")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='movements_v2')
     
-    # Auditoría
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    movement_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    quantity = models.IntegerField(verbose_name="Cantidad")
+    date = models.DateTimeField(auto_now_add=True)
+    
+    # === LA SOLUCIÓN MÁGICA ===
+    # Agregamos related_name='inventory_updates'
+    # Así Django sabe que este usuario NO es el mismo del modelo viejo
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True,
+        related_name='inventory_updates' 
+    )
+    
+    reference = models.CharField(max_length=100, blank=True, verbose_name="Referencia")
+    description = models.CharField(max_length=255, blank=True, verbose_name="Comentario")
 
     class Meta:
-        verbose_name = "Movimiento de Inventario"
-        verbose_name_plural = "Kardex / Movimientos"
+        verbose_name = "Movimiento (Kardex)"
+        verbose_name_plural = "Movimientos"
+        ordering = ['-date']
 
-    def __str__(self): return f"{self.get_movement_type_display()} - {self.reference}"
+    def __str__(self): return f"{self.get_movement_type_display()} - {self.product.name}"
+    
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            if 'IN' in self.movement_type:
+                self.product.stock_quantity += self.quantity
+            elif 'OUT' in self.movement_type:
+                self.product.stock_quantity -= self.quantity
+            self.product.save()
+        super().save(*args, **kwargs)
 
 class MovementDetail(models.Model):
-    movement = models.ForeignKey(InventoryMovement, on_delete=models.CASCADE, related_name='details')
+    movement = models.ForeignKey(StockMovement, on_delete=models.CASCADE, related_name='details')
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT)
-    
-    quantity = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Cantidad")
-    unit_cost = models.DecimalField(max_digits=12, decimal_places=4, default=0, verbose_name="Costo Unitario")
-    
-    def __str__(self): return f"{self.product.sku} - {self.quantity}"
+    quantity = models.DecimalField(max_digits=12, decimal_places=2)

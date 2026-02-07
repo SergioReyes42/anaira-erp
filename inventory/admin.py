@@ -1,9 +1,9 @@
 from django.contrib import admin
-from .models import Category, Brand, Product, Stock, InventoryMovement, MovementDetail
+from .models import Category, Brand, Product, Stock, StockMovement, MovementDetail
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'company', 'is_active')
+    list_display = ('name', 'company')
 
 @admin.register(Brand)
 class BrandAdmin(admin.ModelAdmin):
@@ -11,22 +11,20 @@ class BrandAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('sku', 'name', 'product_type', 'sale_price', 'company')
-    list_filter = ('company', 'product_type', 'is_active')
-    search_fields = ('sku', 'name')
+    list_display = ('sku', 'name', 'company', 'stock_quantity')
+    list_filter = ('company', 'category')
+    search_fields = ('name', 'sku')
 
 @admin.register(Stock)
 class StockAdmin(admin.ModelAdmin):
-    list_display = ('product', 'warehouse', 'quantity', 'location_in_warehouse')
-    list_filter = ('warehouse',)
+    list_display = ('product', 'warehouse', 'quantity')
 
 class MovementDetailInline(admin.TabularInline):
     model = MovementDetail
     extra = 1
 
-@admin.register(InventoryMovement)
-class InventoryMovementAdmin(admin.ModelAdmin):
-    list_display = ('date', 'movement_type', 'reference', 'company', 'user')
+@admin.register(StockMovement)
+class StockMovementAdmin(admin.ModelAdmin):
+    list_display = ('date', 'product', 'movement_type', 'quantity', 'user')
     list_filter = ('movement_type', 'date')
     inlines = [MovementDetailInline]
-    
