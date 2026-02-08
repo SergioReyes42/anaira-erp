@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from datetime import date
+from django.contrib.auth.models import User
 
 User = get_user_model()
 
@@ -486,3 +487,36 @@ class StockMovement(models.Model):
     comments = models.CharField(max_length=200, blank=True, null=True, verbose_name="Comentario/Razón")
     def __str__(self): return f"{self.get_movement_type_display()}: {self.quantity} de {self.product.code}"
     class Meta: verbose_name = "Movimiento de Kardex"; verbose_name_plural = "Kardex (Historial)"; ordering = ['-date']
+
+class Invoice(models.Model):
+    client = models.ForeignKey('Client', on_delete=models.PROTECT)
+    date = models.DateField(auto_now_add=True)
+    due_date = models.DateField() # Fecha de vencimiento
+    payment_method = models.CharField(max_length=50, choices=[('CONTADO', 'Contado'), ('CREDITO', 'Crédito')])
+    
+    # Datos Fiscales
+    fel_uuid = models.CharField(max_length=100, blank=True, null=True, verbose_name="UUID Fiscal")
+    fel_series = models.CharField(max_length=50, blank=True, null=True)
+    fel_number = models.CharField(max_length=50, blank=True, null=True)
+    
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    
+    # Relación con la cotización original
+    origin_quotation = models.ForeignKey('Quotation', on_delete=models.SET_NULL, null=True, blank=True)
+    
+    user = models.ForeignKey(User, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Factura #{self.id} - {self.client.name}"
+
+class InvoiceDetail(models.Model):
+    invoice = models.ForeignKey(Invoice, related_name='details', on_delete=models.CASCADE)
+    # Usamos string 'inventory.Product' para evitar errores de importación circular
+    product = models.ForeignKey('inventory.Product', on_delete=models.PROTECT)
+    quantity = models.IntegerField()
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    @property
+    def subtotal(self):
+        return self.quantity * self.unit_price
