@@ -1225,30 +1225,24 @@ def expense_list(request):
 
 @login_required
 def client_list(request):
-    """Muestra el listado de clientes"""
-    clientes = Client.objects.filter(is_active=True).order_by('name')
-    return render(request, 'core/sales/client_list.html', {'clientes': clientes})
+    # Listamos todos los clientes activos
+    clientes = Client.objects.filter(is_active=True).order_by('-created_at')
+    return render(request, 'core/client_list.html', {'clientes': clientes})
 
 @login_required
 def client_create(request):
-    """Formulario para crear cliente"""
-    
     if request.method == 'POST':
-        # Llamamos al formulario que definimos en forms.py
         form = ClientForm(request.POST)
-        
         if form.is_valid():
-            form.save()
-            messages.success(request, "Cliente registrado exitosamente.")
-            return redirect('client_list') # Asegúrese de tener esta URL o cambie a 'home'
-        else:
-            messages.error(request, "Error al registrar cliente. Verifique los datos.")
+            cliente = form.save(commit=False)
+            # Asignamos la empresa actual si usas multi-empresa
+            # cliente.company = ... (si tienes la lógica de empresa en sesión)
+            cliente.save()
+            return redirect('client_list')
     else:
         form = ClientForm()
     
-    return render(request, 'core/sales/client_form.html', {'form': form})
-
-from datetime import timedelta
+    return render(request, 'core/client_form.html', {'form': form})
 
 # --- 1. LISTA DE COTIZACIONES ---
 @login_required

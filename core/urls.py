@@ -44,7 +44,7 @@ urlpatterns = [
 
     # --- VENTAS Y CLIENTES ---
     path('clientes/', views.client_list, name='client_list'),
-    path('clientes/nuevo/', views.create_client, name='client_create'),
+    path('clientes/nuevo/', views.client_create, name='client_create'),
     path('ventas/cotizaciones/', views.quotation_list, name='quotation_list'),
     path('ventas/cotizaciones/nueva/', views.create_quotation, name='create_quotation'),
     path('ventas/cotizacion/<int:quote_id>/facturar/', views.convert_quote_to_sale, name='convert_quote_to_sale'),

@@ -239,15 +239,25 @@ class SaleForm(forms.ModelForm):
 class ClientForm(forms.ModelForm):
     class Meta:
         model = Client
-        fields = ['name', 'nit', 'phone', 'email', 'address']
+        fields = ['name', 'nit', 'address', 'phone', 'email', 'contact_name', 'credit_days', 'credit_limit']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'nit': forms.TextInput(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Razón Social o Nombre Completo'}),
+            'nit': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'NIT / CUI'}),
+            'address': forms.TextInput(attrs={'class': 'form-control'}),
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'address': forms.TextInput(attrs={'class': 'form-control'}),
+            'contact_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Persona de contacto'}),
+            'credit_days': forms.NumberInput(attrs={'class': 'form-control'}),
+            'credit_limit': forms.NumberInput(attrs={'class': 'form-control'}),
         }
-
+        labels = {
+            'name': 'Nombre del Cliente',
+            'nit': 'NIT / RUC',
+            'address': 'Dirección Fiscal',
+            'phone': 'Teléfono',
+            'credit_days': 'Días de Crédito',
+            'credit_limit': 'Límite de Crédito (Q)',
+        }
 # ==========================================
 # 8. COMPRAS (CORREGIDO)
 # ==========================================

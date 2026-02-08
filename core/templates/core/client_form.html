@@ -1,0 +1,66 @@
+    {% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 800px;">
+    <div class="card shadow border-0">
+        <div class="card-header bg-primary text-white py-3">
+            <h4 class="mb-0"><i class="bi bi-person-badge me-2"></i>Registrar Nuevo Cliente</h4>
+        </div>
+        <div class="card-body p-4 bg-light">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <label class="fw-bold">Razón Social / Nombre</label>
+                        {{ form.name }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="fw-bold">NIT / CUI</label>
+                        {{ form.nit }}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="fw-bold">Teléfono</label>
+                        {{ form.phone }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="fw-bold">Email</label>
+                        {{ form.email }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="fw-bold">Dirección Fiscal</label>
+                    {{ form.address }}
+                </div>
+
+                <hr>
+                <h6 class="text-primary fw-bold"><i class="bi bi-cash-coin"></i> Datos de Crédito</h6>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label>Límite de Crédito (Q)</label>
+                        {{ form.credit_limit }}
+                    </div>
+                    <div class="col-md-4">
+                        <label>Días de Crédito</label>
+                        {{ form.credit_days }}
+                    </div>
+                    <div class="col-md-4">
+                        <label>Contacto de Pagos</label>
+                        {{ form.contact_name }}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'client_list' %}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary fw-bold px-4">Guardar Cliente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
