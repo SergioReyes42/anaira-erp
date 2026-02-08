@@ -7,30 +7,36 @@ from .models import StockMovement, Product
 class StockMovementForm(forms.ModelForm):
     class Meta:
         model = StockMovement
-        fields = ['product', 'movement_type', 'quantity', 'reference', 'description']
+        # AGREGAMOS 'warehouse' AQUÍ:
+        fields = ['warehouse', 'product', 'movement_type', 'quantity', 'reference', 'description']
         widgets = {
-            'product': forms.Select(attrs={'class': 'form-select select2'}), # select2 para búsqueda rápida
+            # Selector de Bodega
+            'warehouse': forms.Select(attrs={'class': 'form-select'}),
+            
+            'product': forms.Select(attrs={'class': 'form-select select2'}),
             'movement_type': forms.Select(attrs={'class': 'form-select'}),
             'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
             'reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej. Factura #123'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Comentarios opcionales...'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
         labels = {
-            'product': 'Seleccione Producto',
-            'movement_type': 'Tipo de Movimiento',
+            'warehouse': 'Seleccionar Bodega',  # Etiqueta nueva
+            'product': 'Producto',
+            'movement_type': 'Tipo',
             'quantity': 'Cantidad',
-            'reference': 'Referencia (Opcional)',
+            'reference': 'Ref.',
             'description': 'Notas',
         }
 
     def __init__(self, *args, **kwargs):
-        # Capturamos el ID de la empresa para filtrar los productos
         company_id = kwargs.pop('company_id', None)
         super().__init__(*args, **kwargs)
         
         if company_id:
-            # FILTRO DE SEGURIDAD: Solo mostrar productos de esta empresa
             self.fields['product'].queryset = Product.objects.filter(company_id=company_id)
+            # FILTRO IMPORTANTE: Solo mostrar bodegas de ESTA empresa (vía sucursales)
+            from core.models import Warehouse
+            self.fields['warehouse'].queryset = Warehouse.objects.filter(branch__company_id=company_id, active=True)
 
 
 # ==========================================
