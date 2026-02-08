@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 700px;">
+    <div class="card shadow border-0">
+        <div class="card-header bg-primary text-white py-3">
+            <h4 class="mb-0"><i class="bi bi-building-add me-2"></i>Nueva Bodega / Estante</h4>
+        </div>
+        <div class="card-body p-4 bg-light">
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                    <div class="alert alert-danger">{{ form.errors }}</div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Sucursal</label>
+                    {{ form.branch }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Nombre de la Ubicación</label>
+                    {{ form.name }}
+                    <small class="text-muted">Ej: "Bodega Central" o "Estante A-1"</small>
+                </div>
+
+                <div class="mb-3 p-3 bg-white border rounded">
+                    <label class="fw-bold mb-1 text-primary">
+                        <i class="bi bi-diagram-2 me-1"></i>¿Está dentro de otra bodega?
+                    </label>
+                    {{ form.parent }}
+                    <div class="form-text mt-1">
+                        Déjalo vacío si es una Bodega Principal. Selecciónalo si es un Estante o Pasillo.
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            {{ form.is_main }}
+                            <label class="form-check-label fw-bold">¿Es Bodega Principal?</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            {{ form.active }}
+                            <label class="form-check-label fw-bold">Activa / Visible</label>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'warehouse_management' %}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary fw-bold px-4">
+                        Guardar
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
