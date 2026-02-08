@@ -26,6 +26,8 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils.safestring import mark_safe 
+from inventory.models import StockMovement
+from .models import Invoice, InvoiceDetail
 
 # --- CEREBRO IA (Si lo está usando) ---
 from .ai_brain import analizar_texto_bancario, analizar_documento_ia
@@ -1955,3 +1957,60 @@ def force_password_reset(request):
     reporte.append("<br><a href='/accounts/login/' style='font-size:20px'>👉 IR AL LOGIN AHORA</a>")
     return HttpResponse("".join(reporte))
 
+@login_required
+def convert_quote_to_invoice(request, quote_id):
+    # 1. Buscamos la cotización
+    cotizacion = get_object_or_404(Quotation, id=quote_id)
+    
+    if cotizacion.status == 'BILLED':
+        # Evitar duplicados
+        return redirect('invoice_view', id=cotizacion.invoice_set.first().id)
+
+    with transaction.atomic():
+        # 2. Crear el Encabezado de la Factura
+        factura = Invoice.objects.create(
+            client=cotizacion.client,
+            payment_method=cotizacion.payment_method,
+            due_date=timezone.now().date() + timedelta(days=cotizacion.client.credit_days), # Calc fecha vencimiento
+            total=cotizacion.total,
+            origin_quotation=cotizacion,
+            user=request.user
+        )
+
+        # 3. Copiar Detalles y RESTAR STOCK
+        for item in cotizacion.details.all():
+            # A. Crear detalle de factura
+            InvoiceDetail.objects.create(
+                invoice=factura,
+                product=item.product,
+                quantity=item.quantity,
+                unit_price=item.unit_price
+            )
+            
+            # B. MOVIMIENTO DE INVENTARIO (Salida por Venta)
+            # Aquí asumimos que sale de la Bodega Principal (o podrías pedir seleccionarla)
+            # Para este ejemplo, usamos la primera bodega activa de la empresa.
+            bodega_salida = item.product.company.branch_set.first().warehouses.filter(active=True).first()
+            
+            if bodega_salida:
+                StockMovement.objects.create(
+                    product=item.product,
+                    warehouse=bodega_salida,
+                    quantity=item.quantity,
+                    movement_type='OUT_SALE',
+                    user=request.user,
+                    reference=f"Factura #{factura.id}",
+                    description=f"Venta desde Cotización #{cotizacion.id}"
+                )
+
+        # 4. Actualizar estado de Cotización
+        cotizacion.status = 'BILLED'
+        cotizacion.save()
+        
+        return redirect('invoice_view', id=factura.id)
+
+# Vista para VER la Factura (similar a la de cotización)
+@login_required
+def invoice_view(request, id):
+    factura = get_object_or_404(Invoice, id=id)
+    return render(request, 'core/invoice_view.html', {'f': factura, 'company': request.user.company})

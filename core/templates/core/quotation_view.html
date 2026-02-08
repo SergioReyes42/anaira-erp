@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<div class="container-fluid py-4 bg-light">
+    <div class="row">
+        
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm border-0 sticky-top" style="top: 20px;">
+                <div class="card-header bg-dark text-white fw-bold">
+                    <i class="bi bi-gear-fill me-2"></i>Acciones
+                </div>
+                <div class="card-body d-grid gap-2">
+                    
+                    <button onclick="printDocument()" class="btn btn-outline-secondary text-start">
+                        <i class="bi bi-printer me-2"></i> Imprimir
+                    </button>
+
+                    <button onclick="downloadPDF()" class="btn btn-outline-danger text-start">
+                        <i class="bi bi-file-earmark-pdf me-2"></i> Descargar PDF
+                    </button>
+
+                    <hr class="my-1">
+
+                    {% if q.status != 'BILLED' %}
+                        <a href="{% url 'convert_quote_to_invoice' q.id %}" 
+                           class="btn btn-success fw-bold py-2"
+                           onclick="return confirm('¿Confirmas convertir esta cotización en Factura y descargar el inventario?');">
+                            <i class="bi bi-receipt me-2"></i> CONVERTIR A FACTURA
+                        </a>
+                    {% else %}
+                        <div class="alert alert-success mb-0 text-center">
+                            <i class="bi bi-check-circle"></i> Ya facturada
+                        </div>
+                    {% endif %}
+
+                    <a href="{% url 'quotation_list' %}" class="btn btn-link text-decoration-none mt-2">
+                        <i class="bi bi-arrow-left"></i> Volver al listado
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div id="documentoPDF" class="bg-white p-5 shadow mx-auto" style="max-width: 21cm; min-height: 29.7cm;">
+                
+                <div class="d-flex justify-content-between mb-5">
+                    <div>
+                        <h2 class="fw-bold text-dark mb-0">{{ company|upper }}</h2>
+                        <small class="text-muted d-block">Soluciones Tecnológicas S.A.</small>
+                        <small class="text-muted">NIT: 123456-7 | PBX: 2222-0000</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="badge bg-primary fs-6 mb-2">COTIZACIÓN</div>
+                        <h3 class="text-danger fw-bold"># {{ q.id|stringformat:"05d" }}</h3>
+                        <div class="small">Fecha: {{ q.date|date:"d/m/Y" }}</div>
+                    </div>
+                </div>
+
+                <div class="row mb-4 p-3 bg-light rounded border">
+                    <div class="col-sm-6">
+                        <strong class="text-secondary text-uppercase small">Cliente:</strong><br>
+                        <span class="fs-5 fw-bold">{{ q.client.name }}</span><br>
+                        <small>{{ q.client.address }}</small>
+                    </div>
+                    <div class="col-sm-6 text-sm-end">
+                        <strong class="text-secondary text-uppercase small">Condiciones:</strong><br>
+                        NIT: {{ q.client.nit }}<br>
+                        Pago: {{ q.payment_method }}<br>
+                        Vence: {{ q.valid_until|date:"d/m/Y" }}
+                    </div>
+                </div>
+
+                <table class="table mt-4 mb-4 table-borderless">
+                    <thead class="border-bottom border-dark">
+                        <tr>
+                            <th class="text-uppercase small text-secondary">Cant</th>
+                            <th class="text-uppercase small text-secondary">Descripción</th>
+                            <th class="text-end text-uppercase small text-secondary">Precio</th>
+                            <th class="text-end text-uppercase small text-secondary">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in detalles %}
+                        <tr class="border-bottom">
+                            <td class="fw-bold text-center">{{ item.quantity }}</td>
+                            <td>
+                                {{ item.product.name }}
+                                <div class="small text-muted">{{ item.product.sku }}</div>
+                            </td>
+                            <td class="text-end">Q{{ item.unit_price }}</td>
+                            <td class="text-end fw-bold">Q{{ item.subtotal }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <div class="row justify-content-end mt-5">
+                    <div class="col-md-5">
+                        <table class="table table-sm">
+                            <tr>
+                                <td class="text-end">Subtotal:</td>
+                                <td class="text-end fw-bold">Q{{ q.total }}</td>
+                            </tr>
+                            <tr class="bg-light border-top border-dark">
+                                <td class="text-end fs-4 fw-bold text-dark">TOTAL:</td>
+                                <td class="text-end fs-4 fw-bold text-primary">Q{{ q.total }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="mt-5 pt-5 text-center text-muted small border-top">
+                    <p class="mb-1">Este documento es una cotización y no representa una reserva de inventario.</p>
+                    <p>Gracias por su preferencia.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Función para imprimir solo el documento
+    function printDocument() {
+        var contenido = document.getElementById('documentoPDF').innerHTML;
+        var original = document.body.innerHTML;
+        
+        document.body.innerHTML = contenido;
+        window.print();
+        document.body.innerHTML = original;
+        location.reload(); // Recargar para restaurar eventos JS
+    }
+
+    // Función para descargar PDF usando html2pdf.js
+    function downloadPDF() {
+        var element = document.getElementById('documentoPDF');
+        var opt = {
+            margin:       0.5,
+            filename:     'Cotizacion_{{ q.id }}.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+
+{% endblock %}

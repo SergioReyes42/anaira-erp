@@ -84,4 +84,13 @@ urlpatterns = [
     # COTIZACIONES
     path('cotizaciones/', views.quotation_list, name='quotation_list'),
     path('cotizaciones/nueva/', views.quotation_create, name='quotation_create'),
+
+    # VER COTIZACION (El visor nuevo)
+    path('cotizaciones/<int:id>/ver/', views.quotation_print, name='quotation_view'), # Actualiza el nombre de la vista en views.py a quotation_view si cambiaste el nombre
+    
+    # ACCIÓN: CONVERTIR
+    path('cotizaciones/<int:quote_id>/facturar/', views.convert_quote_to_invoice, name='convert_quote_to_invoice'),
+    
+    # VER FACTURA (Crea el template invoice_view.html copiando el de cotización)
+    path('facturas/<int:id>/ver/', views.invoice_view, name='invoice_view'),
 ]
