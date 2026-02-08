@@ -22,6 +22,6 @@ urlpatterns = [
 
     # 3. Traslados (create_transfer) lo mandamos a crear movimiento
     path('traslados/', views.create_movement, name='create_transfer'),
-    path('movimientos/nuevo/', views.create_movement, name='create_movement'),
+    path('traslado/', views.make_transfer, name='make_transfer'),
     path('kardex/<int:product_id>/', views.product_kardex, name='product_kardex'),
 ]
