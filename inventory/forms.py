@@ -68,20 +68,21 @@ class ProductForm(forms.ModelForm):
         }
 
 class TransferForm(forms.Form):
+    # Definimos los campos vacíos primero, los llenaremos en el __init__
     from_warehouse = forms.ModelChoiceField(
-        queryset=Warehouse.objects.filter(active=True),
+        queryset=Warehouse.objects.none(), # Se llena dinámicamente
         label="🔴 Bodega Origen (Sale)",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     to_warehouse = forms.ModelChoiceField(
-        queryset=Warehouse.objects.filter(active=True),
+        queryset=Warehouse.objects.none(), # Se llena dinámicamente
         label="🟢 Bodega Destino (Entra)",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     product = forms.ModelChoiceField(
         queryset=Product.objects.all(),
         label="📦 Producto",
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.Select(attrs={'class': 'form-select select2'}) # select2 ayuda a buscar
     )
     quantity = forms.IntegerField(
         min_value=1,
@@ -93,3 +94,18 @@ class TransferForm(forms.Form):
         label="Comentarios",
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2})
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # === FILTRO INTELIGENTE DE BODEGAS ===
+        # Lógica: Excluir cualquier bodega que sea "padre" de otra.
+        # Solo queremos las "hojas" del árbol (las que no tienen sub_warehouses).
+        
+        bodegas_finales = Warehouse.objects.filter(
+            active=True, 
+            sub_warehouses__isnull=True  # <--- ESTO ES LA CLAVE: Solo las que NO tienen hijos
+        )
+
+        self.fields['from_warehouse'].queryset = bodegas_finales
+        self.fields['to_warehouse'].queryset = bodegas_finales
