@@ -27,7 +27,6 @@ class Brand(models.Model):
 class Product(models.Model):
     TYPE_CHOICES = [('PRODUCT', 'Producto Almacenable'), ('SERVICE', 'Servicio')]
 
-    # Le ponemos un related_name único para que no choque con el Product viejo
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='inventory_products_v2')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
@@ -71,7 +70,7 @@ class Stock(models.Model):
     def __str__(self): return f"{self.product.name} en {self.warehouse.name}: {self.quantity}"
 
 # ==========================================
-# 4. KARDEX (AQUÍ ESTABA EL ERROR)
+# 4. KARDEX (AQUÍ ESTÁ LA CORRECCIÓN)
 # ==========================================
 class StockMovement(models.Model):
     TYPE_CHOICES = [
@@ -83,17 +82,22 @@ class StockMovement(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='movements_v2')
     
-    # === NUEVO CAMPO PARA OPCIÓN A ===
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, verbose_name="Bodega", null=True, blank=True)
+    # === LA SOLUCIÓN AL ERROR E304 ===
+    # Agregamos related_name='inventory_movements' para que no choque con el viejo
+    warehouse = models.ForeignKey(
+        Warehouse, 
+        on_delete=models.CASCADE, 
+        verbose_name="Bodega", 
+        null=True, 
+        blank=True,
+        related_name='inventory_movements' 
+    )
     # =================================
 
     movement_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     quantity = models.IntegerField(verbose_name="Cantidad")
     date = models.DateTimeField(auto_now_add=True)
     
-    # === LA SOLUCIÓN MÁGICA ===
-    # Agregamos related_name='inventory_updates'
-    # Así Django sabe que este usuario NO es el mismo del modelo viejo
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.SET_NULL, 
@@ -111,28 +115,25 @@ class StockMovement(models.Model):
 
     def __str__(self): return f"{self.get_movement_type_display()} - {self.product.name}"
     
-  # === LÓGICA INTELIGENTE (OPCIÓN A) ===
     def save(self, *args, **kwargs):
-        # 1. Guardamos el movimiento primero
-        super().save(*args, **kwargs) 
+        # 1. Guardar el movimiento
+        super().save(*args, **kwargs)
 
-        # 2. Si definimos una bodega, actualizamos el STOCK ESPECÍFICO
+        # 2. Actualizar stock en BODEGA ESPECÍFICA (si existe)
         if self.warehouse:
             stock_record, created = Stock.objects.get_or_create(
                 product=self.product,
                 warehouse=self.warehouse,
                 defaults={'quantity': 0}
             )
-            
             if 'IN' in self.movement_type:
                 stock_record.quantity += self.quantity
             elif 'OUT' in self.movement_type:
                 stock_record.quantity -= self.quantity
-            
             stock_record.save()
 
-        # 3. SIEMPRE actualizamos el stock global del producto (Suma de todo)
-        # Esto mantiene el producto actualizado para vistas rápidas
+        # 3. Actualizar stock GLOBAL del producto
+        # (Suma de todas las bodegas para tener el dato rápido)
         total_real = self.product.stocks_v2.aggregate(total=models.Sum('quantity'))['total'] or 0
         self.product.stock_quantity = total_real
         self.product.save()
