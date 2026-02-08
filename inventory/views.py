@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.db.models import Prefetch, Sum  # <--- AQUÍ ESTABA EL ERROR
 from core.models import Company, Branch, Warehouse
 from .models import Product, StockMovement, Stock
-from .forms import StockMovementForm, ProductForm
+from .forms import StockMovementForm, ProductForm, TransferForm
 
 # ========================================================
 # 1. VISTA PRINCIPAL (LISTA DE PRODUCTOS)
@@ -149,3 +149,43 @@ def product_kardex(request, product_id):
     }
     # Reutilizamos la misma plantilla de lista de movimientos
     return render(request, 'inventory/movement_list.html', context)
+
+import random
+
+@login_required
+def make_transfer(request):
+    if request.method == 'POST':
+        form = TransferForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            
+            # Generamos un ID único para agrupar este traslado (hermanar los movimientos)
+            transfer_group_id = random.randint(100000, 999999)
+            
+            # 1. REGISTRAR SALIDA (ORIGEN)
+            StockMovement.objects.create(
+                product=data['product'],
+                warehouse=data['from_warehouse'],
+                quantity=data['quantity'],
+                movement_type='TRANSFER_OUT', # Salida por traslado
+                user=request.user,
+                comments=f"Traslado hacia {data['to_warehouse'].name} | {data['comments']}",
+                related_transfer_id=transfer_group_id
+            )
+
+            # 2. REGISTRAR ENTRADA (DESTINO)
+            StockMovement.objects.create(
+                product=data['product'],
+                warehouse=data['to_warehouse'],
+                quantity=data['quantity'],
+                movement_type='TRANSFER_IN', # Entrada por traslado
+                user=request.user,
+                comments=f"Recibido desde {data['from_warehouse'].name} | {data['comments']}",
+                related_transfer_id=transfer_group_id
+            )
+            
+            return redirect('movement_list')
+    else:
+        form = TransferForm()
+
+    return render(request, 'inventory/transfer_form.html', {'form': form})

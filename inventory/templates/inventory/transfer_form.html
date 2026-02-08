@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-warning text-dark py-3">
+            <h4 class="mb-0"><i class="bi bi-truck me-2"></i>Nuevo Traslado de Bodegas</h4>
+        </div>
+        <div class="card-body p-4 bg-light">
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                <div class="row align-items-center mb-4">
+                    <div class="col-md-5">
+                        <div class="card border-danger">
+                            <div class="card-body bg-white">
+                                <h6 class="text-danger fw-bold">🔴 SALIDA DE:</h6>
+                                {{ form.from_warehouse }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-2 text-center display-6 text-muted">
+                        <i class="bi bi-arrow-right-circle-fill"></i>
+                    </div>
+
+                    <div class="col-md-5">
+                        <div class="card border-success">
+                            <div class="card-body bg-white">
+                                <h6 class="text-success fw-bold">🟢 ENTRADA A:</h6>
+                                {{ form.to_warehouse }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <label class="fw-bold">Producto a Mover</label>
+                        {{ form.product }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="fw-bold">Cantidad</label>
+                        {{ form.quantity }}
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="fw-bold">Observaciones</label>
+                    {{ form.comments }}
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-warning btn-lg fw-bold">
+                        <i class="bi bi-check-lg me-2"></i> Confirmar Traslado
+                    </button>
+                    <a href="{% url 'movement_list' %}" class="btn btn-link text-muted">Cancelar</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
