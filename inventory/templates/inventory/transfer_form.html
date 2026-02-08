@@ -1,59 +1,81 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-4" style="max-width: 900px;">
     <div class="card shadow border-0">
         <div class="card-header bg-warning text-dark py-3">
-            <h4 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>Realizar Traslado Interno</h4>
+            <h4 class="mb-0 fw-bold">
+                <i class="bi bi-arrow-left-right me-2"></i>Traslado entre Bodegas
+            </h4>
         </div>
+        
         <div class="card-body p-4 bg-light">
             <form method="post">
                 {% csrf_token %}
                 
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong>Error:</strong> Por favor revise los campos.
+                        {{ form.errors }}
+                    </div>
+                {% endif %}
+
                 <div class="row mb-4 align-items-center">
                     <div class="col-md-5">
-                        <div class="card border-danger">
-                            <div class="card-body">
-                                <h6 class="text-danger fw-bold">DESDE (Sale)</h6>
+                        <div class="card border-danger shadow-sm h-100">
+                            <div class="card-header bg-danger text-white fw-bold">
+                                <i class="bi bi-box-arrow-right"></i> SALE DE (Origen)
+                            </div>
+                            <div class="card-body bg-white">
                                 {{ form.from_warehouse }}
+                                <small class="text-muted">Se restará inventario de aquí.</small>
                             </div>
                         </div>
                     </div>
+
                     <div class="col-md-2 text-center">
-                        <h1>➡️</h1>
+                        <i class="bi bi-arrow-right-circle-fill display-4 text-warning"></i>
                     </div>
+
                     <div class="col-md-5">
-                        <div class="card border-success">
-                            <div class="card-body">
-                                <h6 class="text-success fw-bold">HACIA (Entra)</h6>
+                        <div class="card border-success shadow-sm h-100">
+                            <div class="card-header bg-success text-white fw-bold">
+                                <i class="bi bi-box-arrow-in-down"></i> ENTRA A (Destino)
+                            </div>
+                            <div class="card-body bg-white">
                                 {{ form.to_warehouse }}
+                                <small class="text-muted">Se sumará inventario aquí.</small>
                             </div>
                         </div>
                     </div>
                 </div>
+                <hr>
 
                 <div class="row mb-3">
                     <div class="col-md-8">
-                        <label class="fw-bold">Producto</label>
+                        <label class="fw-bold mb-1">📦 Producto a mover</label>
                         {{ form.product }}
                     </div>
                     <div class="col-md-4">
-                        <label class="fw-bold">Cantidad</label>
+                        <label class="fw-bold mb-1">🔢 Cantidad</label>
                         {{ form.quantity }}
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="fw-bold">Comentarios</label>
+                <div class="mb-4">
+                    <label class="fw-bold mb-1">📝 Notas / Razón del traslado</label>
                     {{ form.comments }}
                 </div>
 
                 <div class="d-flex justify-content-end gap-2">
-                    <a href="{% url 'movement_list' %}" class="btn btn-secondary">Cancelar</a>
-                    <button type="submit" class="btn btn-warning fw-bold px-4">
-                        Confirmar Traslado
+                    <a href="{% url 'movement_list' %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-warning fw-bold px-4 shadow-sm">
+                        <i class="bi bi-check-circle-fill me-2"></i>CONFIRMAR TRASLADO
                     </button>
                 </div>
+
             </form>
         </div>
     </div>

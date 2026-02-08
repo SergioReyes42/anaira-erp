@@ -7,7 +7,7 @@
     <div class="d-flex justify-content-between align-items-center my-4">
         <div>
             <h2 class="fw-bold text-dark">
-                <i class="bi bi-arrow-left-right me-2 text-primary"></i>Kardex de Inventario
+                <i class="bi bi-clipboard-data me-2 text-primary"></i>Kardex de Inventario
             </h2>
             <p class="text-muted mb-0">Movimientos de: <strong>{{ current_company_name }}</strong></p>
         </div>
@@ -18,14 +18,14 @@
             </a>
 
             <a href="{% url 'create_movement' %}" class="btn btn-primary btn-lg shadow-sm">
-                <i class="bi bi-plus-circle me-2"></i>Ajuste (Entrada/Salida)
+                <i class="bi bi-plus-circle me-2"></i>Ajuste Rápido
             </a>
         </div>
         </div>
 
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-white py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Historial Reciente</h6>
+            <h6 class="m-0 font-weight-bold text-primary">Historial de Operaciones</h6>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -36,7 +36,7 @@
                             <th>TIPO</th>
                             <th>PRODUCTO</th>
                             <th>CANTIDAD</th>
-                            <th>REFERENCIA</th>
+                            <th>BODEGA</th> <th>REFERENCIA</th>
                             <th>USUARIO</th>
                         </tr>
                     </thead>
@@ -57,17 +57,24 @@
                                         <i class="bi bi-arrow-up-right me-1"></i>SALIDA
                                     </span>
                                 {% else %}
-                                    <span class="badge bg-warning-subtle text-warning border border-warning rounded-pill px-3">
-                                        <i class="bi bi-arrow-left-right me-1"></i>{{ mov.get_movement_type_display }}
+                                    <span class="badge bg-warning-subtle text-dark border border-warning rounded-pill px-3">
+                                        <i class="bi bi-arrow-left-right me-1"></i>TRASLADO
                                     </span>
                                 {% endif %}
                             </td>
 
                             <td>
                                 <div class="d-flex align-items-center">
-                                    <div class="ms-2">
+                                    {% if mov.product.image %}
+                                        <img src="{{ mov.product.image.url }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
+                                    {% else %}
+                                        <div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center text-white" style="width: 30px; height: 30px; font-size: 10px;">
+                                            <i class="bi bi-box"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
                                         <span class="d-block fw-bold text-dark">{{ mov.product.name }}</span>
-                                        <small class="text-muted" style="font-size: 0.8rem;">SKU: {{ mov.product.code|default:"--" }}</small>
+                                        <small class="text-muted" style="font-size: 0.75rem;">{{ mov.product.code|default:"" }}</small>
                                     </div>
                                 </div>
                             </td>
@@ -77,27 +84,30 @@
                             </td>
 
                             <td>
+                                <span class="badge bg-light text-dark border">{{ mov.warehouse.name }}</span>
+                            </td>
+
+                            <td>
                                 <small class="text-muted fst-italic">{{ mov.reference|default:"--" }}</small>
                                 {% if mov.related_transfer_id %}
-                                    <br><span class="badge bg-light text-dark border">Traslado #{{ mov.related_transfer_id }}</span>
+                                    <br><span class="badge bg-info text-dark" style="font-size: 0.7rem;">Traslado #{{ mov.related_transfer_id }}</span>
                                 {% endif %}
                             </td>
                             
                             <td>
                                 <small class="text-muted">
-                                    <i class="bi bi-person-circle me-1"></i>{{ mov.user.username|default:"Sistema" }}
+                                    <i class="bi bi-person-circle me-1"></i>{{ mov.user.username|default:"--" }}
                                 </small>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center py-5">
-                                <h4 class="text-secondary fw-bold">Sin movimientos aún</h4>
-                                <div class="d-flex justify-content-center gap-2 mt-3">
-                                    <a href="{% url 'create_movement' %}" class="btn btn-outline-primary btn-sm">
-                                        Registrar Ajuste
-                                    </a>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="mb-3 opacity-50">
+                                    <i class="bi bi-box-seam display-1 text-secondary"></i>
                                 </div>
+                                <h4 class="text-secondary fw-bold">Sin movimientos</h4>
+                                <p class="text-muted">El historial está vacío por ahora.</p>
                             </td>
                         </tr>
                         {% endfor %}
