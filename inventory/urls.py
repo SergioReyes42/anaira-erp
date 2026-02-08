@@ -25,4 +25,7 @@ urlpatterns = [
     path('movimientos/nuevo/', views.create_movement, name='create_movement'),
     path('kardex/<int:product_id>/', views.product_kardex, name='product_kardex'),
     path('traslado-interno/', views.make_transfer, name='make_transfer'),
+
+    path('gestion-bodegas/', views.warehouse_management, name='warehouse_management'),
+    path('gestion-bodegas/nueva/', views.warehouse_create, name='warehouse_create'),
 ]

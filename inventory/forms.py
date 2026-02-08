@@ -1,5 +1,6 @@
 from django import forms
 from .models import StockMovement, Product, Warehouse
+from core.models import Branch # Asegúrate de importar Branch
 
 # ==========================================
 # 1. FORMULARIO DE MOVIMIENTOS (Kardex)
@@ -109,3 +110,31 @@ class TransferForm(forms.Form):
 
         self.fields['from_warehouse'].queryset = bodegas_finales
         self.fields['to_warehouse'].queryset = bodegas_finales
+
+class WarehouseForm(forms.ModelForm):
+    class Meta:
+        model = Warehouse
+        fields = ['branch', 'name', 'parent', 'is_main', 'active']
+        widgets = {
+            'branch': forms.Select(attrs={'class': 'form-select'}),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'parent': forms.Select(attrs={'class': 'form-select'}),
+            'is_main': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        labels = {
+            'branch': 'Sucursal',
+            'name': 'Nombre de la Bodega/Estante',
+            'parent': 'Es sub-bodega de... (Opcional)',
+            'is_main': '¿Es Bodega Principal?',
+            'active': 'Activa',
+        }
+
+    def __init__(self, *args, **kwargs):
+        company_id = kwargs.pop('company_id', None)
+        super().__init__(*args, **kwargs)
+        if company_id:
+            # Filtramos sucursales de la empresa actual
+            self.fields['branch'].queryset = Branch.objects.filter(company_id=company_id)
+            # Filtramos padres (bodegas) de la empresa actual
+            self.fields['parent'].queryset = Warehouse.objects.filter(branch__company_id=company_id)

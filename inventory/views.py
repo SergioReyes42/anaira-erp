@@ -6,6 +6,7 @@ from core.models import Company, Branch, Warehouse
 from .models import Product, StockMovement, Stock
 from .forms import StockMovementForm, ProductForm, TransferForm
 from django.db.models import Q
+from .forms import WarehouseForm
 
 # ========================================================
 # 1. VISTA PRINCIPAL (LISTA DE PRODUCTOS)
@@ -232,3 +233,32 @@ def make_transfer(request):
         
 
     return render(request, 'inventory/transfer_form.html', {'form': form})
+@login_required
+def warehouse_management(request):
+    company_id = request.session.get('company_id')
+    if not company_id: return redirect('select_company')
+    
+    # Traemos todas las bodegas de la empresa
+    # Ordenamos por 'branch' y luego por 'parent' para que se vean ordenadas
+    bodegas = Warehouse.objects.filter(branch__company_id=company_id).order_by('branch', 'parent__id', 'name')
+    
+    return render(request, 'inventory/warehouse_list.html', {
+        'bodegas': bodegas
+    })
+
+@login_required
+def warehouse_create(request):
+    company_id = request.session.get('company_id')
+    if not company_id: return redirect('select_company')
+
+    if request.method == 'POST':
+        form = WarehouseForm(request.POST, company_id=company_id)
+        if form.is_valid():
+            bodega = form.save(commit=False)
+            # Validar que la sucursal pertenezca a la empresa es buena práctica
+            bodega.save()
+            return redirect('warehouse_management')
+    else:
+        form = WarehouseForm(company_id=company_id)
+
+    return render(request, 'inventory/warehouse_form.html', {'form': form})
