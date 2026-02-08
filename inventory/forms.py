@@ -68,39 +68,28 @@ class ProductForm(forms.ModelForm):
         }
 
 class TransferForm(forms.Form):
-    """Formulario especial para mover mercadería de A a B"""
     from_warehouse = forms.ModelChoiceField(
         queryset=Warehouse.objects.filter(active=True),
-        label="🔴 Desde (Origen)",
+        label="🔴 Bodega Origen (Sale)",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     to_warehouse = forms.ModelChoiceField(
         queryset=Warehouse.objects.filter(active=True),
-        label="🟢 Hacia (Destino)",
+        label="🟢 Bodega Destino (Entra)",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     product = forms.ModelChoiceField(
         queryset=Product.objects.all(),
         label="📦 Producto",
-        widget=forms.Select(attrs={'class': 'form-select select2'})
+        widget=forms.Select(attrs={'class': 'form-select'})
     )
     quantity = forms.IntegerField(
         min_value=1,
-        label="Cantidad a Mover",
+        label="Cantidad",
         widget=forms.NumberInput(attrs={'class': 'form-control'})
     )
     comments = forms.CharField(
         required=False,
-        label="Comentario / Razón",
+        label="Comentarios",
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2})
     )
-
-    def clean(self):
-        cleaned_data = super().clean()
-        origen = cleaned_data.get("from_warehouse")
-        destino = cleaned_data.get("to_warehouse")
-
-        if origen and destino and origen == destino:
-            raise forms.ValidationError("¡La bodega de origen y destino no pueden ser la misma!")
-        
-        return cleaned_data
