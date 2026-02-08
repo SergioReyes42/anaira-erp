@@ -106,7 +106,9 @@ class Branch(models.Model):
 class Warehouse(models.Model):
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='warehouses')
     name = models.CharField(max_length=255, verbose_name="Bodega")
+    # === AGREGUE ESTA LÍNEA EXACTA ===
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sub_warehouses', verbose_name="Bodega Padre")
+    # =================================
     is_main = models.BooleanField(default=False, verbose_name="¿Principal?")
 
 def __str__(self):
@@ -114,6 +116,7 @@ def __str__(self):
         if self.parent:
             return f"{self.branch.name} | {self.parent.name} > {self.name}"
         return f"{self.branch.name} | {self.name}"
+
 class Meta:
         verbose_name = "Bodega"
         verbose_name_plural = "Bodegas"
