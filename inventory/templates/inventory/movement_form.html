@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 800px;">
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-dark text-white py-3">
+            <h4 class="mb-0"><i class="bi bi-arrow-left-right me-2"></i>Registrar Movimiento</h4>
+        </div>
+        <div class="card-body p-4">
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong>Por favor corrija los errores:</strong>
+                        {{ form.errors }}
+                    </div>
+                {% endif %}
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="fw-bold mb-1 text-primary">📂 Seleccionar Bodega</label>
+                        {{ form.warehouse }}
+                        <small class="text-muted">¿A dónde entra o de dónde sale?</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="fw-bold mb-1">Tipo de Movimiento</label>
+                        {{ form.movement_type }}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <label class="fw-bold mb-1">Producto</label>
+                        {{ form.product }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="fw-bold mb-1">Cantidad</label>
+                        {{ form.quantity }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="fw-bold mb-1">Referencia (Factura / Doc)</label>
+                    {{ form.reference }}
+                </div>
+                
+                <div class="mb-4">
+                    <label class="fw-bold mb-1">Comentarios</label>
+                    {{ form.description }}
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'movement_list' %}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-success px-4">
+                        <i class="bi bi-save me-1"></i> Guardar Movimiento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
