@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold"><i class="bi bi-file-earmark-text me-2"></i>Cotizaciones</h2>
+        <a href="{% url 'quotation_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nueva Cotización</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Folio</th>
+                        <th>Cliente</th>
+                        <th>Fecha</th>
+                        <th>Vence</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for q in cotizaciones %}
+                    <tr>
+                        <td class="ps-4 fw-bold">#{{ q.id }}</td>
+                        <td>{{ q.client.name }}</td>
+                        <td>{{ q.date|date:"d/m/Y" }}</td>
+                        <td>{{ q.valid_until|date:"d/m/Y" }}</td>
+                        <td class="fw-bold text-success">Q{{ q.total }}</td>
+                        <td>
+                            {% if q.status == 'DRAFT' %} <span class="badge bg-secondary">Borrador</span>
+                            {% elif q.status == 'BILLED' %} <span class="badge bg-success">Facturada</span>
+                            {% else %} <span class="badge bg-danger">Cancelada</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center p-4">No hay cotizaciones aún.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

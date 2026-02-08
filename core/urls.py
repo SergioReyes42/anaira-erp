@@ -81,4 +81,7 @@ urlpatterns = [
 
     path('reset-password-emergency/', views.force_password_reset, name='reset_password'), # <--- LA NUEVA
 
+    # COTIZACIONES
+    path('cotizaciones/', views.quotation_list, name='quotation_list'),
+    path('cotizaciones/nueva/', views.quotation_create, name='quotation_create'),
 ]

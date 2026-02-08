@@ -212,19 +212,20 @@ class LoanForm(forms.ModelForm):
 # 7. VENTAS Y CLIENTES
 # ==========================================
 class QuotationForm(forms.ModelForm):
-    validity_days = forms.IntegerField(
-        label="Días de Validez", 
-        initial=15,
-        widget=forms.NumberInput(attrs={'class': 'form-control'})
-    )
-
     class Meta:
         model = Quotation
-        fields = ['client', 'date', 'validity_days', 'total'] 
-        exclude = ['user', 'company', 'created_at', 'status']
+        fields = ['client', 'valid_until', 'payment_method', 'observation']
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'client': forms.Select(attrs={'class': 'form-select'}),
+            'client': forms.Select(attrs={'class': 'form-select select2'}), # select2 ayuda a buscar
+            'valid_until': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'payment_method': forms.Select(attrs={'class': 'form-select'}),
+            'observation': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+        labels = {
+            'client': 'Cliente',
+            'valid_until': 'Válida hasta',
+            'payment_method': 'Forma de Pago',
+            'observation': 'Notas / Observaciones',
         }
 
 class SaleForm(forms.ModelForm):

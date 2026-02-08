@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4 mt-4">
+    <form method="post" id="quoteForm">
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-header bg-dark text-white py-2">
+                        <h6 class="mb-0"><i class="bi bi-person-lines-fill me-2"></i>Datos del Cliente</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            {{ form.client }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold">Válida hasta:</label>
+                            {{ form.valid_until }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold">Pago:</label>
+                            {{ form.payment_method }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <label class="small fw-bold">Observaciones:</label>
+                        {{ form.observation }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-primary text-white py-2 d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="bi bi-cart4 me-2"></i>Detalle de Productos</h6>
+                        <button type="button" class="btn btn-sm btn-light text-primary fw-bold" onclick="addRow()">
+                            <i class="bi bi-plus-lg"></i> Agregar Producto
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-striped mb-0" id="detallesTable">
+                                <thead class="bg-light text-secondary small">
+                                    <tr>
+                                        <th style="width: 40%;">Producto</th>
+                                        <th style="width: 15%;">Precio (Q)</th>
+                                        <th style="width: 15%;">Cantidad</th>
+                                        <th style="width: 20%;">Subtotal</th>
+                                        <th style="width: 10%;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableBody">
+                                    </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-end fw-bold fs-5">TOTAL:</td>
+                                        <td class="fw-bold fs-5 text-primary">Q <span id="grandTotal">0.00</span></td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white text-end">
+                        <a href="{% url 'quotation_list' %}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-success fw-bold px-4">
+                            <i class="bi bi-save me-2"></i>Guardar Cotización
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    // 1. CARGA DE PRODUCTOS DESDE DJANGO
+    // Usamos |unlocalize para asegurar que el número use PUNTO (150.50) y no COMA (150,50)
+    const productsDB = [
+        {% for p in products %}
+            { 
+                id: "{{ p.id }}", 
+                name: "{{ p.name|escapejs }}", 
+                // Si no tiene precio, pone 0. Si tiene, le quita el formato local (comas)
+                price: "{{ p.sale_price|default:0|unlocalize }}" 
+            },
+        {% endfor %}
+    ];
+
+    function addRow() {
+        const tbody = document.getElementById('tableBody');
+        const rowId = Date.now(); 
+        
+        let optionsHtml = '<option value="">-- Seleccionar --</option>';
+        productsDB.forEach(p => {
+            // Convertimos el precio a float aquí mismo para formatearlo bonito (2 decimales)
+            let precioNum = parseFloat(p.price).toFixed(2);
+            optionsHtml += `<option value="${p.id}" data-price="${precioNum}">${p.name}</option>`;
+        });
+
+        const row = `
+            <tr id="row-${rowId}">
+                <td>
+                    <select name="product_id[]" class="form-select form-select-sm" onchange="updatePrice(this, ${rowId})" required>
+                        ${optionsHtml}
+                    </select>
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm bg-light" id="price-${rowId}" readonly value="0.00">
+                </td>
+                <td>
+                    <input type="number" name="qty[]" class="form-control form-control-sm" value="1" min="1" oninput="calcRow(${rowId})">
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm fw-bold border-0 bg-transparent" id="subtotal-${rowId}" readonly value="0.00">
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="removeRow(${rowId})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        tbody.insertAdjacentHTML('beforeend', row);
+    }
+
+    function updatePrice(selectElement, rowId) {
+        const price = selectElement.options[selectElement.selectedIndex].getAttribute('data-price') || "0";
+        document.getElementById(`price-${rowId}`).value = parseFloat(price).toFixed(2);
+        calcRow(rowId);
+    }
+
+    function calcRow(rowId) {
+        const price = parseFloat(document.getElementById(`price-${rowId}`).value) || 0;
+        const qty = parseFloat(document.querySelector(`#row-${rowId} input[name='qty[]']`).value) || 0;
+        const subtotal = price * qty;
+        
+        document.getElementById(`subtotal-${rowId}`).value = subtotal.toFixed(2);
+        calcTotal();
+    }
+
+    function removeRow(rowId) {
+        const row = document.getElementById(`row-${rowId}`);
+        if(row) row.remove();
+        calcTotal();
+    }
+
+    function calcTotal() {
+        let total = 0;
+        document.querySelectorAll("input[id^='subtotal-']").forEach(input => {
+            total += parseFloat(input.value) || 0;
+        });
+        document.getElementById('grandTotal').innerText = total.toFixed(2);
+    }
+
+    window.onload = function() {
+        addRow();
+    };
+</script>
+{% endblock %}
