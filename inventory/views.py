@@ -190,8 +190,6 @@ def product_kardex(request, product_id):
 
 import random
 
-import random
-
 @login_required
 def make_transfer(request):
     if request.method == 'POST':
@@ -199,38 +197,38 @@ def make_transfer(request):
         if form.is_valid():
             data = form.cleaned_data
             
-            # Validación simple
-            if data['from_warehouse'] == data['to_warehouse']:
-                form.add_error('to_warehouse', '¡La bodega destino no puede ser la misma que la de origen!')
-                return render(request, 'inventory/transfer_form.html', {'form': form})
+            # Generamos un ID y lo convertimos a TEXTO para que quepa en 'reference'
+            transfer_id = str(random.randint(100000, 999999))
 
-            # Generamos un ID de grupo para saber que estos dos movimientos son hermanos
-            transfer_id = random.randint(100000, 999999)
-
-            # 1. SACAMOS DE ORIGEN
+            # 1. SALIDA (ORIGEN)
             StockMovement.objects.create(
                 product=data['product'],
                 warehouse=data['from_warehouse'],
                 quantity=data['quantity'],
-                movement_type='TRANSFER_OUT',
+                movement_type='TRANSFER_OUT', # O 'OUT' si su sistema no tiene TRANSFER_OUT
                 user=request.user,
-                comments=f"Traslado hacia {data['to_warehouse'].name} | {data['comments']}",
-                related_transfer_id=transfer_id
+                
+                # CORRECCIÓN AQUÍ: Usamos 'description' y 'reference'
+                description=f"Traslado hacia {data['to_warehouse'].name} | {data['comments']}",
+                reference=f"TRASLADO-{transfer_id}" 
             )
 
-            # 2. METEMOS EN DESTINO
+            # 2. ENTRADA (DESTINO)
             StockMovement.objects.create(
                 product=data['product'],
                 warehouse=data['to_warehouse'],
                 quantity=data['quantity'],
-                movement_type='TRANSFER_IN',
+                movement_type='TRANSFER_IN', # O 'IN' si su sistema no tiene TRANSFER_IN
                 user=request.user,
-                comments=f"Recibido desde {data['from_warehouse'].name} | {data['comments']}",
-                related_transfer_id=transfer_id
+                
+                # CORRECCIÓN AQUÍ: Usamos 'description' y 'reference'
+                description=f"Recibido desde {data['from_warehouse'].name} | {data['comments']}",
+                reference=f"TRASLADO-{transfer_id}"
             )
             
             return redirect('movement_list')
     else:
         form = TransferForm()
+        
 
     return render(request, 'inventory/transfer_form.html', {'form': form})
