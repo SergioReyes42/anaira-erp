@@ -7,107 +7,110 @@
     <div class="d-flex justify-content-between align-items-center my-4">
         <div>
             <h2 class="fw-bold text-dark">
-                <i class="bi bi-clipboard-data me-2 text-primary"></i>Kardex de Inventario
+                <i class="bi bi-clipboard-data me-2 text-primary"></i>Kardex Inteligente
             </h2>
             <p class="text-muted mb-0">Movimientos de: <strong>{{ current_company_name }}</strong></p>
         </div>
         
         <div class="d-flex gap-2">
-            <a href="{% url 'make_transfer' %}" class="btn btn-warning btn-lg shadow-sm text-dark fw-bold">
-                <i class="bi bi-arrow-left-right me-2"></i>Nuevo Traslado
+            <a href="{% url 'make_transfer' %}" class="btn btn-warning shadow-sm text-dark fw-bold">
+                <i class="bi bi-arrow-left-right me-2"></i>Traslado
             </a>
-
-            <a href="{% url 'create_movement' %}" class="btn btn-primary btn-lg shadow-sm">
-                <i class="bi bi-plus-circle me-2"></i>Ajuste Rápido
+            <a href="{% url 'create_movement' %}" class="btn btn-primary shadow-sm">
+                <i class="bi bi-plus-circle me-2"></i>Ajuste
             </a>
         </div>
-        </div>
+    </div>
 
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body py-3">
+            <form method="get" class="row g-2 align-items-center">
+                
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" name="q" class="form-control border-start-0 ps-0" 
+                               placeholder="Buscar producto, factura, referencia..." 
+                               value="{{ q|default:'' }}">
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <select name="tipo" class="form-select">
+                        <option value="" {% if not tipo %}selected{% endif %}>-- Todos los Tipos --</option>
+                        <option value="ENTRADAS" {% if tipo == 'ENTRADAS' %}selected{% endif %}>Solo Entradas</option>
+                        <option value="SALIDAS" {% if tipo == 'SALIDAS' %}selected{% endif %}>Solo Salidas</option>
+                        <option value="TRASLADOS" {% if tipo == 'TRASLADOS' %}selected{% endif %}>Solo Traslados</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3 d-flex gap-1">
+                    <input type="date" name="date_start" class="form-control" title="Fecha Inicio" value="{{ date_start }}">
+                    <span class="align-self-center">-</span>
+                    <input type="date" name="date_end" class="form-control" title="Fecha Fin" value="{{ date_end }}">
+                </div>
+
+                <div class="col-md-3 text-end">
+                    <button type="submit" class="btn btn-dark w-100">
+                        <i class="bi bi-filter"></i> Filtrar Resultados
+                    </button>
+                </div>
+            </form>
+            
+            {% if q or tipo or date_start %}
+            <div class="mt-2 text-end">
+                <a href="{% url 'movement_list' %}" class="text-danger small text-decoration-none">
+                    <i class="bi bi-x-circle"></i> Limpiar todos los filtros
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Historial de Operaciones</h6>
-        </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-light text-secondary">
                         <tr>
-                            <th class="ps-4 py-3">FECHA</th>
+                            <th class="ps-4">FECHA</th>
                             <th>TIPO</th>
                             <th>PRODUCTO</th>
                             <th>CANTIDAD</th>
-                            <th>BODEGA</th> <th>REFERENCIA</th>
-                            <th>USUARIO</th>
+                            <th>BODEGA</th>
+                            <th>REFERENCIA</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for mov in movements %}
                         <tr>
-                            <td class="ps-4 fw-bold text-muted small">
-                                {{ mov.date|date:"d/m/Y H:i" }}
-                            </td>
-
-                            <td>
-                                {% if mov.movement_type == 'IN' or mov.movement_type == 'IN_PURCHASE' or mov.movement_type == 'TRANSFER_IN' %}
-                                    <span class="badge bg-success-subtle text-success border border-success rounded-pill px-3">
-                                        <i class="bi bi-arrow-down-left me-1"></i>ENTRADA
-                                    </span>
-                                {% elif mov.movement_type == 'OUT' or mov.movement_type == 'OUT_SALE' or mov.movement_type == 'TRANSFER_OUT' %}
-                                    <span class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-3">
-                                        <i class="bi bi-arrow-up-right me-1"></i>SALIDA
-                                    </span>
-                                {% else %}
-                                    <span class="badge bg-warning-subtle text-dark border border-warning rounded-pill px-3">
-                                        <i class="bi bi-arrow-left-right me-1"></i>TRASLADO
-                                    </span>
-                                {% endif %}
-                            </td>
-
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    {% if mov.product.image %}
-                                        <img src="{{ mov.product.image.url }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
-                                    {% else %}
-                                        <div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center text-white" style="width: 30px; height: 30px; font-size: 10px;">
-                                            <i class="bi bi-box"></i>
-                                        </div>
-                                    {% endif %}
-                                    <div>
-                                        <span class="d-block fw-bold text-dark">{{ mov.product.name }}</span>
-                                        <small class="text-muted" style="font-size: 0.75rem;">{{ mov.product.code|default:"" }}</small>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td>
-                                <span class="fw-bold fs-6">{{ mov.quantity }}</span>
-                            </td>
-
-                            <td>
-                                <span class="badge bg-light text-dark border">{{ mov.warehouse.name }}</span>
-                            </td>
-
-                            <td>
-                                <small class="text-muted fst-italic">{{ mov.reference|default:"--" }}</small>
-                                {% if mov.related_transfer_id %}
-                                    <br><span class="badge bg-info text-dark" style="font-size: 0.7rem;">Traslado #{{ mov.related_transfer_id }}</span>
-                                {% endif %}
-                            </td>
+                            <td class="ps-4 small text-muted fw-bold">{{ mov.date|date:"d/m/Y H:i" }}</td>
                             
                             <td>
-                                <small class="text-muted">
-                                    <i class="bi bi-person-circle me-1"></i>{{ mov.user.username|default:"--" }}
-                                </small>
+                                {% if 'IN' in mov.movement_type %}
+                                    <span class="badge bg-success-subtle text-success border border-success px-2">ENTRADA</span>
+                                {% elif 'OUT' in mov.movement_type %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger px-2">SALIDA</span>
+                                {% else %}
+                                    <span class="badge bg-warning-subtle text-dark border border-warning px-2">TRASLADO</span>
+                                {% endif %}
                             </td>
+
+                            <td>
+                                <span class="fw-bold d-block text-dark">{{ mov.product.name }}</span>
+                                <small class="text-muted">{{ mov.product.sku }}</small>
+                            </td>
+
+                            <td><span class="fw-bold fs-6">{{ mov.quantity }}</span></td>
+                            
+                            <td><span class="badge bg-light text-dark border">{{ mov.warehouse.name }}</span></td>
+                            
+                            <td><small class="fst-italic text-muted">{{ mov.reference|default:"--" }}</small></td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center py-5">
-                                <div class="mb-3 opacity-50">
-                                    <i class="bi bi-box-seam display-1 text-secondary"></i>
-                                </div>
-                                <h4 class="text-secondary fw-bold">Sin movimientos</h4>
-                                <p class="text-muted">El historial está vacío por ahora.</p>
+                            <td colspan="6" class="text-center py-5">
+                                <h4 class="text-muted">No se encontraron movimientos</h4>
+                                <p>Prueba cambiando los filtros de búsqueda.</p>
                             </td>
                         </tr>
                         {% endfor %}

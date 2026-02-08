@@ -5,6 +5,7 @@ from django.db.models import Prefetch, Sum  # <--- AQUÍ ESTABA EL ERROR
 from core.models import Company, Branch, Warehouse
 from .models import Product, StockMovement, Stock
 from .forms import StockMovementForm, ProductForm, TransferForm
+from django.db.models import Q
 
 # ========================================================
 # 1. VISTA PRINCIPAL (LISTA DE PRODUCTOS)
@@ -79,13 +80,50 @@ def movement_list(request):
 
     empresa = Company.objects.get(id=company_id)
 
+    # 1. Consulta Base (Todos los movimientos de la empresa)
     movimientos = StockMovement.objects.filter(
         product__company_id=company_id
-    ).select_related('product', 'user').order_by('-date')
+    ).select_related('product', 'user', 'warehouse').order_by('-date')
+
+    # === AQUÍ EMPIEZA LA MAGIA DE LOS FILTROS ===
+    
+    # A. Filtro por Palabra Clave (Buscador General)
+    search_query = request.GET.get('q')
+    if search_query:
+        movimientos = movimientos.filter(
+            Q(product__name__icontains=search_query) |  # Nombre producto
+            Q(product__code__icontains=search_query) |  # Código SKU
+            Q(reference__icontains=search_query) |      # Factura / Referencia
+            Q(comments__icontains=search_query)         # Comentarios
+        )
+
+    # B. Filtro por Tipo de Movimiento
+    tipo_filtro = request.GET.get('tipo')
+    if tipo_filtro:
+        if tipo_filtro == 'ENTRADAS':
+            movimientos = movimientos.filter(movement_type__in=['IN', 'IN_PURCHASE', 'TRANSFER_IN'])
+        elif tipo_filtro == 'SALIDAS':
+            movimientos = movimientos.filter(movement_type__in=['OUT', 'OUT_SALE', 'TRANSFER_OUT'])
+        elif tipo_filtro == 'TRASLADOS':
+            movimientos = movimientos.filter(movement_type__in=['TRANSFER_IN', 'TRANSFER_OUT'])
+
+    # C. Filtro por Fechas
+    fecha_inicio = request.GET.get('date_start')
+    fecha_fin = request.GET.get('date_end')
+
+    if fecha_inicio:
+        movimientos = movimientos.filter(date__date__gte=fecha_inicio)
+    if fecha_fin:
+        movimientos = movimientos.filter(date__date__lte=fecha_fin)
 
     context = {
         'movements': movimientos,
-        'current_company_name': empresa.name
+        'current_company_name': empresa.name,
+        # Devolvemos los filtros para que no se borren al buscar
+        'q': search_query,
+        'tipo': tipo_filtro,
+        'date_start': fecha_inicio,
+        'date_end': fecha_fin
     }
     return render(request, 'inventory/movement_list.html', context)
 
