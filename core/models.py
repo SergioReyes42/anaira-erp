@@ -117,6 +117,7 @@ def __str__(self):
             return f"{self.branch.name} | {self.parent.name} > {self.name}"
         return f"{self.branch.name} | {self.name}"
 
+
 class Meta:
         verbose_name = "Bodega"
         verbose_name_plural = "Bodegas"
