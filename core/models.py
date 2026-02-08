@@ -5,8 +5,6 @@ from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from datetime import date
-from django.db import models
-from django.contrib.auth.models import User
 
 User = get_user_model()
 
@@ -30,7 +28,6 @@ class Company(models.Model):
         settings.AUTH_USER_MODEL, 
         through='UserRoleCompany', 
         related_name='companies_assigned'
-    
     )
     active = models.BooleanField(default=True, verbose_name="Activa")
 
@@ -44,18 +41,13 @@ class Company(models.Model):
 class UserProfile(models.Model):
     """Extensión del usuario para manejar Multi-Empresa"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    
-    # Aquí definimos a qué empresas tiene permiso de entrar
     allowed_companies = models.ManyToManyField(Company, verbose_name="Empresas Permitidas")
-    
-    # Aquí guardamos en cuál está trabajando actualmente
     active_company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True, related_name='active_users')
 
     def __str__(self):
         return f"Perfil de {self.user.username}"
 
-# --- SEÑALES MAGICAS ---
-# Esto crea el perfil automáticamente cuando usted crea un usuario en el Admin
+# --- SEÑALES PARA PERFIL ---
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
@@ -72,7 +64,6 @@ class CompanyProfile(models.Model):
     phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True, null=True)
     logo = models.ImageField(upload_to='company_logos/', blank=True, null=True, verbose_name="Logo")
     
-    # --- CAMPO NUEVO: CONTROL DE ACCESO ---
     allowed_users = models.ManyToManyField(
         User, 
         related_name='allowed_companies', 
@@ -95,32 +86,43 @@ class UserRoleCompany(models.Model):
     class Meta: 
         unique_together = ("user", "role", "company")
 
-class Branch(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='branches')
-    name = models.CharField(max_length=255, verbose_name="Sucursal")
-    code = models.CharField(max_length=10, verbose_name="Código")
-    location = models.CharField(max_length=255, verbose_name="Ubicación")
+# --- SUCURSALES Y BODEGAS (DEFINICIÓN ÚNICA Y CORRECTA) ---
 
-    def __str__(self): return f"{self.name} ({self.company.name})"
+class Branch(models.Model):
+    # Unificamos la definición aquí. Usamos CompanyProfile para mantener coherencia con el resto.
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='branches') 
+    name = models.CharField(max_length=255, verbose_name="Sucursal")
+    code = models.CharField(max_length=20, verbose_name="Código/Prefijo", help_text="Ej: Z9, CENT")
+    location = models.CharField(max_length=255, verbose_name="Ubicación/Dirección", null=True, blank=True)
+    phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True, null=True)
+
+    def __str__(self): return f"{self.name} ({self.code})"
+    
+    class Meta:
+        verbose_name = "Sucursal"
+        verbose_name_plural = "Sucursales"
 
 class Warehouse(models.Model):
-    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='warehouses')
-    name = models.CharField(max_length=255, verbose_name="Bodega")
-    # === AGREGUE ESTA LÍNEA EXACTA ===
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='warehouses', verbose_name="Sucursal")
+    name = models.CharField(max_length=255, verbose_name="Nombre Bodega")
+    
+    # === LA LÍNEA MÁGICA PARA EL MONITOR DE EXISTENCIAS ===
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sub_warehouses', verbose_name="Bodega Padre")
-    # =================================
+    # ====================================================
+    
     is_main = models.BooleanField(default=False, verbose_name="¿Principal?")
+    active = models.BooleanField(default=True, verbose_name="Activa")
 
-def __str__(self):
-        # Esto hará que se vea bonito: "Central > Cableados > Bobinas"
+    def __str__(self):
+        # Jerarquía visual: "Central > Cableados > Bobinas"
         if self.parent:
             return f"{self.branch.name} | {self.parent.name} > {self.name}"
         return f"{self.branch.name} | {self.name}"
 
-
-class Meta:
+    class Meta:
         verbose_name = "Bodega"
         verbose_name_plural = "Bodegas"
+
 
 # ==========================================
 # 2. CONTABILIDAD (NÚCLEO FINANCIERO)
@@ -177,23 +179,6 @@ class BankAccount(models.Model):
         verbose_name = "Cuenta Bancaria"
         verbose_name_plural = "Cuentas Bancarias"
 
-class BankTransaction(models.Model):
-    MOVEMENT_CHOICES = (
-        ('IN', 'Entrada / Depósito'),
-        ('OUT', 'Salida / Retiro'),
-    )
-    account = models.ForeignKey(BankAccount, on_delete=models.CASCADE)
-    date = models.DateField(verbose_name="Fecha")
-    movement_type = models.CharField(max_length=3, choices=MOVEMENT_CHOICES, default='OUT')
-    amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto")
-    description = models.CharField(max_length=255, verbose_name="Descripción")
-    reference = models.CharField(max_length=100, blank=True, null=True, verbose_name="Referencia")
-    evidence = models.ImageField(upload_to='bank_evidence/', blank=True, null=True, verbose_name="Comprobante")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.get_movement_type_display()} - Q{self.amount}"
-
 class BankMovement(models.Model):
     """El historial real de la libreta"""
     TYPES = (('IN', 'Depósito'), ('OUT', 'Retiro/Cheque'))
@@ -224,7 +209,6 @@ class BusinessPartner(models.Model):
     type = models.CharField(max_length=10, choices=TYPES, default='CLIENTE', verbose_name="Tipo Texto")
     partner_type = models.CharField(max_length=1, choices=TYPES, default='P', verbose_name="Tipo Código")
     
-    # Datos Bancarios
     bank_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Banco del Proveedor")
     bank_account = models.CharField(max_length=50, blank=True, null=True, verbose_name="No. Cuenta Proveedor")
     account_type = models.CharField(max_length=50, blank=True, null=True, default="Monetaria", verbose_name="Tipo Cuenta")
@@ -259,6 +243,17 @@ class Fleet(models.Model):
     model = models.CharField(max_length=50, verbose_name="Modelo")
     year = models.IntegerField(verbose_name="Año", null=True, blank=True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, verbose_name="Empresa")
+    
+    def __str__(self):
+        return f"{self.plate} - {self.brand} {self.model}"
+
+# Aseguramos que Fleet (Flotilla) también exista por si las vistas lo piden
+class Fleet(models.Model):
+    plate = models.CharField(max_length=20, unique=True, verbose_name="Placa")
+    brand = models.CharField(max_length=50, verbose_name="Marca")
+    model = models.CharField(max_length=50, verbose_name="Modelo")
+    year = models.IntegerField(verbose_name="Año", null=True, blank=True)
+    company = models.ForeignKey('Company', on_delete=models.CASCADE, verbose_name="Empresa")
     
     def __str__(self):
         return f"{self.plate} - {self.brand} {self.model}"
@@ -299,7 +294,7 @@ class Gasto(models.Model):
 
 
 # ==========================================
-# 5. LOGÍSTICA E INVENTARIO (UNIFICADO)
+# 5. LOGÍSTICA E INVENTARIO (MAESTROS)
 # ==========================================
 
 class Product(models.Model):
@@ -310,53 +305,22 @@ class Product(models.Model):
     cost = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo")
     image = models.ImageField(upload_to='products/', blank=True, null=True)
     
-    # --- STOCK Y APARTADOS ---
-    stock = models.IntegerField(default=0, verbose_name="Stock Físico")
+    # Stock Global (Referencial)
+    stock = models.IntegerField(default=0, verbose_name="Stock Físico Global")
     stock_reserved = models.IntegerField(default=0, verbose_name="Apartado en Cotizaciones")
 
     def __str__(self):
-        return f"{self.name} (Disp: {self.available_stock})"
+        return f"{self.name} ({self.code})"
 
     @property
     def available_stock(self):
         return self.stock - self.stock_reserved
 
-class InventoryMovement(models.Model):
-    TYPE_CHOICES = [('IN', 'Entrada'), ('OUT', 'Salida')]
-    
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.IntegerField()
-    type = models.CharField(max_length=3, choices=TYPE_CHOICES)
-    date = models.DateTimeField(default=timezone.now)
-    reference = models.CharField(max_length=200)
-    
-    # ** SOLUCIÓN AL ERROR DE CHOQUE **
-    # Agregamos related_name para que no choque con usuarios de otras apps
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='inventory_history')
-
-    def __str__(self):
-        return f"{self.type} {self.quantity} - {self.product.name}"
-
-
 # ==========================================
 # 6. RECURSOS HUMANOS (EMPLEADOS Y NÓMINA)
 # ==========================================
-# 1. MODELO SUCURSAL (Punto de Venta / Facturación)
-class Branch(models.Model):
-    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
-    name = models.CharField(max_length=100, verbose_name="Nombre Sucursal")
-    code = models.CharField(max_length=20, verbose_name="Código/Prefijo", help_text="Ej: Z9, CENT, SUR")
-    address = models.CharField(max_length=200, verbose_name="Dirección")
-    phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True, null=True)
-    
-    def __str__(self):
-        return f"{self.code} - {self.name}"
 
-    class Meta:
-        verbose_name = "Sucursal"
-        verbose_name_plural = "Sucursales"
 class Employee(models.Model):
-    # Campos existentes
     first_name = models.CharField(max_length=100, verbose_name="Nombres")
     last_name = models.CharField(max_length=100, verbose_name="Apellidos")
     dpi = models.CharField(max_length=20, verbose_name="DPI", unique=True)
@@ -370,10 +334,9 @@ class Employee(models.Model):
     bonus = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Bonificación")
     igss_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="No. IGSS")
     
-    # --- NUEVOS CAMPOS (LOS QUE FALTAN) ---
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Usuario de Sistema")
-    branch = models.ForeignKey('Branch', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Sucursal Asignada")
-    company = models.ForeignKey('CompanyProfile', on_delete=models.CASCADE, null=True, blank=True)
+    branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Sucursal Asignada")
+    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -437,8 +400,6 @@ class Client(models.Model):
     credit_limit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Límite de Crédito")
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True, verbose_name="Activo")
-    
-    # Campo opcional si quieres ligar cliente a una empresa especifica
     company = models.ForeignKey(CompanyProfile, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
@@ -450,7 +411,6 @@ class Quotation(models.Model):
         ('BILLED', 'Facturada (Rebaja Stock)'),
         ('CANCELED', 'Cancelada (Libera Stock)'),
     ]
-    # --- NUEVO BLOQUE: OPCIONES DE PAGO ---
     PAYMENT_CHOICES = [
         ('EFECTIVO', 'Efectivo'),
         ('TRANSFERENCIA', 'Transferencia'),
@@ -464,18 +424,7 @@ class Quotation(models.Model):
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     observation = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='DRAFT')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    # --- NUEVO CAMPO ---
-    payment_method = models.CharField(
-        max_length=50, 
-        choices=PAYMENT_CHOICES, 
-        default='EFECTIVO',
-        verbose_name="Método de Pago"
-    )
-    total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    observation = models.TextField(blank=True, null=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='DRAFT')
+    payment_method = models.CharField(max_length=50, choices=PAYMENT_CHOICES, default='EFECTIVO', verbose_name="Método de Pago")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -491,22 +440,7 @@ class QuotationDetail(models.Model):
         return f"{self.quantity} x {self.product.name}"
 
 
-
-# 2. MODELO BODEGA (Almacenamiento Físico)
-class Warehouse(models.Model):
-    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, verbose_name="Sucursal", related_name="warehouses")
-    name = models.CharField(max_length=100, verbose_name="Nombre Bodega")
-    active = models.BooleanField(default=True, verbose_name="Activa")
-    
-    def __str__(self):
-        return f"{self.branch.code} - {self.name}"
-
-    class Meta:
-        verbose_name = "Bodega"
-        verbose_name_plural = "Bodegas"
-
-# 3. MODELO INVENTARIO DETALLADO (Stock por Bodega)
-# Este es el nuevo corazón del stock. Reemplaza al campo simple 'stock' del producto.
+# MODELO INVENTARIO DETALLADO (Stock por Bodega)
 class Inventory(models.Model):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, verbose_name="Bodega")
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Producto")
@@ -515,7 +449,7 @@ class Inventory(models.Model):
     location = models.CharField(max_length=50, verbose_name="Ubicación/Estante", blank=True, null=True)
 
     class Meta:
-        unique_together = ('warehouse', 'product') # No puede haber duplicados de producto en la misma bodega
+        unique_together = ('warehouse', 'product')
         verbose_name = "Inventario por Bodega"
         verbose_name_plural = "Inventarios por Bodega"
 
@@ -523,7 +457,6 @@ class Inventory(models.Model):
         return f"{self.product.name} en {self.warehouse.name}: {self.quantity}"
 
 class Sale(models.Model):
-    """Registro de una Venta completada (Facturada)"""
     company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
     client = models.ForeignKey(Client, on_delete=models.CASCADE, verbose_name="Cliente")
     date = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Venta")
@@ -538,7 +471,6 @@ class Sale(models.Model):
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     invoice_number = models.CharField(max_length=50, blank=True, verbose_name="No. Factura/Recibo")
 
-    # NUEVOS CAMPOS
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, verbose_name="Sucursal de Facturación")
     warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, verbose_name="Bodega de Despacho")
 
@@ -565,21 +497,8 @@ class SaleDetail(models.Model):
 
 # --- PROVEEDORES Y COMPRAS ---
 
-class Provider(models.Model):
-    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
-    name = models.CharField(max_length=100, verbose_name="Razón Social / Nombre")
-    nit = models.CharField(max_length=20, blank=True, verbose_name="NIT")
-    contact_name = models.CharField(max_length=100, blank=True, verbose_name="Contacto")
-    phone = models.CharField(max_length=20, blank=True, verbose_name="Teléfono")
-    email = models.EmailField(blank=True, verbose_name="Email")
-    
-    def __str__(self): return self.name
-    class Meta:
-        verbose_name = "Proveedor"
-        verbose_name_plural = "Proveedores"
-
-# 1. PRIMERO EL PROVEEDOR
 class Supplier(models.Model):
+    # Unificado: Este es el modelo oficial de Proveedor
     company = models.ForeignKey('CompanyProfile', on_delete=models.CASCADE, verbose_name="Empresa", null=True, blank=True)
     name = models.CharField(max_length=200, verbose_name="Razón Social / Nombre")
     nit = models.CharField(max_length=20, verbose_name="NIT / RUT", blank=True, null=True)
@@ -596,15 +515,12 @@ class Supplier(models.Model):
         verbose_name = "Proveedor"
         verbose_name_plural = "Proveedores"
 
-# 2. LUEGO LA COMPRA (Ahora sí reconoce a Supplier)
 class Purchase(models.Model):
     STATUS_CHOICES = [
         ('DRAFT', 'Borrador'),
         ('RECEIVED', 'Recibido / Inventario Cargado'),
         ('CANCELLED', 'Cancelada'),
     ]
-    
-    # --- NUEVOS MÉTODOS DE PAGO ---
     PAYMENT_METHODS = [
         ('CASH', 'Efectivo'),
         ('TRANSFER', 'Transferencia Bancaria'),
@@ -622,9 +538,8 @@ class Purchase(models.Model):
 
     warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, verbose_name="Bodega de Entrada")
     
-    # --- CAMPOS NUEVOS ---
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='CASH', verbose_name="Método de Pago")
-    payment_reference = models.CharField(max_length=100, verbose_name="Cuenta / Referencia / Tarjeta", blank=True, null=True, help_text="Ej: Banco Industrial, Tarjeta terminación 4099")
+    payment_reference = models.CharField(max_length=100, verbose_name="Cuenta / Referencia / Tarjeta", blank=True, null=True)
     
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='RECEIVED', verbose_name="Estado")
@@ -639,7 +554,6 @@ class Purchase(models.Model):
         verbose_name = "Compra"
         verbose_name_plural = "Compras"
 
-# 3. FINALMENTE EL DETALLE (Usa a Purchase)
 class PurchaseDetail(models.Model):
     purchase = models.ForeignKey(Purchase, related_name='details', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Producto")
@@ -654,12 +568,8 @@ class PurchaseDetail(models.Model):
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
 
-# SEÑALES (Signals)
 @receiver(post_save, sender=PurchaseDetail)
 def update_inventory_on_purchase(sender, instance, created, **kwargs):
-    """
-    Automáticamente suma al stock cuando se crea un detalle de compra.
-    """
     if created: 
         producto = instance.product
         producto.stock += instance.quantity
@@ -680,11 +590,9 @@ class StockMovement(models.Model):
     quantity = models.IntegerField(verbose_name="Cantidad")
     movement_type = models.CharField(max_length=20, choices=MOVEMENT_TYPES, verbose_name="Tipo de Movimiento")
     
-    # Referencias cruzadas (Opcionales, para saber de dónde vino el movimiento)
     related_purchase = models.ForeignKey('Purchase', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Ref. Compra")
     related_sale = models.ForeignKey('Sale', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Ref. Venta")
     
-    # Para traslados, saber de dónde vino o a dónde fue
     related_transfer_id = models.IntegerField(null=True, blank=True, help_text="ID del grupo de traslado")
     
     date = models.DateTimeField(auto_now_add=True, verbose_name="Fecha y Hora")
@@ -700,4 +608,71 @@ class StockMovement(models.Model):
         ordering = ['-date']
 
 
+# ==========================================================
+# BLOQUE DE RECUPERACIÓN: TESORERÍA Y FLOTILLA (LEGACY)
+# Pegar esto al final de core/models.py
+# ==========================================================
+
+class BankTransaction(models.Model):
+    """Transacciones bancarias simples (Requerido por views.py)"""
+    MOVEMENT_CHOICES = (
+        ('IN', 'Entrada / Depósito'),
+        ('OUT', 'Salida / Retiro'),
+    )
+    account = models.ForeignKey('BankAccount', on_delete=models.CASCADE)
+    date = models.DateField(verbose_name="Fecha")
+    movement_type = models.CharField(max_length=3, choices=MOVEMENT_CHOICES, default='OUT')
+    amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto")
+    description = models.CharField(max_length=255, verbose_name="Descripción")
+    reference = models.CharField(max_length=100, blank=True, null=True, verbose_name="Referencia")
+    evidence = models.ImageField(upload_to='bank_evidence/', blank=True, null=True, verbose_name="Comprobante")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_movement_type_display()} - Q{self.amount}"
+
+# ==========================================
+# BLOQUE RECUPERADO: PROVEEDOR LEGACY
+# ==========================================
+
+class Provider(models.Model):
+    """Modelo de proveedor simple para compatibilidad con vistas antiguas"""
+    company = models.ForeignKey('CompanyProfile', on_delete=models.CASCADE, verbose_name="Empresa")
+    name = models.CharField(max_length=100, verbose_name="Razón Social / Nombre")
+    nit = models.CharField(max_length=20, blank=True, verbose_name="NIT")
+    contact_name = models.CharField(max_length=100, blank=True, verbose_name="Contacto")
+    phone = models.CharField(max_length=20, blank=True, verbose_name="Teléfono")
+    email = models.EmailField(blank=True, verbose_name="Email")
     
+    def __str__(self): return self.name
+    
+    class Meta:
+        verbose_name = "Proveedor (Simple)"
+        verbose_name_plural = "Proveedores (Simple)"
+
+
+
+
+# ==========================================================
+# BLOQUE RECUPERADO: MOVIMIENTOS SIMPLES (LEGACY)
+# Pegar al final de core/models.py
+# ==========================================================
+
+class InventoryMovement(models.Model):
+    """
+    Modelo de movimiento de inventario simple (Legacy).
+    Necesario para que core/views.py no se rompa.
+    """
+    TYPE_CHOICES = [('IN', 'Entrada'), ('OUT', 'Salida')]
+    
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    quantity = models.IntegerField()
+    type = models.CharField(max_length=3, choices=TYPE_CHOICES)
+    date = models.DateTimeField(default=timezone.now)
+    reference = models.CharField(max_length=200)
+    
+    # Usamos related_name para evitar choque con otros modelos de usuario
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='inventory_history_legacy')
+
+    def __str__(self):
+        return f"{self.type} {self.quantity} - {self.product.name}"
