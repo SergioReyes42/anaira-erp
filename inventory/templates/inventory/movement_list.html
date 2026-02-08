@@ -12,10 +12,16 @@
             <p class="text-muted mb-0">Movimientos de: <strong>{{ current_company_name }}</strong></p>
         </div>
         
-        <a href="{% url 'create_movement' %}" class="btn btn-primary btn-lg shadow-sm">
-            <i class="bi bi-plus-circle me-2"></i>Registrar Movimiento
-        </a>
-    </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'make_transfer' %}" class="btn btn-warning btn-lg shadow-sm text-dark fw-bold">
+                <i class="bi bi-arrow-left-right me-2"></i>Nuevo Traslado
+            </a>
+
+            <a href="{% url 'create_movement' %}" class="btn btn-primary btn-lg shadow-sm">
+                <i class="bi bi-plus-circle me-2"></i>Registrar Ajuste
+            </a>
+        </div>
+        </div>
 
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-white py-3">
@@ -42,17 +48,17 @@
                             </td>
 
                             <td>
-                                {% if mov.movement_type == 'IN' %}
+                                {% if mov.movement_type == 'IN' or mov.movement_type == 'IN_PURCHASE' or mov.movement_type == 'TRANSFER_IN' %}
                                     <span class="badge bg-success-subtle text-success border border-success rounded-pill px-3">
                                         <i class="bi bi-arrow-down-left me-1"></i>ENTRADA
                                     </span>
-                                {% elif mov.movement_type == 'OUT' %}
+                                {% elif mov.movement_type == 'OUT' or mov.movement_type == 'OUT_SALE' or mov.movement_type == 'TRANSFER_OUT' %}
                                     <span class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-3">
                                         <i class="bi bi-arrow-up-right me-1"></i>SALIDA
                                     </span>
                                 {% else %}
                                     <span class="badge bg-warning-subtle text-warning border border-warning rounded-pill px-3">
-                                        <i class="bi bi-arrow-left-right me-1"></i>TRASLADO
+                                        <i class="bi bi-arrow-left-right me-1"></i>{{ mov.get_movement_type_display }}
                                     </span>
                                 {% endif %}
                             </td>
@@ -61,7 +67,7 @@
                                 <div class="d-flex align-items-center">
                                     <div class="ms-2">
                                         <span class="d-block fw-bold text-dark">{{ mov.product.name }}</span>
-                                        <small class="text-muted" style="font-size: 0.8rem;">SKU: {{ mov.product.sku|default:"--" }}</small>
+                                        <small class="text-muted" style="font-size: 0.8rem;">SKU: {{ mov.product.code|default:"--" }}</small>
                                     </div>
                                 </div>
                             </td>
@@ -71,7 +77,10 @@
                             </td>
 
                             <td>
-                                <small class="text-muted fst-italic">{{ mov.reference|default:"Sin referencia" }}</small>
+                                <small class="text-muted fst-italic">{{ mov.reference|default:"--" }}</small>
+                                {% if mov.related_transfer_id %}
+                                    <br><span class="badge bg-light text-dark border">Traslado #{{ mov.related_transfer_id }}</span>
+                                {% endif %}
                             </td>
                             
                             <td>
@@ -88,9 +97,14 @@
                                 </div>
                                 <h4 class="text-secondary fw-bold">Sin movimientos aún</h4>
                                 <p class="text-muted">No se han registrado entradas ni salidas en esta empresa.</p>
-                                <a href="{% url 'create_movement' %}" class="btn btn-outline-primary btn-sm mt-2">
-                                    Registrar el primero
-                                </a>
+                                <div class="d-flex justify-content-center gap-2 mt-3">
+                                    <a href="{% url 'create_movement' %}" class="btn btn-outline-primary btn-sm">
+                                        Registrar Ajuste
+                                    </a>
+                                    <a href="{% url 'make_transfer' %}" class="btn btn-outline-warning btn-sm text-dark">
+                                        Registrar Traslado
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
