@@ -1305,20 +1305,26 @@ def quotation_create(request):
                 for i in range(len(product_ids)):
                     if product_ids[i]:
                         prod = get_object_or_404(Product, id=product_ids[i])
-                        
                         cant = float(qtys[i])
-                        
-                        # --- CORRECCIÓN CRÍTICA ---
-                        # Antes: precio = float(prod.price) (Ignoraba tu cambio)
-                        # Ahora: precio = float(prices[i]) (Usa lo que escribiste en pantalla)
-                        precio = float(prices[i]) 
+                        precio = float(prices[i])
+
+                        # --- NUEVA VALIDACIÓN DE STOCK ---
+                    if prod.stock < cant:
+                    # Si pides 10 y hay 5, lanzamos error y cancelamos todo
+                        messages.error(request, f"⚠️ STOCK INSUFICIENTE: Intentas cotizar {cant} de '{prod.name}', pero solo tienes {prod.stock} en existencia.")
+                    # Opcional: Podrías hacer un 'break' o 'return' para no guardar nada
+                    # Por ahora, dejaremos que guarde pero con la advertencia, o puedes poner:
+                    # transaction.set_rollback(True)
+                    # return redirect('quotation_create') 
+
+                    # --- FIN VALIDACIÓN ---
                         
                         # Calculamos subtotal
-                        subtotal_linea = cant * precio
-                        total_cotizacion += subtotal_linea
+                    subtotal_linea = cant * precio
+                    total_cotizacion += subtotal_linea
 
                         # Guardamos
-                        QuotationDetail.objects.create(
+                    QuotationDetail.objects.create(
                             quotation=cotizacion,
                             product=prod,
                             quantity=cant,
