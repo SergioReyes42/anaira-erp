@@ -79,28 +79,31 @@
 </div>
 
 <script>
-    // 1. CARGA DE PRODUCTOS DESDE DJANGO
-    const productsDB = [
-        {% for p in products %}
-            { 
-                id: "{{ p.id }}", 
-                name: "{{ p.name|escapejs }}", 
-                // CORRECCIÓN: Usamos 'stringformat:f' que es nativo y fuerza el formato 123.45
-                price: "{{ p.sale_price|default:0|stringformat:'f' }}" 
-            },
-        {% endfor %}
-    ];
+    /* ==========================================
+       LOGICA DE PRODUCTOS Y PRECIOS
+       ========================================== */
+    
+    // 1. Base de datos de productos (pasada desde Django a JS)
+    // Usamos stringformat:'f' para que el precio sea un número limpio (ej: 150.00)
+    const productsDB = {};
+    
+    {% for p in products %}
+        productsDB["{{ p.id }}"] = {
+            name: "{{ p.name|escapejs }}",
+            price: {{ p.sale_price|default:0|stringformat:"f" }} 
+        };
+    {% endfor %}
 
+    // 2. Función para agregar filas
     function addRow() {
         const tbody = document.getElementById('tableBody');
-        const rowId = Date.now(); 
+        const rowId = Date.now(); // ID único
         
+        // Generar las opciones del Select
         let optionsHtml = '<option value="">-- Seleccionar --</option>';
-        productsDB.forEach(p => {
-            // Convertimos el precio a float aquí mismo para formatearlo bonito (2 decimales)
-            let precioNum = parseFloat(p.price).toFixed(2);
-            optionsHtml += `<option value="${p.id}" data-price="${precioNum}">${p.name}</option>`;
-        });
+        for (const [id, data] of Object.entries(productsDB)) {
+            optionsHtml += `<option value="${id}">${data.name}</option>`;
+        }
 
         const row = `
             <tr id="row-${rowId}">
@@ -110,13 +113,16 @@
                     </select>
                 </td>
                 <td>
-                    <input type="text" class="form-control form-control-sm bg-light" id="price-${rowId}" readonly value="0.00">
+                    <input type="number" class="form-control form-control-sm bg-light text-end" 
+                           id="price-${rowId}" name="price[]" readonly value="0.00">
                 </td>
                 <td>
-                    <input type="number" name="qty[]" class="form-control form-control-sm" value="1" min="1" oninput="calcRow(${rowId})">
+                    <input type="number" name="qty[]" class="form-control form-control-sm text-center" 
+                           value="1" min="1" oninput="calcRow(${rowId})">
                 </td>
                 <td>
-                    <input type="text" class="form-control form-control-sm fw-bold border-0 bg-transparent" id="subtotal-${rowId}" readonly value="0.00">
+                    <input type="text" class="form-control form-control-sm fw-bold border-0 bg-transparent text-end" 
+                           id="subtotal-${rowId}" readonly value="0.00">
                 </td>
                 <td class="text-center">
                     <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="removeRow(${rowId})">
@@ -128,12 +134,23 @@
         tbody.insertAdjacentHTML('beforeend', row);
     }
 
+    // 3. Actualizar precio al seleccionar producto
     function updatePrice(selectElement, rowId) {
-        const price = selectElement.options[selectElement.selectedIndex].getAttribute('data-price') || "0";
-        document.getElementById(`price-${rowId}`).value = parseFloat(price).toFixed(2);
-        calcRow(rowId);
+        const productId = selectElement.value;
+        const priceInput = document.getElementById(`price-${rowId}`);
+        
+        if (productId && productsDB[productId]) {
+            // Asignamos el precio automáticamente
+            let precio = parseFloat(productsDB[productId].price);
+            priceInput.value = precio.toFixed(2);
+        } else {
+            priceInput.value = "0.00";
+        }
+        
+        calcRow(rowId); // Recalcular subtotal
     }
 
+    // 4. Calcular Subtotal (Precio * Cantidad)
     function calcRow(rowId) {
         const price = parseFloat(document.getElementById(`price-${rowId}`).value) || 0;
         const qty = parseFloat(document.querySelector(`#row-${rowId} input[name='qty[]']`).value) || 0;
@@ -143,12 +160,14 @@
         calcTotal();
     }
 
+    // 5. Eliminar fila
     function removeRow(rowId) {
         const row = document.getElementById(`row-${rowId}`);
         if(row) row.remove();
         calcTotal();
     }
 
+    // 6. Calcular Total General
     function calcTotal() {
         let total = 0;
         document.querySelectorAll("input[id^='subtotal-']").forEach(input => {
@@ -157,6 +176,7 @@
         document.getElementById('grandTotal').innerText = total.toFixed(2);
     }
 
+    // Iniciar con una fila vacía al cargar
     window.onload = function() {
         addRow();
     };
