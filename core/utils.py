@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 # Cargar variables de entorno (API Keys)
 load_dotenv()
 
+
 # =======================================================
 # 1. LISTADO DE CUENTAS POR DEFECTO (CATÁLOGO BASE)
 # =======================================================
