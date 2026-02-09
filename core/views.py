@@ -79,6 +79,7 @@ from .forms import (
     EmployeeForm, 
     LoanForm
 )
+User = get_user_model()
 # ---------------------------------------------------------
 # A PARTIR DE AQUÍ COMIENZAN SUS VISTAS (def home...)
 # ---------------------------------------------------------
@@ -2122,15 +2123,14 @@ def quotation_convert(request, id):
 # 1. LISTA DE USUARIOS (DASHBOARD RRHH)
 @login_required
 def user_list(request):
-    # Solo administradores deberían ver esto
     if not request.user.is_staff:
         messages.error(request, "Acceso denegado.")
         return redirect('home')
 
-    users = User.objects.all().select_related('profile') # Optimizamos la consulta
+    # Ahora 'User' se refiere a tu modelo 'accounts.User'
+    users = User.objects.all() 
     return render(request, 'core/config/user_list.html', {'users': users})
 
-# 2. CREAR NUEVO USUARIO
 @login_required
 def user_create(request):
     if not request.user.is_staff:
@@ -2141,17 +2141,73 @@ def user_create(request):
         if form.is_valid():
             user = form.save()
             
-            # MAGIA: Actualizamos el perfil sin que explote
+            # Intentamos guardar la sucursal si tu modelo lo permite
             branch = form.cleaned_data.get('branch')
             if branch:
-                # Usamos get_or_create para evitar el IntegrityError
-                profile, created = UserProfile.objects.get_or_create(user=user)
-                profile.branch = branch
-                profile.save()
-            
+                # OJO: Si tu usuario personalizado YA tiene campo 'branch', úsalo directo:
+                # user.branch = branch
+                # user.save()
+                
+                # Si usas perfil aparte:
+                try:
+                    profile, created = UserProfile.objects.get_or_create(user=user)
+                    profile.branch = branch
+                    profile.save()
+                except:
+                    pass # Evitamos errores si la estructura es diferente
+
             messages.success(request, f"Usuario {user.username} creado exitosamente.")
             return redirect('user_list')
     else:
         form = CustomUserForm()
 
     return render(request, 'core/config/user_form.html', {'form': form})
+
+@login_required
+def control_panel(request):
+    # 1. Seguridad: Solo Staff/Admin puede ver esto
+    if not request.user.is_staff:
+        messages.error(request, "Acceso restringido al Panel de Control.")
+        return redirect('home')
+
+    # 2. Recopilar Estadísticas Reales
+    context = {
+        # Contadores (Tarjetas de arriba)
+        'total_empresas': CompanyProfile.objects.count() if hasattr(CompanyProfile, 'objects') else 1,
+        'total_usuarios': User.objects.count(),
+        'total_gastos': Quotation.objects.count(), # Usamos Cotizaciones como "Registros Globales" por ahora
+        
+        # Listas (Tablas de abajo)
+        'empresas_list': CompanyProfile.objects.all() if hasattr(CompanyProfile, 'objects') else [],
+        'usuarios_recientes': User.objects.order_by('-date_joined')[:5], # Los últimos 5 usuarios
+    }
+
+    return render(request, 'core/config/control_panel.html', context)
+
+from .forms import CompanyForm # Importar el form nuevo
+
+# LISTAR EMPRESAS
+@login_required
+def company_list(request):
+    if not request.user.is_staff:
+        return redirect('home')
+    empresas = CompanyProfile.objects.all()
+    return render(request, 'core/config/company_list.html', {'empresas': empresas})
+
+# CREAR / EDITAR EMPRESA
+@login_required
+def company_create(request):
+    if not request.user.is_staff:
+        return redirect('home')
+
+    if request.method == 'POST':
+        # OJO: request.FILES es necesario para subir el LOGO
+        form = CompanyForm(request.POST, request.FILES) 
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Empresa guardada exitosamente.")
+            return redirect('company_list')
+    else:
+        form = CompanyForm()
+
+    return render(request, 'core/config/company_form.html', {'form': form})

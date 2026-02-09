@@ -97,7 +97,11 @@ urlpatterns = [
     path('facturas/<int:id>/ver/', views.invoice_view, name='invoice_view'),
 
     # USUARIOS
-        path('config/usuarios/', views.user_list, name='user_list'),
+    path('config/usuarios/', views.user_list, name='user_list'),
     path('config/usuarios/nuevo/', views.user_create, name='user_create'),
+    path('config/panel-sistema/', views.control_panel, name='control_panel'),
+
+    path('config/empresas/', views.company_list, name='company_list'),
+    path('config/empresas/nueva/', views.company_create, name='company_create'),
 
 ]

@@ -317,3 +317,17 @@ class CustomUserForm(UserCreationForm):
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
+class CompanyForm(forms.ModelForm):
+    class Meta:
+        model = CompanyProfile
+        fields = ['name', 'nit', 'address', 'phone', 'email', 'logo', 'currency_symbol']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'nit': forms.TextInput(attrs={'class': 'form-control'}),
+            'address': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'currency_symbol': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Q'}),
+            'logo': forms.FileInput(attrs={'class': 'form-control'}),
+        }

@@ -244,9 +244,9 @@
             </div>
 
              <div class="mt-4 border-top border-secondary pt-2">
-                 <a href="{% url 'control_panel' %}" class="list-group-item list-group-item-action">
-                    <i class="bi bi-gear-fill me-2"></i> Configuración
-                </a>
+                 <a class="collapse-item" href="{% url 'control_panel' %}">
+    <i class="fas fa-cogs me-2"></i>Panel de Sistema
+</a>
                  <form action="{% url 'logout' %}" method="post" class="d-inline">
                     {% csrf_token %}
                     <button type="submit" class="list-group-item list-group-item-action text-danger bg-transparent border-0 w-100 text-start">

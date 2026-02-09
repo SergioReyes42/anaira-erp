@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-5">
+    <div class="card shadow border-0 mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-primary text-white fw-bold">
+            Datos de la Empresa
+        </div>
+        <div class="card-body p-4">
+            <form method="post" enctype="multipart/form-data"> 
+                {% csrf_token %}
+                {{ form.as_p }}
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary">Guardar Empresa</button>
+                    <a href="{% url 'company_list' %}" class="btn btn-light">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
