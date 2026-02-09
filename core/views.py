@@ -1255,20 +1255,25 @@ def quotation_list(request):
 
 @login_required
 def quotation_create(request):
-    # 1. Obtener la Sucursal del Usuario
-    # ASUNCIÓN: Tu usuario tiene un perfil o campo 'branch'. Ajusta esto según tu modelo real.
-    # Ejemplo: usuario.employee_profile.branch
-    sucursal_nombre = "Sede Central" # Valor por defecto
+    # 1. DETECCIÓN SEGURA DE SUCURSAL
+    # Valores por defecto (si no se encuentra nada)
+    sucursal_nombre = "Sede Central" 
     branch_id = None
     
-    if hasattr(request.user, 'branch'): # Si el usuario tiene campo branch directo
+    # Intento 1: Ver si el usuario tiene el campo 'branch' directo
+    if getattr(request.user, 'branch', None):
         sucursal_nombre = request.user.branch.name
         branch_id = request.user.branch.id
-    elif hasattr(request.user, 'profile') and request.user.profile.branch: # Si es vía perfil
-        sucursal_nombre = request.user.profile.branch.name
-        branch_id = request.user.profile.branch.id
+        
+    # Intento 2: Ver si está en el perfil (UserProfile) usando getattr para evitar el AttributeError
+    elif hasattr(request.user, 'profile'):
+        # Aquí es donde fallaba antes. Ahora usamos getattr para preguntar "¿Tienes branch?"
+        branch_perfil = getattr(request.user.profile, 'branch', None)
+        if branch_perfil:
+            sucursal_nombre = branch_perfil.name
+            branch_id = branch_perfil.id
 
-    # 2. Configurar el Formulario con Fecha de Hoy
+    # 2. Configurar el Formulario
     form = QuotationForm(initial={
         'date': timezone.now().date(),
         'valid_until': timezone.now().date() + timezone.timedelta(days=15)
@@ -1280,12 +1285,14 @@ def quotation_create(request):
             with transaction.atomic():
                 cotizacion = form.save(commit=False)
                 cotizacion.user = request.user
-                # Guardamos la sucursal en la cotización si tu modelo lo permite
+                
+                # Solo asignamos branch si lo encontramos
                 if branch_id and hasattr(cotizacion, 'branch'):
                     cotizacion.branch_id = branch_id
+                    
                 cotizacion.save()
                 
-                # ... (Lógica de guardado de detalles igual que antes) ...
+                # Guardar detalles
                 product_ids = request.POST.getlist('product_id[]')
                 qtys = request.POST.getlist('qty[]')
                 
@@ -1300,17 +1307,14 @@ def quotation_create(request):
                         )
                 return redirect('quotation_list')
 
-    # 3. FILTRADO DE PRODUCTOS POR SUCURSAL
-    # Si tienes un sistema de inventario, filtra aquí. 
-    # Ejemplo: Product.objects.filter(inventory__warehouse__branch_id=branch_id, inventory__stock__gt=0)
-    # Por ahora usaremos .all() pero aquí es donde pondrías tu filtro:
+    # 3. PRODUCTOS (Sin filtro de sucursal por ahora para evitar errores)
     products = Product.objects.all()
 
     return render(request, 'core/quotation_form.html', {
         'form': form,
         'products': products,
-        'sucursal_nombre': sucursal_nombre, # Pasamos el nombre para el HTML
-        'company': request.user.company if hasattr(request.user, 'company') else "Mi Empresa"
+        'sucursal_nombre': sucursal_nombre,
+        'company': getattr(request.user, 'company', "Mi Empresa")
     })
 
 # --- 3. GENERAR PDF (CON EMPRESA DINÁMICA) ---
