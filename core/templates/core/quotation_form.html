@@ -118,15 +118,22 @@
 </div>
 
 <script>
-    /* LÓGICA DE PRODUCTOS (IGUAL QUE ANTES, PERO CON DISEÑO AJUSTADO) */
+    /* ==========================================
+       CONFIGURACIÓN
+       ========================================== */
+    const CLAVE_SUPERVISOR = "admin123"; // 🔒 CAMBIA ESTO POR TU CLAVE REAL
+
+    // 1. Cargar base de datos de productos
     const productsDB = {};
     {% for p in products %}
         productsDB["{{ p.id }}"] = {
             name: "{{ p.name|escapejs }}",
-            price: {{ p.sale_price|default:0|stringformat:"f" }}
+            // Usamos stringformat:"f" para evitar errores de comas/puntos
+            price: {{ p.sale_price|default:0|stringformat:"f" }} 
         };
     {% endfor %}
 
+    // 2. Función para agregar una fila nueva
     function addRow() {
         const tbody = document.getElementById('tableBody');
         const rowId = Date.now();
@@ -144,8 +151,19 @@
                     </select>
                 </td>
                 <td>
-                    <input type="number" class="form-control bg-light text-end border-0 fw-bold text-muted" 
-                           id="price-${rowId}" name="price[]" readonly value="0.00">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0 py-0 px-1 text-muted" style="font-size: 0.7rem;">Q</span>
+                        <input type="number" 
+                               class="form-control bg-light text-end fw-bold" 
+                               id="price-${rowId}" 
+                               name="price[]" 
+                               readonly 
+                               value="0.00"
+                               ondblclick="unlockPrice(${rowId})"
+                               onblur="lockPrice(${rowId})"
+                               title="Doble click para desbloquear (Requiere clave)"
+                               step="0.01">
+                    </div>
                 </td>
                 <td>
                     <input type="number" name="qty[]" class="form-control text-center fw-bold" 
@@ -157,7 +175,7 @@
                 </td>
                 <td class="text-center">
                     <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-circle" 
-                            onclick="removeRow(${rowId})" title="Eliminar fila">
+                            onclick="removeRow(${rowId})">
                         <i class="bi bi-x-lg"></i>
                     </button>
                 </td>
@@ -166,6 +184,7 @@
         tbody.insertAdjacentHTML('beforeend', row);
     }
 
+    // 3. Actualizar precio automático al seleccionar
     function updatePrice(selectElement, rowId) {
         const productId = selectElement.value;
         const priceInput = document.getElementById(`price-${rowId}`);
@@ -179,10 +198,42 @@
         calcRow(rowId);
     }
 
+    // 4. FUNCION DE SEGURIDAD: Desbloquear Precio
+    function unlockPrice(rowId) {
+        const input = document.getElementById(`price-${rowId}`);
+        
+        // Si ya está desbloqueado, no hacemos nada
+        if (!input.readOnly) return;
+
+        // Pedir clave
+        let password = prompt("🔒 CONTROL DE PRECIOS\nIngrese clave de Supervisor para editar:");
+        
+        if (password === CLAVE_SUPERVISOR) {
+            input.readOnly = false; // Quitar candado
+            input.classList.remove("bg-light"); // Quitar color gris
+            input.classList.add("bg-white", "border-primary"); // Poner blanco y borde azul
+            input.focus();
+            alert("✅ Precio desbloqueado temporalmente.");
+        } else {
+            alert("⛔ Clave incorrecta. Acceso denegado.");
+        }
+    }
+
+    // (Opcional) Volver a bloquear al salir del campo para seguridad
+    function lockPrice(rowId) {
+        const input = document.getElementById(`price-${rowId}`);
+        calcRow(rowId); // Asegurar calculo
+        // No lo bloqueamos inmediatamente para no ser molestos, 
+        // pero podrías descomentar la linea de abajo si quieres que se bloquee siempre al salir.
+        // input.readOnly = true; 
+    }
+
+    // 5. Cálculos Matemáticos
     function calcRow(rowId) {
         const price = parseFloat(document.getElementById(`price-${rowId}`).value) || 0;
         const qty = parseFloat(document.querySelector(`#row-${rowId} input[name='qty[]']`).value) || 0;
         const subtotal = price * qty;
+        
         document.getElementById(`subtotal-${rowId}`).value = subtotal.toFixed(2);
         calcTotal();
     }
@@ -199,9 +250,10 @@
             total += parseFloat(input.value) || 0;
         });
         document.getElementById('grandTotal').innerText = total.toFixed(2);
-        document.getElementById('subTotalDisplay').innerText = total.toFixed(2); // Actualiza el subtotal pequeño también
+        document.getElementById('subTotalDisplay').innerText = total.toFixed(2);
     }
 
+    // Inicializar
     window.onload = function() {
         addRow();
     };
