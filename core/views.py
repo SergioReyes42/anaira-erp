@@ -1303,7 +1303,7 @@ def quotation_create(request):
                             quotation=cotizacion,
                             product=prod,
                             quantity=qtys[i],
-                            unit_price=prod.sale_price
+                            unit_price=prod.price
                         )
                 return redirect('quotation_list')
 

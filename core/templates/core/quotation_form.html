@@ -129,7 +129,7 @@
         productsDB["{{ p.id }}"] = {
             name: "{{ p.name|escapejs }}",
             // Usamos stringformat:"f" para evitar errores de comas/puntos
-            price: {{ p.sale_price|default:0|stringformat:"f" }} 
+            price: {{ p.price|default:0|stringformat:"f" }}
         };
     {% endfor %}
 
