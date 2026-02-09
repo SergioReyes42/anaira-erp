@@ -95,4 +95,9 @@ urlpatterns = [
     
     # VER FACTURA (Crea el template invoice_view.html copiando el de cotización)
     path('facturas/<int:id>/ver/', views.invoice_view, name='invoice_view'),
+
+    # USUARIOS
+        path('config/usuarios/', views.user_list, name='user_list'),
+    path('config/usuarios/nuevo/', views.user_create, name='user_create'),
+
 ]

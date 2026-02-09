@@ -10,6 +10,7 @@ from .models import Quotation, Sale, SaleDetail, CompanyProfile, BankAccount, Ba
 from .logic import realizar_traslado_entre_bodegas # <--- IMPORTANTE
 from .models import StockMovement
 from inventory.models import Product # Necesitamos productos
+from .forms import CustomUserForm, User
 
 # --- IMPORTS DE DJANGO ---
 from django.http import JsonResponse, HttpResponse
@@ -2117,3 +2118,40 @@ def quotation_convert(request, id):
     
     # Redirigir a la lista de cotizaciones (o a la nueva factura si tienes esa vista)
     return redirect('quotation_list')
+
+# 1. LISTA DE USUARIOS (DASHBOARD RRHH)
+@login_required
+def user_list(request):
+    # Solo administradores deberían ver esto
+    if not request.user.is_staff:
+        messages.error(request, "Acceso denegado.")
+        return redirect('home')
+
+    users = User.objects.all().select_related('profile') # Optimizamos la consulta
+    return render(request, 'core/config/user_list.html', {'users': users})
+
+# 2. CREAR NUEVO USUARIO
+@login_required
+def user_create(request):
+    if not request.user.is_staff:
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = CustomUserForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            
+            # MAGIA: Actualizamos el perfil sin que explote
+            branch = form.cleaned_data.get('branch')
+            if branch:
+                # Usamos get_or_create para evitar el IntegrityError
+                profile, created = UserProfile.objects.get_or_create(user=user)
+                profile.branch = branch
+                profile.save()
+            
+            messages.success(request, f"Usuario {user.username} creado exitosamente.")
+            return redirect('user_list')
+    else:
+        form = CustomUserForm()
+
+    return render(request, 'core/config/user_form.html', {'form': form})
