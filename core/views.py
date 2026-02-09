@@ -1255,59 +1255,46 @@ def quotation_list(request):
 
 @login_required
 def quotation_create(request):
-    # Traemos productos para el select (con precio para JS)
-    products = Product.objects.filter(company_id=request.session.get('company_id'))
-
+    # 1. Creamos el formulario vacío
+    form = QuotationForm(initial={'client': None}) # Ojo: Asegúrate de que QuotationForm esté importado
+    
     if request.method == 'POST':
         form = QuotationForm(request.POST)
         if form.is_valid():
-            try:
-                with transaction.atomic(): # Si algo falla, no guarda nada (seguridad)
-                    # 1. Guardar Encabezado
-                    cotizacion = form.save(commit=False)
-                    cotizacion.user = request.user
-                    cotizacion.total = 0 # Calcularemos esto abajo
-                    cotizacion.save()
+            with transaction.atomic():
+                cotizacion = form.save(commit=False)
+                # Si tu modelo User tiene company, úsalo, si no, omite esta línea o usa un valor por defecto
+                if hasattr(request.user, 'company'):
+                     cotizacion.company = request.user.company
+                
+                cotizacion.user = request.user
+                cotizacion.save()
+                
+                # Guardar los productos del detalle
+                product_ids = request.POST.getlist('product_id[]')
+                qtys = request.POST.getlist('qty[]')
+                
+                for i in range(len(product_ids)):
+                    if product_ids[i]:
+                        # CORRECCIÓN AQUÍ TAMBIÉN: Validar que el producto exista
+                        prod = get_object_or_404(Product, id=product_ids[i])
+                        QuotationDetail.objects.create(
+                            quotation=cotizacion,
+                            product=prod,
+                            quantity=qtys[i],
+                            unit_price=prod.price # O sale_price según tu modelo
+                        )
+                
+                return redirect('quotation_list')
 
-                    # 2. Guardar Detalles (Productos)
-                    # Recibimos listas del HTML: product_id[], qty[]
-                    product_ids = request.POST.getlist('product_id[]')
-                    quantities = request.POST.getlist('qty[]')
-                    
-                    grand_total = 0
-
-                    for i in range(len(product_ids)):
-                        p_id = product_ids[i]
-                        qty = int(quantities[i])
-                        
-                        if qty > 0:
-                            producto = Product.objects.get(id=p_id)
-                            precio = producto.price # Usamos precio de lista
-                            subtotal = precio * qty
-                            
-                            QuotationDetail.objects.create(
-                                quotation=cotizacion,
-                                product=producto,
-                                quantity=qty,
-                                unit_price=precio
-                            )
-                            grand_total += subtotal
-
-                    # 3. Actualizar Total Final
-                    cotizacion.total = grand_total
-                    cotizacion.save()
-                    
-                    return redirect('quotation_list')
-
-            except Exception as e:
-                # Si pasa algo raro, mostramos error
-                print(f"Error al guardar: {e}")
-    else:
-        form = QuotationForm()
+    # 2. TRAER LOS PRODUCTOS (AQUÍ ESTABA EL ERROR)
+    # Antes tenías: Product.objects.filter(company_id=...)
+    # Solución: Traemos todos los productos disponibles
+    products = Product.objects.all()
 
     return render(request, 'core/quotation_form.html', {
         'form': form,
-        'products': products # Enviamos productos al HTML
+        'products': products
     })
 
 # --- 3. GENERAR PDF (CON EMPRESA DINÁMICA) ---
