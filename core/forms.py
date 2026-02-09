@@ -216,7 +216,8 @@ class QuotationForm(forms.ModelForm):
         model = Quotation
         fields = ['client', 'valid_until', 'payment_method', 'observation']
         widgets = {
-            'client': forms.Select(attrs={'class': 'form-select select2'}), # select2 ayuda a buscar
+            'client': forms.Select(attrs={'class': 'form-select select2'}), # select2 para búsqueda rápida
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'valid_until': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'payment_method': forms.Select(attrs={'class': 'form-select'}),
             'observation': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),

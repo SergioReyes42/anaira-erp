@@ -1255,46 +1255,62 @@ def quotation_list(request):
 
 @login_required
 def quotation_create(request):
-    # 1. Creamos el formulario vacío
-    form = QuotationForm(initial={'client': None}) # Ojo: Asegúrate de que QuotationForm esté importado
+    # 1. Obtener la Sucursal del Usuario
+    # ASUNCIÓN: Tu usuario tiene un perfil o campo 'branch'. Ajusta esto según tu modelo real.
+    # Ejemplo: usuario.employee_profile.branch
+    sucursal_nombre = "Sede Central" # Valor por defecto
+    branch_id = None
+    
+    if hasattr(request.user, 'branch'): # Si el usuario tiene campo branch directo
+        sucursal_nombre = request.user.branch.name
+        branch_id = request.user.branch.id
+    elif hasattr(request.user, 'profile') and request.user.profile.branch: # Si es vía perfil
+        sucursal_nombre = request.user.profile.branch.name
+        branch_id = request.user.profile.branch.id
+
+    # 2. Configurar el Formulario con Fecha de Hoy
+    form = QuotationForm(initial={
+        'date': timezone.now().date(),
+        'valid_until': timezone.now().date() + timezone.timedelta(days=15)
+    })
     
     if request.method == 'POST':
         form = QuotationForm(request.POST)
         if form.is_valid():
             with transaction.atomic():
                 cotizacion = form.save(commit=False)
-                # Si tu modelo User tiene company, úsalo, si no, omite esta línea o usa un valor por defecto
-                if hasattr(request.user, 'company'):
-                     cotizacion.company = request.user.company
-                
                 cotizacion.user = request.user
+                # Guardamos la sucursal en la cotización si tu modelo lo permite
+                if branch_id and hasattr(cotizacion, 'branch'):
+                    cotizacion.branch_id = branch_id
                 cotizacion.save()
                 
-                # Guardar los productos del detalle
+                # ... (Lógica de guardado de detalles igual que antes) ...
                 product_ids = request.POST.getlist('product_id[]')
                 qtys = request.POST.getlist('qty[]')
                 
                 for i in range(len(product_ids)):
                     if product_ids[i]:
-                        # CORRECCIÓN AQUÍ TAMBIÉN: Validar que el producto exista
                         prod = get_object_or_404(Product, id=product_ids[i])
                         QuotationDetail.objects.create(
                             quotation=cotizacion,
                             product=prod,
                             quantity=qtys[i],
-                            unit_price=prod.price # O sale_price según tu modelo
+                            unit_price=prod.sale_price
                         )
-                
                 return redirect('quotation_list')
 
-    # 2. TRAER LOS PRODUCTOS (AQUÍ ESTABA EL ERROR)
-    # Antes tenías: Product.objects.filter(company_id=...)
-    # Solución: Traemos todos los productos disponibles
+    # 3. FILTRADO DE PRODUCTOS POR SUCURSAL
+    # Si tienes un sistema de inventario, filtra aquí. 
+    # Ejemplo: Product.objects.filter(inventory__warehouse__branch_id=branch_id, inventory__stock__gt=0)
+    # Por ahora usaremos .all() pero aquí es donde pondrías tu filtro:
     products = Product.objects.all()
 
     return render(request, 'core/quotation_form.html', {
         'form': form,
-        'products': products
+        'products': products,
+        'sucursal_nombre': sucursal_nombre, # Pasamos el nombre para el HTML
+        'company': request.user.company if hasattr(request.user, 'company') else "Mi Empresa"
     })
 
 # --- 3. GENERAR PDF (CON EMPRESA DINÁMICA) ---
