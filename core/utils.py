@@ -9,6 +9,10 @@ from dotenv import load_dotenv
 # Cargar variables de entorno (API Keys)
 load_dotenv()
 
+try:
+    import google.genai as genai
+except ImportError:
+    genai = None  # Si no está instalado, no explota, solo lo ignora.
 
 # =======================================================
 # 1. LISTADO DE CUENTAS POR DEFECTO (CATÁLOGO BASE)
