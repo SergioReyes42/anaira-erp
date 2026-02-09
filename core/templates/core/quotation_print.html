@@ -147,18 +147,45 @@
 </div>
 
 <style>
-    /* AJUSTES PARA IMPRESIÓN REAL */
+    /* ESTILOS EXCLUSIVOS PARA IMPRESIÓN */
     @media print {
-        body { background-color: white !important; }
-        .d-print-none { display: none !important; }
-        .card { 
-            box-shadow: none !important; 
-            border: none !important;
-            margin: 0; 
-            width: 100%;
+        /* 1. OCULTAR TODO EL SITIO WEB */
+        body * {
+            visibility: hidden;
+            height: 0;
+            overflow: hidden; 
         }
-        .bg-dark { background-color: #212529 !important; color: white !important; -webkit-print-color-adjust: exact; }
-        .bg-primary { background-color: #0d6efd !important; color: white !important; -webkit-print-color-adjust: exact; }
+
+        /* 2. MOSTRAR SOLO LA HOJA DE PAPEL */
+        #printArea, #printArea * {
+            visibility: visible;
+            height: auto;
+            overflow: visible;
+        }
+
+        /* 3. POSICIONAR LA HOJA EN LA ESQUINA SUPERIOR */
+        #printArea {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+
+        /* 4. FORZAR FONDOS BLANCOS Y LETRAS NEGRAS */
+        body {
+            background-color: white !important;
+            -webkit-print-color-adjust: exact; /* Para que Chrome imprima colores de fondo */
+            print-color-adjust: exact;
+        }
+
+        /* Ocultar botones que se hayan colado */
+        .d-print-none, .btn, header, nav, footer, .sidebar {
+            display: none !important;
+        }
     }
 </style>
 {% endblock %}

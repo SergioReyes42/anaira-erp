@@ -1295,35 +1295,39 @@ def quotation_create(request):
                 # Variables para calcular el total general
                 total_cotizacion = 0
 
-                # Guardar detalles
+                # 1. OBTENEMOS LAS LISTAS DEL FORMULARIO
                 product_ids = request.POST.getlist('product_id[]')
                 qtys = request.POST.getlist('qty[]')
+                prices = request.POST.getlist('price[]') # <--- ESTO ES NUEVO: Traemos los precios del form
                 
                 total_cotizacion = 0
 
                 for i in range(len(product_ids)):
                     if product_ids[i]:
                         prod = get_object_or_404(Product, id=product_ids[i])
-                        cant = float(qtys[i])
-                        precio = float(prod.price)
                         
-                        # 1. Calculamos el subtotal solo para sumar al gran total
+                        cant = float(qtys[i])
+                        
+                        # --- CORRECCIÓN CRÍTICA ---
+                        # Antes: precio = float(prod.price) (Ignoraba tu cambio)
+                        # Ahora: precio = float(prices[i]) (Usa lo que escribiste en pantalla)
+                        precio = float(prices[i]) 
+                        
+                        # Calculamos subtotal
                         subtotal_linea = cant * precio
                         total_cotizacion += subtotal_linea
 
-                        # 2. GUARDAMOS EL DETALLE (SIN EL CAMPO SUBTOTAL)
-                        # Aquí estaba el error. Quitamos 'subtotal=subtotal_linea'
+                        # Guardamos
                         QuotationDetail.objects.create(
                             quotation=cotizacion,
                             product=prod,
                             quantity=cant,
-                            unit_price=precio
+                            unit_price=precio # Guardamos el precio real (4,500)
                         )
                 
-                # 3. Guardamos el Gran Total en la Cotización (esto sí lo tiene tu modelo)
                 cotizacion.total = total_cotizacion
                 cotizacion.save()
-
+                
                 return redirect('quotation_list')
 
     # 3. PRODUCTOS (Sin filtro de sucursal por ahora para evitar errores)
