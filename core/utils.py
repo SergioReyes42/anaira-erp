@@ -1,7 +1,6 @@
 import os
 import json
 import datetime
-import google.genai as genai
 from django.conf import settings
 from django.core.management import call_command
 from dotenv import load_dotenv
