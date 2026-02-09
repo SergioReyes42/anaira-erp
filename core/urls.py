@@ -84,6 +84,8 @@ urlpatterns = [
     # COTIZACIONES
     path('cotizaciones/', views.quotation_list, name='quotation_list'),
     path('cotizaciones/nueva/', views.quotation_create, name='quotation_create'),
+    path('cotizaciones/<int:id>/ver/', views.quotation_print, name='quotation_view'), # Ojo: Asegúrate que esta se llame 'quotation_view' o ajusta el HTML    
+    path('cotizaciones/<int:id>/convertir/', views.quotation_convert, name='quotation_convert'),
 
     # VER COTIZACION (El visor nuevo)
     path('cotizaciones/<int:id>/ver/', views.quotation_print, name='quotation_view'), # Actualiza el nombre de la vista en views.py a quotation_view si cambiaste el nombre

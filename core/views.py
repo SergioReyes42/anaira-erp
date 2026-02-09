@@ -2033,3 +2033,56 @@ def convert_quote_to_invoice(request, quote_id):
 def invoice_view(request, id):
     factura = get_object_or_404(Invoice, id=id)
     return render(request, 'core/invoice_view.html', {'f': factura, 'company': request.user.company})
+
+@login_required
+def quotation_convert(request, id):
+    # Buscamos la cotización
+    cotizacion = get_object_or_404(Quotation, id=id)
+
+    # SEGURIDAD: Si ya está facturada, no hacer nada
+    if cotizacion.status == 'BILLED':
+        messages.warning(request, "Esta cotización ya fue facturada.")
+        return redirect('quotation_list')
+
+    # INICIO DE TRANSACCIÓN (Todo o Nada)
+    # Si algo falla a la mitad, no se descuenta inventario ni se crea factura incompleta
+    with transaction.atomic():
+        # A. Crear la Factura (Encabezado)
+        factura = Invoice.objects.create(
+            client=cotizacion.client,
+            user=request.user,
+            date=timezone.now(),
+            valid_until=timezone.now() + timezone.timedelta(days=30),
+            payment_method=cotizacion.payment_method,
+            total=cotizacion.total,
+            # Si tienes campo sucursal/branch en Invoice, agrégalo aquí:
+            # branch=cotizacion.branch 
+        )
+
+        # B. Mover los Detalles y Descontar Inventario
+        detalles_cotizacion = QuotationDetail.objects.filter(quotation=cotizacion)
+        
+        for item in detalles_cotizacion:
+            # 1. Crear detalle de factura
+            InvoiceDetail.objects.create(
+                invoice=factura,
+                product=item.product,
+                quantity=item.quantity,
+                unit_price=item.unit_price,
+                subtotal=item.subtotal
+            )
+
+            # 2. DESCONTAR INVENTARIO (La parte crítica)
+            producto = item.product
+            # Restamos la cantidad
+            producto.stock -= item.quantity 
+            producto.save()
+
+        # C. Actualizar estado de la Cotización
+        cotizacion.status = 'BILLED'
+        cotizacion.save()
+
+    messages.success(request, f"Factura #{factura.id} creada exitosamente y stock actualizado.")
+    
+    # Redirigir a la lista de cotizaciones (o a la nueva factura si tienes esa vista)
+    return redirect('quotation_list')
