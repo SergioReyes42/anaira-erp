@@ -1796,32 +1796,26 @@ def admin_control_panel(request):
 
 @login_required
 def quotation_print(request, id):
-    # 1. CORRECCIÓN DE NOMBRE:
-    # Usamos 'quote' aquí para que coincida con las variables de abajo
+    # 1. Buscamos al Padre (La Cotización)
     quote = get_object_or_404(Quotation, id=id)
 
-    # 2. LOGICA DE EMPRESA (BLINDADA):
-    # Intentamos buscar el perfil de empresa. Si no existe modelo o tabla,
-    # usamos un diccionario manual para que no de Error 500.
+    # 2. Buscamos a los Hijos (Los Detalles) DIRECTAMENTE
+    # Esta es la línea mágica que arregla el error:
+    details = QuotationDetail.objects.filter(quotation=quote)
+
+    # 3. Datos de la Empresa (Misma lógica segura de antes)
     try:
         company = CompanyProfile.objects.first()
     except:
-        # Si falla, usamos datos genéricos o del usuario
-        company = {
-            'name': getattr(request.user, 'company', 'Mi Empresa S.A.'),
-            'logo': None, # Aquí iría la lógica de tu logo si lo tienes en otro lado
-            'address': 'Ciudad de Guatemala',
-            'phone': '+(502) 5555-5555'
-        }
-    
-    # 3. RENDERIZADO
-    # Nota: Quité '/sales/' de la ruta para coincidir con tu estructura actual
+        company = None
+
     return render(request, 'core/quotation_print.html', {
         'quote': quote,
+        'details': details,  # Enviamos la lista que buscamos manualmente
         'company': company,
-        # 4. CORRECCIÓN DE DETALLES:
-        # Usamos '_set.all()' que es la forma estándar de Django para traer hijos
-        'details': quote.quotationdetail_set.all() 
+        # Variables extra por si tu template las pide diferente
+        'user_company': getattr(request.user, 'company', 'Mi Empresa'),
+        'user_branch': getattr(request.user, 'branch', 'Sede Central')
     })
 
 # --- Vista para verificar PIN de autorización ---
