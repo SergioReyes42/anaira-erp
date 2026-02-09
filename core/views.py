@@ -1294,33 +1294,33 @@ def quotation_create(request):
                 
                 # Variables para calcular el total general
                 total_cotizacion = 0
-                
+
                 # Guardar detalles
                 product_ids = request.POST.getlist('product_id[]')
                 qtys = request.POST.getlist('qty[]')
                 
+                total_cotizacion = 0
+
                 for i in range(len(product_ids)):
                     if product_ids[i]:
                         prod = get_object_or_404(Product, id=product_ids[i])
                         cant = float(qtys[i])
-                        precio = float(prod.price) # Usamos el precio del producto
+                        precio = float(prod.price)
                         
-                        # 1. CALCULAR SUBTOTAL DE LA LÍNEA
+                        # 1. Calculamos el subtotal solo para sumar al gran total
                         subtotal_linea = cant * precio
-                        
-                        # 2. ACUMULAR AL TOTAL GENERAL
                         total_cotizacion += subtotal_linea
 
-                        # 3. GUARDAR EL DETALLE CON EL SUBTOTAL CALCULADO
+                        # 2. GUARDAMOS EL DETALLE (SIN EL CAMPO SUBTOTAL)
+                        # Aquí estaba el error. Quitamos 'subtotal=subtotal_linea'
                         QuotationDetail.objects.create(
                             quotation=cotizacion,
                             product=prod,
                             quantity=cant,
-                            unit_price=precio,
-                            subtotal=subtotal_linea # <--- ESTO FALTABA
+                            unit_price=precio
                         )
                 
-                # 4. ACTUALIZAR EL TOTAL DE LA COTIZACIÓN PADRE
+                # 3. Guardamos el Gran Total en la Cotización (esto sí lo tiene tu modelo)
                 cotizacion.total = total_cotizacion
                 cotizacion.save()
 
@@ -1815,14 +1815,17 @@ def admin_control_panel(request):
 
 @login_required
 def quotation_print(request, id):
-    # 1. Buscamos al Padre (La Cotización)
     quote = get_object_or_404(Quotation, id=id)
-
-    # 2. Buscamos a los Hijos (Los Detalles) DIRECTAMENTE
-    # Esta es la línea mágica que arregla el error:
+    
+    # 1. Traemos los detalles
     details = QuotationDetail.objects.filter(quotation=quote)
+    
+    # 2. TRUCO DE MAGIA: Calculamos el subtotal al vuelo
+    # Como no está en la base de datos, se lo pegamos a cada objeto aquí
+    for d in details:
+        d.subtotal = d.quantity * d.unit_price
 
-    # 3. Datos de la Empresa (Misma lógica segura de antes)
+    # 3. Lógica de empresa (la misma de antes)
     try:
         company = CompanyProfile.objects.first()
     except:
@@ -1830,9 +1833,8 @@ def quotation_print(request, id):
 
     return render(request, 'core/quotation_print.html', {
         'quote': quote,
-        'details': details,  # Enviamos la lista que buscamos manualmente
+        'details': details, # Ahora llevan el subtotal calculado en memoria
         'company': company,
-        # Variables extra por si tu template las pide diferente
         'user_company': getattr(request.user, 'company', 'Mi Empresa'),
         'user_branch': getattr(request.user, 'branch', 'Sede Central')
     })
