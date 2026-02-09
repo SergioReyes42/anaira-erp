@@ -6,6 +6,22 @@ from django.conf import settings
 from django.core.management import call_command
 from dotenv import load_dotenv
 
+# --- CORRECCIÓN IMPORTANTE ---
+# Usamos google.generativeai en lugar de google.genai para estandarizar
+try:
+    import google.generativeai as genai
+except ImportError:
+    genai = None
+
+# Configuración segura
+if genai:
+    try:
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if api_key:
+            genai.configure(api_key=api_key)
+    except Exception as e:
+        print(f"Error configurando IA: {e}")
+
 # Cargar variables de entorno (API Keys)
 load_dotenv()
 
