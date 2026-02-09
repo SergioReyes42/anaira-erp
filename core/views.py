@@ -1292,6 +1292,9 @@ def quotation_create(request):
                     
                 cotizacion.save()
                 
+                # Variables para calcular el total general
+                total_cotizacion = 0
+                
                 # Guardar detalles
                 product_ids = request.POST.getlist('product_id[]')
                 qtys = request.POST.getlist('qty[]')
@@ -1299,12 +1302,28 @@ def quotation_create(request):
                 for i in range(len(product_ids)):
                     if product_ids[i]:
                         prod = get_object_or_404(Product, id=product_ids[i])
+                        cant = float(qtys[i])
+                        precio = float(prod.price) # Usamos el precio del producto
+                        
+                        # 1. CALCULAR SUBTOTAL DE LA LÍNEA
+                        subtotal_linea = cant * precio
+                        
+                        # 2. ACUMULAR AL TOTAL GENERAL
+                        total_cotizacion += subtotal_linea
+
+                        # 3. GUARDAR EL DETALLE CON EL SUBTOTAL CALCULADO
                         QuotationDetail.objects.create(
                             quotation=cotizacion,
                             product=prod,
-                            quantity=qtys[i],
-                            unit_price=prod.price
+                            quantity=cant,
+                            unit_price=precio,
+                            subtotal=subtotal_linea # <--- ESTO FALTABA
                         )
+                
+                # 4. ACTUALIZAR EL TOTAL DE LA COTIZACIÓN PADRE
+                cotizacion.total = total_cotizacion
+                cotizacion.save()
+
                 return redirect('quotation_list')
 
     # 3. PRODUCTOS (Sin filtro de sucursal por ahora para evitar errores)

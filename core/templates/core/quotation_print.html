@@ -1,145 +1,164 @@
 {% extends 'base.html' %}
 {% load static %}
-
-{% block content %}
-<div class="container py-5">
+{% load humanize %} {% block content %}
+<div class="container py-5 bg-light">
     
     <div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
         <a href="{% url 'quotation_list' %}" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Volver
+            <i class="bi bi-arrow-left"></i> Volver al Listado
         </a>
         <div>
-            <button onclick="window.print()" class="btn btn-secondary me-2">
-                <i class="bi bi-printer"></i> Imprimir / PDF
+            <button onclick="window.print()" class="btn btn-dark me-2">
+                <i class="bi bi-printer-fill"></i> Imprimir
             </button>
             
             {% if quote.status == 'DRAFT' %}
             <a href="{% url 'quotation_convert' quote.id %}" class="btn btn-success fw-bold shadow-sm">
-                <i class="bi bi-file-earmark-check-fill me-2"></i>CONVERTIR A FACTURA
+                <i class="bi bi-check-circle-fill me-2"></i>CONVERTIR A FACTURA
             </a>
             {% endif %}
         </div>
     </div>
 
-    <div class="card shadow-lg border-0 mx-auto" style="max-width: 210mm; min-height: 297mm;">
+    <div class="card shadow-lg border-0 mx-auto" style="max-width: 210mm; min-height: 297mm; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+        
+        <div class="card-header bg-dark text-white p-5">
+            <div class="row align-items-center">
+                <div class="col-6">
+                    <h2 class="fw-bold mb-0 text-uppercase">{{ user_company|default:"ANAIRA ERP" }}</h2>
+                    <p class="small text-white-50 mb-0">{{ user_branch }}</p>
+                </div>
+                <div class="col-6 text-end">
+                    <h4 class="fw-light mb-0">COTIZACIÓN</h4>
+                    <h1 class="fw-bold text-warning">#{{ quote.id|stringformat:"05d" }}</h1>
+                </div>
+            </div>
+        </div>
+
         <div class="card-body p-5">
             
-            <div class="row border-bottom pb-4 mb-4">
-                <div class="col-8">
-                    <h2 class="fw-bold text-primary mb-0">{{ user_company|upper }}</h2>
-                    <p class="text-muted small mb-0">{{ user_branch }}</p>
-                    <p class="text-muted small">Ciudad de Guatemala, Guatemala</p>
-                </div>
-                <div class="col-4 text-end">
-                    <h4 class="text-dark fw-bold">COTIZACIÓN</h4>
-                    <h5 class="text-danger">#{{ quote.id }}</h5>
-                    <p class="mb-0 small"><strong>Fecha:</strong> {{ quote.date|date:"d/m/Y" }}</p>
-                    <p class="mb-0 small"><strong>Vence:</strong> {{ quote.valid_until|date:"d/m/Y" }}</p>
-                </div>
-            </div>
-
             <div class="row mb-5">
-                <div class="col-md-6">
-                    <h6 class="text-uppercase text-muted small fw-bold">Cliente:</h6>
-                    <h5 class="fw-bold">{{ quote.client.name }}</h5>
-                    <p class="mb-0">{{ quote.client.address|default:"Ciudad" }}</p>
-                    <p class="mb-0">NIT: {{ quote.client.nit|default:"C/F" }}</p>
-                    <p class="mb-0">{{ quote.client.email }}</p>
+                <div class="col-6">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-3">Emisor:</h6>
+                    <h5 class="fw-bold text-dark">{{ user_company|default:"Mi Empresa S.A." }}</h5>
+                    <p class="mb-1 text-muted"><i class="bi bi-geo-alt me-2"></i>Ciudad de Guatemala</p>
+                    <p class="mb-1 text-muted"><i class="bi bi-telephone me-2"></i>+(502) 2222-0000</p>
+                    <p class="mb-0 text-muted"><i class="bi bi-envelope me-2"></i>info@miempresa.com</p>
                 </div>
-                <div class="col-md-6 text-end">
-                    <h6 class="text-uppercase text-muted small fw-bold">Atendido por:</h6>
-                    <p class="fw-bold mb-0">{{ quote.user.get_full_name|default:quote.user.username }}</p>
-                    <span class="badge bg-warning text-dark">{{ user_branch }}</span>
+                <div class="col-6 text-end">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-3">Cliente:</h6>
+                    <h4 class="fw-bold text-primary">{{ quote.client.name }}</h4>
+                    <p class="mb-1 text-dark"><strong>NIT:</strong> {{ quote.client.nit|default:"C/F" }}</p>
+                    <p class="mb-1 text-muted">{{ quote.client.address|default:"Ciudad" }}</p>
+                    <p class="mb-0 text-muted">{{ quote.client.email }}</p>
+
+                    <div class="mt-4 p-3 bg-light rounded text-start border">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small fw-bold">Fecha Emisión:</span>
+                            <span class="small">{{ quote.date|date:"d/m/Y" }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="small fw-bold text-danger">Válida hasta:</span>
+                            <span class="small text-danger">{{ quote.valid_until|date:"d/m/Y" }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="table-responsive mb-5">
-                <table class="table table-striped table-borderless">
-                    <thead class="bg-dark text-white">
+            <div class="table-responsive mb-4">
+                <table class="table table-striped border-bottom">
+                    <thead class="bg-primary text-white">
                         <tr>
-                            <th scope="col" class="py-3 ps-3">Descripción</th>
-                            <th scope="col" class="py-3 text-center">Cant.</th>
-                            <th scope="col" class="py-3 text-end">Precio Unit.</th>
-                            <th scope="col" class="py-3 text-end pe-3">Total</th>
+                            <th class="py-3 ps-4" style="width: 50%">DESCRIPCIÓN</th>
+                            <th class="py-3 text-center" style="width: 15%">CANTIDAD</th>
+                            <th class="py-3 text-end" style="width: 15%">PRECIO</th>
+                            <th class="py-3 text-end pe-4" style="width: 20%">TOTAL</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for detail in details %}
                         <tr>
-                            <td class="ps-3">
-                                <strong>{{ detail.product.name }}</strong>
-                                <br><small class="text-muted">{{ detail.product.code }}</small>
+                            <td class="ps-4 py-3">
+                                <span class="fw-bold text-dark">{{ detail.product.name }}</span><br>
+                                <small class="text-muted">Código: {{ detail.product.code }}</small>
                             </td>
-                            <td class="text-center align-middle">{{ detail.quantity }}</td>
-                            <td class="text-end align-middle">Q{{ detail.unit_price }}</td>
-                            <td class="text-end align-middle pe-3 fw-bold">Q{{ detail.subtotal }}</td>
+                            <td class="text-center py-3">{{ detail.quantity }}</td>
+                            <td class="text-end py-3">Q{{ detail.unit_price|floatformat:2 }}</td>
+                            
+                            <td class="text-end pe-4 py-3 fw-bold text-dark">
+                                {% if detail.subtotal %}
+                                    Q{{ detail.subtotal|floatformat:2 }}
+                                {% else %}
+                                    Q{% widthratio detail.quantity 1 detail.unit_price %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">No hay productos en esta cotización.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
 
-            <div class="row justify-content-end mb-5">
-                <div class="col-md-5">
-                    <table class="table table-sm table-borderless">
+            <div class="row">
+                <div class="col-7">
+                    <div class="mb-4">
+                        <h6 class="fw-bold">Términos y Condiciones:</h6>
+                        <p class="small text-muted fst-italic">
+                            {{ quote.observation|default:"Esta oferta es válida por 15 días. Precios sujetos a cambios. El tiempo de entrega comienza a correr a partir de la recepción de la orden de compra." }}
+                        </p>
+                    </div>
+                </div>
+                <div class="col-5">
+                    <table class="table table-borderless">
                         <tr>
-                            <td class="text-end">Subtotal:</td>
-                            <td class="text-end fw-bold">Q{{ quote.total }}</td>
+                            <td class="text-end fs-5 text-muted">Subtotal:</td>
+                            <td class="text-end fs-5 fw-bold text-dark">Q{{ quote.total|floatformat:2 }}</td>
                         </tr>
-                        <tr class="border-top border-2 border-dark">
-                            <td class="text-end fs-5 fw-bold text-dark pt-3">TOTAL:</td>
-                            <td class="text-end fs-4 fw-bold text-primary pt-3">Q{{ quote.total }}</td>
+                        <tr class="border-top border-dark border-2">
+                            <td class="text-end fs-4 fw-bold text-dark pt-3">TOTAL:</td>
+                            <td class="text-end fs-3 fw-bold text-primary pt-3">Q{{ quote.total|floatformat:2 }}</td>
                         </tr>
                     </table>
                 </div>
             </div>
 
-            <div class="mt-auto pt-5 border-top">
-                <div class="row">
-                    <div class="col-12 text-center">
-                        <p class="fw-bold mb-1">Notas y Condiciones</p>
-                        <p class="small text-muted mb-4">
-                            {{ quote.observation|default:"Esta cotización tiene una validez de 15 días. Precios sujetos a cambios sin previo aviso." }}
-                        </p>
+            <div class="mt-5 pt-5">
+                <div class="row text-center mt-5">
+                    <div class="col-6 px-5">
+                        <div class="border-bottom border-dark mb-2"></div>
+                        <p class="small fw-bold">Autorizado por<br>{{ quote.user.get_full_name|default:"Administración" }}</p>
                     </div>
-                </div>
-                <div class="row mt-4">
-                    <div class="col-6 text-center">
-                        <div style="border-bottom: 1px solid #000; width: 80%; margin: 0 auto 10px;"></div>
-                        <p class="small">Firma Autorizada</p>
-                    </div>
-                    <div class="col-6 text-center">
-                        <div style="border-bottom: 1px solid #000; width: 80%; margin: 0 auto 10px;"></div>
-                        <p class="small">Aceptado por Cliente</p>
+                    <div class="col-6 px-5">
+                        <div class="border-bottom border-dark mb-2"></div>
+                        <p class="small fw-bold">Aceptado por Cliente</p>
                     </div>
                 </div>
             </div>
 
         </div>
+        
+        <div class="card-footer bg-light text-center py-3 border-0">
+            <small class="text-muted">Generado por Anaira ERP - Documento no contable</small>
+        </div>
     </div>
 </div>
 
 <style>
-    /* ESTILOS DE IMPRESIÓN */
+    /* AJUSTES PARA IMPRESIÓN REAL */
     @media print {
-        body * {
-            visibility: hidden;
-        }
-        .card, .card * {
-            visibility: visible;
-        }
-        .card {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0 !important;
-            box-shadow: none !important;
+        body { background-color: white !important; }
+        .d-print-none { display: none !important; }
+        .card { 
+            box-shadow: none !important; 
             border: none !important;
+            margin: 0; 
+            width: 100%;
         }
-        .d-print-none {
-            display: none !important;
-        }
+        .bg-dark { background-color: #212529 !important; color: white !important; -webkit-print-color-adjust: exact; }
+        .bg-primary { background-color: #0d6efd !important; color: white !important; -webkit-print-color-adjust: exact; }
     }
 </style>
 {% endblock %}
