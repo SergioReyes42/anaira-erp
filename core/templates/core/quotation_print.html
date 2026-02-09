@@ -147,45 +147,52 @@
 </div>
 
 <style>
-    /* ESTILOS EXCLUSIVOS PARA IMPRESIÓN */
     @media print {
-        /* 1. OCULTAR TODO EL SITIO WEB */
-        body * {
-            visibility: hidden;
-            height: 0;
-            overflow: hidden; 
+        /* 1. OCULTAR TODO LO QUE NO QUEREMOS VER */
+        body > *:not(#printArea) {
+            display: none !important;
         }
 
-        /* 2. MOSTRAR SOLO LA HOJA DE PAPEL */
-        #printArea, #printArea * {
-            visibility: visible;
-            height: auto;
-            overflow: visible;
+        /* 2. OCULTAR BARRA DE NAVEGACIÓN, SIDEBAR, BOTONES ESPECÍFICOS */
+        nav, header, footer, .sidebar, .d-print-none, .btn {
+            display: none !important;
         }
 
-        /* 3. POSICIONAR LA HOJA EN LA ESQUINA SUPERIOR */
+        /* 3. CONFIGURAR LA HOJA PARA QUE OCUPE TODO EL PAPEL */
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: white !important;
+            height: 100%;
+            overflow: visible !important;
+        }
+
+        /* 4. POSICIONAR LA COTIZACIÓN ENCIMA DE TODO (STICKER GIGANTE) */
         #printArea {
-            position: absolute;
-            left: 0;
-            top: 0;
+            display: block !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
-            box-shadow: none !important;
             border: none !important;
+            box-shadow: none !important;
+            z-index: 9999 !important; /* Asegura que esté al frente */
+            visibility: visible !important;
         }
 
-        /* 4. FORZAR FONDOS BLANCOS Y LETRAS NEGRAS */
-        body {
-            background-color: white !important;
-            -webkit-print-color-adjust: exact; /* Para que Chrome imprima colores de fondo */
-            print-color-adjust: exact;
+        /* 5. FORZAR COLORES PARA QUE SE VEA EL TEXTO */
+        #printArea * {
+            visibility: visible !important;
+            color-adjust: exact;
+            -webkit-print-color-adjust: exact;
         }
-
-        /* Ocultar botones que se hayan colado */
-        .d-print-none, .btn, header, nav, footer, .sidebar {
-            display: none !important;
-        }
+        
+        /* Asegurar que las letras sean negras y no gris claro o blancas */
+        .text-white { color: black !important; }
+        .bg-dark { background-color: #f0f0f0 !important; color: black !important; }
+        .bg-primary { background-color: #f0f0f0 !important; color: black !important; }
     }
 </style>
 {% endblock %}
