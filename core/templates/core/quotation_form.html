@@ -80,14 +80,13 @@
 
 <script>
     // 1. CARGA DE PRODUCTOS DESDE DJANGO
-    // Usamos |unlocalize para asegurar que el número use PUNTO (150.50) y no COMA (150,50)
     const productsDB = [
         {% for p in products %}
             { 
                 id: "{{ p.id }}", 
                 name: "{{ p.name|escapejs }}", 
-                // Si no tiene precio, pone 0. Si tiene, le quita el formato local (comas)
-                price: "{{ p.sale_price|default:0|unlocalize }}" 
+                // CORRECCIÓN: Usamos 'stringformat:f' que es nativo y fuerza el formato 123.45
+                price: "{{ p.sale_price|default:0|stringformat:'f' }}" 
             },
         {% endfor %}
     ];
