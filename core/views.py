@@ -2279,3 +2279,37 @@ def vehicle_list(request):
             return redirect('vehicle_list')
 
     return render(request, 'core/expenses/vehicle_list.html', {'vehiculos': vehiculos, 'form': form})
+
+# Vista Rápida para Pilotos (Solo Foto)
+@login_required
+def upload_expense_photo(request):
+    if request.method == 'POST':
+        # Obtenemos la foto y la placa (si la mandó)
+        foto = request.FILES.get('invoice_file')
+        placa_id = request.POST.get('vehicle_id')
+        
+        if foto:
+            # Creamos el gasto en estado PENDIENTE con montos en 0
+            gasto = Expense.objects.create(
+                user=request.user,
+                invoice_file=foto,
+                date=timezone.now().date(), # Fecha de hoy automática
+                provider="Pendiente de Revisión", # Texto temporal
+                description="Gasto subido por piloto (Requiere validación)",
+                total_amount=0, # Se llenará después
+                status='PENDING' # <--- LA CLAVE
+            )
+            
+            # Si seleccionó vehículo, lo asignamos
+            if placa_id:
+                gasto.vehicle_id = placa_id
+                gasto.save()
+                
+            messages.success(request, "¡Foto enviada! El departamento de contabilidad la procesará.")
+            return redirect('home') # O al dashboard del piloto
+        else:
+            messages.error(request, "Debes subir una foto.")
+            
+    # Traemos los vehículos para que seleccione
+    vehiculos = Vehicle.objects.filter(status='ACTIVO')
+    return render(request, 'core/expenses/pilot_upload.html', {'vehiculos': vehiculos})
