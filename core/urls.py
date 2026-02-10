@@ -116,4 +116,6 @@ urlpatterns = [
     path('gastos/subir-foto/', views.upload_expense_photo, name='upload_expense_photo'), # Para el Piloto
     path('gastos/pendientes/', views.expense_pending_list, name='expense_pending_list'), # Bandeja del Contador
     path('gastos/revisar/<int:pk>/', views.expense_approve, name='expense_approve'),     # Acción de Revisar
+
+    path('gastos/subir-foto/', views.upload_expense_photo, name='upload_expense_photo'),
 ]

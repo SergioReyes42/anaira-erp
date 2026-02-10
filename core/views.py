@@ -2283,34 +2283,35 @@ def vehicle_list(request):
 # Vista Rápida para Pilotos (Solo Foto)
 @login_required
 def upload_expense_photo(request):
+    # Si el piloto envía el formulario (POST)
     if request.method == 'POST':
-        # Obtenemos la foto y la placa (si la mandó)
         foto = request.FILES.get('invoice_file')
-        placa_id = request.POST.get('vehicle_id')
+        vehicle_id = request.POST.get('vehicle_id')
         
         if foto:
-            # Creamos el gasto en estado PENDIENTE con montos en 0
+            # Creamos el gasto en modo "Borrador"
             gasto = Expense.objects.create(
                 user=request.user,
                 invoice_file=foto,
-                date=timezone.now().date(), # Fecha de hoy automática
-                provider="Pendiente de Revisión", # Texto temporal
-                description="Gasto subido por piloto (Requiere validación)",
-                total_amount=0, # Se llenará después
-                status='PENDING' # <--- LA CLAVE
+                date=timezone.now().date(),      # Fecha de hoy
+                provider="Pendiente de Revisión",# Texto temporal
+                description="Gasto reportado por Piloto",
+                total_amount=0,                  # Monto 0 (Contador lo llenará)
+                status='PENDING',                # <--- ESTADO CLAVE
+                is_fuel=False                    # Por defecto false
             )
             
-            # Si seleccionó vehículo, lo asignamos
-            if placa_id:
-                gasto.vehicle_id = placa_id
+            # Si seleccionó placa, la guardamos
+            if vehicle_id:
+                gasto.vehicle_id = vehicle_id
                 gasto.save()
-                
-            messages.success(request, "¡Foto enviada! El departamento de contabilidad la procesará.")
-            return redirect('home') # O al dashboard del piloto
-        else:
-            messages.error(request, "Debes subir una foto.")
             
-    # Traemos los vehículos para que seleccione
+            messages.success(request, "✅ ¡Foto enviada! Contabilidad revisará tu gasto.")
+            return redirect('home') # Lo regresa al inicio
+        else:
+            messages.error(request, "⚠️ Debes tomar una foto o subir un archivo.")
+
+    # Si entra a la página (GET), le mostramos los vehículos
     vehiculos = Vehicle.objects.filter(status='ACTIVO')
     return render(request, 'core/expenses/pilot_upload.html', {'vehiculos': vehiculos})
 
