@@ -561,5 +561,15 @@ class Expense(models.Model):
     # En lugar de 'auth.User' o User, usamos settings.AUTH_USER_MODEL
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
+    # ESTADOS DEL GASTO
+    STATUS_CHOICES = [
+        ('PENDING', '🟡 Pendiente (Solo Foto)'),
+        ('APPROVED', '🟢 Aprobado y Contabilizado'),
+        ('REJECTED', '🔴 Rechazado'),
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='APPROVED') 
+    # Nota: Ponemos default APPROVED para que lo antiguo no se rompa, 
+    # pero el formulario del piloto usará PENDING.
+
     def __str__(self):
         return f"{self.date} - {self.provider} (Q{self.total_amount})"
