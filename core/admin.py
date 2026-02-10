@@ -60,8 +60,8 @@ except ImportError:
 try:
     @admin.register(CompanyProfile)
     class CompanyProfileAdmin(admin.ModelAdmin):
-        list_display = ('name', 'nit', 'phone')
-        filter_horizontal = ('allowed_users',) 
+        list_display = ('name', 'nit', 'phone', 'email')
+        search_fields = ('name', 'nit') 
         
         def has_add_permission(self, request):
             return True 

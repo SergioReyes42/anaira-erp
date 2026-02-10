@@ -39,19 +39,18 @@ class Company(models.Model):
     def __str__(self): return self.name
 
 class CompanyProfile(models.Model):
-    name = models.CharField(max_length=200, verbose_name="Nombre de la Empresa")
-    nit = models.CharField(max_length=20, verbose_name="NIT")
-    address = models.TextField(verbose_name="Dirección", blank=True, null=True)
-    phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True, null=True)
+    name = models.CharField(max_length=200, verbose_name="Nombre Empresa")
+    nit = models.CharField(max_length=20, blank=True, null=True, verbose_name="NIT")
     logo = models.ImageField(upload_to='company_logos/', blank=True, null=True, verbose_name="Logo")
     
-    allowed_users = models.ManyToManyField(
-        User, 
-        related_name='allowed_companies', 
-        blank=True, 
-        verbose_name="Usuarios Autorizados",
-        help_text="Seleccione los usuarios que pueden acceder a esta empresa."
-    )
+    # --- ESTOS SON LOS CAMPOS QUE TE FALTAN Y CAUSAN EL ERROR ---
+    address = models.CharField(max_length=255, blank=True, null=True, verbose_name="Dirección")
+    phone = models.CharField(max_length=50, blank=True, null=True, verbose_name="Teléfono")
+    email = models.EmailField(blank=True, null=True, verbose_name="Correo Electrónico")
+    currency_symbol = models.CharField(max_length=5, default="Q", verbose_name="Símbolo Moneda")
+
+    def __str__(self):
+        return self.name
 
     def __str__(self): return self.name
 
