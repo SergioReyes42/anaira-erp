@@ -8,13 +8,19 @@ from django.conf import settings
 
 urlpatterns = [
     # --- ACCESO Y DASHBOARD ---
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
     path('seleccionar-empresa/', views.select_company, name='select_company'),
     path('', views.home, name='home'),
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
-
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('seleccionar-empresa/', views.select_company, name='select_company'),
+    path('', views.home, name='home'),
+    
+    re_path(r'^media/(?P<path>.*)$', serve, {
+        'document_root': settings.MEDIA_ROOT,
+    }),
+    
     # --- GASTOS Y OCR ---
     path('gastos/dashboard/', views.dashboard_gastos, name='dashboard_gastos'),
     path('gastos/lista/', views.expense_list, name='expense_list'),
@@ -125,7 +131,4 @@ urlpatterns = [
 
     path('gastos/subir-foto/', views.upload_expense_photo, name='upload_expense_photo'),
 
-    re_path(r'^media/(?P<path>.*)$', serve, {
-        'document_root': settings.MEDIA_ROOT,
-    }),
 ]
