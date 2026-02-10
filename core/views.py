@@ -2225,43 +2225,28 @@ def expense_create(request):
             gasto = form.save(commit=False)
             gasto.user = request.user
             
-            # --- 1. DETECCIÓN IA DE COMBUSTIBLE ---
-            # Palabras clave que activan la lógica de IDP
-            keywords_fuel = ['gasolina', 'diesel', 'combustible', 'regular', 'super', 'v-power', 'shell', 'texaco', 'puma']
-            texto_analisis = (gasto.description + " " + gasto.provider).lower()
-            
-            if any(word in texto_analisis for word in keywords_fuel):
-                gasto.is_fuel = True
-            
-            # --- 2. CÁLCULO AUTOMÁTICO DE MONTOS (CONTABILIDAD) ---
+            # --- PROTECCIÓN DOBLE: RE-CALCULAR EN SERVIDOR ---
             total = float(gasto.total_amount)
+            # Si el usuario no puso IDP, asumimos 0
             idp = float(gasto.idp_amount) if gasto.idp_amount else 0.0
             
+            # Lógica IA de texto (Si dice 'Gasolina' forzamos el check)
+            desc_full = (gasto.description + " " + gasto.provider).lower()
+            if 'gasolina' in desc_full or 'diesel' in desc_full or 'shell' in desc_full:
+                gasto.is_fuel = True
+
+            # Cálculo Matemático Final
             if gasto.is_fuel:
-                # LÓGICA COMBUSTIBLE (Tu estructura)
-                # Base = (Total - IDP) / 1.12
-                subtotal_sin_idp = total - idp
-                base = subtotal_sin_idp / 1.12
-                iva = subtotal_sin_idp - base
-                
-                # Mensaje de Partida
-                msg_partida = f"PARTIDA GENERADA (COMBUSTIBLE): DEBE: Combustible Q{base:.2f} | DEBE: IDP Q{idp:.2f} | DEBE: IVA Q{iva:.2f} --> HABER: Caja Q{total:.2f}"
+                subtotal = total - idp
+                gasto.base_amount = subtotal / 1.12
+                gasto.vat_amount = subtotal - gasto.base_amount
             else:
-                # LÓGICA GASTO NORMAL (Llantas, Repuestos)
-                # Base = Total / 1.12
-                base = total / 1.12
-                iva = total - base
-                idp = 0
-                
-                msg_partida = f"PARTIDA GENERADA (GASTO): DEBE: Gasto Q{base:.2f} | DEBE: IVA Q{iva:.2f} --> HABER: Caja Q{total:.2f}"
+                gasto.idp_amount = 0 # Asegurar 0 si no es gas
+                gasto.base_amount = total / 1.12
+                gasto.vat_amount = total - gasto.base_amount
 
-            # Guardamos los cálculos precisos
-            gasto.base_amount = base
-            gasto.vat_amount = iva
-            gasto.idp_amount = idp
             gasto.save()
-
-            messages.success(request, f"Gasto guardado. 🤖 {msg_partida}")
+            messages.success(request, f"Gasto de Q{total} registrado y calculado correctamente.")
             return redirect('expense_list')
     else:
         form = ExpenseForm()

@@ -3,90 +3,83 @@
 {% block content %}
 <div class="container py-4">
 
-    <div class="alert alert-success d-flex align-items-center mb-3 border-0 shadow-sm" role="alert" style="background-color: #d1e7dd;">
-        <i class="bi bi-robot me-2 text-success"></i>
-        <small class="fw-bold text-success-emphasis">IA Detectada: LISTO. Sistema preparado para escanear.</small>
-        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
-    </div>
-
     <div class="card shadow border-0">
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
-            <h5 class="mb-0 fw-bold"><i class="bi bi-receipt me-2"></i>Registrar Gasto / Compra</h5>
-            <span class="badge bg-warning text-dark">Manual</span>
+            <h5 class="mb-0 fw-bold"><i class="bi bi-receipt me-2"></i>Registrar Gasto Inteligente</h5>
+            <span class="badge bg-warning text-dark">IA Ready</span>
         </div>
         
         <div class="card-body p-4">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
 
-                <div class="border border-primary border-dashed rounded p-4 mb-4 text-center bg-light" style="border-style: dashed !important;">
-                    <div class="d-flex align-items-center justify-content-center mb-3">
-                        <i class="bi bi-qr-code-scan text-primary me-3" style="font-size: 2.5rem;"></i>
-                        <div class="text-start">
-                            <h6 class="text-primary fw-bold mb-0">Smart Scanner (IA)</h6>
-                            <small class="text-muted">Suba su factura aquí y la IA llenará los campos.</small>
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        {{ form.invoice_file }}
-                        <button class="btn btn-primary fw-bold" type="button">
-                            <i class="bi bi-magic me-2"></i>ANALIZAR DOCUMENTO
-                        </button>
+                <div class="alert alert-info border-dashed d-flex align-items-center mb-4">
+                    <i class="bi bi-qr-code-scan fs-1 me-3"></i>
+                    <div>
+                        <strong>Smart Scanner (Simulado):</strong>
+                        <p class="mb-0 small">Al subir la foto, el sistema detectará automáticamente si es Gasolina o Repuesto al guardar.</p>
                     </div>
                 </div>
 
-                <h6 class="text-muted mb-3 border-bottom pb-2">Detalle de la Factura</h6>
+                {{ form.non_field_errors }}
 
                 <div class="row g-3 mb-3">
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold small">Fecha Emisión</label>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Proveedor / Establecimiento</label>
+                        {{ form.provider }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Fecha</label>
                         {{ form.date }}
                     </div>
-                    <div class="col-md-8">
-                        <label class="form-label fw-bold small">Proveedor / Emisor</label>
-                        {{ form.provider }}
+                    <div class="col-md-3">
+                         <label class="form-label fw-bold">Subir Factura</label>
+                         {{ form.invoice_file }}
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold small">Descripción / Concepto</label>
+                    <label class="form-label fw-bold">Descripción del Gasto</label>
                     {{ form.description }}
                 </div>
 
-                <div class="row g-3 mb-4">
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold text-success small">Total (Caja)</label>
-                        {{ form.total_amount }}
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold text-primary small">IDP (Gasolina)</label>
-                        {{ form.idp_amount }}
-                        <div class="form-text x-small">No paga IVA</div>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label text-muted small">Base (Gasto Real)</label>
-                        {{ form.base_amount }}
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label text-muted small">IVA (Crédito)</label>
-                        {{ form.vat_amount }}
+                <div class="bg-light p-3 rounded border mb-4">
+                    <div class="form-check form-switch">
+                        {{ form.is_fuel }}
+                        <label class="form-check-label fw-bold text-primary" for="{{ form.is_fuel.id_for_label }}">
+                            <i class="bi bi-fuel-pump-fill me-1"></i> ¿Es Compra de Combustible?
+                        </label>
                     </div>
                 </div>
 
-                <div class="bg-light p-3 rounded border mb-4">
-                    <div class="form-check form-switch mb-2">
-                        {{ form.is_fuel }}
-                        <label class="form-check-label fw-bold" for="{{ form.is_fuel.id_for_label }}">¿Es Compra de Combustible o Mantenimiento?</label>
+                <h6 class="text-muted border-bottom pb-2 mb-3">Desglose de Factura (Automático)</h6>
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-success">TOTAL FACTURA (Q)</label>
+                        {{ form.total_amount }} </div>
+
+                    <div class="col-md-3" id="div_idp" style="display:none;">
+                        <label class="form-label fw-bold text-primary">IDP (Impuesto Gas)</label>
+                        {{ form.idp_amount }} <div class="form-text x-small">Monto del impuesto IDP</div>
                     </div>
-                    <div id="vehicleSelector" style="display: none;">
-                        <label class="small text-muted mb-1">Seleccionar Vehículo de la Flotilla:</label>
-                        {{ form.vehicle }}
-                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label text-muted">Base Imponible</label>
+                        {{ form.base_amount }} </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-muted">IVA (12%)</label>
+                        {{ form.vat_amount }} </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Asignar a Vehículo (Opcional)</label>
+                    {{ form.vehicle }}
                 </div>
 
                 <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-success fw-bold py-2">
-                        <i class="bi bi-save me-2"></i>GUARDAR GASTO
+                    <button type="submit" class="btn btn-success fw-bold py-3">
+                        <i class="bi bi-save me-2"></i>GUARDAR Y CONTABILIZAR
                     </button>
                 </div>
             </form>
@@ -95,40 +88,60 @@
 </div>
 
 <script>
-    // Script simple para mostrar/ocultar el selector de vehículo
-    function toggleVehicle() {
-        var checkBox = document.getElementById("id_is_fuel");
-        var selector = document.getElementById("vehicleSelector");
-        if (checkBox.checked == true){
-            selector.style.display = "block";
-        } else {
-            selector.style.display = "none";
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. OBTENER LOS CAMPOS POR SU ID DE DJANGO
+        const checkFuel = document.getElementById('id_is_fuel');
+        const inputTotal = document.getElementById('id_total_amount');
+        const inputIDP = document.getElementById('id_idp_amount');
+        const inputBase = document.getElementById('id_base_amount');
+        const inputIVA = document.getElementById('id_vat_amount');
+        const divIDP = document.getElementById('div_idp');
+
+        // Hacer Base e IVA solo lectura (para que nadie los rompa)
+        inputBase.setAttribute('readonly', true);
+        inputIVA.setAttribute('readonly', true);
+
+        // 2. FUNCIÓN DE CÁLCULO GUATEMALA
+        function calcularMontos() {
+            let total = parseFloat(inputTotal.value) || 0;
+            let idp = parseFloat(inputIDP.value) || 0;
+            let esGasolina = checkFuel.checked;
+
+            // Mostrar u ocultar campo IDP
+            if (esGasolina) {
+                divIDP.style.display = 'block';
+            } else {
+                divIDP.style.display = 'none';
+                idp = 0; // Si no es gas, IDP vale 0 para el cálculo
+                inputIDP.value = 0; 
+            }
+
+            let base = 0;
+            let iva = 0;
+
+            if (esGasolina) {
+                // FÓRMULA COMBUSTIBLE: (Total - IDP) / 1.12
+                let subtotal = total - idp;
+                base = subtotal / 1.12;
+            } else {
+                // FÓRMULA NORMAL: Total / 1.12
+                base = total / 1.12;
+            }
+
+            // El IVA es la diferencia (o base * 0.12)
+            if (base > 0) {
+                 iva = (total - idp) - base;
+            }
+
+            // Poner los valores en los cuadros (con 2 decimales)
+            inputBase.value = base.toFixed(2);
+            inputIVA.value = iva.toFixed(2);
         }
-    }
-    
-    // Asignar el evento al checkbox
-    document.getElementById("id_is_fuel").addEventListener('change', toggleVehicle);
 
-    // Calculadora Automática de IVA (Simple)
-    const totalInput = document.getElementById('id_total_amount');
-    const idpInput = document.getElementById('id_idp_amount');
-    const baseInput = document.getElementById('id_base_amount');
-    const vatInput = document.getElementById('id_vat_amount');
-
-    function calculateValues() {
-        let total = parseFloat(totalInput.value) || 0;
-        let idp = parseFloat(idpInput.value) || 0;
-
-        // Formula Guatemala: (Total - IDP) / 1.12 = Base
-        let subtotal = total - idp;
-        let base = subtotal / 1.12;
-        let vat = subtotal - base;
-
-        baseInput.value = base.toFixed(2);
-        vatInput.value = vat.toFixed(2);
-    }
-
-    totalInput.addEventListener('input', calculateValues);
-    idpInput.addEventListener('input', calculateValues);
+        // 3. ESCUCHAR CAMBIOS (DETECTAR CUANDO ESCRIBES)
+        inputTotal.addEventListener('input', calcularMontos);
+        inputIDP.addEventListener('input', calcularMontos);
+        checkFuel.addEventListener('change', calcularMontos);
+    });
 </script>
 {% endblock %}

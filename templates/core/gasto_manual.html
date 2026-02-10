@@ -1,147 +1,136 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container py-4">
-
-    <div class="card shadow border-0">
-        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
-            <h5 class="mb-0 fw-bold"><i class="bi bi-receipt me-2"></i>Registrar Gasto Inteligente</h5>
-            <span class="badge bg-warning text-dark">IA Ready</span>
-        </div>
+<div class="row justify-content-center">
+    <div class="col-md-9">
         
-        <div class="card-body p-4">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-
-                <div class="alert alert-info border-dashed d-flex align-items-center mb-4">
-                    <i class="bi bi-qr-code-scan fs-1 me-3"></i>
-                    <div>
-                        <strong>Smart Scanner (Simulado):</strong>
-                        <p class="mb-0 small">Al subir la foto, el sistema detectará automáticamente si es Gasolina o Repuesto al guardar.</p>
-                    </div>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {% if 'IA Detectada' in message.message %} <i class="bi bi-robot"></i> {% endif %}
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
+            {% endfor %}
+        {% endif %}
 
-                {{ form.non_field_errors }}
+        <div class="card shadow">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-receipt"></i> Registrar Gasto / Compra</h5>
+                <span class="badge bg-warning text-dark">Manual</span>
+            </div>
+            
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
 
-                <div class="row g-3 mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Proveedor / Establecimiento</label>
-                        {{ form.provider }}
+                    <div class="alert alert-info border-info" style="background: #f0f8ff; border: 2px dashed #0dcaf0;">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-robot fs-1 me-3 text-primary"></i>
+                            <div>
+                                <h5 class="text-primary fw-bold m-0">Smart Scanner (IA)</h5>
+                                <small class="text-muted">Suba su factura aquí y la IA llenará los campos por usted.</small>
+                            </div>
+                        </div>
+
+                        <div class="input-group input-group-lg">
+                            <input type="file" name="imagen_factura" class="form-control" id="id_imagen_ia">
+                            
+                            <button type="submit" name="analizar_ia" value="1" class="btn btn-primary fw-bold" formnovalidate>
+                                <i class="bi bi-magic"></i> ANALIZAR DOCUMENTO
+                            </button>
+                        </div>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">Fecha</label>
-                        {{ form.date }}
-                    </div>
-                    <div class="col-md-3">
-                         <label class="form-label fw-bold">Subir Factura</label>
-                         {{ form.invoice_file }}
-                    </div>
-                </div>
+                    <h6 class="text-muted border-bottom pb-2 mb-3 mt-4">Detalle de la Factura</h6>
 
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Descripción del Gasto</label>
-                    {{ form.description }}
-                </div>
-
-                <div class="bg-light p-3 rounded border mb-4">
-                    <div class="form-check form-switch">
-                        {{ form.is_fuel }}
-                        <label class="form-check-label fw-bold text-primary" for="{{ form.is_fuel.id_for_label }}">
-                            <i class="bi bi-fuel-pump-fill me-1"></i> ¿Es Compra de Combustible?
-                        </label>
-                    </div>
-                </div>
-
-                <h6 class="text-muted border-bottom pb-2 mb-3">Desglose de Factura (Automático)</h6>
-                
-                <div class="row g-3 mb-4">
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold text-success">TOTAL FACTURA (Q)</label>
-                        {{ form.total_amount }} </div>
-
-                    <div class="col-md-3" id="div_idp" style="display:none;">
-                        <label class="form-label fw-bold text-primary">IDP (Impuesto Gas)</label>
-                        {{ form.idp_amount }} <div class="form-text x-small">Monto del impuesto IDP</div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Fecha Emisión</label>
+                            <input type="date" name="fecha" class="form-control" value="{{ fecha|date:'Y-m-d' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Proveedor / Emisor</label>
+                            <input type="text" name="nombre_emisor" class="form-control" placeholder="Ej: Gasolinera Shell" value="{{ proveedor|default:'' }}" required>
+                        </div>
                     </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label text-muted">Base Imponible</label>
-                        {{ form.base_amount }} </div>
-                    <div class="col-md-3">
-                        <label class="form-label text-muted">IVA (12%)</label>
-                        {{ form.vat_amount }} </div>
-                </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción / Concepto</label>
+                        <input type="text" name="concepto" class="form-control" placeholder="Ej: Compra de combustible unidad 501" value="{{ descripcion|default:'' }}" required>
+                    </div>
 
-                <div class="mb-4">
-                    <label class="form-label fw-bold">Asignar a Vehículo (Opcional)</label>
-                    {{ form.vehicle }}
-                </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold text-success">Total (Caja)</label>
+                            <input type="number" step="0.01" name="monto_total" class="form-control border-success fw-bold" 
+                                   style="font-size: 1.1rem;" value="{{ total|default:'' }}" required>
+                        </div>
 
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-success fw-bold py-3">
-                        <i class="bi bi-save me-2"></i>GUARDAR Y CONTABILIZAR
-                    </button>
-                </div>
-            </form>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold text-primary">IDP (Gasolina)</label>
+                            <input type="number" step="0.01" name="monto_idp" class="form-control" 
+                                   value="{{ monto_idp|default:'0' }}" placeholder="0.00">
+                            <small class="text-muted" style="font-size: 0.7rem;">No paga IVA</small>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label small">Base (Gasto Real)</label>
+                            <input type="number" step="0.01" name="base_imponible" class="form-control bg-light" 
+                                   value="{{ base_imponible|default:'' }}" readonly>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label small">IVA (Crédito)</label>
+                            <input type="number" step="0.01" name="impuesto_iva" class="form-control bg-light" 
+                                   value="{{ iva|default:'' }}" readonly>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <div class="form-check p-3 border rounded bg-light">
+                                <input class="form-check-input" type="checkbox" name="es_combustible" id="checkFuel" {% if es_combustible %}checked{% endif %}>
+                                <label class="form-check-label fw-bold" for="checkFuel">
+                                    <i class="bi bi-fuel-pump text-danger"></i> ¿Es Compra de Combustible?
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <h6 class="text-muted border-bottom pb-2 mb-3 mt-4">Método de Pago y Asignación</h6>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Pagar desde Banco</label>
+                            <select name="bank_id" class="form-select">
+                                <option value="">-- Dejar como Cuenta por Pagar --</option>
+                                {% for banco in bancos %}
+                                    <option value="{{ banco.id }}">{{ banco.bank_name }} - Q{{ banco.current_balance }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Asignar a Vehículo</label>
+                            <select name="vehicle_id" class="form-select">
+                                <option value="">-- Ninguno --</option>
+                                {% for v in vehiculos %}
+                                    <option value="{{ v.id }}">{{ v.brand }} {{ v.model }} ({{ v.plate }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-save"></i> GUARDAR GASTO FINAL
+                        </button>
+                        <a href="{% url 'dashboard_gastos' %}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+
+                </form>
+            </div>
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // 1. OBTENER LOS CAMPOS POR SU ID DE DJANGO
-        const checkFuel = document.getElementById('id_is_fuel');
-        const inputTotal = document.getElementById('id_total_amount');
-        const inputIDP = document.getElementById('id_idp_amount');
-        const inputBase = document.getElementById('id_base_amount');
-        const inputIVA = document.getElementById('id_vat_amount');
-        const divIDP = document.getElementById('div_idp');
-
-        // Hacer Base e IVA solo lectura (para que nadie los rompa)
-        inputBase.setAttribute('readonly', true);
-        inputIVA.setAttribute('readonly', true);
-
-        // 2. FUNCIÓN DE CÁLCULO GUATEMALA
-        function calcularMontos() {
-            let total = parseFloat(inputTotal.value) || 0;
-            let idp = parseFloat(inputIDP.value) || 0;
-            let esGasolina = checkFuel.checked;
-
-            // Mostrar u ocultar campo IDP
-            if (esGasolina) {
-                divIDP.style.display = 'block';
-            } else {
-                divIDP.style.display = 'none';
-                idp = 0; // Si no es gas, IDP vale 0 para el cálculo
-                inputIDP.value = 0; 
-            }
-
-            let base = 0;
-            let iva = 0;
-
-            if (esGasolina) {
-                // FÓRMULA COMBUSTIBLE: (Total - IDP) / 1.12
-                let subtotal = total - idp;
-                base = subtotal / 1.12;
-            } else {
-                // FÓRMULA NORMAL: Total / 1.12
-                base = total / 1.12;
-            }
-
-            // El IVA es la diferencia (o base * 0.12)
-            if (base > 0) {
-                 iva = (total - idp) - base;
-            }
-
-            // Poner los valores en los cuadros (con 2 decimales)
-            inputBase.value = base.toFixed(2);
-            inputIVA.value = iva.toFixed(2);
-        }
-
-        // 3. ESCUCHAR CAMBIOS (DETECTAR CUANDO ESCRIBES)
-        inputTotal.addEventListener('input', calcularMontos);
-        inputIDP.addEventListener('input', calcularMontos);
-        checkFuel.addEventListener('change', calcularMontos);
-    });
-</script>
 {% endblock %}
