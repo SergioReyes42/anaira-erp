@@ -344,11 +344,12 @@
 <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-            navigator.serviceWorker.register("{% static 'sw.js' %}")
+            // AHORA APUNTA A LA RAÍZ "/sw.js"
+            navigator.serviceWorker.register("/sw.js") 
             .then(function(registration) {
-                console.log('ServiceWorker registrado con éxito: ', registration.scope);
+                console.log('App lista para instalar. Scope:', registration.scope);
             }, function(err) {
-                console.log('Fallo al registrar ServiceWorker: ', err);
+                console.log('Error al registrar App:', err);
             });
         });
     }

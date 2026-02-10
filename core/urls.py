@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from django.views.generic import TemplateView
 
 urlpatterns = [
     # --- ACCESO Y DASHBOARD ---
@@ -108,4 +109,6 @@ urlpatterns = [
     path('gastos/listado/', views.expense_list, name='expense_list'),
     path('flotilla/', views.vehicle_list, name='vehicle_list'),
 
+    # RUTA MÁGICA PARA EL SERVICE WORKER (PWA)
+    path('sw.js', TemplateView.as_view(template_name='sw.js', content_type='application/javascript'), name='sw.js'),
 ]
