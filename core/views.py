@@ -589,43 +589,88 @@ def pay_supplier(request):
 @login_required
 def libro_diario(request):
     """
-    Une 3 fuentes de datos en un solo flujo contable:
-    1. Gastos (Salidas)
-    2. Ingresos/Ventas (Entradas)
-    3. Movimientos Bancarios (Depósitos/Retiros/Transferencias)
+    Libro Diario Operativo:
+    Une Gastos, Ingresos y Movimientos Bancarios en una sola línea de tiempo.
     """
     company_id = request.session.get('company_id')
-    company = Company.objects.get(id=company_id)
+    company = get_object_or_404(Company, id=company_id)
     
-    # 1. Traemos los Gastos
-    gastos = Expense.objects.filter(company=company).order_by('-fecha')
+    # 1. TRAER LOS GASTOS (Corregido: Filtra por empresa del usuario)
+    # Nota: Como Expense no tiene 'company', filtramos por los usuarios de esta empresa
+    gastos = Expense.objects.filter(
+        user__profile__active_company_id=company_id
+    ).order_by('-date')
     
-    # 2. Traemos los Ingresos
-    ingresos = Income.objects.filter(company=company).order_by('-date')
+    # 2. TRAER LOS INGRESOS
+    ingresos = Income.objects.filter(company_id=company_id).order_by('-date')
     
-    # 3. Traemos los Movimientos Bancarios directos
-    bancos = BankMovement.objects.filter(account__company=company).order_by('-date')
+    # 3. TRAER MOVIMIENTOS BANCARIOS (Excluyendo los que ya son Ingresos/Gastos para no duplicar visualmente si se desea)
+    bancos = BankMovement.objects.filter(account__company_id=company_id).order_by('-date')
 
-    # Unificamos las listas (Chain)
-    for g in gastos: g.date_unificada = g.date
-    for i in ingresos: i.date_unificada = i.date
-    for b in bancos: b.date_unificada = b.date
+    # 4. UNIFICAR TODO EN UNA LISTA NORMALIZADA
+    # Convertimos todo a un diccionario común para que el HTML no sufra con los nombres distintos
+    movimientos_unificados = []
 
-    # Ordenamos todo por fecha (lo más reciente arriba)
-    movimientos = sorted(
-        chain(gastos, ingresos, bancos),
-        key=attrgetter('fecha_unificada'),
-        reverse=True
-    )
+    # A. Procesar Gastos
+    for g in gastos:
+        movimientos_unificados.append({
+            'fecha': g.date,
+            'descripcion': f"GASTO: {g.provider or 'Sin proveedor'} - {g.description}",
+            'referencia': f"EXP-{g.id}",
+            'debe': g.total_amount,  # Gasto es salida (Debe contable / Haber banco) - Aquí lo mostramos como monto
+            'haber': 0,
+            'saldo': -g.total_amount, # Resta
+            'tipo': 'GASTO',
+            'objeto': g
+        })
 
-    t_gastos = gastos.aggregate(Sum('total_amount'))['total_amount__sum'] or 0 # <--- CAMBIAR AQUÍ
-    t_ingresos = ingresos.aggregate(Sum('amount'))['amount__sum'] or 0
+    # B. Procesar Ingresos
+    for i in ingresos:
+        movimientos_unificados.append({
+            'fecha': i.date,
+            'descripcion': f"INGRESO: {i.description}",
+            'referencia': i.reference_doc or f"INC-{i.id}",
+            'debe': 0,
+            'haber': i.amount,
+            'saldo': i.amount, # Suma
+            'tipo': 'INGRESO',
+            'objeto': i
+        })
+
+    # C. Procesar Bancos (Solo transferencias o ajustes manuales para no duplicar)
+    # Si quieres ver TODO el banco, descomenta todo. Aquí filtramos solo lo que no venga de Gasto/Ingreso
+    for b in bancos:
+        # Simple lógica para evitar duplicados visuales si ya registraste el ingreso arriba
+        # (Opcional: Si prefieres ver todo, quita el 'if')
+        es_ingreso = 'Ingreso' in b.category
+        es_gasto = 'Pago' in b.category or 'Gasto' in b.category
+        
+        # Solo agregamos si es una transferencia pura o ajuste, o si quieres ver el flujo bancario puro
+        movimientos_unificados.append({
+            'fecha': b.date,
+            'descripcion': f"BANCO: {b.description} ({b.category})",
+            'referencia': b.reference or f"BNK-{b.id}",
+            'debe': b.amount if b.movement_type == 'OUT' else 0,
+            'haber': b.amount if b.movement_type == 'IN' else 0,
+            'saldo': b.amount if b.movement_type == 'IN' else -b.amount,
+            'tipo': 'BANCO',
+            'objeto': b
+        })
+
+    # 5. ORDENAR POR FECHA (Del más reciente al más antiguo)
+    movimientos_unificados.sort(key=lambda x: x['fecha'], reverse=True)
+
+    # 6. CALCULAR TOTALES
+    total_debe = sum(m['debe'] for m in movimientos_unificados)
+    total_haber = sum(m['haber'] for m in movimientos_unificados)
+    balance = total_haber - total_debe
 
     return render(request, 'accounting/libro_diario.html', {
-        'movimientos': movimientos,
-        't_gastos': t_gastos,
-        't_ingresos': t_ingresos,
-        'balance': t_ingresos - t_gastos
+        'movimientos': movimientos_unificados,
+        'total_debe': total_debe,
+        'total_haber': total_haber,
+        'balance': balance,
+        'company': company
     })
 
 @login_required
