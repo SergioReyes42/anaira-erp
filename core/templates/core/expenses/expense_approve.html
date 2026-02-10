@@ -6,103 +6,146 @@
         
         <div class="col-lg-5 mb-4">
             <div class="card shadow h-100 border-0">
-                <div class="card-header bg-dark text-white">
-                    <h6 class="m-0"><i class="bi bi-eye me-2"></i>Evidencia Subida</h6>
+                <div class="card-header bg-dark text-white d-flex justify-content-between">
+                    <h6 class="m-0"><i class="bi bi-eye me-2"></i>Evidencia</h6>
+                    <small><i class="bi bi-zoom-in"></i> Clic para ampliar</small>
                 </div>
-                <div class="card-body bg-light text-center d-flex align-items-center justify-content-center overflow-hidden">
+                <div class="card-body bg-light text-center d-flex align-items-center justify-content-center overflow-hidden position-relative">
                     {% if gasto.invoice_file %}
-                        <img src="{{ gasto.invoice_file.url }}" class="img-fluid rounded shadow-sm" style="max-height: 600px;" alt="Factura">
+                        <div style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#zoomModal">
+                            <img src="{{ gasto.invoice_file.url }}" class="img-fluid rounded shadow-sm" style="max-height: 500px; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" alt="Factura">
+                            <div class="position-absolute top-50 start-50 translate-middle text-white bg-dark bg-opacity-50 rounded p-2 opacity-0 hover-overlay">
+                                <i class="bi bi-arrows-fullscreen"></i>
+                            </div>
+                        </div>
                     {% else %}
-                        <p class="text-muted">El piloto no subió foto (Error)</p>
+                        <div class="text-muted py-5">
+                            <i class="bi bi-image-slash fs-1 d-block mb-2"></i>
+                            Sin Foto Adjunta
+                        </div>
                     {% endif %}
                 </div>
             </div>
         </div>
 
         <div class="col-lg-7">
-            
-            <div class="card shadow border-0">
-                <div class="card-header bg-success text-white py-3">
-                    <h5 class="mb-0 fw-bold"><i class="bi bi-check-circle me-2"></i>Aprobar y Contabilizar</h5>
-                </div>
-                <div class="card-body p-4">
-                    
-                    <form method="post" enctype="multipart/form-data" id="approveForm">
-                        {% csrf_token %}
-                        
+            <form method="post" enctype="multipart/form-data" id="approveForm">
+                {% csrf_token %}
+                <div class="card shadow border-0">
+                    <div class="card-header bg-success text-white py-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-check-circle me-2"></i>Procesar Gasto</h5>
+                    </div>
+                    <div class="card-body p-4">
+
                         <div class="row g-3 mb-3">
                             <div class="col-md-4">
-                                <label class="fw-bold">Fecha Factura</label>
+                                <label class="fw-bold small">Fecha</label>
                                 {{ form.date }}
                             </div>
                             <div class="col-md-8">
-                                <label class="fw-bold">Proveedor</label>
+                                <label class="fw-bold small">Proveedor</label>
                                 {{ form.provider }}
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label class="fw-bold">Concepto</label>
+                            <label class="fw-bold small">Descripción</label>
                             {{ form.description }}
+                        </div>
+
+                        <div class="bg-warning bg-opacity-10 p-3 rounded border border-warning mb-3">
+                            <h6 class="fw-bold text-dark border-bottom border-warning pb-2 mb-3">Método de Pago</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="small fw-bold">¿Cómo se pagó?</label>
+                                    {{ form.payment_method }} </div>
+                                <div class="col-md-6" id="div_tarjeta" style="display:none;">
+                                    <label class="small fw-bold text-primary">Seleccionar Tarjeta</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white"><i class="bi bi-credit-card-2-front"></i></span>
+                                        {{ form.credit_card }} </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="bg-light p-3 rounded border mb-3">
                             <div class="d-flex justify-content-between mb-2">
-                                <h6 class="text-primary fw-bold">Desglose Contable</h6>
+                                <h6 class="text-primary fw-bold m-0">Montos</h6>
                                 <div class="form-check form-switch">
                                     {{ form.is_fuel }}
-                                    <label class="form-check-label fw-bold" for="{{ form.is_fuel.id_for_label }}">Es Combustible</label>
+                                    <label class="form-check-label fw-bold small" for="{{ form.is_fuel.id_for_label }}">Es Combustible</label>
                                 </div>
                             </div>
                             <div class="row g-2">
                                 <div class="col-md-3">
-                                    <label class="small fw-bold text-success">TOTAL</label>
+                                    <label class="x-small fw-bold text-success">TOTAL</label>
                                     {{ form.total_amount }}
                                 </div>
                                 <div class="col-md-3" id="div_idp" style="display:none;">
-                                    <label class="small fw-bold text-primary">IDP</label>
+                                    <label class="x-small fw-bold text-primary">IDP</label>
                                     {{ form.idp_amount }}
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="small text-muted">BASE</label>
+                                    <label class="x-small text-muted">BASE</label>
                                     {{ form.base_amount }}
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="small text-muted">IVA</label>
+                                    <label class="x-small text-muted">IVA</label>
                                     {{ form.vat_amount }}
                                 </div>
                             </div>
                         </div>
 
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <label>Vehículo Asignado</label>
-                                {{ form.vehicle }}
-                            </div>
-                             <div class="col-md-6">
-                                <div class="d-none">
-                                    {{ form.invoice_file }}
-                                </div>
-                            </div>
+                        <div class="mb-3">
+                            <label class="small fw-bold">Vehículo Asignado</label>
+                            {{ form.vehicle }}
                         </div>
+                        
+                        <div class="d-none">{{ form.invoice_file }}</div>
 
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-lg fw-bold">
-                                <i class="bi bi-file-earmark-check me-2"></i>FINALIZAR APROBACIÓN
+                            <button type="submit" class="btn btn-success fw-bold py-3 shadow">
+                                <i class="bi bi-file-earmark-check me-2"></i>CONTABILIZAR AHORA
                             </button>
-                            <a href="{% url 'expense_pending_list' %}" class="btn btn-outline-secondary">Cancelar</a>
                         </div>
-                    </form>
                     </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="zoomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-transparent border-0">
+            <div class="modal-body text-center position-relative">
+                <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                {% if gasto.invoice_file %}
+                    <img src="{{ gasto.invoice_file.url }}" class="img-fluid rounded shadow-lg" alt="Factura Zoom">
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // ... (Copia y pega el script de la calculadora JS aquí) ...
-     document.addEventListener('DOMContentLoaded', function() {
-        // 1. OBTENER LOS CAMPOS POR SU ID DE DJANGO
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- 1. LÓGICA TARJETAS ---
+        const selectMetodo = document.getElementById('id_payment_method');
+        const divTarjeta = document.getElementById('div_tarjeta');
+        
+        function toggleTarjeta() {
+            // Si el valor seleccionado es 'CARD', mostramos el selector
+            if (selectMetodo.value === 'CARD') {
+                divTarjeta.style.display = 'block';
+            } else {
+                divTarjeta.style.display = 'none';
+            }
+        }
+        selectMetodo.addEventListener('change', toggleTarjeta);
+        toggleTarjeta(); // Ejecutar al inicio
+
+        // --- 2. LÓGICA CALCULADORA (La misma de siempre) ---
         const checkFuel = document.getElementById('id_is_fuel');
         const inputTotal = document.getElementById('id_total_amount');
         const inputIDP = document.getElementById('id_idp_amount');
@@ -110,11 +153,9 @@
         const inputIVA = document.getElementById('id_vat_amount');
         const divIDP = document.getElementById('div_idp');
 
-        // Hacer Base e IVA solo lectura
         inputBase.setAttribute('readonly', true);
         inputIVA.setAttribute('readonly', true);
 
-        // 2. FUNCIÓN DE CÁLCULO
         function calcularMontos() {
             let total = parseFloat(inputTotal.value) || 0;
             let idp = parseFloat(inputIDP.value) || 0;
@@ -124,12 +165,10 @@
                 divIDP.style.display = 'block';
             } else {
                 divIDP.style.display = 'none';
-                idp = 0;
-                inputIDP.value = 0; 
+                idp = 0; inputIDP.value = 0; 
             }
 
-            let base = 0;
-            let iva = 0;
+            let base = 0; let iva = 0;
 
             if (esGasolina) {
                 let subtotal = total - idp;
@@ -138,9 +177,7 @@
                 base = total / 1.12;
             }
 
-            if (base > 0) {
-                 iva = (total - idp) - base;
-            }
+            if (base > 0) { iva = (total - idp) - base; }
 
             inputBase.value = base.toFixed(2);
             inputIVA.value = iva.toFixed(2);
@@ -149,8 +186,6 @@
         inputTotal.addEventListener('input', calcularMontos);
         inputIDP.addEventListener('input', calcularMontos);
         checkFuel.addEventListener('change', calcularMontos);
-        
-        // Ejecutar al inicio por si ya trae datos
         calcularMontos();
     });
 </script>

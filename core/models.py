@@ -561,6 +561,18 @@ class Expense(models.Model):
     # En lugar de 'auth.User' o User, usamos settings.AUTH_USER_MODEL
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
+    # NUEVOS CAMPOS DE PAGO
+    PAYMENT_METHODS = [
+        ('CASH', 'Efectivo / Caja Chica'),
+        ('CARD', 'Tarjeta de Crédito / Débito'),
+        ('TRANSFER', 'Transferencia Bancaria'),
+        ('CHECK', 'Cheque'),
+        ('CREDIT', 'Crédito (Cuenta por Pagar)'),
+    ]
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='CASH', verbose_name="Método de Pago")
+    
+    # Vinculación (Solo si fue tarjeta)
+    credit_card = models.ForeignKey("CreditCard", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Tarjeta Usada")
     # ESTADOS DEL GASTO
     STATUS_CHOICES = [
         ('PENDING', '🟡 Pendiente (Solo Foto)'),
@@ -573,3 +585,15 @@ class Expense(models.Model):
 
     def __str__(self):
         return f"{self.date} - {self.provider} (Q{self.total_amount})"
+
+## --- 1. MODELO DE TARJETAS DE CRÉDITO ---
+class CreditCard(models.Model):
+    bank_name = models.CharField(max_length=100, verbose_name="Banco Emisor")
+    alias = models.CharField(max_length=100, verbose_name="Alias (Ej: Visa Gerencia)")
+    last_4_digits = models.CharField(max_length=4, verbose_name="Últimos 4 dígitos")
+    credit_limit = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Límite de Crédito")
+    current_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Saldo Deuda Actual")
+    cutoff_day = models.IntegerField(verbose_name="Día de Corte", help_text="Día del mes")
+    
+    def __str__(self):
+        return f"{self.alias} (Termina en {self.last_4_digits})"

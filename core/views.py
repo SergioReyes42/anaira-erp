@@ -11,7 +11,7 @@ from .logic import realizar_traslado_entre_bodegas # <--- IMPORTANTE
 from .models import StockMovement
 from inventory.models import Product # Necesitamos productos
 from .forms import CustomUserForm, User
-from .models import Expense, Vehicle
+from .models import Expense, Vehicle, CreditCard
 
 # --- IMPORTS DE DJANGO ---
 from django.http import JsonResponse, HttpResponse
@@ -2350,6 +2350,9 @@ def expense_approve(request, pk):
                 gasto_final.base_amount = total / Decimal('1.12')
                 gasto_final.vat_amount = total - gasto_final.base_amount
             
+            # Cuando cargues el template (al final de la función):
+            tarjetas = CreditCard.objects.all() # <-- AGREGA ESTO
+            
             gasto_final.save()
             
             messages.success(request, f"✅ Gasto aprobado y contabilizado (ID #{gasto_final.id})")
@@ -2358,4 +2361,8 @@ def expense_approve(request, pk):
         # Cargamos el formulario con los datos que mandó el piloto (Foto y Vehículo)
         form = ExpenseForm(instance=gasto)
     
-    return render(request, 'core/expenses/expense_approve.html', {'form': form, 'gasto': gasto})
+    return render(request, 'core/expenses/expense_approve.html', {
+        'form': form, 
+        'gasto': gasto, 
+        'tarjetas': tarjetas # <-- Y ENVÍALO AQUÍ
+    })
