@@ -61,13 +61,20 @@ class UserProfile(models.Model):
 
     def __str__(self): return f"Perfil de {self.user.username}"
 
-@receiver(post_save, sender=User)
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_profile(sender, instance, created, **kwargs):
-    if created: UserProfile.objects.create(user=instance)
+    if created:
+        # CAMBIO CLAVE AQUÍ: Usamos get_or_create en vez de solo create
+        # Esto evita el error de "Duplicate Key"
+        UserProfile.objects.get_or_create(user=instance)
 
-@receiver(post_save, sender=User)
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def save_user_profile(sender, instance, **kwargs):
-    instance.profile.save()
+    # Intentamos guardar, y si no existe el perfil, no hacemos nada (evita errores raros)
+    try:
+        instance.userprofile.save()
+    except:
+        pass
 
 class Role(models.Model):
     name = models.CharField(max_length=80, unique=True)
