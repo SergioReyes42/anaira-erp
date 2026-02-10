@@ -2222,52 +2222,47 @@ def expense_create(request):
     if request.method == 'POST':
         form = ExpenseForm(request.POST, request.FILES)
         if form.is_valid():
-            try:
-                with transaction.atomic():
-                    # 1. Guardar el Gasto Físico
-                    gasto = form.save(commit=False)
-                    gasto.user = request.user
-                    
-                    # LOGICA IA (Detección Automática por Palabras Clave)
-                    desc = gasto.description.lower()
-                    prov = gasto.provider.lower()
-                    keywords_fuel = ['gasolina', 'diesel', 'regular', 'super', 'combustible', 'shell', 'puma', 'uno', 'texaco']
-                    
-                    # Si detecta palabras de combustible, marca el check automáticamente
-                    if any(word in desc for word in keywords_fuel) or any(word in prov for word in keywords_fuel):
-                        gasto.is_fuel = True
+            gasto = form.save(commit=False)
+            gasto.user = request.user
+            
+            # --- 1. DETECCIÓN IA DE COMBUSTIBLE ---
+            # Palabras clave que activan la lógica de IDP
+            keywords_fuel = ['gasolina', 'diesel', 'combustible', 'regular', 'super', 'v-power', 'shell', 'texaco', 'puma']
+            texto_analisis = (gasto.description + " " + gasto.provider).lower()
+            
+            if any(word in texto_analisis for word in keywords_fuel):
+                gasto.is_fuel = True
+            
+            # --- 2. CÁLCULO AUTOMÁTICO DE MONTOS (CONTABILIDAD) ---
+            total = float(gasto.total_amount)
+            idp = float(gasto.idp_amount) if gasto.idp_amount else 0.0
+            
+            if gasto.is_fuel:
+                # LÓGICA COMBUSTIBLE (Tu estructura)
+                # Base = (Total - IDP) / 1.12
+                subtotal_sin_idp = total - idp
+                base = subtotal_sin_idp / 1.12
+                iva = subtotal_sin_idp - base
+                
+                # Mensaje de Partida
+                msg_partida = f"PARTIDA GENERADA (COMBUSTIBLE): DEBE: Combustible Q{base:.2f} | DEBE: IDP Q{idp:.2f} | DEBE: IVA Q{iva:.2f} --> HABER: Caja Q{total:.2f}"
+            else:
+                # LÓGICA GASTO NORMAL (Llantas, Repuestos)
+                # Base = Total / 1.12
+                base = total / 1.12
+                iva = total - base
+                idp = 0
+                
+                msg_partida = f"PARTIDA GENERADA (GASTO): DEBE: Gasto Q{base:.2f} | DEBE: IVA Q{iva:.2f} --> HABER: Caja Q{total:.2f}"
 
-                    gasto.save()
+            # Guardamos los cálculos precisos
+            gasto.base_amount = base
+            gasto.vat_amount = iva
+            gasto.idp_amount = idp
+            gasto.save()
 
-                    # 2. GENERADOR DE PARTIDAS CONTABLES (AUTOMATIZACIÓN)
-                    # Aquí es donde la "IA" contable trabaja
-                    
-                    if gasto.is_fuel:
-                        # --- ESCENARIO A: COMBUSTIBLE ---
-                        # Estructura: 
-                        # DEBE: Combustibles (Base)
-                        # DEBE: IDP (Impuesto específico)
-                        # DEBE: IVA por Cobrar
-                        # HABER: Caja y Bancos (Total)
-                        
-                        messages.info(request, f"🤖 IA Contable: Partida de COMBUSTIBLE generada. IDP: Q{gasto.idp_amount}")
-                        # create_journal_entry(...) <--- Aquí llamarías a tu función de contabilidad real
-                        
-                    else:
-                        # --- ESCENARIO B: GASTO GENERAL (Repuestos, Llantas, etc) ---
-                        # Estructura:
-                        # DEBE: Gasto General / Repuestos (Base)
-                        # DEBE: IVA por Cobrar
-                        # HABER: Caja y Bancos (Total)
-                        
-                        messages.info(request, f"🤖 IA Contable: Partida de GASTO GENERAL generada.")
-                        # create_journal_entry(...) 
-
-                    messages.success(request, f"Gasto registrado y contabilizado correctamente.")
-                    return redirect('expense_list')
-
-            except Exception as e:
-                messages.error(request, f"Error al procesar contabilidad: {e}")
+            messages.success(request, f"Gasto guardado. 🤖 {msg_partida}")
+            return redirect('expense_list')
     else:
         form = ExpenseForm()
     
