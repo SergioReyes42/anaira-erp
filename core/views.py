@@ -2215,6 +2215,7 @@ def company_create(request):
 
 from .models import Expense, Vehicle
 from .forms import ExpenseForm, VehicleForm
+from decimal import Decimal
 
 # --- GASTOS ---
 @login_required
@@ -2225,28 +2226,33 @@ def expense_create(request):
             gasto = form.save(commit=False)
             gasto.user = request.user
             
-            # --- PROTECCIÓN DOBLE: RE-CALCULAR EN SERVIDOR ---
-            total = float(gasto.total_amount)
-            # Si el usuario no puso IDP, asumimos 0
-            idp = float(gasto.idp_amount) if gasto.idp_amount else 0.0
+            # --- PROTECCIÓN DE DATOS: RE-CÁLCULO EN SERVIDOR ---
+            # Convertimos a Decimal para precisión monetaria (evita errores de centavos)
+            total = Decimal(str(gasto.total_amount))
+            idp = Decimal(str(gasto.idp_amount)) if gasto.idp_amount else Decimal('0.00')
             
-            # Lógica IA de texto (Si dice 'Gasolina' forzamos el check)
-            desc_full = (gasto.description + " " + gasto.provider).lower()
-            if 'gasolina' in desc_full or 'diesel' in desc_full or 'shell' in desc_full:
-                gasto.is_fuel = True
-
-            # Cálculo Matemático Final
+            # 1. Validar Tipo de Gasto (Combustible vs Normal)
             if gasto.is_fuel:
-                subtotal = total - idp
-                gasto.base_amount = subtotal / 1.12
-                gasto.vat_amount = subtotal - gasto.base_amount
+                # Fórmula: (Total - IDP) / 1.12
+                monto_sujeto_iva = total - idp
+                gasto.base_amount = monto_sujeto_iva / Decimal('1.12')
+                gasto.vat_amount = monto_sujeto_iva - gasto.base_amount
             else:
-                gasto.idp_amount = 0 # Asegurar 0 si no es gas
-                gasto.base_amount = total / 1.12
+                # Fórmula: Total / 1.12
+                gasto.idp_amount = Decimal('0.00') # Forzamos 0 si no es combustible
+                gasto.base_amount = total / Decimal('1.12')
                 gasto.vat_amount = total - gasto.base_amount
+            
+            # 2. IA de Texto (Opcional: Detecta si olvidaron marcar el switch)
+            texto = (gasto.description + " " + gasto.provider).lower()
+            if 'gasolina' in texto or 'diesel' in texto or 'combustible' in texto:
+                if not gasto.is_fuel:
+                    # Podríamos auto-corregirlo o solo avisar. 
+                    # Por ahora, confiamos en lo que mandó el form validado arriba.
+                    pass 
 
             gasto.save()
-            messages.success(request, f"Gasto de Q{total} registrado y calculado correctamente.")
+            messages.success(request, f"Gasto de Q{total} registrado. Partida contable generada correctamente.")
             return redirect('expense_list')
     else:
         form = ExpenseForm()

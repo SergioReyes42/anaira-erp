@@ -3,25 +3,26 @@
 {% block content %}
 <div class="container py-4">
 
-    <div class="card shadow border-0">
+    <div class="card shadow border-0 mb-4">
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
-            <h5 class="mb-0 fw-bold"><i class="bi bi-receipt me-2"></i>Registrar Gasto Inteligente</h5>
-            <span class="badge bg-warning text-dark">IA Ready</span>
+            <h5 class="mb-0 fw-bold"><i class="bi bi-robot me-2"></i>Registro Inteligente de Gastos</h5>
+            <span class="badge bg-success">IA Active</span>
         </div>
         
         <div class="card-body p-4">
-            <form method="post" enctype="multipart/form-data">
+            <form method="post" enctype="multipart/form-data" id="expenseForm">
                 {% csrf_token %}
 
-                <div class="alert alert-info border-dashed d-flex align-items-center mb-4">
-                    <i class="bi bi-qr-code-scan fs-1 me-3"></i>
-                    <div>
-                        <strong>Smart Scanner (Simulado):</strong>
-                        <p class="mb-0 small">Al subir la foto, el sistema detectará automáticamente si es Gasolina o Repuesto al guardar.</p>
+                <div class="alert alert-light border border-dashed text-center py-4 mb-4" style="border-style: dashed !important; border-color: #adb5bd !important;">
+                    <i class="bi bi-qr-code-scan text-primary" style="font-size: 3rem;"></i>
+                    <h5 class="fw-bold mt-2">Smart Scanner</h5>
+                    <p class="text-muted small mb-3">Suba la foto o PDF de la factura aquí</p>
+                    <div class="row justify-content-center">
+                        <div class="col-md-6">
+                            {{ form.invoice_file }}
+                        </div>
                     </div>
                 </div>
-
-                {{ form.non_field_errors }}
 
                 <div class="row g-3 mb-3">
                     <div class="col-md-6">
@@ -29,57 +30,58 @@
                         {{ form.provider }}
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label fw-bold">Fecha</label>
+                        <label class="form-label fw-bold">Fecha Emisión</label>
                         {{ form.date }}
                     </div>
                     <div class="col-md-3">
-                         <label class="form-label fw-bold">Subir Factura</label>
-                         {{ form.invoice_file }}
+                        <label class="form-label fw-bold">Vehículo (Si aplica)</label>
+                        {{ form.vehicle }}
                     </div>
                 </div>
 
-                <div class="mb-3">
+                <div class="mb-4">
                     <label class="form-label fw-bold">Descripción del Gasto</label>
                     {{ form.description }}
                 </div>
 
-                <div class="bg-light p-3 rounded border mb-4">
+                <div class="bg-warning bg-opacity-10 p-3 rounded border border-warning mb-4">
                     <div class="form-check form-switch">
-                        {{ form.is_fuel }}
-                        <label class="form-check-label fw-bold text-primary" for="{{ form.is_fuel.id_for_label }}">
-                            <i class="bi bi-fuel-pump-fill me-1"></i> ¿Es Compra de Combustible?
+                        {{ form.is_fuel }} <label class="form-check-label fw-bold text-dark" for="{{ form.is_fuel.id_for_label }}">
+                            <i class="bi bi-fuel-pump-fill me-2"></i>¿Es Factura de Combustible? (Aplica IDP)
                         </label>
                     </div>
                 </div>
 
-                <h6 class="text-muted border-bottom pb-2 mb-3">Desglose de Factura (Automático)</h6>
+                <h6 class="text-muted border-bottom pb-2 mb-3">
+                    <i class="bi bi-calculator me-2"></i>Desglose Contable (Automático)
+                </h6>
                 
                 <div class="row g-3 mb-4">
                     <div class="col-md-3">
                         <label class="form-label fw-bold text-success">TOTAL FACTURA (Q)</label>
-                        {{ form.total_amount }} </div>
+                        {{ form.total_amount }}
+                    </div>
 
-                    <div class="col-md-3" id="div_idp" style="display:none;">
+                    <div class="col-md-3" id="bloque_idp" style="display:none;">
                         <label class="form-label fw-bold text-primary">IDP (Impuesto Gas)</label>
-                        {{ form.idp_amount }} <div class="form-text x-small">Monto del impuesto IDP</div>
+                        {{ form.idp_amount }}
+                        <div class="form-text x-small text-muted">Monto exacto del impuesto IDP</div>
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label text-muted">Base Imponible</label>
-                        {{ form.base_amount }} </div>
-                    <div class="col-md-3">
-                        <label class="form-label text-muted">IVA (12%)</label>
-                        {{ form.vat_amount }} </div>
-                </div>
+                        <label class="form-label text-muted">Base (Gasto Real)</label>
+                        {{ form.base_amount }}
+                    </div>
 
-                <div class="mb-4">
-                    <label class="form-label fw-bold">Asignar a Vehículo (Opcional)</label>
-                    {{ form.vehicle }}
+                    <div class="col-md-3">
+                        <label class="form-label text-muted">IVA Crédito (12%)</label>
+                        {{ form.vat_amount }}
+                    </div>
                 </div>
 
                 <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-success fw-bold py-3">
-                        <i class="bi bi-save me-2"></i>GUARDAR Y CONTABILIZAR
+                    <button type="submit" class="btn btn-primary fw-bold py-3 shadow-sm">
+                        <i class="bi bi-save2-fill me-2"></i>GUARDAR Y CONTABILIZAR
                     </button>
                 </div>
             </form>
@@ -88,60 +90,70 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // 1. OBTENER LOS CAMPOS POR SU ID DE DJANGO
-        const checkFuel = document.getElementById('id_is_fuel');
-        const inputTotal = document.getElementById('id_total_amount');
-        const inputIDP = document.getElementById('id_idp_amount');
-        const inputBase = document.getElementById('id_base_amount');
-        const inputIVA = document.getElementById('id_vat_amount');
-        const divIDP = document.getElementById('div_idp');
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        // 1. OBTENER REFERENCIAS A LOS CAMPOS (Usando los IDs que genera Django)
+        const checkEsCombustible = document.getElementById("id_is_fuel");
+        const inputTotal = document.getElementById("id_total_amount");
+        const inputIDP = document.getElementById("id_idp_amount");
+        const inputBase = document.getElementById("id_base_amount");
+        const inputIVA = document.getElementById("id_vat_amount");
+        const bloqueIDP = document.getElementById("bloque_idp");
 
-        // Hacer Base e IVA solo lectura (para que nadie los rompa)
-        inputBase.setAttribute('readonly', true);
-        inputIVA.setAttribute('readonly', true);
+        // Bloquear Base e IVA para que el usuario no los rompa (Solo lectura)
+        inputBase.setAttribute("readonly", true);
+        inputIVA.setAttribute("readonly", true);
+        
+        // Inicializar IDP en 0 si está vacío
+        if(!inputIDP.value) inputIDP.value = 0;
 
-        // 2. FUNCIÓN DE CÁLCULO GUATEMALA
-        function calcularMontos() {
+        // 2. FUNCIÓN MAESTRA DE CÁLCULO
+        function calcularContabilidad() {
             let total = parseFloat(inputTotal.value) || 0;
             let idp = parseFloat(inputIDP.value) || 0;
-            let esGasolina = checkFuel.checked;
+            let esGas = checkEsCombustible.checked;
 
-            // Mostrar u ocultar campo IDP
-            if (esGasolina) {
-                divIDP.style.display = 'block';
+            // Lógica Visual: Mostrar/Ocultar campo IDP
+            if (esGas) {
+                bloqueIDP.style.display = "block";
             } else {
-                divIDP.style.display = 'none';
-                idp = 0; // Si no es gas, IDP vale 0 para el cálculo
+                bloqueIDP.style.display = "none";
+                idp = 0; // Si no es gas, ignoramos el IDP para el cálculo
                 inputIDP.value = 0; 
             }
 
             let base = 0;
             let iva = 0;
 
-            if (esGasolina) {
-                // FÓRMULA COMBUSTIBLE: (Total - IDP) / 1.12
+            // FÓRMULAS GUATEMALA
+            if (esGas) {
+                // Combustible: (Total - IDP) / 1.12
                 let subtotal = total - idp;
                 base = subtotal / 1.12;
             } else {
-                // FÓRMULA NORMAL: Total / 1.12
+                // Gasto Normal: Total / 1.12
                 base = total / 1.12;
             }
 
-            // El IVA es la diferencia (o base * 0.12)
+            // Cálculo final de IVA
+            // El IVA es la diferencia entre lo que pagaste (menos impuestos exentos) y la base
             if (base > 0) {
-                 iva = (total - idp) - base;
+                iva = (total - idp) - base;
             }
 
-            // Poner los valores en los cuadros (con 2 decimales)
+            // Escribir en los campos (Con 2 decimales)
             inputBase.value = base.toFixed(2);
             inputIVA.value = iva.toFixed(2);
         }
 
-        // 3. ESCUCHAR CAMBIOS (DETECTAR CUANDO ESCRIBES)
-        inputTotal.addEventListener('input', calcularMontos);
-        inputIDP.addEventListener('input', calcularMontos);
-        checkFuel.addEventListener('change', calcularMontos);
+        // 3. ESCUCHADORES DE EVENTOS (Triggers)
+        // Ejecutar cálculo cuando escriban en Total
+        inputTotal.addEventListener("input", calcularContabilidad);
+        // Ejecutar cálculo cuando escriban en IDP
+        inputIDP.addEventListener("input", calcularContabilidad);
+        // Ejecutar cálculo cuando marquen/desmarquen el switch
+        checkEsCombustible.addEventListener("change", calcularContabilidad);
+
     });
 </script>
 {% endblock %}
