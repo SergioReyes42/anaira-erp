@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container d-flex flex-column justify-content-center align-items-center" style="min-height: 80vh;">
+    
+    <div class="mb-4 text-center">
+        {% with empresa=request.user.company_profile %} 
+        
+            {% if empresa and empresa.logo %}
+                <img src="{{ empresa.logo.url }}" alt="Logo Empresa" class="img-fluid" style="max-height: 250px;">
+            {% else %}
+                <i class="bi bi-building-fill-check text-primary" style="font-size: 8rem;"></i>
+            {% endif %}
+            
+    </div>
+
+    <h1 class="display-3 fw-bold text-dark mb-2 text-uppercase text-center">
+        {{ empresa.name|default:"MI EMPRESA S.A." }}
+    </h1>
+    
+        {% endwith %}
+
+    <p class="text-secondary text-uppercase" style="letter-spacing: 3px; font-size: 0.9rem;">
+        Sistema ERP Online v2.0
+    </p>
+
+    <hr class="w-25 my-4 border-secondary">
+
+    <div class="alert alert-light shadow-sm border px-5 py-3 text-center rounded-pill">
+        <i class="bi bi-person-circle text-success me-2"></i>
+        Bienvenido, <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+        <span class="mx-2">|</span>
+        <small class="text-muted">{{ request.user.branch.name|default:"Sede Central" }}</small>
+    </div>
+
+</div>
+{% endblock %}

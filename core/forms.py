@@ -12,6 +12,9 @@ from .models import (
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from .models import Branch, UserProfile # O como se llame tu modelo de Perfil
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 # ==========================================
 # 1. SELECCIÓN DE EMPRESA
@@ -301,19 +304,13 @@ class PurchaseForm(forms.ModelForm):
 class CustomUserForm(UserCreationForm):
     first_name = forms.CharField(label="Nombre", widget=forms.TextInput(attrs={'class': 'form-control'}))
     last_name = forms.CharField(label="Apellido", widget=forms.TextInput(attrs={'class': 'form-control'}))
-    email = forms.EmailField(label="Correo Electrónico", widget=forms.EmailInput(attrs={'class': 'form-control'}))
-    
-    # Aquí seleccionamos la sucursal directamente
-    branch = forms.ModelChoiceField(
-        queryset=Branch.objects.all(), 
-        label="Asignar a Sucursal",
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
+    email = forms.EmailField(label="Correo", widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    branch = forms.ModelChoiceField(queryset=Branch.objects.all(), label="Sucursal", required=False, widget=forms.Select(attrs={'class': 'form-select'}))
 
     class Meta:
-        model = User
-        fields = ['username', 'first_name', 'last_name', 'email']
+        # 2. AQUÍ ESTÁ LA SOLUCIÓN: Usamos la variable 'User' que definimos arriba
+        model = User 
+        fields = ['username', 'first_name', 'last_name', 'email', 'branch']
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control'}),
         }
