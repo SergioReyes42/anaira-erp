@@ -70,11 +70,11 @@
         <div class="list-group list-group-flush pt-3">
             
             <a href="{% url 'home' %}" class="list-group-item list-group-item-action">
-                <i class="bi bi-grid-1x2-fill me-2 text-info"></i> Mi Tablero
+                <i class="bi bi-grid-1x2-fill me-2 text-info"></i> Mi Sistema ERP
             </a>
             
             
-            <a href="{% url 'smart_hub' %}" class="list-group-item list-group-item-action text-info">
+            <a href="{% url 'supplier_list' %}" class="list-group-item list-group-item-action text-info">
                 <i class="bi bi-magic me-2"></i> Smart Scanner
             </a>
 
@@ -341,6 +341,17 @@
     var toggleButton = document.getElementById("menu-toggle");
     toggleButton.onclick = function () { el.classList.toggle("toggled"); };
 </script>
-
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register("{% static 'sw.js' %}")
+            .then(function(registration) {
+                console.log('ServiceWorker registrado con éxito: ', registration.scope);
+            }, function(err) {
+                console.log('Fallo al registrar ServiceWorker: ', err);
+            });
+        });
+    }
+</script>
 </body>
 </html>
