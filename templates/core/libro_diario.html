@@ -1,18 +1,22 @@
 {% extends 'base.html' %}
 {% load humanize %}
 
-{% block title %}Libro Diario Contable{% endblock %}
+{% block title %}Libro Diario{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 fw-bold text-primary"><i class="fas fa-book"></i> Libro Diario</h1>
-            <p class="text-muted mb-0">Movimientos contables detallados (Partida Doble)</p>
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3 fw-bold text-primary"><i class="fas fa-book"></i> Libro Diario General</h1>
+            <p class="text-muted">Registro detallado de operaciones (Esquema de Partida Doble)</p>
         </div>
-        <div class="text-end">
-            <h4 class="fw-bold mb-0">Balance Actual: Q {{ balance|floatformat:2|intcomma }}</h4>
-            <small class="text-muted">Total Operado</small>
+        <div class="col-md-4 text-end">
+            <div class="card bg-dark text-white">
+                <div class="card-body py-2">
+                    <small class="text-uppercase text-white-50">Balance del Período</small>
+                    <h3 class="fw-bold mb-0">Q {{ balance|floatformat:2|intcomma }}</h3>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -21,22 +25,22 @@
         
         <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
             <div>
-                <span class="fw-bold text-dark">PARTIDA No. {{ mov.referencia }}</span>
+                <span class="fw-bold text-dark">PARTIDA REF: {{ mov.referencia }}</span>
                 <span class="mx-2 text-muted">|</span>
                 <span class="text-muted"><i class="far fa-calendar-alt"></i> {{ mov.fecha|date:"d/m/Y" }}</span>
             </div>
-            <span class="badge {% if mov.tipo == 'GASTO' %}bg-warning text-dark{% elif mov.tipo == 'INGRESO' %}bg-success{% else %}bg-info text-dark{% endif %}">
+            <span class="badge rounded-pill {% if mov.tipo == 'GASTO' %}bg-warning text-dark{% elif mov.tipo == 'INGRESO' %}bg-success{% else %}bg-info text-dark{% endif %}">
                 {{ mov.tipo }}
             </span>
         </div>
 
         <div class="card-body p-0">
             <table class="table table-sm table-borderless mb-0">
-                <thead class="text-muted border-bottom" style="font-size: 0.85rem;">
+                <thead class="text-muted border-bottom" style="font-size: 0.85rem; background-color: #f8f9fa;">
                     <tr>
-                        <th style="width: 50%; padding-left: 20px;">Cuenta Contable / Concepto</th>
-                        <th class="text-end" style="width: 25%;">Debe</th>
-                        <th class="text-end" style="width: 25%; padding-right: 20px;">Haber</th>
+                        <th style="width: 50%; padding-left: 20px;">CUENTA CONTABLE / CONCEPTO</th>
+                        <th class="text-end" style="width: 25%;">DEBE (Q)</th>
+                        <th class="text-end" style="width: 25%; padding-right: 20px;">HABER (Q)</th>
                     </tr>
                 </thead>
                 <tbody style="font-family: 'Courier New', Courier, monospace; font-size: 0.95rem;">
@@ -44,74 +48,75 @@
                     {# ================= LÓGICA PARA GASTOS ================= #}
                     {% if mov.tipo == 'GASTO' %}
                         <tr>
-                            <td class="ps-4 fw-bold">
+                            <td class="ps-4 fw-bold text-dark">
                                 {% if mov.objeto.is_fuel %}
                                     Combustibles y Lubricantes
                                 {% else %}
-                                    Compras / Gastos Generales
+                                    Compras y Gastos Generales
                                 {% endif %}
                             </td>
-                            <td class="text-end">Q {{ mov.objeto.base_amount|floatformat:2|intcomma }}</td>
-                            <td class="text-end">-</td>
+                            <td class="text-end">{{ mov.objeto.base_amount|floatformat:2|intcomma }}</td>
+                            <td class="text-end text-muted">-</td>
                         </tr>
 
                         {% if mov.objeto.vat_amount > 0 %}
                         <tr>
-                            <td class="ps-4">IVA por Cobrar (Crédito Fiscal)</td>
-                            <td class="text-end">Q {{ mov.objeto.vat_amount|floatformat:2|intcomma }}</td>
-                            <td class="text-end">-</td>
+                            <td class="ps-4 text-dark">IVA por Cobrar (Crédito Fiscal)</td>
+                            <td class="text-end">{{ mov.objeto.vat_amount|floatformat:2|intcomma }}</td>
+                            <td class="text-end text-muted">-</td>
                         </tr>
                         {% endif %}
 
                         <tr>
-                            <td class="ps-5 text-muted fst-italic">
+                            <td class="ps-5 text-secondary fst-italic">
                                 a: Caja y Bancos 
-                                {% if mov.objeto.payment_method == 'CARD' %}(Tarjeta){% endif %}
+                                {% if mov.objeto.payment_method == 'CARD' %}(Tarjeta Crédito){% endif %}
                             </td>
-                            <td class="text-end">-</td>
-                            <td class="text-end fw-bold">Q {{ mov.objeto.total_amount|floatformat:2|intcomma }}</td>
+                            <td class="text-end text-muted">-</td>
+                            <td class="text-end fw-bold">{{ mov.objeto.total_amount|floatformat:2|intcomma }}</td>
                         </tr>
 
                     {# ================= LÓGICA PARA INGRESOS ================= #}
                     {% elif mov.tipo == 'INGRESO' %}
                         <tr>
-                            <td class="ps-4 fw-bold">Caja y Bancos</td>
-                            <td class="text-end">Q {{ mov.objeto.amount|floatformat:2|intcomma }}</td>
-                            <td class="text-end">-</td>
+                            <td class="ps-4 fw-bold text-dark">Caja y Bancos</td>
+                            <td class="text-end">{{ mov.objeto.amount|floatformat:2|intcomma }}</td>
+                            <td class="text-end text-muted">-</td>
                         </tr>
 
                         <tr>
-                            <td class="ps-5 text-muted fst-italic">a: Ventas / Servicios Prestados</td>
-                            <td class="text-end">-</td>
-                            <td class="text-end">Q {{ mov.objeto.amount|floatformat:2|intcomma }}</td>
+                            <td class="ps-5 text-secondary fst-italic">a: Ventas / Servicios Prestados</td>
+                            <td class="text-end text-muted">-</td>
+                            <td class="text-end">{{ mov.objeto.amount|floatformat:2|intcomma }}</td>
                         </tr>
 
                     {# ================= LÓGICA PARA BANCOS PUROS ================= #}
                     {% else %}
                         <tr>
-                            <td class="ps-4 fw-bold">
+                            <td class="ps-4 fw-bold text-dark">
                                 {% if mov.debe > 0 %}Banco (Entrada){% else %}Cuenta Transitoria{% endif %}
                             </td>
-                            <td class="text-end">{% if mov.debe > 0 %}Q {{ mov.debe|floatformat:2|intcomma }}{% else %}-{% endif %}</td>
-                            <td class="text-end">{% if mov.haber > 0 %}Q {{ mov.haber|floatformat:2|intcomma }}{% else %}-{% endif %}</td>
+                            <td class="text-end">{% if mov.debe > 0 %}{{ mov.debe|floatformat:2|intcomma }}{% else %}-{% endif %}</td>
+                            <td class="text-end">{% if mov.haber > 0 %}{{ mov.haber|floatformat:2|intcomma }}{% else %}-{% endif %}</td>
                         </tr>
                         <tr>
-                            <td class="ps-5 text-muted fst-italic">
+                            <td class="ps-5 text-secondary fst-italic">
                                 a: {% if mov.haber > 0 %}Banco (Salida){% else %}Cuenta Transitoria{% endif %}
                             </td>
                             <td class="text-end">-</td>
                             <td class="text-end">
-                                {% if mov.haber > 0 %}Q {{ mov.haber|floatformat:2|intcomma }}
-                                {% else %}Q {{ mov.debe|floatformat:2|intcomma }}{% endif %}
+                                {% if mov.haber > 0 %}{{ mov.haber|floatformat:2|intcomma }}
+                                {% else %}{{ mov.debe|floatformat:2|intcomma }}{% endif %}
                             </td>
                         </tr>
                     {% endif %}
 
                 </tbody>
-                <tfoot class="bg-light">
+                
+                <tfoot class="bg-white border-top">
                     <tr>
                         <td colspan="3" class="ps-3 py-2">
-                            <small class="text-muted fw-bold">GLOSA:</small> 
+                            <small class="fw-bold text-muted me-2">GLOSA:</small> 
                             <span class="text-secondary fst-italic">{{ mov.descripcion }}</span>
                         </td>
                     </tr>
@@ -120,9 +125,10 @@
         </div>
     </div>
     {% empty %}
-        <div class="alert alert-info text-center shadow-sm">
-            <h4><i class="fas fa-folder-open"></i></h4>
-            No hay movimientos contables registrados en este período.
+        <div class="alert alert-light text-center py-5 shadow-sm">
+            <h1 class="text-muted"><i class="fas fa-ghost mb-3"></i></h1>
+            <h4>No hay movimientos contables registrados aún.</h4>
+            <p class="text-muted">Registre un gasto o un ingreso para ver la primera partida.</p>
         </div>
     {% endfor %}
 </div>
