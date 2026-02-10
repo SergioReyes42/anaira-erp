@@ -2313,3 +2313,48 @@ def upload_expense_photo(request):
     # Traemos los vehículos para que seleccione
     vehiculos = Vehicle.objects.filter(status='ACTIVO')
     return render(request, 'core/expenses/pilot_upload.html', {'vehiculos': vehiculos})
+
+# 1. BANDEJA DE ENTRADA (Solo muestra lo PENDIENTE)
+@login_required
+def expense_pending_list(request):
+    # Filtramos solo los que están en estatus 'PENDING'
+    pendientes = Expense.objects.filter(status='PENDING').order_by('-created_at')
+    return render(request, 'core/expenses/expense_pending_list.html', {'pendientes': pendientes})
+
+# 2. VISTA DE APROBACIÓN (El Contador llena los datos)
+@login_required
+def expense_approve(request, pk):
+    # Obtenemos el gasto pendiente
+    gasto = get_object_or_404(Expense, pk=pk)
+    
+    if request.method == 'POST':
+        form = ExpenseForm(request.POST, request.FILES, instance=gasto)
+        if form.is_valid():
+            gasto_final = form.save(commit=False)
+            
+            # --- CÁLCULOS FINALES Y CAMBIO DE ESTADO ---
+            # 1. Cambiamos estado a APROBADO
+            gasto_final.status = 'APPROVED'
+            
+            # 2. Convertimos a Decimales y Calculamos (Igual que antes)
+            total = Decimal(str(gasto_final.total_amount))
+            idp = Decimal(str(gasto_final.idp_amount)) if gasto_final.idp_amount else Decimal('0.00')
+            
+            if gasto_final.is_fuel:
+                monto_sujeto = total - idp
+                gasto_final.base_amount = monto_sujeto / Decimal('1.12')
+                gasto_final.vat_amount = monto_sujeto - gasto_final.base_amount
+            else:
+                gasto_final.idp_amount = Decimal('0.00')
+                gasto_final.base_amount = total / Decimal('1.12')
+                gasto_final.vat_amount = total - gasto_final.base_amount
+            
+            gasto_final.save()
+            
+            messages.success(request, f"✅ Gasto aprobado y contabilizado (ID #{gasto_final.id})")
+            return redirect('expense_pending_list')
+    else:
+        # Cargamos el formulario con los datos que mandó el piloto (Foto y Vehículo)
+        form = ExpenseForm(instance=gasto)
+    
+    return render(request, 'core/expenses/expense_approve.html', {'form': form, 'gasto': gasto})

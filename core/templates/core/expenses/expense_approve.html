@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow h-100 border-0">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="m-0"><i class="bi bi-eye me-2"></i>Evidencia Subida</h6>
+                </div>
+                <div class="card-body bg-light text-center d-flex align-items-center justify-content-center overflow-hidden">
+                    {% if gasto.invoice_file %}
+                        <img src="{{ gasto.invoice_file.url }}" class="img-fluid rounded shadow-sm" style="max-height: 600px;" alt="Factura">
+                    {% else %}
+                        <p class="text-muted">El piloto no subió foto (Error)</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            
+            <div class="card shadow border-0">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-check-circle me-2"></i>Aprobar y Contabilizar</h5>
+                </div>
+                <div class="card-body p-4">
+                    
+                    <form method="post" enctype="multipart/form-data" id="approveForm">
+                        {% csrf_token %}
+                        
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="fw-bold">Fecha Factura</label>
+                                {{ form.date }}
+                            </div>
+                            <div class="col-md-8">
+                                <label class="fw-bold">Proveedor</label>
+                                {{ form.provider }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="fw-bold">Concepto</label>
+                            {{ form.description }}
+                        </div>
+
+                        <div class="bg-light p-3 rounded border mb-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <h6 class="text-primary fw-bold">Desglose Contable</h6>
+                                <div class="form-check form-switch">
+                                    {{ form.is_fuel }}
+                                    <label class="form-check-label fw-bold" for="{{ form.is_fuel.id_for_label }}">Es Combustible</label>
+                                </div>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <label class="small fw-bold text-success">TOTAL</label>
+                                    {{ form.total_amount }}
+                                </div>
+                                <div class="col-md-3" id="div_idp" style="display:none;">
+                                    <label class="small fw-bold text-primary">IDP</label>
+                                    {{ form.idp_amount }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="small text-muted">BASE</label>
+                                    {{ form.base_amount }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="small text-muted">IVA</label>
+                                    {{ form.vat_amount }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label>Vehículo Asignado</label>
+                                {{ form.vehicle }}
+                            </div>
+                             <div class="col-md-6">
+                                <div class="d-none">
+                                    {{ form.invoice_file }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg fw-bold">
+                                <i class="bi bi-file-earmark-check me-2"></i>FINALIZAR APROBACIÓN
+                            </button>
+                            <a href="{% url 'expense_pending_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ... (Copia y pega el script de la calculadora JS aquí) ...
+     document.addEventListener('DOMContentLoaded', function() {
+        // 1. OBTENER LOS CAMPOS POR SU ID DE DJANGO
+        const checkFuel = document.getElementById('id_is_fuel');
+        const inputTotal = document.getElementById('id_total_amount');
+        const inputIDP = document.getElementById('id_idp_amount');
+        const inputBase = document.getElementById('id_base_amount');
+        const inputIVA = document.getElementById('id_vat_amount');
+        const divIDP = document.getElementById('div_idp');
+
+        // Hacer Base e IVA solo lectura
+        inputBase.setAttribute('readonly', true);
+        inputIVA.setAttribute('readonly', true);
+
+        // 2. FUNCIÓN DE CÁLCULO
+        function calcularMontos() {
+            let total = parseFloat(inputTotal.value) || 0;
+            let idp = parseFloat(inputIDP.value) || 0;
+            let esGasolina = checkFuel.checked;
+
+            if (esGasolina) {
+                divIDP.style.display = 'block';
+            } else {
+                divIDP.style.display = 'none';
+                idp = 0;
+                inputIDP.value = 0; 
+            }
+
+            let base = 0;
+            let iva = 0;
+
+            if (esGasolina) {
+                let subtotal = total - idp;
+                base = subtotal / 1.12;
+            } else {
+                base = total / 1.12;
+            }
+
+            if (base > 0) {
+                 iva = (total - idp) - base;
+            }
+
+            inputBase.value = base.toFixed(2);
+            inputIVA.value = iva.toFixed(2);
+        }
+
+        inputTotal.addEventListener('input', calcularMontos);
+        inputIDP.addEventListener('input', calcularMontos);
+        checkFuel.addEventListener('change', calcularMontos);
+        
+        // Ejecutar al inicio por si ya trae datos
+        calcularMontos();
+    });
+</script>
+{% endblock %}

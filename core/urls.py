@@ -111,4 +111,9 @@ urlpatterns = [
 
     # RUTA MÁGICA PARA EL SERVICE WORKER (PWA)
     path('sw.js', TemplateView.as_view(template_name='sw.js', content_type='application/javascript'), name='sw.js'),
+
+    # --- MÓDULO DE GASTOS Y FLOTILLA ---
+    path('gastos/subir-foto/', views.upload_expense_photo, name='upload_expense_photo'), # Para el Piloto
+    path('gastos/pendientes/', views.expense_pending_list, name='expense_pending_list'), # Bandeja del Contador
+    path('gastos/revisar/<int:pk>/', views.expense_approve, name='expense_approve'),     # Acción de Revisar
 ]

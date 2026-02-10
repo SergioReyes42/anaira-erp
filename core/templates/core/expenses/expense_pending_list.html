@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-gray-800"><i class="bi bi-inbox-fill text-warning me-2"></i>Gastos Pendientes de Revisión</h1>
+        <span class="badge bg-warning text-dark fs-6">{{ pendientes.count }} por procesar</span>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-white border-bottom-0">
+            <h6 class="m-0 font-weight-bold text-primary">Cola de Aprobación (Pilotos)</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-uppercase small text-muted">
+                        <tr>
+                            <th class="ps-4">Fecha Subida</th>
+                            <th>Enviado Por</th>
+                            <th>Vehículo</th>
+                            <th>Evidencia (Foto)</th>
+                            <th class="text-end pe-4">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for gasto in pendientes %}
+                        <tr>
+                            <td class="ps-4 fw-bold">{{ gasto.created_at|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-2" style="width:30px; height:30px; font-size:0.8rem;">
+                                        {{ gasto.user.username|make_list|first|upper }}
+                                    </div>
+                                    {{ gasto.user.username }}
+                                </div>
+                            </td>
+                            <td>
+                                {% if gasto.vehicle %}
+                                    <span class="badge bg-info text-dark">{{ gasto.vehicle.plate }}</span>
+                                {% else %}
+                                    <span class="text-muted small">-- Sin Asignar --</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if gasto.invoice_file %}
+                                    <a href="{{ gasto.invoice_file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-image me-1"></i>Ver Foto
+                                    </a>
+                                {% else %}
+                                    <span class="text-danger small">Sin Foto</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="{% url 'expense_approve' gasto.id %}" class="btn btn-success btn-sm fw-bold shadow-sm">
+                                    REVISAR Y CONTABILIZAR <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-check-circle fs-1 text-success d-block mb-2"></i>
+                                ¡Todo al día! No hay gastos pendientes de revisión.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
