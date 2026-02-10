@@ -1,110 +1,254 @@
 {% extends 'base.html' %}
-{% block title %}Libro Diario - Sermaworld{% endblock %}
+{% load humanize %}
+
+{% block title %}Libro Diario General{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="fw-bold text-dark"><i class="bi bi-journal-text text-primary"></i> Libro Diario General</h2>
-        <p class="text-muted">Registro unificado de Operaciones, Tesorería y Contabilidad</p>
-    </div>
-    <div class="text-end">
-        <button onclick="window.print()" class="btn btn-outline-primary d-print-none">
-            <i class="bi bi-printer"></i> Imprimir Diario
-        </button>
-    </div>
-</div>
+<style>
+    /* ESTILOS DE CONTABILIDAD PROFESIONAL */
+    .journal-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .journal-entry {
+        background-color: #fff;
+        border: 1px solid #d1d3e2;
+        border-radius: 5px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    /* Encabezado Gris de la Partida */
+    .journal-header {
+        background-color: #e9ecef; 
+        border-bottom: 2px solid #4e73df;
+        padding: 12px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-<div class="row mb-4 d-print-none">
-    <div class="col-md-4">
-        <div class="card bg-success text-white">
+    .journal-ref {
+        font-weight: 800;
+        color: #2e59d9;
+        font-size: 1.1rem;
+        letter-spacing: 0.5px;
+    }
+
+    /* Tabla interna de la partida */
+    .journal-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .journal-table th {
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        color: #858796;
+        padding: 10px 25px;
+        border-bottom: 1px solid #e3e6f0;
+        letter-spacing: 1px;
+    }
+
+    .journal-table td {
+        padding: 8px 25px;
+        font-size: 0.95rem;
+        vertical-align: middle;
+        color: #5a5c69;
+        border-bottom: 1px solid #f8f9fc;
+    }
+
+    /* Estilo para números (Monospace para alinear decimales) */
+    .amount-col {
+        font-family: 'Consolas', 'Monaco', monospace;
+        text-align: right;
+        width: 18%;
+        font-weight: 500;
+    }
+
+    /* Sangría contable estándar para cuentas del Haber */
+    .account-credit {
+        padding-left: 60px !important;
+        font-style: italic;
+        color: #6e707e;
+    }
+    .account-credit::before {
+        content: "a: ";
+        font-weight: bold;
+        color: #b7b9cc;
+        font-style: normal;
+    }
+
+    /* Líneas de Cierre */
+    .total-row td {
+        font-weight: 800;
+        color: #000;
+        border-top: 2px solid #858796; /* Línea de suma */
+        border-bottom: 4px double #000; /* Doble línea de cierre */
+        background-color: #fdfdfe;
+    }
+
+    /* Glosa al pie */
+    .glosa-row {
+        background-color: #f8f9fa;
+        color: #858796;
+        font-style: italic;
+        font-size: 0.9rem;
+    }
+</style>
+
+<div class="journal-container py-4">
+    
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800 fw-bold"><i class="fas fa-book-open text-primary"></i> Libro Diario General</h1>
+            <p class="text-muted mb-0">Expresado en Quetzales (Q)</p>
+        </div>
+        
+        <div class="card border-left-success shadow h-100 py-2">
             <div class="card-body">
-                <small class="text-uppercase opacity-75">Total Ingresos</small>
-                <h3 class="fw-bold">Q {{ t_ingresos|floatformat:2 }}</h3>
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Balance Operativo</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">Q {{ balance|floatformat:2|intcomma }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card bg-danger text-white">
-            <div class="card-body">
-                <small class="text-uppercase opacity-75">Total Gastos</small>
-                <h3 class="fw-bold">Q {{ t_gastos|floatformat:2 }}</h3>
+
+    {% for mov in movimientos %}
+    <div class="journal-entry">
+        <div class="journal-header">
+            <div>
+                <span class="journal-ref">PARTIDA No. {{ mov.referencia }}</span>
+            </div>
+            <div class="text-secondary font-weight-bold">
+                <i class="far fa-calendar-alt me-1"></i> {{ mov.fecha|date:"d/m/Y" }}
             </div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card bg-dark text-white">
-            <div class="card-body">
-                <small class="text-uppercase opacity-75">Saldo Neto</small>
-                <h3 class="fw-bold">Q {{ balance|floatformat:2 }}</h3>
-            </div>
-        </div>
-    </div>
-</div>
 
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-dark">
+        <table class="journal-table">
+            <thead>
+                <tr>
+                    <th style="width: 50%;">CUENTAS</th>
+                    <th class="text-end">DEBE</th>
+                    <th class="text-end">HABER</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                {# ============ CASO 1: GASTOS (COMPRAS) ============ #}
+                {% if mov.tipo == 'GASTO' %}
                     <tr>
-                        <th class="ps-3">Fecha</th>
-                        <th>Origen / Tipo</th>
-                        <th>Concepto / Referencia</th>
-                        <th class="text-end">Debe (Entradas)</th>
-                        <th class="text-end pe-3">Haber (Salidas)</th>
+                        <td class="fw-bold text-dark">
+                            {% if mov.objeto.is_fuel %}Combustibles y Lubricantes{% else %}Compras y Gastos Generales{% endif %}
+                        </td>
+                        <td class="amount-col">{{ mov.objeto.base_amount|floatformat:2|intcomma }}</td>
+                        <td class="amount-col text-muted">-</td>
                     </tr>
-                </thead>
-                <tbody>
-                    {% for mov in movimientos %}
-                    <tr>
-                        <td class="ps-3 fw-bold">{{ mov.fecha_unificada|date:"d/m/Y" }}</td>
-                        <td>
-                            {% if mov.proveedor %}
-                                <span class="badge bg-danger-subtle text-danger border border-danger">GASTO OPERATIVO</span>
-                            {% elif mov.bank_account and not mov.movement_type %}
-                                <span class="badge bg-success-subtle text-success border border-success">INGRESO / VENTA</span>
-                            {% else %}
-                                <span class="badge bg-info-subtle text-info border border-info">MOV. BANCARIO ({{ mov.get_movement_type_display }})</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="fw-semibold">
-                                {% if mov.proveedor %}{{ mov.proveedor.name }}{% endif %}
-                                {% if mov.description %}{{ mov.description }}{% endif %}
-                                {% if mov.descripcion %}{{ mov.descripcion }}{% endif %}
-                            </div>
-                            <small class="text-muted">
-                                {% if mov.no_factura %}Doc: {{ mov.no_factura }}{% endif %}
-                                {% if mov.reference %}Ref: {{ mov.reference }}{% endif %}
-                            </small>
-                        </td>
-                        
-                        <td class="text-end">
-                            {% if mov.amount and not mov.movement_type or mov.movement_type == 'IN' %}
-                                <span class="text-success fw-bold">Q {{ mov.amount|floatformat:2 }}</span>
-                            {% else %}
-                                <span class="text-muted opacity-25">-</span>
-                            {% endif %}
-                        </td>
 
-                        <td class="text-end pe-3">
-                            {% if mov.total %}
-                                <span class="text-danger fw-bold">Q {{ mov.total|floatformat:2 }}</span>
-                            {% elif mov.movement_type == 'OUT' %}
-                                <span class="text-danger fw-bold">Q {{ mov.amount|floatformat:2 }}</span>
-                            {% else %}
-                                <span class="text-muted opacity-25">-</span>
-                            {% endif %}
+                    {% if mov.objeto.vat_amount > 0 %}
+                    <tr>
+                        <td class="text-dark">IVA por Cobrar (Crédito Fiscal)</td>
+                        <td class="amount-col">{{ mov.objeto.vat_amount|floatformat:2|intcomma }}</td>
+                        <td class="amount-col text-muted">-</td>
+                    </tr>
+                    {% endif %}
+
+                    {% if mov.objeto.idp_amount > 0 %}
+                    <tr>
+                        <td class="text-dark">Impuesto IDP (Combustibles)</td>
+                        <td class="amount-col">{{ mov.objeto.idp_amount|floatformat:2|intcomma }}</td>
+                        <td class="amount-col text-muted">-</td>
+                    </tr>
+                    {% endif %}
+
+                    <tr>
+                        <td class="account-credit">
+                            Caja y Bancos 
+                            {% if mov.objeto.payment_method == 'CARD' %}(Tarjeta Crédito){% endif %}
+                        </td>
+                        <td class="amount-col text-muted">-</td>
+                        <td class="amount-col">{{ mov.objeto.total_amount|floatformat:2|intcomma }}</td>
+                    </tr>
+
+                    <tr class="total-row">
+                        <td class="text-end pe-4">SUMAS IGUALES</td>
+                        <td class="amount-col">{{ mov.objeto.total_amount|floatformat:2|intcomma }}</td>
+                        <td class="amount-col">{{ mov.objeto.total_amount|floatformat:2|intcomma }}</td>
+                    </tr>
+
+                {# ============ CASO 2: INGRESOS (VENTAS) ============ #}
+                {% elif mov.tipo == 'INGRESO' %}
+                    <tr>
+                        <td class="fw-bold text-dark">Caja y Bancos (Ingresos)</td>
+                        <td class="amount-col">{{ mov.objeto.amount|floatformat:2|intcomma }}</td>
+                        <td class="amount-col text-muted">-</td>
+                    </tr>
+
+                    <tr>
+                        <td class="account-credit">Ventas y Servicios Prestados</td>
+                        <td class="amount-col text-muted">-</td>
+                        <td class="amount-col">{{ mov.objeto.amount|floatformat:2|intcomma }}</td>
+                    </tr>
+
+                    <tr class="total-row">
+                        <td class="text-end pe-4">SUMAS IGUALES</td>
+                        <td class="amount-col">{{ mov.objeto.amount|floatformat:2|intcomma }}</td>
+                        <td class="amount-col">{{ mov.objeto.amount|floatformat:2|intcomma }}</td>
+                    </tr>
+
+                {# ============ CASO 3: MOVIMIENTOS BANCARIOS PUROS ============ #}
+                {% else %}
+                    <tr>
+                        <td class="fw-bold text-dark">
+                            {% if mov.debe > 0 %}Banco (Depósito){% else %}Cuenta Transitoria{% endif %}
+                        </td>
+                        <td class="amount-col">{% if mov.debe > 0 %}{{ mov.debe|floatformat:2|intcomma }}{% else %}-{% endif %}</td>
+                        <td class="amount-col text-muted">-</td>
+                    </tr>
+                    
+                    <tr>
+                        <td class="account-credit">
+                            {% if mov.haber > 0 %}Banco (Retiro){% else %}Cuenta Transitoria{% endif %}
+                        </td>
+                        <td class="amount-col text-muted">-</td>
+                        <td class="amount-col">{% if mov.haber > 0 %}{{ mov.haber|floatformat:2|intcomma }}{% else %}-{% endif %}</td>
+                    </tr>
+
+                    <tr class="total-row">
+                        <td class="text-end pe-4">SUMAS IGUALES</td>
+                        <td class="amount-col">
+                            {% if mov.debe > 0 %}{{ mov.debe|floatformat:2|intcomma }}{% else %}{{ mov.haber|floatformat:2|intcomma }}{% endif %}
+                        </td>
+                        <td class="amount-col">
+                            {% if mov.haber > 0 %}{{ mov.haber|floatformat:2|intcomma }}{% else %}{{ mov.debe|floatformat:2|intcomma }}{% endif %}
                         </td>
                     </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">No se han registrado movimientos contables aún.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                {% endif %}
+
+            </tbody>
+            
+            <tfoot class="glosa-row">
+                <tr>
+                    <td colspan="3" class="px-4 py-2">
+                        <strong class="me-2 text-dark">R//</strong> {{ mov.descripcion }}
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
     </div>
+    {% empty %}
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-folder-open fa-3x mb-3"></i>
+            <h4>No hay partidas registradas en este período.</h4>
+        </div>
+    {% endfor %}
 </div>
 {% endblock %}
