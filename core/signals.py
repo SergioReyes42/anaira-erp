@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import Company, Gasto, Role, UserRoleCompany
+from .models import Company, Expense, Role, UserRoleCompany # ✅ CORRECTO
 from .utils import create_tenant_db
 from accounting.models import JournalEntry, JournalItem, Account
 
@@ -26,7 +26,7 @@ def trigger_db_creation(sender, instance, created, **kwargs):
 # =======================================================
 # 2. SEÑAL CONTABLE (AQUÍ ESTÁ LA CORRECCIÓN)
 # =======================================================
-@receiver(post_save, sender=Gasto)
+@receiver(post_save, sender=Expense)
 def create_accounting_entry_for_expense(sender, instance, created, **kwargs):
     if created:
         try:

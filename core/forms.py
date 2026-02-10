@@ -1,35 +1,127 @@
 from django import forms
-from .models import (
-    Company, CompanyProfile,
-    BankAccount, BankTransaction, BankMovement, 
-    Income, Gasto, Fleet,
-    BusinessPartner, Provider, 
-    Product, 
-    Employee, Loan, 
-    Quotation, Client, Warehouse, Supplier, Sale,
-    Purchase # Aseguramos que Purchase esté importado
-)
-from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm
-from .models import Branch, UserProfile # O como se llame tu modelo de Perfil
 from django.contrib.auth import get_user_model
-from .models import Expense, Vehicle
+from django.contrib.auth.forms import UserCreationForm
+
+# Importamos TODOS los modelos necesarios (Versión Correcta)
+from .models import (
+    Company, CompanyProfile, UserProfile, Branch, Warehouse,
+    BankAccount, BankTransaction, BankMovement, Income,
+    Expense, Vehicle, CreditCard, # Usamos Expense/Vehicle en vez de Gasto/Fleet
+    Supplier, Client, Product,
+    Employee, Loan,
+    Quotation, Sale, Purchase,
+    # BusinessPartner, Provider (Legacy - si los usas, descoméntalos en models.py)
+)
 
 User = get_user_model()
 
 # ==========================================
-# 1. SELECCIÓN DE EMPRESA
+# 1. GESTIÓN DE USUARIOS Y EMPRESAS
 # ==========================================
+
 class CompanySelectForm(forms.Form):
     company = forms.ModelChoiceField(
-        queryset=Company.objects.all(),
+        queryset=Company.objects.filter(active=True),
         label="Seleccione una Empresa",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
+class CompanyForm(forms.ModelForm):
+    class Meta:
+        model = CompanyProfile
+        fields = ['name', 'nit', 'address', 'phone', 'email', 'logo', 'currency_symbol']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'nit': forms.TextInput(attrs={'class': 'form-control'}),
+            'address': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'currency_symbol': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Q'}),
+            'logo': forms.FileInput(attrs={'class': 'form-control'}),
+        }
+
+class CustomUserForm(UserCreationForm):
+    first_name = forms.CharField(label="Nombre", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    last_name = forms.CharField(label="Apellido", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    email = forms.EmailField(label="Correo", widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    branch = forms.ModelChoiceField(queryset=Branch.objects.all(), label="Sucursal", required=False, widget=forms.Select(attrs={'class': 'form-select'}))
+
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email', 'branch']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ['allowed_companies', 'active_company']
+        widgets = {
+             'allowed_companies': forms.CheckboxSelectMultiple(),
+             'active_company': forms.Select(attrs={'class': 'form-select'}),
+        }
+
 # ==========================================
-# 2. BANCOS Y TESORERÍA
+# 2. GASTOS (MÓDULO CRÍTICO ACTUALIZADO)
 # ==========================================
+
+# A. FORMULARIO COMPLETO (Para Contabilidad/Admin)
+class ExpenseForm(forms.ModelForm):
+    # Campos adicionales para cálculos visuales
+    date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        label="Fecha Factura"
+    )
+    
+    class Meta:
+        model = Expense
+        fields = [
+            'date', 'provider', 'description', 
+            'total_amount', 'idp_amount', 'base_amount', 'vat_amount', 
+            'is_fuel', 'vehicle', 'payment_method', 'credit_card', 'invoice_file'
+        ]
+        widgets = {
+            'provider': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Gasolinera Shell'}),
+            'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Descripción del gasto'}),
+            
+            # Montos
+            'total_amount': forms.NumberInput(attrs={'class': 'form-control text-success fw-bold', 'step': '0.01', 'id': 'id_total_amount'}),
+            'idp_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'id': 'id_idp_amount'}),
+            'base_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'readonly': 'readonly', 'id': 'id_base_amount'}),
+            'vat_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'readonly': 'readonly', 'id': 'id_vat_amount'}),
+            
+            # Selectores
+            'is_fuel': forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'id_is_fuel'}),
+            'vehicle': forms.Select(attrs={'class': 'form-select'}),
+            'payment_method': forms.Select(attrs={'class': 'form-select', 'id': 'id_payment_method'}),
+            'credit_card': forms.Select(attrs={'class': 'form-select', 'id': 'id_credit_card'}),
+            'invoice_file': forms.FileInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtramos solo vehículos activos
+        self.fields['vehicle'].queryset = Vehicle.objects.filter(status='ACTIVO')
+        self.fields['credit_card'].empty_label = "--- Seleccione Tarjeta ---"
+
+
+# B. FORMULARIO PILOTO (Simplificado para celular)
+class PilotExpenseForm(forms.ModelForm):
+    # Este reemplaza al antiguo MobileExpenseForm pero apunta al modelo correcto
+    class Meta:
+        model = Expense
+        fields = ['invoice_file', 'vehicle', 'description']
+        widgets = {
+            'invoice_file': forms.FileInput(attrs={'class': 'form-control form-control-lg'}),
+            'vehicle': forms.Select(attrs={'class': 'form-select form-select-lg'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Comentario opcional (Ej: Llantas)'}),
+        }
+
+# ==========================================
+# 3. TESORERÍA E INGRESOS
+# ==========================================
+
 class BankAccountForm(forms.ModelForm):
     class Meta:
         model = BankAccount
@@ -40,82 +132,25 @@ class BankAccountForm(forms.ModelForm):
             'currency': forms.TextInput(attrs={'class': 'form-control'}),
             'balance': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }
-        labels = {
-            'bank_name': 'Nombre del Banco',
-            'account_number': 'Número de Cuenta',
-            'currency': 'Moneda',
-            'balance': 'Saldo Inicial',
-        }
 
 class BankTransactionForm(forms.ModelForm):
     class Meta:
         model = BankMovement
-        fields = ['account', 'category', 'description', 'amount', 'reference', 'date']
+        fields = ['account', 'category', 'description', 'amount', 'reference', 'date', 'evidence']
         widgets = {
             'account': forms.Select(attrs={'class': 'form-select'}),
-            'category': forms.Select(attrs={'class': 'form-select'}),
+            'category': forms.TextInput(attrs={'class': 'form-control'}), # O Select si tienes categorías fijas
             'description': forms.TextInput(attrs={'class': 'form-control'}),
-            'amount': forms.NumberInput(attrs={'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'reference': forms.TextInput(attrs={'class': 'form-control'}),
             'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-        }
-
-class TransferForm(forms.Form):
-    from_account = forms.ModelChoiceField(queryset=None, label="Cuenta Origen", widget=forms.Select(attrs={'class': 'form-select'}))
-    to_account = forms.ModelChoiceField(queryset=None, label="Cuenta Destino", widget=forms.Select(attrs={'class': 'form-select'}))
-    amount = forms.DecimalField(label="Monto a Transferir", max_digits=12, decimal_places=2, widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    date = forms.DateField(label="Fecha", widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
-    reference = forms.CharField(required=False, label="Referencia", widget=forms.TextInput(attrs={'class': 'form-control'}))
-    evidence = forms.ImageField(required=False, label="Comprobante", widget=forms.FileInput(attrs={'class': 'form-control'}))
-
-    def __init__(self, company, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if company:
-            self.fields['from_account'].queryset = BankAccount.objects.filter(company__name=company.name) 
-            self.fields['to_account'].queryset = BankAccount.objects.filter(company__name=company.name)
-
-# ==========================================
-# 3. GASTOS E INGRESOS
-# ==========================================
-class GastoForm(forms.ModelForm):
-    class Meta:
-        model = Gasto
-        fields = ['fecha', 'proveedor', 'descripcion', 'total', 'amount_untaxed', 'iva', 'categoria', 'bank_account', 'vehicle', 'imagen']
-        widgets = {
-            'fecha': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'proveedor': forms.TextInput(attrs={'class': 'form-control'}),
-            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'total': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'id': 'inputTotal', 'oninput': 'calcularIVA()'}),
-            'amount_untaxed': forms.NumberInput(attrs={'class': 'form-control', 'readonly': 'readonly', 'id': 'inputBase'}),
-            'iva': forms.NumberInput(attrs={'class': 'form-control', 'readonly': 'readonly', 'id': 'inputIVA'}),
-            'categoria': forms.TextInput(attrs={'class': 'form-control'}),
-            'bank_account': forms.Select(attrs={'class': 'form-select'}),
-            'vehicle': forms.Select(attrs={'class': 'form-select'}),
-            'imagen': forms.FileInput(attrs={'class': 'form-control'}),
-        }
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['vehicle'].queryset = Fleet.objects.all()
-
-class MobileExpenseForm(forms.ModelForm):
-    class Meta:
-        model = Gasto
-        fields = ['total', 'imagen', 'descripcion'] 
-        widgets = {
-            'total': forms.NumberInput(attrs={'class': 'form-control form-control-lg', 'placeholder': 'Q 0.00'}),
-            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': '¿Qué compraste?'}),
-            'imagen': forms.FileInput(attrs={'class': 'form-control'}),
+            'evidence': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
 class IncomeForm(forms.ModelForm):
     class Meta:
         model = Income
         fields = ['date', 'description', 'amount', 'bank_account', 'reference_doc', 'evidence']
-        labels = {
-            'date': 'Fecha', 'description': 'Descripción / Cliente', 'amount': 'Monto',
-            'bank_account': 'Cuenta Destino', 'reference_doc': 'No. Documento', 'evidence': 'Comprobante'
-        }
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'description': forms.TextInput(attrs={'class': 'form-control'}),
@@ -125,14 +160,30 @@ class IncomeForm(forms.ModelForm):
             'evidence': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
+class TransferForm(forms.Form):
+    from_account = forms.ModelChoiceField(queryset=None, label="Cuenta Origen", widget=forms.Select(attrs={'class': 'form-select'}))
+    to_account = forms.ModelChoiceField(queryset=None, label="Cuenta Destino", widget=forms.Select(attrs={'class': 'form-select'}))
+    amount = forms.DecimalField(label="Monto", max_digits=12, decimal_places=2, widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    date = forms.DateField(label="Fecha", widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
+    reference = forms.CharField(required=False, label="Referencia", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    evidence = forms.ImageField(required=False, label="Comprobante", widget=forms.FileInput(attrs={'class': 'form-control'}))
+
+    def __init__(self, company, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if company:
+            qs = BankAccount.objects.filter(company__name=company.name)
+            self.fields['from_account'].queryset = qs
+            self.fields['to_account'].queryset = qs
+
 # ==========================================
-# 4. PROVEEDORES
+# 4. COMPRAS Y PROVEEDORES
 # ==========================================
+
 class SupplierForm(forms.ModelForm):
     class Meta:
         model = Supplier
         fields = '__all__'
-        exclude = ['company']
+        exclude = ['company', 'created_at']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'nit': forms.TextInput(attrs={'class': 'form-control'}),
@@ -141,7 +192,26 @@ class SupplierForm(forms.ModelForm):
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
 
+class PurchaseForm(forms.ModelForm):
+    class Meta:
+        model = Purchase
+        fields = ['supplier', 'date', 'document_reference', 'payment_method', 'payment_reference', 'warehouse']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'supplier': forms.Select(attrs={'class': 'form-select'}),
+            'warehouse': forms.Select(attrs={'class': 'form-select border-success fw-bold'}),
+            'document_reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Factura #123'}),
+            'payment_method': forms.Select(attrs={'class': 'form-select'}),
+            'payment_reference': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'warehouse' in self.fields:
+            self.fields['warehouse'].queryset = Warehouse.objects.filter(active=True)
+
 class SupplierPaymentForm(forms.Form):
+    # Formulario manual para pagos a proveedores
     provider = forms.ModelChoiceField(queryset=None, label="Proveedor", widget=forms.Select(attrs={'class': 'form-select'}))
     my_account = forms.ModelChoiceField(queryset=None, label="Pagar desde", widget=forms.Select(attrs={'class': 'form-select'}))
     amount = forms.DecimalField(label="Monto a Pagar", widget=forms.NumberInput(attrs={'class': 'form-control'}))
@@ -151,35 +221,69 @@ class SupplierPaymentForm(forms.Form):
     def __init__(self, company, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if company:
-            self.fields['provider'].queryset = BusinessPartner.objects.filter(company=company, partner_type__in=['P', 'A'])
+            self.fields['provider'].queryset = Supplier.objects.filter(company__name=company.name)
+            self.fields['my_account'].queryset = BankAccount.objects.filter(company__name=company.name)
 
 # ==========================================
 # 5. INVENTARIO (PRODUCTOS)
 # ==========================================
-# NOTA IMPORTANTE: Se han comentado los campos 'category', 'brand' y 'min_stock'
-# porque causaban error ya que NO existen en el modelo Product actual.
+
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['code', 'name', 'cost', 'price', 'stock', 'image'] # Solo campos existentes
-        # fields originales (si agrega los campos al modelo, descomente esta línea):
-        # fields = ['code', 'name', 'category', 'brand', 'cost', 'price', 'stock', 'min_stock', 'image']
-        
+        fields = ['code', 'name', 'cost', 'price', 'stock', 'image']
         widgets = {
             'code': forms.TextInput(attrs={'class': 'form-control'}),
             'name': forms.TextInput(attrs={'class': 'form-control'}),
-            # 'category': forms.Select(attrs={'class': 'form-select'}),
-            # 'brand': forms.Select(attrs={'class': 'form-select'}),
             'cost': forms.NumberInput(attrs={'class': 'form-control'}),
             'price': forms.NumberInput(attrs={'class': 'form-control'}),
             'stock': forms.NumberInput(attrs={'class': 'form-control'}),
-            # 'min_stock': forms.NumberInput(attrs={'class': 'form-control'}),
             'image': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
 # ==========================================
-# 6. RECURSOS HUMANOS
+# 6. VENTAS Y CLIENTES
 # ==========================================
+
+class ClientForm(forms.ModelForm):
+    class Meta:
+        model = Client
+        fields = ['name', 'nit', 'address', 'phone', 'email', 'contact_name', 'credit_days', 'credit_limit']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'nit': forms.TextInput(attrs={'class': 'form-control'}),
+            'address': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'contact_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'credit_days': forms.NumberInput(attrs={'class': 'form-control'}),
+            'credit_limit': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+
+class QuotationForm(forms.ModelForm):
+    class Meta:
+        model = Quotation
+        fields = ['client', 'valid_until', 'payment_method', 'observation']
+        widgets = {
+            'client': forms.Select(attrs={'class': 'form-select select2'}), 
+            'valid_until': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'payment_method': forms.Select(attrs={'class': 'form-select'}),
+            'observation': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+
+class SaleForm(forms.ModelForm):
+    class Meta:
+        model = Sale
+        fields = ['client', 'payment_method']
+        widgets = {
+            'client': forms.Select(attrs={'class': 'form-select select2'}),
+            'payment_method': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+# ==========================================
+# 7. RECURSOS HUMANOS (RRHH)
+# ==========================================
+
 class EmployeeForm(forms.ModelForm):
     class Meta:
         model = Employee
@@ -213,140 +317,12 @@ class LoanForm(forms.ModelForm):
     def __init__(self, company=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if company:
-            self.fields['employee'].queryset = Employee.objects.filter(company=company)
+            # Filtramos empleados por la empresa del perfil activo
+            self.fields['employee'].queryset = Employee.objects.filter(company__name=company.name)
 
 # ==========================================
-# 7. VENTAS Y CLIENTES
+# 8. ACTIVOS (VEHÍCULOS)
 # ==========================================
-class QuotationForm(forms.ModelForm):
-    class Meta:
-        model = Quotation
-        fields = ['client', 'valid_until', 'payment_method', 'observation']
-        widgets = {
-            'client': forms.Select(attrs={'class': 'form-select select2'}), # select2 para búsqueda rápida
-            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'valid_until': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'payment_method': forms.Select(attrs={'class': 'form-select'}),
-            'observation': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-        }
-        labels = {
-            'client': 'Cliente',
-            'valid_until': 'Válida hasta',
-            'payment_method': 'Forma de Pago',
-            'observation': 'Notas / Observaciones',
-        }
-
-class SaleForm(forms.ModelForm):
-    class Meta:
-        model = Sale
-        fields = ['client', 'payment_method'] 
-        widgets = {
-            'client': forms.Select(attrs={'class': 'form-select select2'}),
-            'payment_method': forms.Select(attrs={'class': 'form-select'}),
-        }
-
-class ClientForm(forms.ModelForm):
-    class Meta:
-        model = Client
-        fields = ['name', 'nit', 'address', 'phone', 'email', 'contact_name', 'credit_days', 'credit_limit']
-        widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Razón Social o Nombre Completo'}),
-            'nit': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'NIT / CUI'}),
-            'address': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'contact_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Persona de contacto'}),
-            'credit_days': forms.NumberInput(attrs={'class': 'form-control'}),
-            'credit_limit': forms.NumberInput(attrs={'class': 'form-control'}),
-        }
-        labels = {
-            'name': 'Nombre del Cliente',
-            'nit': 'NIT / RUC',
-            'address': 'Dirección Fiscal',
-            'phone': 'Teléfono',
-            'credit_days': 'Días de Crédito',
-            'credit_limit': 'Límite de Crédito (Q)',
-        }
-# ==========================================
-# 8. COMPRAS (CORREGIDO)
-# ==========================================
-class PurchaseForm(forms.ModelForm):
-    class Meta:
-        model = Purchase
-        # AQUI ESTA LA MAGIA: Incluimos 'warehouse' para que aparezca el select
-        fields = [
-            'supplier', 
-            'date', 
-            'document_reference', 
-            'payment_method', 
-            'payment_reference', 
-            'warehouse' 
-        ]
-        
-        exclude = ['user', 'company', 'created_at', 'status', 'total', 'branch']
-        
-        widgets = {
-            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'supplier': forms.Select(attrs={'class': 'form-select'}),
-            # Estilo verde y negrita para destacar el campo de Bodega
-            'warehouse': forms.Select(attrs={'class': 'form-select border-success fw-bold'}),
-            'document_reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Factura #123'}),
-            'payment_method': forms.Select(attrs={'class': 'form-select'}),
-            'payment_reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Banco Industrial / Tarjeta'}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Cargamos solo las bodegas activas
-        if 'warehouse' in self.fields:
-            self.fields['warehouse'].queryset = Warehouse.objects.filter(active=True)
-            self.fields['warehouse'].empty_label = "--- Seleccione Bodega ---"
-
-class CustomUserForm(UserCreationForm):
-    first_name = forms.CharField(label="Nombre", widget=forms.TextInput(attrs={'class': 'form-control'}))
-    last_name = forms.CharField(label="Apellido", widget=forms.TextInput(attrs={'class': 'form-control'}))
-    email = forms.EmailField(label="Correo", widget=forms.EmailInput(attrs={'class': 'form-control'}))
-    branch = forms.ModelChoiceField(queryset=Branch.objects.all(), label="Sucursal", required=False, widget=forms.Select(attrs={'class': 'form-select'}))
-
-    class Meta:
-        # 2. AQUÍ ESTÁ LA SOLUCIÓN: Usamos la variable 'User' que definimos arriba
-        model = User 
-        fields = ['username', 'first_name', 'last_name', 'email', 'branch']
-        widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-        }
-
-class CompanyForm(forms.ModelForm):
-    class Meta:
-        model = CompanyProfile
-        fields = ['name', 'nit', 'address', 'phone', 'email', 'logo', 'currency_symbol']
-        widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'nit': forms.TextInput(attrs={'class': 'form-control'}),
-            'address': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'currency_symbol': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Q'}),
-            'logo': forms.FileInput(attrs={'class': 'form-control'}),
-        }
-
-class ExpenseForm(forms.ModelForm):
-    class Meta:
-        model = Expense
-        fields = ['invoice_file', 'date', 'provider', 'description', 'total_amount', 'idp_amount', 'base_amount', 'vat_amount', 'is_fuel', 'vehicle']
-        widgets = {
-            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'provider': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: GASOLINERA SHELL...'}),
-            'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Gasto detectado...'}),
-            # Montos
-            'total_amount': forms.NumberInput(attrs={'class': 'form-control text-success fw-bold', 'step': '0.01'}),
-            'idp_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'base_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'readonly': 'readonly'}), # Calculado automático
-            'vat_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'readonly': 'readonly'}), # Calculado automático
-            # Flotilla
-            'is_fuel': forms.CheckboxInput(attrs={'class': 'form-check-input', 'onclick': 'toggleVehicle()'}),
-            'vehicle': forms.Select(attrs={'class': 'form-select'}),
-        }
 
 class VehicleForm(forms.ModelForm):
     class Meta:
@@ -358,4 +334,6 @@ class VehicleForm(forms.ModelForm):
             'plate': forms.TextInput(attrs={'class': 'form-control'}),
             'year': forms.NumberInput(attrs={'class': 'form-control'}),
             'color': forms.TextInput(attrs={'class': 'form-control'}),
+            'assigned_driver': forms.TextInput(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
         }
