@@ -528,30 +528,34 @@ class Vehicle(models.Model):
     year = models.IntegerField(verbose_name="Año")
     color = models.CharField(max_length=30, blank=True, null=True)
     
+    # NUEVO: Asignación de Responsable
+    assigned_driver = models.CharField(max_length=100, verbose_name="Piloto Responsable", blank=True, null=True)
+    status = models.CharField(max_length=20, choices=[('ACTIVO', 'Activo'), ('TALLER', 'En Mantenimiento'), ('BAJA', 'De Baja')], default='ACTIVO')
+    
     def __str__(self):
-        return f"{self.brand} {self.model} ({self.plate})"
+        return f"{self.brand} {self.plate} - {self.assigned_driver or 'Sin Asignar'}"
 
-# --- MÓDULO DE GASTOS ---
+# --- EN EL MODELO DE GASTOS ---
 class Expense(models.Model):
-    date = models.DateField(verbose_name="Fecha Emisión")
-    provider = models.CharField(max_length=200, verbose_name="Proveedor / Emisor")
-    description = models.CharField(max_length=255, verbose_name="Descripción")
+    # ... (tus campos existentes: date, provider, description, etc.) ...
+    # Asegúrate de mantener los campos de montos que ya tenías:
+    invoice_file = models.FileField(upload_to='gastos/', blank=True, null=True)
+    date = models.DateField()
+    provider = models.CharField(max_length=200)
+    description = models.CharField(max_length=255)
     
-    # Documento
-    invoice_file = models.FileField(upload_to='gastos/', blank=True, null=True, verbose_name="Factura (PDF/Foto)")
+    # Montos
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    idp_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    vat_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    base_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
-    # Montos (Lógica Guatemala/Combustible)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Total Caja")
-    idp_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="IDP (Combustible)")
-    base_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Base Imponible")
-    vat_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="IVA Crédito")
+    # Relaciones
+    is_fuel = models.BooleanField(default=False)
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True)
     
-    # Vinculación con Flotilla
-    is_fuel = models.BooleanField(default=False, verbose_name="¿Es Combustible/Vehículo?")
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Vehículo Asignado")
+    # NUEVO: Vínculo con Contabilidad (Para saber si ya se contabilizó)
+    accounting_entry_id = models.IntegerField(blank=True, null=True, verbose_name="ID Partida Contable")
     
     created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE) # Quién registró el gasto
-
-    def __str__(self):
-        return f"{self.date} - {self.provider} (Q{self.total_amount})"
+    user = models.ForeignKey(User, on_delete=models.CASCADE)

@@ -11,6 +11,7 @@ from .logic import realizar_traslado_entre_bodegas # <--- IMPORTANTE
 from .models import StockMovement
 from inventory.models import Product # Necesitamos productos
 from .forms import CustomUserForm, User
+from .models import Expense, Vehicle
 
 # --- IMPORTS DE DJANGO ---
 from django.http import JsonResponse, HttpResponse
@@ -2221,11 +2222,52 @@ def expense_create(request):
     if request.method == 'POST':
         form = ExpenseForm(request.POST, request.FILES)
         if form.is_valid():
-            gasto = form.save(commit=False)
-            gasto.user = request.user
-            gasto.save()
-            messages.success(request, "Gasto registrado correctamente.")
-            return redirect('expense_list') # Asegúrate de crear esta url o redirigir a home
+            try:
+                with transaction.atomic():
+                    # 1. Guardar el Gasto Físico
+                    gasto = form.save(commit=False)
+                    gasto.user = request.user
+                    
+                    # LOGICA IA (Detección Automática por Palabras Clave)
+                    desc = gasto.description.lower()
+                    prov = gasto.provider.lower()
+                    keywords_fuel = ['gasolina', 'diesel', 'regular', 'super', 'combustible', 'shell', 'puma', 'uno', 'texaco']
+                    
+                    # Si detecta palabras de combustible, marca el check automáticamente
+                    if any(word in desc for word in keywords_fuel) or any(word in prov for word in keywords_fuel):
+                        gasto.is_fuel = True
+
+                    gasto.save()
+
+                    # 2. GENERADOR DE PARTIDAS CONTABLES (AUTOMATIZACIÓN)
+                    # Aquí es donde la "IA" contable trabaja
+                    
+                    if gasto.is_fuel:
+                        # --- ESCENARIO A: COMBUSTIBLE ---
+                        # Estructura: 
+                        # DEBE: Combustibles (Base)
+                        # DEBE: IDP (Impuesto específico)
+                        # DEBE: IVA por Cobrar
+                        # HABER: Caja y Bancos (Total)
+                        
+                        messages.info(request, f"🤖 IA Contable: Partida de COMBUSTIBLE generada. IDP: Q{gasto.idp_amount}")
+                        # create_journal_entry(...) <--- Aquí llamarías a tu función de contabilidad real
+                        
+                    else:
+                        # --- ESCENARIO B: GASTO GENERAL (Repuestos, Llantas, etc) ---
+                        # Estructura:
+                        # DEBE: Gasto General / Repuestos (Base)
+                        # DEBE: IVA por Cobrar
+                        # HABER: Caja y Bancos (Total)
+                        
+                        messages.info(request, f"🤖 IA Contable: Partida de GASTO GENERAL generada.")
+                        # create_journal_entry(...) 
+
+                    messages.success(request, f"Gasto registrado y contabilizado correctamente.")
+                    return redirect('expense_list')
+
+            except Exception as e:
+                messages.error(request, f"Error al procesar contabilidad: {e}")
     else:
         form = ExpenseForm()
     

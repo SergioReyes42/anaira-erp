@@ -169,12 +169,12 @@
             </div>
             {% endif %} 
             
-            <a href="#menuFinanzas" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
-                <i class="bi bi-cash-coin me-2 text-warning"></i> Tesorería
-            </a>
+                <a href="#menuFinanzas" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
+                    <i class="bi bi-cash-coin me-2 text-warning"></i> Tesorería & Flotilla
+                </a>
             <div class="collapse submenu" id="menuFinanzas">
-                <a href="{% url 'bank_list' %}" class="list-group-item list-group-item-action text-white fw-bold">
-                    <i class="bi bi-bank2 me-1"></i> Panel de Bancos
+                 <a href="{% url 'bank_list' %}" class="list-group-item list-group-item-action text-white">
+                     <i class="bi bi-bank2 me-1"></i> Panel de Bancos
                 </a>
                 <a href="{% url 'bank_transaction_create' %}?type=IN" class="list-group-item list-group-item-action">
                     <i class="bi bi-arrow-down-circle-fill text-success me-1"></i> Registrar Depósito
@@ -195,16 +195,19 @@
                 <div class="dropdown-divider border-secondary mt-2"></div>
                 <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Control de Gastos & Flotilla</small>
                 
-                <a href="{% url 'expense_create' %}" class="list-group-item list-group-item-action">
-                    <i class="bi bi-receipt me-1"></i> Registrar Gasto (IA)
+                <a href="{% url 'vehicle_list' %}" class="list-group-item list-group-item-action text-warning">
+                    <i class="bi bi-truck-front-fill me-1"></i> Fichas de Vehículos
                 </a>
                 <a href="{% url 'expense_list' %}" class="list-group-item list-group-item-action">
-                    <i class="bi bi-list-columns-reverse me-1"></i> Reporte de Gastos
+                    <i class="bi bi-clipboard-data me-1"></i> Reporte Gastos por Placa
                 </a>
                 <a href="{% url 'vehicle_list' %}" class="list-group-item list-group-item-action text-info">
                     <i class="bi bi-truck-front-fill me-1"></i> Flotilla de Vehículos
                 </a>
-                <div class="dropdown-divider border-secondary mt-2"></div>            
+                <a href="{% url 'expense_list' %}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-list-columns-reverse me-1"></i> Reporte de Gastos
+                </a>
+                                <div class="dropdown-divider border-secondary mt-2"></div>            
                 <a href="{% url 'supplier_list' %}" class="list-group-item list-group-item-action">
                     <i class="bi bi-wallet2 me-1"></i> Cuentas por Cobrar
                 </a>

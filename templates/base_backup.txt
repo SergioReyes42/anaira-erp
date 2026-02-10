@@ -345,3 +345,7 @@
 
 </body>
 </html>
+
+<a href="{% url 'expense_create' %}" class="list-group-item list-group-item-action">
+                    <i class="bi bi-receipt me-1"></i> Registrar Gasto (IA)
+                </a>
