@@ -69,24 +69,21 @@
         
         <div class="list-group list-group-flush pt-3">
             
-            <a href="{% url 'home' %}" class="list-group-item list-group-item-action">
-                <i class="bi bi-grid-1x2-fill me-2 text-info"></i> Mi Sistema ERP
+           <a href="{% url 'home' %}" class="list-group-item list-group-item-action">
+                <i class="bi bi-grid-1x2-fill me-2 text-info"></i> Mi Tablero
             </a>
             
-        <div class="sidebar-heading py-2 mt-2 text-uppercase text-muted small" style="font-size: 0.7rem; background: transparent;">
-                Ingreso Inteligente
-        </div>
-            {% if request.user|has_group:"Pilotos" or request.user|has_group:"Vendedores" or request.user|has_group:"Administrador" %}
-        <div class="sidebar-heading py-2 mt-2 text-uppercase text-muted small" style="background: transparent;">
-            Acceso Rápido
-        </div>
+            {% if request.user|has_group:"Pilotos" or request.user|has_group:"Vendedores" or request.user.is_superuser %}
             <a href="{% url 'upload_expense_photo' %}" class="list-group-item list-group-item-action text-warning fw-bold">
                 <i class="bi bi-camera-fill me-2"></i> Subir Gasto (Foto)
             </a>
             {% endif %}
+            
+            {% if request.user|has_group:"Pilotos" or request.user|has_group:"Vendedores" or request.user|has_group:"Gerencia" or request.user.is_superuser %}
             <a href="{% url 'gasto_manual' %}"class="list-group-item list-group-item-action text-warning fw-bold">
                 <i class="bi bi-qr-code-scan me-2"></i> Smart Scanner IA
             </a>
+            {% endif %}
             <a href="#menuVentas" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
                 <i class="bi bi-cart-fill me-2 text-warning"></i> Ventas & CRM
             </a>
