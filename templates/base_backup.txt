@@ -73,7 +73,6 @@
                 <i class="bi bi-grid-1x2-fill me-2 text-info"></i> Mi Tablero
             </a>
             
-            
             <a href="{% url 'smart_hub' %}" class="list-group-item list-group-item-action text-info">
                 <i class="bi bi-magic me-2"></i> Smart Scanner
             </a>
@@ -191,19 +190,20 @@
                 <a href="{% url 'bank_list' %}" class="list-group-item list-group-item-action">
                     <i class="bi bi-file-earmark-spreadsheet me-1"></i> Estados de Cuenta
                 </a>
-
-                <div class="dropdown-divider border-secondary mt-2"></div>
-                <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Control de Gastos & Flotilla</small>
                 
+                <div class="dropdown-divider border-secondary mt-2"></div>
+                <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Gastos & Flotilla</small>
+
+                <a href="{% url 'vehicle_list' %}" class="list-group-item list-group-item-action text-info">
+                    <i class="bi bi-truck-front-fill me-1"></i> Flotilla de Vehículos
+                </a>
                 <a href="{% url 'expense_create' %}" class="list-group-item list-group-item-action">
-                    <i class="bi bi-receipt me-1"></i> Registrar Gasto (IA)
+                    <i class="bi bi-receipt me-1"></i> Registrar Gasto (Vehículo)
                 </a>
                 <a href="{% url 'expense_list' %}" class="list-group-item list-group-item-action">
                     <i class="bi bi-list-columns-reverse me-1"></i> Reporte de Gastos
                 </a>
-                <a href="{% url 'vehicle_list' %}" class="list-group-item list-group-item-action text-info">
-                    <i class="bi bi-truck-front-fill me-1"></i> Flotilla de Vehículos
-                </a>
+
                 <div class="dropdown-divider border-secondary mt-2"></div>            
                 <a href="#" class="list-group-item list-group-item-action">
                     <i class="bi bi-wallet2 me-1"></i> Cuentas por Cobrar
@@ -261,7 +261,7 @@
                 </a>   
             </div>
 
-             <div class="mt-4 border-top border-secondary pt-2">
+            <div class="mt-4 border-top border-secondary pt-2">
                  <a class="list-group-item list-group-item-action" href="{% url 'control_panel' %}">
                     <i class="bi bi-gear-fill me-2"></i>Panel de Sistema
                 </a>
@@ -275,6 +275,7 @@
 
         </div>
     </div>
+    
     <div id="page-content-wrapper">
         <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
             <div class="container-fluid">
@@ -288,8 +289,8 @@
                     {% endif %}
                 </span>
                 <span class="badge bg-warning text-dark border border-dark ms-3">
-    <i class="bi bi-shop-window me-1"></i> {{ GLOBAL_SUCURSAL }}
-</span>
+                    <i class="bi bi-shop-window me-1"></i> {{ GLOBAL_SUCURSAL }}
+                </span>
 
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav ms-auto mt-2 mt-lg-0 align-items-center">
