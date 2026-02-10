@@ -72,26 +72,7 @@
             <a href="{% url 'home' %}" class="list-group-item list-group-item-action">
                 <i class="bi bi-grid-1x2-fill me-2 text-info"></i> Mi Tablero
             </a>
-            <div class="sidebar-heading">
-    Tesorería
-</div>
-
-<li class="nav-item">
-    <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseGastos">
-        <i class="bi bi-wallet2"></i>
-        <span>Gastos y Compras</span>
-    </a>
-    <div id="collapseGastos" class="collapse" data-bs-parent="#accordionSidebar">
-        <div class="bg-white py-2 collapse-inner rounded">
-            <h6 class="collapse-header">Operaciones:</h6>
-            <a class="collapse-item" href="{% url 'expense_create' %}">Registrar Gasto</a>
-            <a class="collapse-item" href="{% url 'expense_list' %}">Ver Reporte</a>
-            <div class="collapse-divider"></div>
-            <h6 class="collapse-header">Activos:</h6>
-            <a class="collapse-item" href="{% url 'vehicle_list' %}">Flotilla Vehículos</a>
-        </div>
-    </div>
-</li>
+            
             
             <a href="{% url 'smart_hub' %}" class="list-group-item list-group-item-action text-info">
                 <i class="bi bi-magic me-2"></i> Smart Scanner
