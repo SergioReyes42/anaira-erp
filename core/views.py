@@ -2256,7 +2256,7 @@ def expense_create(request):
 @login_required
 def expense_list(request):
     gastos = Expense.objects.filter(user=request.user).order_by('-date')
-    return render(request, 'core/expenses/expense_list.html', {'gastos': gastos})
+    return render(request, 'templates/core/gasto_manual.html', {'gastos': gastos})
 
 # --- VEHÍCULOS ---
 @login_required
