@@ -2264,12 +2264,11 @@ def expense_approve(request, pk):
         if form.is_valid():
             gasto_final = form.save(commit=False)
             
-            # --- CÁLCULOS FINALES Y CAMBIO DE ESTADO ---
             # 1. Cambiamos estado a APROBADO
             gasto_final.status = 'APPROVED'
             
-            # 2. Convertimos a Decimales y Calculamos (Igual que antes)
-            total = Decimal(str(gasto_final.total_amount_amount_amount_amount))
+            # 2. Convertimos a Decimales y Calculamos
+            total = Decimal(str(gasto_final.total_amount))
             idp = Decimal(str(gasto_final.idp_amount)) if gasto_final.idp_amount else Decimal('0.00')
             
             if gasto_final.is_fuel:
@@ -2281,21 +2280,21 @@ def expense_approve(request, pk):
                 gasto_final.base_amount = total / Decimal('1.12')
                 gasto_final.vat_amount = total - gasto_final.base_amount
             
-            # Cuando cargues el template (al final de la función):
-            tarjetas = CreditCard.objects.all() # <-- AGREGA ESTO
-            
             gasto_final.save()
             
             messages.success(request, f"✅ Gasto aprobado y contabilizado (ID #{gasto_final.id})")
             return redirect('expense_pending_list')
     else:
-        # Cargamos el formulario con los datos que mandó el piloto (Foto y Vehículo)
+        # Cargamos el formulario
         form = ExpenseForm(instance=gasto)
+    
+    # --- CORRECCIÓN AQUÍ: Definimos la variable que faltaba ---
+    tarjetas = CreditCard.objects.all() 
     
     return render(request, 'core/expenses/expense_approve.html', {
         'form': form, 
         'gasto': gasto, 
-        'tarjetas': tarjetas # <-- Y ENVÍALO AQUÍ
+        'tarjetas': tarjetas # Ahora sí existe
     })
 
 @login_required
