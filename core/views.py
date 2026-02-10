@@ -2211,3 +2211,43 @@ def company_create(request):
         form = CompanyForm()
 
     return render(request, 'core/config/company_form.html', {'form': form})
+
+from .models import Expense, Vehicle
+from .forms import ExpenseForm, VehicleForm
+
+# --- GASTOS ---
+@login_required
+def expense_create(request):
+    if request.method == 'POST':
+        form = ExpenseForm(request.POST, request.FILES)
+        if form.is_valid():
+            gasto = form.save(commit=False)
+            gasto.user = request.user
+            gasto.save()
+            messages.success(request, "Gasto registrado correctamente.")
+            return redirect('expense_list') # Asegúrate de crear esta url o redirigir a home
+    else:
+        form = ExpenseForm()
+    
+    return render(request, 'core/expenses/expense_form.html', {'form': form})
+
+@login_required
+def expense_list(request):
+    gastos = Expense.objects.filter(user=request.user).order_by('-date')
+    return render(request, 'core/expenses/expense_list.html', {'gastos': gastos})
+
+# --- VEHÍCULOS ---
+@login_required
+def vehicle_list(request):
+    vehiculos = Vehicle.objects.all()
+    # Si quieres un modal para crear rápido, pasamos el form aquí
+    form = VehicleForm()
+    
+    if request.method == 'POST':
+        form = VehicleForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Vehículo agregado.")
+            return redirect('vehicle_list')
+
+    return render(request, 'core/expenses/vehicle_list.html', {'vehiculos': vehiculos, 'form': form})

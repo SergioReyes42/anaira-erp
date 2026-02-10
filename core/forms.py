@@ -13,6 +13,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from .models import Branch, UserProfile # O como se llame tu modelo de Perfil
 from django.contrib.auth import get_user_model
+from .models import Expense, Vehicle
 
 User = get_user_model()
 
@@ -327,4 +328,34 @@ class CompanyForm(forms.ModelForm):
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'currency_symbol': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Q'}),
             'logo': forms.FileInput(attrs={'class': 'form-control'}),
+        }
+
+class ExpenseForm(forms.ModelForm):
+    class Meta:
+        model = Expense
+        fields = ['invoice_file', 'date', 'provider', 'description', 'total_amount', 'idp_amount', 'base_amount', 'vat_amount', 'is_fuel', 'vehicle']
+        widgets = {
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'provider': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: GASOLINERA SHELL...'}),
+            'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Gasto detectado...'}),
+            # Montos
+            'total_amount': forms.NumberInput(attrs={'class': 'form-control text-success fw-bold', 'step': '0.01'}),
+            'idp_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'base_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'readonly': 'readonly'}), # Calculado automático
+            'vat_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'readonly': 'readonly'}), # Calculado automático
+            # Flotilla
+            'is_fuel': forms.CheckboxInput(attrs={'class': 'form-check-input', 'onclick': 'toggleVehicle()'}),
+            'vehicle': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+class VehicleForm(forms.ModelForm):
+    class Meta:
+        model = Vehicle
+        fields = '__all__'
+        widgets = {
+            'brand': forms.TextInput(attrs={'class': 'form-control'}),
+            'model': forms.TextInput(attrs={'class': 'form-control'}),
+            'plate': forms.TextInput(attrs={'class': 'form-control'}),
+            'year': forms.NumberInput(attrs={'class': 'form-control'}),
+            'color': forms.TextInput(attrs={'class': 'form-control'}),
         }

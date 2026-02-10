@@ -104,4 +104,8 @@ urlpatterns = [
     path('config/empresas/', views.company_list, name='company_list'),
     path('config/empresas/nueva/', views.company_create, name='company_create'),
 
+    path('gastos/nuevo/', views.expense_create, name='expense_create'),
+    path('gastos/listado/', views.expense_list, name='expense_list'),
+    path('flotilla/', views.vehicle_list, name='vehicle_list'),
+
 ]

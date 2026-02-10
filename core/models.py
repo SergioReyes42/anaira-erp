@@ -519,3 +519,39 @@ class InvoiceDetail(models.Model):
     @property
     def subtotal(self):
         return self.quantity * self.unit_price
+
+# --- MÓDULO DE FLOTILLA (VEHÍCULOS) ---
+class Vehicle(models.Model):
+    brand = models.CharField(max_length=50, verbose_name="Marca")
+    model = models.CharField(max_length=50, verbose_name="Modelo")
+    plate = models.CharField(max_length=20, unique=True, verbose_name="Placa")
+    year = models.IntegerField(verbose_name="Año")
+    color = models.CharField(max_length=30, blank=True, null=True)
+    
+    def __str__(self):
+        return f"{self.brand} {self.model} ({self.plate})"
+
+# --- MÓDULO DE GASTOS ---
+class Expense(models.Model):
+    date = models.DateField(verbose_name="Fecha Emisión")
+    provider = models.CharField(max_length=200, verbose_name="Proveedor / Emisor")
+    description = models.CharField(max_length=255, verbose_name="Descripción")
+    
+    # Documento
+    invoice_file = models.FileField(upload_to='gastos/', blank=True, null=True, verbose_name="Factura (PDF/Foto)")
+    
+    # Montos (Lógica Guatemala/Combustible)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Total Caja")
+    idp_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="IDP (Combustible)")
+    base_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Base Imponible")
+    vat_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="IVA Crédito")
+    
+    # Vinculación con Flotilla
+    is_fuel = models.BooleanField(default=False, verbose_name="¿Es Combustible/Vehículo?")
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Vehículo Asignado")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE) # Quién registró el gasto
+
+    def __str__(self):
+        return f"{self.date} - {self.provider} (Q{self.total_amount})"
