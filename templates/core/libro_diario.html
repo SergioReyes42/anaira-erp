@@ -5,24 +5,27 @@
 
 {% block content %}
 <style>
-    /* ESTILOS DE CONTABILIDAD PROFESIONAL */
+    /* --- ESTILOS DE AUDITORÍA / CONTABILIDAD --- */
     .journal-container {
-        max-width: 1200px;
+        max-width: 1100px;
         margin: 0 auto;
+        padding-bottom: 50px;
     }
-    .journal-entry {
+
+    /* Tarjeta de la Partida */
+    .journal-card {
         background-color: #fff;
-        border: 1px solid #d1d3e2;
-        border-radius: 5px;
-        margin-bottom: 25px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        border: 1px solid #dcdcdc;
+        border-radius: 6px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+        overflow: hidden; /* Para que el header no se salga */
     }
-    
-    /* Encabezado Gris de la Partida */
+
+    /* Encabezado de la Partida (Gris sólido) */
     .journal-header {
-        background-color: #e9ecef; 
-        border-bottom: 2px solid #4e73df;
+        background-color: #f1f3f5;
+        border-bottom: 2px solid #adb5bd;
         padding: 12px 25px;
         display: flex;
         justify-content: space-between;
@@ -30,123 +33,118 @@
     }
 
     .journal-ref {
+        font-family: 'Segoe UI', sans-serif;
         font-weight: 800;
-        color: #2e59d9;
         font-size: 1.1rem;
+        color: #343a40;
         letter-spacing: 0.5px;
     }
 
-    /* Tabla interna de la partida */
+    .journal-date {
+        color: #495057;
+        font-weight: 600;
+    }
+
+    /* Tabla interna de cuentas */
     .journal-table {
         width: 100%;
         border-collapse: collapse;
     }
 
     .journal-table th {
-        text-transform: uppercase;
+        text-align: left;
         font-size: 0.75rem;
-        color: #858796;
+        text-transform: uppercase;
+        color: #868e96;
         padding: 10px 25px;
-        border-bottom: 1px solid #e3e6f0;
-        letter-spacing: 1px;
+        border-bottom: 1px solid #e9ecef;
     }
 
     .journal-table td {
         padding: 8px 25px;
         font-size: 0.95rem;
+        color: #212529;
+        border-bottom: 1px solid #f8f9fa;
         vertical-align: middle;
-        color: #5a5c69;
-        border-bottom: 1px solid #f8f9fc;
     }
 
-    /* Estilo para números (Monospace para alinear decimales) */
+    /* Columna de Montos (Alineación perfecta) */
     .amount-col {
-        font-family: 'Consolas', 'Monaco', monospace;
+        font-family: 'Consolas', 'Monaco', monospace; /* Fuente tipo máquina de escribir */
         text-align: right;
-        width: 18%;
-        font-weight: 500;
+        width: 15%;
+        font-weight: 600;
     }
 
-    /* Sangría contable estándar para cuentas del Haber */
-    .account-credit {
+    /* Sangría para el HABER ("a: Bancos") */
+    .credit-account {
         padding-left: 60px !important;
         font-style: italic;
-        color: #6e707e;
+        color: #495057;
     }
-    .account-credit::before {
+    .credit-account::before {
         content: "a: ";
-        font-weight: bold;
-        color: #b7b9cc;
-        font-style: normal;
+        color: #adb5bd;
+        font-weight: normal;
+        margin-right: 5px;
     }
 
-    /* Líneas de Cierre */
-    .total-row td {
+    /* Fila de Totales (Sumas Iguales) */
+    .row-totals td {
+        border-top: 2px solid #343a40; /* Línea de suma */
+        border-bottom: 4px double #343a40; /* Doble línea de cierre */
+        background-color: #fff;
         font-weight: 800;
         color: #000;
-        border-top: 2px solid #858796; /* Línea de suma */
-        border-bottom: 4px double #000; /* Doble línea de cierre */
-        background-color: #fdfdfe;
+        padding-top: 10px;
+        padding-bottom: 10px;
     }
 
     /* Glosa al pie */
-    .glosa-row {
+    .journal-footer {
         background-color: #f8f9fa;
-        color: #858796;
-        font-style: italic;
+        padding: 10px 25px;
         font-size: 0.9rem;
+        color: #6c757d;
+        border-top: 1px solid #e9ecef;
+        font-style: italic;
     }
 </style>
 
-<div class="journal-container py-4">
+<div class="journal-container">
     
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-5 mt-4">
         <div>
-            <h1 class="h3 mb-0 text-gray-800 fw-bold"><i class="fas fa-book-open text-primary"></i> Libro Diario General</h1>
+            <h2 class="fw-bold text-dark"><i class="fas fa-balance-scale"></i> Libro Diario General</h2>
             <p class="text-muted mb-0">Expresado en Quetzales (Q)</p>
         </div>
-        
-        <div class="card border-left-success shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            Balance Operativo</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">Q {{ balance|floatformat:2|intcomma }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
+        <div class="text-end">
+            <span class="badge bg-dark fs-6 p-2">Balance: Q {{ balance|floatformat:2|intcomma }}</span>
         </div>
     </div>
 
     {% for mov in movimientos %}
-    <div class="journal-entry">
+    <div class="journal-card">
+        
         <div class="journal-header">
-            <div>
-                <span class="journal-ref">PARTIDA No. {{ mov.referencia }}</span>
-            </div>
-            <div class="text-secondary font-weight-bold">
-                <i class="far fa-calendar-alt me-1"></i> {{ mov.fecha|date:"d/m/Y" }}
-            </div>
+            <span class="journal-ref">PARTIDA No. {{ mov.referencia }}</span>
+            <span class="journal-date"><i class="far fa-calendar-alt me-2"></i>{{ mov.fecha|date:"d/m/Y" }}</span>
         </div>
 
         <table class="journal-table">
             <thead>
                 <tr>
-                    <th style="width: 50%;">CUENTAS</th>
-                    <th class="text-end">DEBE</th>
-                    <th class="text-end">HABER</th>
+                    <th>Código / Cuenta</th>
+                    <th class="text-end">Debe</th>
+                    <th class="text-end">Haber</th>
                 </tr>
             </thead>
             <tbody>
                 
-                {# ============ CASO 1: GASTOS (COMPRAS) ============ #}
+                {# === CASO GASTO (COMPRA) === #}
                 {% if mov.tipo == 'GASTO' %}
                     <tr>
-                        <td class="fw-bold text-dark">
+                        <td class="fw-bold">
                             {% if mov.objeto.is_fuel %}Combustibles y Lubricantes{% else %}Compras y Gastos Generales{% endif %}
                         </td>
                         <td class="amount-col">{{ mov.objeto.base_amount|floatformat:2|intcomma }}</td>
@@ -155,7 +153,7 @@
 
                     {% if mov.objeto.vat_amount > 0 %}
                     <tr>
-                        <td class="text-dark">IVA por Cobrar (Crédito Fiscal)</td>
+                        <td>IVA por Cobrar (Crédito Fiscal)</td>
                         <td class="amount-col">{{ mov.objeto.vat_amount|floatformat:2|intcomma }}</td>
                         <td class="amount-col text-muted">-</td>
                     </tr>
@@ -163,92 +161,28 @@
 
                     {% if mov.objeto.idp_amount > 0 %}
                     <tr>
-                        <td class="text-dark">Impuesto IDP (Combustibles)</td>
+                        <td>Impuesto IDP</td>
                         <td class="amount-col">{{ mov.objeto.idp_amount|floatformat:2|intcomma }}</td>
                         <td class="amount-col text-muted">-</td>
                     </tr>
                     {% endif %}
 
                     <tr>
-                        <td class="account-credit">
-                            Caja y Bancos 
-                            {% if mov.objeto.payment_method == 'CARD' %}(Tarjeta Crédito){% endif %}
-                        </td>
+                        <td class="credit-account">Caja y Bancos</td>
                         <td class="amount-col text-muted">-</td>
                         <td class="amount-col">{{ mov.objeto.total_amount|floatformat:2|intcomma }}</td>
                     </tr>
 
-                    <tr class="total-row">
+                    <tr class="row-totals">
                         <td class="text-end pe-4">SUMAS IGUALES</td>
                         <td class="amount-col">{{ mov.objeto.total_amount|floatformat:2|intcomma }}</td>
                         <td class="amount-col">{{ mov.objeto.total_amount|floatformat:2|intcomma }}</td>
                     </tr>
 
-                {# ============ CASO 2: INGRESOS (VENTAS) ============ #}
+                {# === CASO INGRESO (VENTA) === #}
                 {% elif mov.tipo == 'INGRESO' %}
                     <tr>
-                        <td class="fw-bold text-dark">Caja y Bancos (Ingresos)</td>
+                        <td class="fw-bold">Caja y Bancos (Ingresos)</td>
                         <td class="amount-col">{{ mov.objeto.amount|floatformat:2|intcomma }}</td>
                         <td class="amount-col text-muted">-</td>
                     </tr>
-
-                    <tr>
-                        <td class="account-credit">Ventas y Servicios Prestados</td>
-                        <td class="amount-col text-muted">-</td>
-                        <td class="amount-col">{{ mov.objeto.amount|floatformat:2|intcomma }}</td>
-                    </tr>
-
-                    <tr class="total-row">
-                        <td class="text-end pe-4">SUMAS IGUALES</td>
-                        <td class="amount-col">{{ mov.objeto.amount|floatformat:2|intcomma }}</td>
-                        <td class="amount-col">{{ mov.objeto.amount|floatformat:2|intcomma }}</td>
-                    </tr>
-
-                {# ============ CASO 3: MOVIMIENTOS BANCARIOS PUROS ============ #}
-                {% else %}
-                    <tr>
-                        <td class="fw-bold text-dark">
-                            {% if mov.debe > 0 %}Banco (Depósito){% else %}Cuenta Transitoria{% endif %}
-                        </td>
-                        <td class="amount-col">{% if mov.debe > 0 %}{{ mov.debe|floatformat:2|intcomma }}{% else %}-{% endif %}</td>
-                        <td class="amount-col text-muted">-</td>
-                    </tr>
-                    
-                    <tr>
-                        <td class="account-credit">
-                            {% if mov.haber > 0 %}Banco (Retiro){% else %}Cuenta Transitoria{% endif %}
-                        </td>
-                        <td class="amount-col text-muted">-</td>
-                        <td class="amount-col">{% if mov.haber > 0 %}{{ mov.haber|floatformat:2|intcomma }}{% else %}-{% endif %}</td>
-                    </tr>
-
-                    <tr class="total-row">
-                        <td class="text-end pe-4">SUMAS IGUALES</td>
-                        <td class="amount-col">
-                            {% if mov.debe > 0 %}{{ mov.debe|floatformat:2|intcomma }}{% else %}{{ mov.haber|floatformat:2|intcomma }}{% endif %}
-                        </td>
-                        <td class="amount-col">
-                            {% if mov.haber > 0 %}{{ mov.haber|floatformat:2|intcomma }}{% else %}{{ mov.debe|floatformat:2|intcomma }}{% endif %}
-                        </td>
-                    </tr>
-                {% endif %}
-
-            </tbody>
-            
-            <tfoot class="glosa-row">
-                <tr>
-                    <td colspan="3" class="px-4 py-2">
-                        <strong class="me-2 text-dark">R//</strong> {{ mov.descripcion }}
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
-    {% empty %}
-        <div class="text-center py-5 text-muted">
-            <i class="fas fa-folder-open fa-3x mb-3"></i>
-            <h4>No hay partidas registradas en este período.</h4>
-        </div>
-    {% endfor %}
-</div>
-{% endblock %}
