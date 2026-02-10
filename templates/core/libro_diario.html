@@ -1,70 +1,129 @@
 {% extends 'base.html' %}
-{% block title %}Libro Diario{% endblock %}
+{% load humanize %}
+
+{% block title %}Libro Diario Contable{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h2">📖 Libro Diario</h1>
-    <span class="text-muted">Historial cronológico de operaciones</span>
-</div>
-
-<div class="card shadow-sm">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th>Fecha</th>
-                    <th>Tipo</th>
-                    <th>Concepto / Descripción</th>
-                    <th>Referencia</th>
-                    <th class="text-end">Debe (Entrada)</th>
-                    <th class="text-end">Haber (Salida)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for mov in movimientos %}
-                <tr>
-                    <td>
-                        {% if mov.fecha %}{{ mov.fecha|date:"d/m/Y" }}{% else %}{{ mov.date|date:"d/m/Y" }}{% endif %}
-                    </td>
-
-                    <td>
-                        {% if mov.proveedor %} <span class="badge bg-warning text-dark">Gasto</span>
-                        {% elif mov.bank_account %} <span class="badge bg-success">Ingreso/Venta</span>
-                        {% elif mov.movement_type %} <span class="badge bg-info text-dark">Banco: {{ mov.get_movement_type_display }}</span>
-                        {% endif %}
-                    </td>
-                    
-                    <td>
-                        {% if mov.proveedor %} {{ mov.proveedor }} - {{ mov.descripcion }}
-                        {% elif mov.description %} {{ mov.description }}
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        {% if mov.no_factura %} Fac: {{ mov.no_factura }}
-                        {% elif mov.reference %} Ref: {{ mov.reference }}
-                        {% else %} -- {% endif %}
-                    </td>
-
-                    <td class="text-end text-success bg-success bg-opacity-10">
-                        {% if mov.movement_type == 'IN' or mov.amount and not mov.total %} 
-                            Q {{ mov.amount|floatformat:2 }}
-                        {% endif %}
-                    </td>
-                    
-                    <td class="text-end text-danger bg-danger bg-opacity-10">
-                        {% if mov.total %} 
-                            Q {{ mov.total|floatformat:2 }}
-                        {% elif mov.movement_type == 'OUT' %} 
-                            Q {{ mov.amount|floatformat:2 }}
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="6" class="text-center py-4">Sin movimientos contables.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-primary"><i class="fas fa-book"></i> Libro Diario</h1>
+            <p class="text-muted mb-0">Movimientos contables detallados (Partida Doble)</p>
+        </div>
+        <div class="text-end">
+            <h4 class="fw-bold mb-0">Balance Actual: Q {{ balance|floatformat:2|intcomma }}</h4>
+            <small class="text-muted">Total Operado</small>
+        </div>
     </div>
+
+    {% for mov in movimientos %}
+    <div class="card shadow-sm mb-4 border-start border-4 {% if mov.tipo == 'GASTO' %}border-warning{% elif mov.tipo == 'INGRESO' %}border-success{% else %}border-info{% endif %}">
+        
+        <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+            <div>
+                <span class="fw-bold text-dark">PARTIDA No. {{ mov.referencia }}</span>
+                <span class="mx-2 text-muted">|</span>
+                <span class="text-muted"><i class="far fa-calendar-alt"></i> {{ mov.fecha|date:"d/m/Y" }}</span>
+            </div>
+            <span class="badge {% if mov.tipo == 'GASTO' %}bg-warning text-dark{% elif mov.tipo == 'INGRESO' %}bg-success{% else %}bg-info text-dark{% endif %}">
+                {{ mov.tipo }}
+            </span>
+        </div>
+
+        <div class="card-body p-0">
+            <table class="table table-sm table-borderless mb-0">
+                <thead class="text-muted border-bottom" style="font-size: 0.85rem;">
+                    <tr>
+                        <th style="width: 50%; padding-left: 20px;">Cuenta Contable / Concepto</th>
+                        <th class="text-end" style="width: 25%;">Debe</th>
+                        <th class="text-end" style="width: 25%; padding-right: 20px;">Haber</th>
+                    </tr>
+                </thead>
+                <tbody style="font-family: 'Courier New', Courier, monospace; font-size: 0.95rem;">
+
+                    {# ================= LÓGICA PARA GASTOS ================= #}
+                    {% if mov.tipo == 'GASTO' %}
+                        <tr>
+                            <td class="ps-4 fw-bold">
+                                {% if mov.objeto.is_fuel %}
+                                    Combustibles y Lubricantes
+                                {% else %}
+                                    Compras / Gastos Generales
+                                {% endif %}
+                            </td>
+                            <td class="text-end">Q {{ mov.objeto.base_amount|floatformat:2|intcomma }}</td>
+                            <td class="text-end">-</td>
+                        </tr>
+
+                        {% if mov.objeto.vat_amount > 0 %}
+                        <tr>
+                            <td class="ps-4">IVA por Cobrar (Crédito Fiscal)</td>
+                            <td class="text-end">Q {{ mov.objeto.vat_amount|floatformat:2|intcomma }}</td>
+                            <td class="text-end">-</td>
+                        </tr>
+                        {% endif %}
+
+                        <tr>
+                            <td class="ps-5 text-muted fst-italic">
+                                a: Caja y Bancos 
+                                {% if mov.objeto.payment_method == 'CARD' %}(Tarjeta){% endif %}
+                            </td>
+                            <td class="text-end">-</td>
+                            <td class="text-end fw-bold">Q {{ mov.objeto.total_amount|floatformat:2|intcomma }}</td>
+                        </tr>
+
+                    {# ================= LÓGICA PARA INGRESOS ================= #}
+                    {% elif mov.tipo == 'INGRESO' %}
+                        <tr>
+                            <td class="ps-4 fw-bold">Caja y Bancos</td>
+                            <td class="text-end">Q {{ mov.objeto.amount|floatformat:2|intcomma }}</td>
+                            <td class="text-end">-</td>
+                        </tr>
+
+                        <tr>
+                            <td class="ps-5 text-muted fst-italic">a: Ventas / Servicios Prestados</td>
+                            <td class="text-end">-</td>
+                            <td class="text-end">Q {{ mov.objeto.amount|floatformat:2|intcomma }}</td>
+                        </tr>
+
+                    {# ================= LÓGICA PARA BANCOS PUROS ================= #}
+                    {% else %}
+                        <tr>
+                            <td class="ps-4 fw-bold">
+                                {% if mov.debe > 0 %}Banco (Entrada){% else %}Cuenta Transitoria{% endif %}
+                            </td>
+                            <td class="text-end">{% if mov.debe > 0 %}Q {{ mov.debe|floatformat:2|intcomma }}{% else %}-{% endif %}</td>
+                            <td class="text-end">{% if mov.haber > 0 %}Q {{ mov.haber|floatformat:2|intcomma }}{% else %}-{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td class="ps-5 text-muted fst-italic">
+                                a: {% if mov.haber > 0 %}Banco (Salida){% else %}Cuenta Transitoria{% endif %}
+                            </td>
+                            <td class="text-end">-</td>
+                            <td class="text-end">
+                                {% if mov.haber > 0 %}Q {{ mov.haber|floatformat:2|intcomma }}
+                                {% else %}Q {{ mov.debe|floatformat:2|intcomma }}{% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+
+                </tbody>
+                <tfoot class="bg-light">
+                    <tr>
+                        <td colspan="3" class="ps-3 py-2">
+                            <small class="text-muted fw-bold">GLOSA:</small> 
+                            <span class="text-secondary fst-italic">{{ mov.descripcion }}</span>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    {% empty %}
+        <div class="alert alert-info text-center shadow-sm">
+            <h4><i class="fas fa-folder-open"></i></h4>
+            No hay movimientos contables registrados en este período.
+        </div>
+    {% endfor %}
 </div>
 {% endblock %}
