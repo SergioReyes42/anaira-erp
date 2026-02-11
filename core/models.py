@@ -32,7 +32,7 @@ class CompanyAwareModel(models.Model):
     Todo modelo que herede de aquí será PRIVADO por empresa.
     """
     company = models.ForeignKey(
-        'CompanyProfile', 
+        'Company', 
         on_delete=models.CASCADE, 
         verbose_name="Empresa",
         null=True, blank=True
@@ -79,7 +79,7 @@ class Company(models.Model):
 
     def __str__(self): return self.name
 
-class CompanyProfile(models.Model):
+class Company(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nombre Empresa")
     nit = models.CharField(max_length=20, blank=True, null=True, verbose_name="NIT")
     logo = models.ImageField(upload_to='company_logos/', blank=True, null=True)
@@ -166,7 +166,7 @@ class Account(CompanyAwareModel): # <--- BLINDADO
 
 class Branch(CompanyAwareModel): # <--- BLINDADO
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='branches')
-    company_profile = models.ForeignKey(CompanyProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='branches_profile')
+    company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True, related_name='branches_profile')
     name = models.CharField(max_length=255, verbose_name="Sucursal")
     code = models.CharField(max_length=20, verbose_name="Código")
     location = models.CharField(max_length=255, verbose_name="Ubicación/Dirección", null=True, blank=True)
@@ -216,7 +216,7 @@ class Inventory(CompanyAwareModel): # <--- BLINDADO
 # ==============================================================================
 
 class BankAccount(CompanyAwareModel): # <--- BLINDADO
-    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, verbose_name="Empresa")
     bank_name = models.CharField(max_length=50, verbose_name="Nombre del Banco")
     account_number = models.CharField(max_length=50, verbose_name="Número de Cuenta")
     currency = models.CharField(max_length=3, default='GTQ', verbose_name="Moneda")
@@ -378,11 +378,11 @@ class Client(CompanyAwareModel): # <--- BLINDADO
     credit_limit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Límite de Crédito")
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True, verbose_name="Activo")
-    company = models.ForeignKey(CompanyProfile, on_delete=models.SET_NULL, null=True, blank=True)
+    company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True)
     def __str__(self): return f"{self.name} ({self.nit})"
 
 class Supplier(CompanyAwareModel): # <--- BLINDADO
-    company = models.ForeignKey('CompanyProfile', on_delete=models.CASCADE, verbose_name="Empresa", null=True, blank=True)
+    company = models.ForeignKey('Company', on_delete=models.CASCADE, verbose_name="Empresa", null=True, blank=True)
     name = models.CharField(max_length=200, verbose_name="Razón Social / Nombre")
     nit = models.CharField(max_length=20, verbose_name="NIT / RUT", blank=True, null=True)
     phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True, null=True)
@@ -394,7 +394,7 @@ class Supplier(CompanyAwareModel): # <--- BLINDADO
     class Meta: verbose_name = "Proveedor"; verbose_name_plural = "Proveedores"
 
 class Provider(models.Model): # LEGACY
-    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, verbose_name="Empresa")
     name = models.CharField(max_length=100, verbose_name="Razón Social / Nombre")
     nit = models.CharField(max_length=20, blank=True, verbose_name="NIT")
     contact_name = models.CharField(max_length=100, blank=True, verbose_name="Contacto")
@@ -446,7 +446,7 @@ class QuotationDetail(models.Model):
     def __str__(self): return f"{self.quantity} x {self.product.name}"
 
 class Sale(CompanyAwareModel): # <--- BLINDADO
-    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, verbose_name="Empresa")
     client = models.ForeignKey(Client, on_delete=models.CASCADE, verbose_name="Cliente")
     date = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Venta")
     quotation_origin = models.OneToOneField(Quotation, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Cotización Origen")
@@ -473,7 +473,7 @@ class SaleDetail(models.Model):
 class Purchase(CompanyAwareModel): # <--- BLINDADO
     STATUS_CHOICES = [('DRAFT', 'Borrador'), ('RECEIVED', 'Recibido / Inventario Cargado'), ('CANCELLED', 'Cancelada')]
     PAYMENT_METHODS = [('CASH', 'Efectivo'), ('TRANSFER', 'Transferencia Bancaria'), ('CARD', 'Tarjeta de Crédito/Débito'), ('CHECK', 'Cheque'), ('CREDIT', 'Crédito (Por Pagar)')]
-    company = models.ForeignKey('CompanyProfile', on_delete=models.CASCADE, verbose_name="Empresa")
+    company = models.ForeignKey('Company', on_delete=models.CASCADE, verbose_name="Empresa")
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name="Comprador")
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, verbose_name="Proveedor", null=True, blank=True)
     date = models.DateField(default=timezone.now, verbose_name="Fecha de Compra")
@@ -583,7 +583,7 @@ class Employee(CompanyAwareModel): # <--- BLINDADO
     igss_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="No. IGSS")
     user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Usuario de Sistema")
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Sucursal Asignada")
-    company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, null=True, blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self): return f"{self.first_name} {self.last_name}"
     class Meta: verbose_name = "Empleado"; verbose_name_plural = "Empleados"
