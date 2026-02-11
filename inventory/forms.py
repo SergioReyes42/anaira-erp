@@ -1,135 +1,73 @@
 from django import forms
-from .models import StockMovement, Product, Warehouse, Company
-from core.models import Branch # Asegúrate de importar Branch
+from core.models import StockMovement, Product, Warehouse, Company
 from anaira.middleware import get_current_company
 
-# ==========================================
-# 1. FORMULARIO DE MOVIMIENTOS (Kardex)
-# ==========================================
 class StockMovementForm(forms.ModelForm):
     class Meta:
         model = StockMovement
-        fields = ['product', 'warehouse', 'movement_type', 'quantity']#'comments'
+        # Aseguramos que 'comments' esté aquí
+        fields = ['product', 'warehouse', 'movement_type', 'quantity', 'comments']
         widgets = {
             'product': forms.Select(attrs={'class': 'form-select select2'}),
             'warehouse': forms.Select(attrs={'class': 'form-select'}),
             'movement_type': forms.Select(attrs={'class': 'form-select'}),
             'quantity': forms.NumberInput(attrs={'class': 'form-control'}),
-            # 'comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        
-        # Obtenemos la empresa actual de forma segura
+        # 1. Definimos los querysets vacíos por seguridad inicial
+        self.fields['product'].queryset = Product.objects.none()
+        self.fields['warehouse'].queryset = Warehouse.objects.none()
+
+        # 2. Obtenemos la empresa del hilo actual
         company = get_current_company()
         
+        # 3. Si hay empresa, filtramos. Si no, se queda vacío.
         if company:
-            # Filtramos los selectores para mostrar solo datos de la empresa activa
+            # Aquí es donde ocurre la magia segura
             self.fields['product'].queryset = Product.objects.filter(company=company)
             self.fields['warehouse'].queryset = Warehouse.objects.filter(company=company)
-        else:
-            # Si no hay empresa (ej: error de carga), lista vacía para seguridad
-            self.fields['product'].queryset = Product.objects.none()
-            self.fields['warehouse'].queryset = Warehouse.objects.none()
 
-
-# ==========================================
-# 2. FORMULARIO DE PRODUCTOS (Nuevo)
-# ==========================================
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['sku', 'name', 'category', 'brand', 'cost_price', 'sale_price', 'product_type', 'image']
+        fields = ['code', 'name', 'cost', 'price', 'stock', 'image']
         widgets = {
-            'sku': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej. PROD-001'}),
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del producto'}),
-            'category': forms.Select(attrs={'class': 'form-select'}),
-            'brand': forms.Select(attrs={'class': 'form-select'}),
-            'cost_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'sale_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'product_type': forms.Select(attrs={'class': 'form-select'}),
+            'code': forms.TextInput(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'cost': forms.NumberInput(attrs={'class': 'form-control'}),
+            'price': forms.NumberInput(attrs={'class': 'form-control'}),
+            'stock': forms.NumberInput(attrs={'class': 'form-control'}),
             'image': forms.FileInput(attrs={'class': 'form-control'}),
-        }
-        labels = {
-            'sku': 'Código / SKU',
-            'name': 'Nombre',
-            'category': 'Categoría',
-            'brand': 'Marca',
-            'cost_price': 'Costo',
-            'sale_price': 'Precio Venta',
-            'product_type': 'Tipo',
-            'image': 'Imagen (Opcional)',
         }
 
 class TransferForm(forms.Form):
-    # Definimos los campos vacíos primero, los llenaremos en el __init__
-    from_warehouse = forms.ModelChoiceField(
-        queryset=Warehouse.objects.none(), # Se llena dinámicamente
-        label="🔴 Bodega Origen (Sale)",
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    to_warehouse = forms.ModelChoiceField(
-        queryset=Warehouse.objects.none(), # Se llena dinámicamente
-        label="🟢 Bodega Destino (Entra)",
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
     product = forms.ModelChoiceField(
-        queryset=Product.objects.all(),
-        label="📦 Producto",
-        widget=forms.Select(attrs={'class': 'form-select select2'}) # select2 ayuda a buscar
+        queryset=Product.objects.none(), # Iniciamos vacío para evitar error al importar
+        label="Producto", 
+        widget=forms.Select(attrs={'class': 'form-select'})
     )
-    quantity = forms.IntegerField(
-        min_value=1,
-        label="Cantidad",
-        widget=forms.NumberInput(attrs={'class': 'form-control'})
+    warehouse_from = forms.ModelChoiceField(
+        queryset=Warehouse.objects.none(), 
+        label="Bodega Origen", 
+        widget=forms.Select(attrs={'class': 'form-select'})
     )
-    comments = forms.CharField(
-        required=False,
-        label="Comentarios",
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2})
+    warehouse_to = forms.ModelChoiceField(
+        queryset=Warehouse.objects.none(), 
+        label="Bodega Destino", 
+        widget=forms.Select(attrs={'class': 'form-select'})
     )
+    quantity = forms.IntegerField(label="Cantidad", widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    comments = forms.CharField(required=False, label="Comentarios", widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2}))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
-        # === FILTRO INTELIGENTE DE BODEGAS ===
-        # Lógica: Excluir cualquier bodega que sea "padre" de otra.
-        # Solo queremos las "hojas" del árbol (las que no tienen sub_warehouses).
-        
-        bodegas_finales = Warehouse.objects.filter(
-            active=True, 
-            sub_warehouses__isnull=True  # <--- ESTO ES LA CLAVE: Solo las que NO tienen hijos
-        )
-
-        self.fields['from_warehouse'].queryset = bodegas_finales
-        self.fields['to_warehouse'].queryset = bodegas_finales
-
-class WarehouseForm(forms.ModelForm):
-    class Meta:
-        model = Warehouse
-        fields = ['branch', 'name', 'parent', 'is_main', 'active']
-        widgets = {
-            'branch': forms.Select(attrs={'class': 'form-select'}),
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'parent': forms.Select(attrs={'class': 'form-select'}),
-            'is_main': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        }
-        labels = {
-            'branch': 'Sucursal',
-            'name': 'Nombre de la Bodega/Estante',
-            'parent': 'Es sub-bodega de... (Opcional)',
-            'is_main': '¿Es Bodega Principal?',
-            'active': 'Activa',
-        }
-
-    def __init__(self, *args, **kwargs):
-        company_id = kwargs.pop('company_id', None)
-        super().__init__(*args, **kwargs)
-        if company_id:
-            # Filtramos sucursales de la empresa actual
-            self.fields['branch'].queryset = Branch.objects.filter(company_id=company_id)
-            # Filtramos padres (bodegas) de la empresa actual
-            self.fields['parent'].queryset = Warehouse.objects.filter(branch__company_id=company_id)
+        company = get_current_company()
+        if company:
+            self.fields['product'].queryset = Product.objects.filter(company=company)
+            qs_warehouses = Warehouse.objects.filter(company=company)
+            self.fields['warehouse_from'].queryset = qs_warehouses
+            self.fields['warehouse_to'].queryset = qs_warehouses
