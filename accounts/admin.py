@@ -1,46 +1,72 @@
 from django.contrib import admin
-from django.conf import settings
-from .models import User
+from django.contrib.auth.admin import UserAdmin
+from django.utils.translation import gettext_lazy as _
+from .models import User  # Importamos TU usuario personalizado
+from core.models import UserRoleCompany, UserProfile
 
-# Branding del admin (Esto está bien dejarlo aquí, no causa conflicto)
-admin.site.site_header = getattr(settings, "ADMIN_SITE_HEADER", "Administración")
-admin.site.site_title = getattr(settings, "ADMIN_SITE_TITLE", "Admin")
-admin.site.index_title = getattr(settings, "ADMIN_INDEX_TITLE", "Panel")
+# 1. INLINE DE EMPRESAS (La Joya de la Corona 👑)
+# Esto permite asignar empresas y roles directamente en la ficha del usuario
+class UserRoleCompanyInline(admin.TabularInline):
+    model = UserRoleCompany
+    extra = 0  # No mostrar filas vacías extra para limpiar la vista
+    verbose_name = "Empresa Asignada"
+    verbose_name_plural = "🏢 Acceso a Empresas"
+    autocomplete_fields = ['company', 'role'] # Útil si tienes muchas empresas
+    classes = ['collapse'] # Permite colapsar la sección si es muy larga
 
-# --- CÓDIGO COMENTADO PARA EVITAR EL ERROR "ALREADY REGISTERED" ---
-# El usuario ya se está registrando en 'core/admin.py' con el perfil multi-empresa.
+# 2. INLINE DE PERFIL (Datos extra: Avatar, Teléfono)
+class UserProfileInline(admin.StackedInline):
+    model = UserProfile
+    can_delete = False
+    verbose_name_plural = '👤 Perfil Detallado'
+    fk_name = 'user'
 
-# @admin.register(User)
-# class UserAdmin(admin.ModelAdmin):
-#     
-#     # 1. Cajitas de izquierda a derecha (Grupos y Empresas)
-#     filter_horizontal = ('groups', 'user_permissions') 
-#     
-#     # 2. Buscador
-#     search_fields = ('email', 'first_name', 'last_name')
-#
-#     # 3. Columnas
-#     list_display = ('email', 'first_name', 'get_online_status', 'current_company', 'last_login')
-#
-#     # 4. Filtros laterales
-#     list_filter = ('current_company', 'is_staff', 'is_active') 
-#
-#     # 5. Función del Semáforo 🟢🔴
-#     def get_online_status(self, obj):
-#         from django.utils import timezone
-#         import datetime
-#         
-#         if not obj.last_login:
-#             return "🔴 Offline"
-#             
-#         now = timezone.now()
-#         # Calculamos la diferencia
-#         diff = now - obj.last_login
-#         
-#         # Si se conectó en los últimos 30 mins
-#         if diff < datetime.timedelta(minutes=30):
-#             return "🟢 Online"
-#         else:
-#             return "⚫ Ausente"
-#     
-#     get_online_status.short_description = "Estado"
+# 3. EL ADMINISTRADOR PROFESIONAL 👔
+@admin.register(User)
+class CustomUserAdmin(UserAdmin):
+    # Qué columnas ver en la lista principal
+    list_display = ('username', 'email', 'get_full_name', 'is_active', 'get_companies_display', 'is_staff')
+    
+    # Por qué campos se puede buscar
+    search_fields = ('username', 'first_name', 'last_name', 'email', 'userrolecompany__company__name')
+    
+    # Filtros laterales potentes
+    list_filter = ('is_active', 'is_staff', 'is_superuser', 'userrolecompany__company')
+    
+    # Los Inlines que definimos arriba
+    inlines = [UserProfileInline, UserRoleCompanyInline]
+
+    # ORGANIZACIÓN VISUAL (Fieldsets)
+    # Esto agrupa los campos para que no sea una lista interminable
+    fieldsets = (
+        ('🔑 Credenciales de Acceso', {
+            'fields': ('username', 'password')
+        }),
+        ('👤 Información Personal', {
+            'fields': ('first_name', 'last_name', 'email', 'avatar') # Agregamos avatar si está en tu modelo User
+        }),
+        ('🏢 Empresa Actual (Contexto)', {
+            'fields': ('current_company',),
+            'description': 'Empresa en la que el usuario está operando actualmente.'
+        }),
+        ('🛡️ Permisos y Seguridad', {
+            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
+            'classes': ('collapse',), # Oculto por defecto para no estorbar
+        }),
+        ('📅 Fechas Importantes', {
+            'fields': ('last_login', 'date_joined'),
+            'classes': ('collapse',),
+        }),
+    )
+
+    # Función para mostrar las empresas bonitas en la lista
+    def get_companies_display(self, obj):
+        companies = [str(urc.company) for urc in obj.userrolecompany_set.all()]
+        if not companies:
+            return "-"
+        return ", ".join(companies)
+    get_companies_display.short_description = 'Empresas Asignadas'
+
+    # Corrección para el manejo de avatares en formularios
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
