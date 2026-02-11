@@ -18,7 +18,6 @@ class StockMovementForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Inicializamos vacíos por seguridad
         self.fields['product'].queryset = Product.objects.none()
         self.fields['warehouse'].queryset = Warehouse.objects.none()
 
@@ -41,21 +40,21 @@ class ProductForm(forms.ModelForm):
             'image': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
-# 3. FORMULARIO DE BODEGAS (¡ESTE FALTABA!)
+# 3. FORMULARIO DE BODEGAS (CORREGIDO: SIN ADDRESS)
 class WarehouseForm(forms.ModelForm):
     class Meta:
         model = Warehouse
-        fields = ['name', 'branch', 'address', 'active']
+        # Quitamos 'address' de aquí porque no existe en el modelo aún
+        fields = ['name', 'branch', 'active'] 
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'branch': forms.Select(attrs={'class': 'form-select'}),
-            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            # 'address': forms.Textarea(...), <--- LO QUITAMOS
             'active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filtramos las sucursales por empresa
         company = get_current_company()
         if company:
             self.fields['branch'].queryset = Branch.objects.filter(company=company)
