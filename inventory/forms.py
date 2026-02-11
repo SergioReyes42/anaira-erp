@@ -9,7 +9,7 @@ from anaira.middleware import get_current_company
 class StockMovementForm(forms.ModelForm):
     class Meta:
         model = StockMovement
-        fields = ['product', 'warehouse', 'movement_type', 'quantity', 'comments']
+        fields = ['product', 'warehouse', 'movement_type', 'quantity']#'comments'
         widgets = {
             'product': forms.Select(attrs={'class': 'form-select select2'}),
             'warehouse': forms.Select(attrs={'class': 'form-select'}),

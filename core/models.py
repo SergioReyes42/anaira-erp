@@ -553,6 +553,7 @@ class StockMovement(CompanyAwareModel): # <--- BLINDADO
     def __str__(self): return f"{self.get_movement_type_display()}: {self.quantity} de {self.product.code}"
     class Meta: verbose_name = "Movimiento de Kardex"; verbose_name_plural = "Kardex (Historial)"; ordering = ['-date']
 
+comments = models.CharField(max_length=200, blank=True, null=True)
 class InventoryMovement(models.Model): # LEGACY
     TYPE_CHOICES = [('IN', 'Entrada'), ('OUT', 'Salida')]
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
