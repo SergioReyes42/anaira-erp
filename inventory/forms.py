@@ -15,7 +15,7 @@ class StockMovementForm(forms.ModelForm):
             'warehouse': forms.Select(attrs={'class': 'form-select'}),
             'movement_type': forms.Select(attrs={'class': 'form-select'}),
             'quantity': forms.NumberInput(attrs={'class': 'form-control'}),
-            'comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            # 'comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
 
     def __init__(self, *args, **kwargs):
