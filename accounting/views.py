@@ -9,7 +9,6 @@ from .forms import ExpensePhotoForm, BankAccountForm, BankTransactionForm, Vehic
 def upload_expense_photo(request):
     if request.method == 'POST':
         form = ExpensePhotoForm(request.POST, request.FILES)
-        # Filtramos vehículos por empresa
         form.fields['vehicle'].queryset = Vehicle.objects.filter(company=request.user.current_company)
         
         if form.is_valid():
@@ -27,7 +26,7 @@ def upload_expense_photo(request):
 
 @login_required
 def expense_list(request):
-    """Reporte de Gastos (Lo pedía el menú)"""
+    """Historial completo de gastos"""
     expenses = Expense.objects.filter(company=request.user.current_company).order_by('-date')
     return render(request, 'accounting/expense_list.html', {'expenses': expenses})
 
@@ -36,16 +35,57 @@ def gasto_manual(request):
     messages.info(request, "El Scanner IA estará disponible pronto.")
     return redirect('upload_expense_photo')
 
+# --- NUEVO: APROBACIÓN DE GASTOS ---
+@login_required
+def expense_pending_list(request):
+    """Lista de gastos que requieren aprobación (Status=PENDING)"""
+    expenses = Expense.objects.filter(
+        company=request.user.current_company, 
+        status='PENDING'
+    ).order_by('-date')
+    return render(request, 'accounting/expense_pending_list.html', {'expenses': expenses})
+
+@login_required
+def approve_expense(request, pk):
+    """Aprobar un gasto"""
+    expense = get_object_or_404(Expense, pk=pk, company=request.user.current_company)
+    expense.status = 'APPROVED'
+    expense.save()
+    messages.success(request, f"Gasto #{expense.id} aprobado.")
+    return redirect('expense_pending_list')
+
+@login_required
+def reject_expense(request, pk):
+    """Rechazar un gasto"""
+    expense = get_object_or_404(Expense, pk=pk, company=request.user.current_company)
+    expense.status = 'REJECTED'
+    expense.save()
+    messages.warning(request, f"Gasto #{expense.id} rechazado.")
+    return redirect('expense_pending_list')
+
+# --- NUEVO: LIBROS CONTABLES (PLACEHOLDERS) ---
+@login_required
+def libro_diario(request):
+    """Vista preliminar del Libro Diario"""
+    # Por ahora mostramos transacciones bancarias como 'asientos' simples
+    transactions = BankTransaction.objects.filter(company=request.user.current_company).order_by('-date')
+    return render(request, 'accounting/libro_diario.html', {'transactions': transactions})
+
+@login_required
+def libro_mayor(request):
+    """Vista preliminar del Libro Mayor"""
+    # Mostramos resumen de cuentas
+    accounts = BankAccount.objects.filter(company=request.user.current_company)
+    return render(request, 'accounting/libro_mayor.html', {'accounts': accounts})
+
 # --- FLOTILLA DE VEHÍCULOS ---
 @login_required
 def vehicle_list(request):
-    """Lista de Vehículos (Lo pedía el menú)"""
     vehicles = Vehicle.objects.filter(company=request.user.current_company)
     return render(request, 'accounting/vehicle_list.html', {'vehicles': vehicles})
 
 @login_required
 def vehicle_create(request):
-    """Crear Vehículo"""
     if request.method == 'POST':
         form = VehicleForm(request.POST)
         if form.is_valid():
