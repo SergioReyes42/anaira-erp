@@ -1,22 +1,28 @@
 from django.contrib import admin
-from .models import CustomerAccount, Invoice, Payment
+from .models import Sale, SaleDetail, Invoice
 
-@admin.register(CustomerAccount)
-class CustomerAccountAdmin(admin.ModelAdmin):
-    list_display = ('customer', 'company', 'balance')
-    search_fields = ('customer__name',)
+# Configuración para ver los productos DENTRO de la venta
+class SaleDetailInline(admin.TabularInline):
+    model = SaleDetail
+    extra = 1  # Muestra una línea vacía para agregar productos rápido
+    autocomplete_fields = ['product']  # Buscador de productos (si tienes muchos)
+    readonly_fields = ['subtotal']  # El subtotal se calcula solo, mejor no tocarlo
 
-class PaymentInline(admin.TabularInline):
-    model = Payment
-    extra = 1
+@admin.register(Sale)
+class SaleAdmin(admin.ModelAdmin):
+    list_display = ['id', 'client', 'date', 'total', 'payment_method', 'company']
+    list_filter = ['date', 'payment_method', 'company']
+    search_fields = ['client__name', 'id']
+    date_hierarchy = 'date'
+    
+    # Aquí agregamos los detalles
+    inlines = [SaleDetailInline]
+    
+    # Hacemos que el total sea de solo lectura (se debería calcular por los detalles)
+    readonly_fields = ['total', 'company']
 
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
-    list_display = ('number', 'customer', 'date', 'total', 'pending_amount', 'status')
-    list_filter = ('status', 'company')
-    search_fields = ('number', 'customer__name')
-    inlines = [PaymentInline]
-
-@admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('invoice', 'date', 'amount', 'method')
+    list_display = ['fel_number', 'serie', 'numero', 'client', 'authorization_date']
+    search_fields = ['fel_number', 'client__name', 'numero']
+    list_filter = ['authorization_date', 'company']

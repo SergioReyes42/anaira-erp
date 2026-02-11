@@ -1,40 +1,55 @@
-from django.db.models.signals import post_save
 from django.db import models
-from core.models import BusinessPartner, Company
+from django.utils import timezone
+from core.models import CompanyAwareModel, Client, Product
 
-
-class CustomerAccount(models.Model):
-    """Estado de cuenta general del cliente"""
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    customer = models.OneToOneField(BusinessPartner, on_delete=models.CASCADE)
-    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    credit_limit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-
-    def __str__(self):
-        return f"{self.customer.name} - Saldo: {self.balance}"
-
-class Invoice(models.Model):
-    """Factura de Venta"""
-    STATUS_CHOICES = [('DRAFT', 'Borrador'), ('OPEN', 'Abierta'), ('PAID', 'Pagada')]
+class Sale(CompanyAwareModel):
+    """
+    Encabezado de la Venta
+    """
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, verbose_name="Cliente")
+    date = models.DateTimeField(default=timezone.now, verbose_name="Fecha")
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    customer = models.ForeignKey(BusinessPartner, on_delete=models.CASCADE)
-    number = models.CharField(max_length=20, unique=True) # <-- CORREGIDO: max_length
-    date = models.DateField()
-    due_date = models.DateField() 
-    total = models.DecimalField(max_digits=12, decimal_places=2)
-    pending_amount = models.DecimalField(max_digits=12, decimal_places=2) 
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='OPEN')
+    PAYMENT_CHOICES = [
+        ('EFECTIVO', 'Efectivo'),
+        ('TARJETA', 'Tarjeta de Crédito/Débito'),
+        ('TRANSFERENCIA', 'Transferencia Bancaria'),
+    ]
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default='EFECTIVO')
 
     def __str__(self):
-        return f"Factura {self.number} - {self.customer.name}"
+        return f"Venta #{self.id} - {self.client.name}"
 
-class Payment(models.Model):
-    """Recibo de Caja / Abono de Cliente"""
-    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments')
-    date = models.DateField()
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
-    method = models.CharField(max_length=50) 
+class SaleDetail(models.Model):
+    """
+    Detalle de productos en la venta
+    """
+    sale = models.ForeignKey(Sale, related_name='details', on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        # Calculamos subtotal automáticamente al guardar
+        self.subtotal = self.quantity * self.unit_price
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Abono a {self.invoice.number} - Q{self.amount}"
+        return f"{self.quantity} x {self.product.name}"
+
+class Invoice(CompanyAwareModel):
+    """
+    Factura Electrónica (FEL) vinculada a una venta
+    """
+    sale = models.OneToOneField(Sale, on_delete=models.CASCADE, verbose_name="Venta Original")
+    fel_number = models.CharField(max_length=100, verbose_name="Número FEL (UUID)")
+    serie = models.CharField(max_length=50, verbose_name="Serie")
+    numero = models.CharField(max_length=50, verbose_name="Número DTE")
+    authorization_date = models.DateTimeField(verbose_name="Fecha de Autorización")
+    
+    # Campo redundante para facilitar búsquedas por cliente sin hacer JOINs complejos
+    client = models.ForeignKey(Client, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Factura {self.serie}-{self.numero}"
