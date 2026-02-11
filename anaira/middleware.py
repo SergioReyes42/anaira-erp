@@ -1,18 +1,37 @@
-# anaira_erp/middleware.py
-from django.core.cache import cache
-from django.utils import timezone
-from django.conf import settings
+import threading
+from django.utils.deprecation import MiddlewareMixin
 
-class ActiveUserMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
+# Almacén de memoria temporal (Thread Local)
+_thread_locals = threading.local()
 
-    def __call__(self, request):
-        if request.user.is_authenticated:
-            # Marcamos al usuario como 'online' por 300 segundos (5 min)
-            # Cada vez que haga clic, este tiempo se reinicia.
-            now = timezone.now()
-            cache.set(f'seen_{request.user.username}', now, 300)
+def get_current_company():
+    """ Devuelve la empresa activa del usuario actual """
+    return getattr(_thread_locals, 'company', None)
+
+def get_current_user():
+    """ Devuelve el usuario actual """
+    return getattr(_thread_locals, 'user', None)
+
+class ActiveCompanyMiddleware(MiddlewareMixin):
+    """
+    Este middleware captura la empresa activa de la sesión y la pone disponible 
+    globalmente para que los Modelos puedan auto-filtrarse.
+    """
+    def process_request(self, request):
+        _thread_locals.user = getattr(request, 'user', None)
         
-        response = self.get_response(request)
-        return response
+        # Intentamos obtener la empresa de la sesión
+        company_id = request.session.get('company_id')
+        if company_id:
+            # Importamos aquí para evitar referencia circular
+            from core.models import CompanyProfile
+            try:
+                company = CompanyProfile.objects.get(id=company_id)
+                _thread_locals.company = company
+                request.company = company # Disponible en views también
+            except CompanyProfile.DoesNotExist:
+                _thread_locals.company = None
+                request.company = None
+        else:
+            _thread_locals.company = None
+            request.company = None

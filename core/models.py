@@ -5,7 +5,49 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 
+# --- INTENTO DE IMPORTAR EL MIDDLEWARE (EL GUARDIA) ---
+try:
+    from anaira.middleware import get_current_company      # ✅ ESTO ES LO CORRECTO
+except ImportError:
+    # Si aún no existe el archivo, usamos una función vacía para que no explote
+    def get_current_company(): return None
+
 User = get_user_model()
+
+# ==============================================================================
+# 0. MODELO MAESTRO DE AISLAMIENTO (EL BLINDAJE) 🛡️
+# ==============================================================================
+
+class CompanyManager(models.Manager):
+    """ Filtra automáticamente para ver solo datos de tu empresa """
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        company = get_current_company()
+        if company:
+            return queryset.filter(company=company)
+        return queryset
+
+class CompanyAwareModel(models.Model):
+    """
+    Todo modelo que herede de aquí será PRIVADO por empresa.
+    """
+    company = models.ForeignKey(
+        'CompanyProfile', 
+        on_delete=models.CASCADE, 
+        verbose_name="Empresa",
+        null=True, blank=True
+    )
+
+    objects = CompanyManager() # Manager con visión de túnel (solo ve lo propio)
+    all_objects = models.Manager() # Manager Dios (ve todo, por si acaso)
+
+    class Meta:
+        abstract = True # No crea tabla, solo sirve de molde
+
+    def save(self, *args, **kwargs):
+        if not self.company:
+            self.company = get_current_company()
+        super().save(*args, **kwargs)
 
 # ==============================================================================
 # 1. NÚCLEO: EMPRESAS, USUARIOS Y PERFILES
@@ -28,7 +70,8 @@ class Company(models.Model):
         through='UserRoleCompany', 
         related_name='companies_assigned'
     )
-    active = models.BooleanField(default=True, verbose_name="Activa")
+    active = models.BooleanField(default=True)
+    
 
     class Meta:
         verbose_name = "Empresa"
@@ -39,12 +82,11 @@ class Company(models.Model):
 class CompanyProfile(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nombre Empresa")
     nit = models.CharField(max_length=20, blank=True, null=True, verbose_name="NIT")
-    logo = models.ImageField(upload_to='company_logos/', blank=True, null=True, verbose_name="Logo")
-    
-    address = models.CharField(max_length=255, blank=True, null=True, verbose_name="Dirección")
-    phone = models.CharField(max_length=50, blank=True, null=True, verbose_name="Teléfono")
-    email = models.EmailField(blank=True, null=True, verbose_name="Correo Electrónico")
-    currency_symbol = models.CharField(max_length=5, default="Q", verbose_name="Símbolo Moneda")
+    logo = models.ImageField(upload_to='company_logos/', blank=True, null=True)
+    address = models.CharField(max_length=255, blank=True, null=True)
+    phone = models.CharField(max_length=50, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    currency_symbol = models.CharField(max_length=5, default="Q")
 
     def __str__(self): return self.name
 
@@ -52,7 +94,6 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     allowed_companies = models.ManyToManyField(Company, verbose_name="Empresas Permitidas")
     active_company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True, related_name='active_users')
-
     def __str__(self): return f"Perfil de {self.user.username}"
 
 class Role(models.Model):
@@ -60,40 +101,36 @@ class Role(models.Model):
     def __str__(self): return self.name
 
 class UserRoleCompany(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     class Meta: unique_together = ("user", "role", "company")
 
 # ==============================================================================
-# 2. MODELOS BASE (Vehículos, Tarjetas y Cuentas Contables)
+# 2. MODELOS BASE (AHORA BLINDADOS) 🔒
 # ==============================================================================
 
-class CreditCard(models.Model):
-    bank_name = models.CharField(max_length=100, verbose_name="Banco Emisor")
-    alias = models.CharField(max_length=100, verbose_name="Alias (Ej: Visa Gerencia)")
-    last_4_digits = models.CharField(max_length=4, verbose_name="Últimos 4 dígitos")
-    credit_limit = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Límite de Crédito")
-    current_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Saldo Deuda Actual")
-    cutoff_day = models.IntegerField(verbose_name="Día de Corte", help_text="Día del mes")
-    
-    def __str__(self):
-        return f"{self.alias} (Termina en {self.last_4_digits})"
+class CreditCard(CompanyAwareModel): # <--- BLINDADO
+    bank_name = models.CharField(max_length=100)
+    alias = models.CharField(max_length=100)
+    last_4_digits = models.CharField(max_length=4)
+    credit_limit = models.DecimalField(max_digits=12, decimal_places=2)
+    current_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    cutoff_day = models.IntegerField()
+    def __str__(self): return f"{self.alias} ({self.last_4_digits})"
 
-class Vehicle(models.Model):
-    brand = models.CharField(max_length=50, verbose_name="Marca")
-    model = models.CharField(max_length=50, verbose_name="Modelo")
-    plate = models.CharField(max_length=20, unique=True, verbose_name="Placa")
-    year = models.IntegerField(verbose_name="Año")
+class Vehicle(CompanyAwareModel): # <--- BLINDADO
+    brand = models.CharField(max_length=50)
+    model = models.CharField(max_length=50)
+    plate = models.CharField(max_length=20, unique=True)
+    year = models.IntegerField()
     color = models.CharField(max_length=30, blank=True, null=True)
-    assigned_driver = models.CharField(max_length=100, verbose_name="Piloto Asignado", blank=True, null=True)
-    status = models.CharField(max_length=20, choices=[('ACTIVO', 'Activo'), ('TALLER', 'En Mantenimiento'), ('BAJA', 'De Baja')], default='ACTIVO')
-    
-    def __str__(self):
-        return f"{self.plate} - {self.brand} {self.model}"
+    assigned_driver = models.CharField(max_length=100, blank=True, null=True)
+    status = models.CharField(max_length=20, choices=[('ACTIVO', 'Activo'), ('TALLER', 'Taller')], default='ACTIVO')
+    def __str__(self): return f"{self.plate} - {self.brand}"
 
 # IMPORTANTE: Account debe ir ANTES de Expense
-class Account(models.Model):
+class Account(CompanyAwareModel): # <--- BLINDADO
     """
     CATÁLOGO DE CUENTAS (NOMENCLATURA NIIF)
     """
@@ -124,10 +161,10 @@ class Account(models.Model):
         return f"{self.code} - {self.name}"
 
 # ==============================================================================
-# 3. ESTRUCTURA FÍSICA Y LOGÍSTICA
+# 3. LOGÍSTICA (BLINDADA)
 # ==============================================================================
 
-class Branch(models.Model):
+class Branch(CompanyAwareModel): # <--- BLINDADO
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='branches')
     company_profile = models.ForeignKey(CompanyProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='branches_profile')
     name = models.CharField(max_length=255, verbose_name="Sucursal")
@@ -139,7 +176,7 @@ class Branch(models.Model):
     def __str__(self): return f"{self.name} ({self.code})"
     class Meta: verbose_name = "Sucursal"; verbose_name_plural = "Sucursales"
 
-class Warehouse(models.Model):
+class Warehouse(CompanyAwareModel): # <--- BLINDADO
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='warehouses', verbose_name="Sucursal")
     name = models.CharField(max_length=100, verbose_name="Nombre Bodega")
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sub_warehouses', verbose_name="Bodega Padre")
@@ -152,7 +189,7 @@ class Warehouse(models.Model):
 
     class Meta: verbose_name = "Bodega"; verbose_name_plural = "Bodegas"
 
-class Product(models.Model):
+class Product(CompanyAwareModel): # <--- BLINDADO
     name = models.CharField(max_length=200, verbose_name="Nombre Producto")
     code = models.CharField(max_length=50, blank=True, null=True, verbose_name="Código/SKU")
     description = models.TextField(blank=True, null=True)
@@ -165,7 +202,7 @@ class Product(models.Model):
     @property
     def available_stock(self): return self.stock - self.stock_reserved
 
-class Inventory(models.Model):
+class Inventory(CompanyAwareModel): # <--- BLINDADO
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, verbose_name="Bodega")
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Producto")
     quantity = models.IntegerField(default=0, verbose_name="Existencia Actual")
@@ -175,10 +212,10 @@ class Inventory(models.Model):
     def __str__(self): return f"{self.product.name} en {self.warehouse.name}: {self.quantity}"
 
 # ==============================================================================
-# 4. TESORERÍA, INGRESOS Y GASTOS (CORE)
+# 4. TESORERÍA (BLINDADA)
 # ==============================================================================
 
-class BankAccount(models.Model):
+class BankAccount(CompanyAwareModel): # <--- BLINDADO
     company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
     bank_name = models.CharField(max_length=50, verbose_name="Nombre del Banco")
     account_number = models.CharField(max_length=50, verbose_name="Número de Cuenta")
@@ -188,7 +225,7 @@ class BankAccount(models.Model):
     def __str__(self): return f"{self.bank_name} - {self.account_number}"
     class Meta: verbose_name = "Cuenta Bancaria"; verbose_name_plural = "Cuentas Bancarias"
 
-class BankTransaction(models.Model):
+class BankTransaction(CompanyAwareModel): # <--- BLINDADO (Opcional, hereda cuenta)
     MOVEMENT_CHOICES = (('IN', 'Entrada / Depósito'), ('OUT', 'Salida / Retiro'))
     account = models.ForeignKey(BankAccount, on_delete=models.CASCADE)
     date = models.DateField(verbose_name="Fecha")
@@ -200,7 +237,7 @@ class BankTransaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self): return f"{self.get_movement_type_display()} - Q{self.amount}"
 
-class BankMovement(models.Model):
+class BankMovement(CompanyAwareModel): # <--- BLINDADO
     TYPES = (('IN', 'Depósito'), ('OUT', 'Retiro/Cheque'))
     account = models.ForeignKey(BankAccount, on_delete=models.CASCADE, related_name='movements')
     date = models.DateField(default=timezone.now, verbose_name="Fecha")
@@ -219,7 +256,7 @@ class BankMovement(models.Model):
             self.account.save()
         super().save(*args, **kwargs)
 
-class Income(models.Model):
+class Income(CompanyAwareModel): # <--- BLINDADO
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     date = models.DateField(default=timezone.now, verbose_name="Fecha")
     description = models.CharField(max_length=200, verbose_name="Descripción / Cliente")
@@ -230,8 +267,11 @@ class Income(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self): return f"{self.description} - Q{self.amount}"
 
-# GASTOS: Ahora ya conoce 'Account', 'Vehicle' y 'CreditCard'
-class Expense(models.Model):
+# ==============================================================================
+# 5. GASTOS (EL MÁS IMPORTANTE) 🛡️
+# ==============================================================================
+
+class Expense(CompanyAwareModel): # <--- AHORA ES PRIVADO POR EMPRESA
     # Relación con Usuario
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     
@@ -283,10 +323,10 @@ class Expense(models.Model):
         return f"{self.date} - {self.provider} (Q{self.total_amount})"
 
 # ==============================================================================
-# 5. CONTABILIDAD (PARTIDAS Y DETALLES)
+# 6. CONTABILIDAD (PARTIDAS)
 # ==============================================================================
 
-class JournalEntry(models.Model):
+class JournalEntry(CompanyAwareModel): # <--- BLINDADO
     """
     ENCABEZADO DE PARTIDA (ASIENTO CONTABLE)
     """
@@ -324,10 +364,10 @@ class JournalItem(models.Model):
         return f"{self.account.code} | D:{self.debit} H:{self.credit}"
 
 # ==============================================================================
-# 6. CLIENTES, PROVEEDORES Y TRANSACCIONES COMERCIALES
+# 7. VENTAS Y CLIENTES (BLINDADOS)
 # ==============================================================================
 
-class Client(models.Model):
+class Client(CompanyAwareModel): # <--- BLINDADO
     name = models.CharField(max_length=200, verbose_name="Razón Social / Nombre")
     nit = models.CharField(max_length=20, verbose_name="NIT", unique=True)
     address = models.CharField(max_length=255, verbose_name="Dirección Fiscal", blank=True)
@@ -341,7 +381,7 @@ class Client(models.Model):
     company = models.ForeignKey(CompanyProfile, on_delete=models.SET_NULL, null=True, blank=True)
     def __str__(self): return f"{self.name} ({self.nit})"
 
-class Supplier(models.Model):
+class Supplier(CompanyAwareModel): # <--- BLINDADO
     company = models.ForeignKey('CompanyProfile', on_delete=models.CASCADE, verbose_name="Empresa", null=True, blank=True)
     name = models.CharField(max_length=200, verbose_name="Razón Social / Nombre")
     nit = models.CharField(max_length=20, verbose_name="NIT / RUT", blank=True, null=True)
@@ -384,7 +424,7 @@ class BusinessPartner(models.Model): # LEGACY
 # 7. VENTAS Y COMPRAS (OPERATIVO)
 # ==============================================================================
 
-class Quotation(models.Model):
+class Quotation(CompanyAwareModel): # <--- BLINDADO
     STATUS_CHOICES = [('DRAFT', 'Borrador (Aparta Stock)'), ('BILLED', 'Facturada (Rebaja Stock)'), ('CANCELED', 'Cancelada (Libera Stock)')]
     PAYMENT_CHOICES = [('EFECTIVO', 'Efectivo'), ('TRANSFERENCIA', 'Transferencia'), ('CHEQUE', 'Cheque'), ('CREDITO', 'Crédito / Por Cobrar')]
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
@@ -405,7 +445,7 @@ class QuotationDetail(models.Model):
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     def __str__(self): return f"{self.quantity} x {self.product.name}"
 
-class Sale(models.Model):
+class Sale(CompanyAwareModel): # <--- BLINDADO
     company = models.ForeignKey(CompanyProfile, on_delete=models.CASCADE, verbose_name="Empresa")
     client = models.ForeignKey(Client, on_delete=models.CASCADE, verbose_name="Cliente")
     date = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Venta")
@@ -430,7 +470,7 @@ class SaleDetail(models.Model):
         super().save(*args, **kwargs)
     def __str__(self): return f"{self.quantity} x {self.product.name}"
 
-class Purchase(models.Model):
+class Purchase(CompanyAwareModel): # <--- BLINDADO
     STATUS_CHOICES = [('DRAFT', 'Borrador'), ('RECEIVED', 'Recibido / Inventario Cargado'), ('CANCELLED', 'Cancelada')]
     PAYMENT_METHODS = [('CASH', 'Efectivo'), ('TRANSFER', 'Transferencia Bancaria'), ('CARD', 'Tarjeta de Crédito/Débito'), ('CHECK', 'Cheque'), ('CREDIT', 'Crédito (Por Pagar)')]
     company = models.ForeignKey('CompanyProfile', on_delete=models.CASCADE, verbose_name="Empresa")
@@ -466,7 +506,7 @@ def update_inventory_on_purchase(sender, instance, created, **kwargs):
         producto.stock += instance.quantity
         producto.save()
 
-class Invoice(models.Model):
+class Invoice(CompanyAwareModel): # <--- BLINDADO
     client = models.ForeignKey('Client', on_delete=models.PROTECT)
     date = models.DateField(auto_now_add=True)
     due_date = models.DateField() # Fecha de vencimiento
@@ -498,7 +538,7 @@ class InvoiceDetail(models.Model):
     def subtotal(self):
         return self.quantity * self.unit_price
 
-class StockMovement(models.Model):
+class StockMovement(CompanyAwareModel): # <--- BLINDADO
     MOVEMENT_TYPES = [('IN_PURCHASE', 'Entrada por Compra'), ('OUT_SALE', 'Salida por Venta'), ('TRANSFER_OUT', 'Salida por Traslado'), ('TRANSFER_IN', 'Entrada por Traslado'), ('ADJUST_ADD', 'Ajuste (Entrada)'), ('ADJUST_SUB', 'Ajuste (Salida)')]
     product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Producto")
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, verbose_name="Bodega Afectada")
@@ -527,7 +567,7 @@ class InventoryMovement(models.Model): # LEGACY
 # 8. RECURSOS HUMANOS (RRHH)
 # ==============================================================================
 
-class Employee(models.Model):
+class Employee(CompanyAwareModel): # <--- BLINDADO
     first_name = models.CharField(max_length=100, verbose_name="Nombres")
     last_name = models.CharField(max_length=100, verbose_name="Apellidos")
     dpi = models.CharField(max_length=20, verbose_name="DPI", unique=True)
@@ -547,7 +587,7 @@ class Employee(models.Model):
     def __str__(self): return f"{self.first_name} {self.last_name}"
     class Meta: verbose_name = "Empleado"; verbose_name_plural = "Empleados"
 
-class Loan(models.Model):
+class Loan(CompanyAwareModel): # <--- BLINDADO
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, verbose_name="Empleado")
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Monto Préstamo")
     monthly_fee = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Cuota Mensual")
@@ -557,7 +597,7 @@ class Loan(models.Model):
     is_active = models.BooleanField(default=True)
     def __str__(self): return f"Préstamo {self.employee.first_name} - Q{self.balance}"
 
-class Payroll(models.Model):
+class Payroll(CompanyAwareModel): # <--- BLINDADO
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='core_payrolls')
     month = models.IntegerField(verbose_name="Mes")
     year = models.IntegerField(verbose_name="Año")
@@ -596,3 +636,44 @@ def save_user_profile(sender, instance, **kwargs):
         instance.userprofile.save()
     except:
         pass
+
+class CompanyManager(models.Manager):
+    """
+    Este Manager sobreescribe el 'objects.all()' estándar.
+    Automáticamente filtra los datos para mostrar SOLO los de la empresa activa.
+    """
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        company = get_current_company()
+        
+        # Si hay una empresa activa, filtramos. 
+        # Si es superusuario o no hay empresa, mostramos todo (o nada).
+        if company:
+            return queryset.filter(company=company)
+        return queryset
+
+class CompanyAwareModel(models.Model):
+    """
+    Clase Abstracta: No crea tabla en la BD, pero da superpoderes a quien la herede.
+    1. Agrega campo 'company' automáticamente.
+    2. Asigna la empresa automáticamente al guardar.
+    3. Filtra automáticamente al consultar.
+    """
+    company = models.ForeignKey(
+        'CompanyProfile', 
+        on_delete=models.CASCADE, 
+        verbose_name="Empresa Propietaria",
+        null=True, blank=True # Opcional al principio para no romper migraciones
+    )
+
+    objects = CompanyManager() # <--- Aquí activamos el filtro automático
+    all_objects = models.Manager() # Por si alguna vez necesitamos ver todo sin filtros
+
+    class Meta:
+        abstract = True # Importante: No crea tabla propia
+
+    def save(self, *args, **kwargs):
+        # Si no tiene empresa asignada, le ponemos la de la sesión actual
+        if not self.company:
+            self.company = get_current_company()
+        super().save(*args, **kwargs)

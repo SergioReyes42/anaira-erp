@@ -57,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'anaira.middleware.ActiveUserMiddleware',
+    'anaira_erp.middleware.ActiveCompanyMiddleware', # <--- TU NUEVO GUARDIAN DE EMPRESA ACTIVA
 ]
 
 # 5. BASE DE DATOS PRINCIPAL (PostgreSQL o SQLite)
