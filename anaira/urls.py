@@ -94,6 +94,8 @@ urlpatterns = [
     
     # Sus rutas de la aplicación
     path('', include('core.urls')),
+
+    path('contabilidad/', include('accounting.urls')),
 ]
 
 # --- HABILITAR CARGA DE LOGOS EN MODO DEBUG ---

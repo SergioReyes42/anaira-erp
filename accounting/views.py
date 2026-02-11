@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.contrib import messages
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
+from .forms import ExpensePhotoForm
 
 # Imports de API
 from rest_framework import viewsets, permissions, status
@@ -200,3 +201,32 @@ class BalanceSheetAPI(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
         return Response({"message": "Balance General API"})
+
+@login_required
+def upload_expense_photo(request):
+    """Vista para subir foto rápida de gasto"""
+    if request.method == 'POST':
+        form = ExpensePhotoForm(request.POST, request.FILES)
+        if form.is_valid():
+            expense = form.save(commit=False)
+            expense.user = request.user
+            # Asignamos la empresa actual del usuario si existe
+            if hasattr(request.user, 'current_company'):
+                expense.company = request.user.current_company
+            
+            expense.save()
+            messages.success(request, "¡Gasto subido correctamente!")
+            return redirect('home')
+    else:
+        form = ExpensePhotoForm()
+    
+    return render(request, 'accounting/upload_photo.html', {'form': form})
+
+@login_required
+def gasto_manual(request):
+    """
+    Vista placeholder para el Scanner IA.
+    ESTA ES LA FUNCIÓN QUE FALTABA Y QUE CAUSABA EL ERROR.
+    """
+    messages.info(request, "El Scanner IA estará disponible pronto. Por ahora usa la subida de fotos.")
+    return redirect('upload_expense_photo')

@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from core.models import Company
+from core.models import CompanyAwareModel
 
 # --- 1. CATÁLOGO DE CUENTAS (PLAN DE CUENTAS) ---
 class Account(models.Model):
@@ -64,3 +65,20 @@ class JournalItem(models.Model):
 
     def __str__(self):
         return f"{self.account.code} | D:{self.debit} C:{self.credit}"
+
+class Expense(CompanyAwareModel):
+    STATUS_CHOICES = [
+        ('PENDING', 'Pendiente'),
+        ('APPROVED', 'Aprobado'),
+        ('REJECTED', 'Rechazado'),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Usuario")
+    photo = models.ImageField(upload_to='expenses/', verbose_name="Foto del Recibo")
+    description = models.TextField(verbose_name="Descripción", null=True, blank=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Monto Total", null=True, blank=True)
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING', verbose_name="Estado")
+
+    def __str__(self):
+        return f"Gasto {self.id} - {self.user}"  

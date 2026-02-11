@@ -33,4 +33,9 @@ urlpatterns = [
     # ==========================================
     path('api/', include(router.urls)),
     path('api/balance/', views.BalanceSheetAPI.as_view(), name='api_balance'),
+
+    path('subir-foto/', views.upload_expense_photo, name='upload_expense_photo'),
+    path('gasto-manual/', views.gasto_manual, name='gasto_manual'),
+
+    path('scanner-ia/', views.gasto_manual, name='gasto_manual'),
 ]
