@@ -28,16 +28,11 @@ class CompanySelectForm(forms.Form):
 
 class CompanyForm(forms.ModelForm):
     class Meta:
-        model = CompanyProfile
-        fields = ['name', 'nit', 'address', 'phone', 'email', 'logo', 'currency_symbol']
+        model = Company
+        fields = ['name', 'active']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'nit': forms.TextInput(attrs={'class': 'form-control'}),
-            'address': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'currency_symbol': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Q'}),
-            'logo': forms.FileInput(attrs={'class': 'form-control'}),
+            'active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
 class CustomUserForm(UserCreationForm):
@@ -48,18 +43,25 @@ class CustomUserForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email', 'branch']
+        fields = ['username', 'first_name', 'last_name', 'email', 'avatar']
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'avatar': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['allowed_companies', 'active_company']
+        # CORREGIDO: Solo ponemos los campos que REALMENTE existen en el modelo
+        fields = ['company', 'phone', 'address', 'avatar']
         widgets = {
-             'allowed_companies': forms.CheckboxSelectMultiple(),
-             'active_company': forms.Select(attrs={'class': 'form-select'}),
+            'company': forms.Select(attrs={'class': 'form-select'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'address': forms.TextInput(attrs={'class': 'form-control'}),
+            'avatar': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
 # ==========================================
@@ -239,6 +241,26 @@ class ProductForm(forms.ModelForm):
             'price': forms.NumberInput(attrs={'class': 'form-control'}),
             'stock': forms.NumberInput(attrs={'class': 'form-control'}),
             'image': forms.FileInput(attrs={'class': 'form-control'}),
+        }
+
+class BranchForm(forms.ModelForm):
+    class Meta:
+        model = Branch
+        fields = ['name', 'code', 'location']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'code': forms.TextInput(attrs={'class': 'form-control'}),
+            'location': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+class WarehouseForm(forms.ModelForm):
+    class Meta:
+        model = Warehouse
+        fields = ['name', 'branch', 'active']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'branch': forms.Select(attrs={'class': 'form-select'}),
+            'active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
 # ==========================================
