@@ -21,6 +21,7 @@ class StockMovementForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
+        
         # Obtenemos la empresa actual de forma segura
         company = get_current_company()
         
