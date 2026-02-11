@@ -15,7 +15,8 @@ class User(AbstractUser):
         default=Roles.VIEWER,
         help_text="Rol dentro de Anaira Systems"
     )
-
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True, verbose_name="Foto de Perfil")
+    
     # Evita el choque de nombres con los modelos internos de Django
     groups = models.ManyToManyField(
         'auth.Group',
