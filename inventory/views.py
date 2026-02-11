@@ -1,11 +1,11 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from core.models import Product, Warehouse, Supplier
 from .models import StockMovement, Purchase
-from .forms import StockMovementForm, PurchaseForm
+from .forms import StockMovementForm, PurchaseForm, TransferForm
 
-# --- VISTAS DE DASHBOARD E INVENTARIO ---
+# --- VISTAS GENERALES ---
 @login_required
 def dashboard(request):
     company = request.user.current_company
@@ -27,6 +27,15 @@ def product_list(request):
 def movement_list(request):
     movements = StockMovement.objects.filter(company=request.user.current_company).order_by('-date')
     return render(request, 'inventory/movement_list.html', {'movements': movements})
+
+# --- ESTA ES LA VISTA QUE PEDÍA EL ERROR (KARDEX) ---
+@login_required
+def inventory_kardex(request):
+    """Vista detallada de movimientos (Kardex)"""
+    # Por ahora reutilizamos la lista de movimientos, pero en el futuro
+    # aquí pondremos filtros por fecha y producto.
+    movements = StockMovement.objects.filter(company=request.user.current_company).order_by('-date')
+    return render(request, 'inventory/kardex.html', {'movements': movements})
 
 @login_required
 def create_movement(request):
@@ -55,25 +64,72 @@ def create_movement(request):
         form.fields['warehouse'].queryset = Warehouse.objects.filter(company=request.user.current_company)
     return render(request, 'inventory/movement_form.html', {'form': form})
 
-# --- NUEVAS: VISTAS DE COMPRAS ---
+# --- NUEVA VISTA: TRANSFERENCIAS ---
+@login_required
+def make_transfer(request):
+    """Mover productos entre bodegas"""
+    if request.method == 'POST':
+        form = TransferForm(request.POST)
+        # Hack para que valide el queryset en POST
+        form.fields['product'].queryset = Product.objects.filter(company=request.user.current_company)
+        form.fields['from_warehouse'].queryset = Warehouse.objects.filter(company=request.user.current_company)
+        form.fields['to_warehouse'].queryset = Warehouse.objects.filter(company=request.user.current_company)
+
+        if form.is_valid():
+            data = form.cleaned_data
+            product = data['product']
+            qty = data['quantity']
+            
+            # Validar Stock Global (Simplificado)
+            if product.stock < qty:
+                messages.error(request, "No hay stock suficiente para transferir.")
+            else:
+                # 1. Crear Salida de Origen
+                StockMovement.objects.create(
+                    company=request.user.current_company,
+                    product=product,
+                    warehouse=data['from_warehouse'],
+                    quantity=qty,
+                    movement_type='TRF', # Transferencia
+                    reason=f"Salida por traslado a {data['to_warehouse'].name}"
+                )
+                
+                # 2. Crear Entrada en Destino
+                StockMovement.objects.create(
+                    company=request.user.current_company,
+                    product=product,
+                    warehouse=data['to_warehouse'],
+                    quantity=qty,
+                    movement_type='TRF',
+                    reason=f"Entrada por traslado desde {data['from_warehouse'].name}"
+                )
+                
+                # Nota: El stock total del producto no cambia, solo su ubicación
+                messages.success(request, "Transferencia realizada con éxito.")
+                return redirect('inventory_kardex')
+    else:
+        form = TransferForm()
+        form.fields['product'].queryset = Product.objects.filter(company=request.user.current_company)
+        form.fields['from_warehouse'].queryset = Warehouse.objects.filter(company=request.user.current_company)
+        form.fields['to_warehouse'].queryset = Warehouse.objects.filter(company=request.user.current_company)
+
+    return render(request, 'inventory/transfer_form.html', {'form': form})
+
+# --- VISTAS DE COMPRAS ---
 @login_required
 def purchase_list(request):
-    """Historial de Compras"""
     purchases = Purchase.objects.filter(company=request.user.current_company).order_by('-date')
     return render(request, 'inventory/purchase_list.html', {'purchases': purchases})
 
 @login_required
 def create_purchase(request):
-    """Crear nueva compra (simplificada)"""
-    # NOTA: En una versión completa, aquí usaríamos formsets para agregar productos.
-    # Por ahora, solo creamos el encabezado para que el botón funcione.
     if request.method == 'POST':
         form = PurchaseForm(request.POST)
         if form.is_valid():
             purchase = form.save(commit=False)
             purchase.company = request.user.current_company
             purchase.save()
-            messages.success(request, "Compra registrada (Encabezado).")
+            messages.success(request, "Compra registrada.")
             return redirect('purchase_list')
     else:
         form = PurchaseForm()
@@ -82,6 +138,5 @@ def create_purchase(request):
 
 @login_required
 def supplier_list(request):
-    """Directorio de Proveedores"""
     suppliers = Supplier.objects.filter(company=request.user.current_company)
     return render(request, 'inventory/supplier_list.html', {'suppliers': suppliers})

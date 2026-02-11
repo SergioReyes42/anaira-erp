@@ -1,12 +1,7 @@
 from django import forms
-from core.models import Product, Warehouse, Company, Branch
-from .models import StockMovement  # <--- AHORA LO IMPORTAMOS DE AQUÍ (LOCAL)
-
-from django import forms
-from core.models import Product, Warehouse, Supplier
+from core.models import Product, Warehouse
 from .models import StockMovement, Purchase
 
-# --- FORMULARIOS DE MOVIMIENTOS ---
 class StockMovementForm(forms.ModelForm):
     class Meta:
         model = StockMovement
@@ -31,7 +26,6 @@ class ProductForm(forms.ModelForm):
             'cost': forms.NumberInput(attrs={'class': 'form-control'}),
         }
 
-# --- NUEVO: FORMULARIO DE COMPRA ---
 class PurchaseForm(forms.ModelForm):
     class Meta:
         model = Purchase
@@ -40,31 +34,30 @@ class PurchaseForm(forms.ModelForm):
             'supplier': forms.Select(attrs={'class': 'form-select'}),
             'invoice_number': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
+# --- NUEVO: FORMULARIO DE TRASLADO ENTRE BODEGAS ---
 class TransferForm(forms.Form):
-    """
-    Formulario especial para mover inventario entre bodegas
-    """
     product = forms.ModelChoiceField(
-        queryset=Product.objects.all(), 
-        widget=forms.Select(attrs={'class': 'form-select'}), 
+        queryset=Product.objects.none(), # Se llena en la vista
+        widget=forms.Select(attrs={'class': 'form-select'}),
         label="Producto"
     )
     from_warehouse = forms.ModelChoiceField(
-        queryset=Warehouse.objects.all(), 
-        widget=forms.Select(attrs={'class': 'form-select'}), 
+        queryset=Warehouse.objects.none(),
+        widget=forms.Select(attrs={'class': 'form-select'}),
         label="Bodega Origen"
     )
     to_warehouse = forms.ModelChoiceField(
-        queryset=Warehouse.objects.all(), 
-        widget=forms.Select(attrs={'class': 'form-select'}), 
+        queryset=Warehouse.objects.none(),
+        widget=forms.Select(attrs={'class': 'form-select'}),
         label="Bodega Destino"
     )
     quantity = forms.IntegerField(
-        widget=forms.NumberInput(attrs={'class': 'form-control'}), 
-        label="Cantidad"
+        widget=forms.NumberInput(attrs={'class': 'form-control'}),
+        label="Cantidad a Mover"
     )
     reason = forms.CharField(
-        widget=forms.TextInput(attrs={'class': 'form-control'}), 
-        label="Motivo", 
-        required=False
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        required=False,
+        label="Motivo (Opcional)"
     )
