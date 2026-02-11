@@ -26,7 +26,6 @@ def upload_expense_photo(request):
 
 @login_required
 def expense_list(request):
-    """Historial completo de gastos"""
     expenses = Expense.objects.filter(company=request.user.current_company).order_by('-date')
     return render(request, 'accounting/expense_list.html', {'expenses': expenses})
 
@@ -35,10 +34,9 @@ def gasto_manual(request):
     messages.info(request, "El Scanner IA estará disponible pronto.")
     return redirect('upload_expense_photo')
 
-# --- NUEVO: APROBACIÓN DE GASTOS ---
+# --- APROBACIÓN DE GASTOS ---
 @login_required
 def expense_pending_list(request):
-    """Lista de gastos que requieren aprobación (Status=PENDING)"""
     expenses = Expense.objects.filter(
         company=request.user.current_company, 
         status='PENDING'
@@ -47,7 +45,6 @@ def expense_pending_list(request):
 
 @login_required
 def approve_expense(request, pk):
-    """Aprobar un gasto"""
     expense = get_object_or_404(Expense, pk=pk, company=request.user.current_company)
     expense.status = 'APPROVED'
     expense.save()
@@ -56,29 +53,44 @@ def approve_expense(request, pk):
 
 @login_required
 def reject_expense(request, pk):
-    """Rechazar un gasto"""
     expense = get_object_or_404(Expense, pk=pk, company=request.user.current_company)
     expense.status = 'REJECTED'
     expense.save()
     messages.warning(request, f"Gasto #{expense.id} rechazado.")
     return redirect('expense_pending_list')
 
-# --- NUEVO: LIBROS CONTABLES (PLACEHOLDERS) ---
+# --- LIBROS Y ESTADOS FINANCIEROS (PLACEHOLDERS) ---
 @login_required
 def libro_diario(request):
-    """Vista preliminar del Libro Diario"""
-    # Por ahora mostramos transacciones bancarias como 'asientos' simples
     transactions = BankTransaction.objects.filter(company=request.user.current_company).order_by('-date')
     return render(request, 'accounting/libro_diario.html', {'transactions': transactions})
 
 @login_required
 def libro_mayor(request):
-    """Vista preliminar del Libro Mayor"""
-    # Mostramos resumen de cuentas
     accounts = BankAccount.objects.filter(company=request.user.current_company)
     return render(request, 'accounting/libro_mayor.html', {'accounts': accounts})
 
-# --- FLOTILLA DE VEHÍCULOS ---
+@login_required
+def balance_saldos(request):
+    """Vista preliminar Balance de Saldos"""
+    # Por ahora mostramos resumen de cuentas
+    accounts = BankAccount.objects.filter(company=request.user.current_company)
+    return render(request, 'accounting/balance_saldos.html', {'accounts': accounts})
+
+@login_required
+def estado_resultados(request):
+    """Vista preliminar Estado de Resultados"""
+    # Calculamos Ingresos (Depósitos) vs Gastos (Retiros + Gastos Reportados)
+    expenses = Expense.objects.filter(company=request.user.current_company, status='APPROVED')
+    return render(request, 'accounting/estado_resultados.html', {'expenses': expenses})
+
+@login_required
+def balance_general(request):
+    """Vista preliminar Balance General"""
+    accounts = BankAccount.objects.filter(company=request.user.current_company)
+    return render(request, 'accounting/balance_general.html', {'accounts': accounts})
+
+# --- FLOTILLA ---
 @login_required
 def vehicle_list(request):
     vehicles = Vehicle.objects.filter(company=request.user.current_company)
@@ -92,7 +104,7 @@ def vehicle_create(request):
             vehicle = form.save(commit=False)
             vehicle.company = request.user.current_company
             vehicle.save()
-            messages.success(request, "Vehículo agregado a la flotilla.")
+            messages.success(request, "Vehículo agregado.")
             return redirect('vehicle_list')
     else:
         form = VehicleForm()
