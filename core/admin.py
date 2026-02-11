@@ -3,6 +3,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.contrib.auth import get_user_model
 from django.contrib.admin.sites import NotRegistered # Importante para el error
+from .models import Company, CompanyProfile, UserProfile
 
 # Importación de TODOS tus modelos
 from .models import (
@@ -198,3 +199,11 @@ admin.site.register(Employee)
 admin.site.register(Loan)
 admin.site.register(Payroll)
 admin.site.register(PayrollDetail)
+
+@admin.register(Company)
+class CompanyAdmin(admin.ModelAdmin):
+    list_display = ['name', 'active']
+
+@admin.register(CompanyProfile)
+class CompanyProfileAdmin(admin.ModelAdmin):
+    list_display = ['name', 'nit', 'phone']
