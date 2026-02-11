@@ -96,6 +96,11 @@ urlpatterns = [
     path('', include('core.urls')),
 
     path('contabilidad/', include('accounting.urls')),
+
+    # --- ¡ESTA ES LA LÍNEA QUE TE FALTA O ESTÁ COMENTADA! ---
+    path('ventas/', include('sales.urls')), 
+    
+    path('rrhh/', include('hr.urls')),
 ]
 
 # --- HABILITAR CARGA DE LOGOS EN MODO DEBUG ---
