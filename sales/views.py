@@ -1,77 +1,36 @@
-# sales/views.py
-from django.shortcuts import render, redirect
-from .forms import InvoiceForm
-from core.models import Company
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import Quotation, Sale
+from .forms import QuotationForm, SaleForm
+from core.models import Client
 
-def create_invoice_view(request):
-    company_id = request.session.get('active_company_id')
-    company = Company.objects.get(id=company_id)
-    
+@login_required
+def quotation_list(request):
+    """Listado de Cotizaciones"""
+    quotations = Quotation.objects.filter(company=request.user.current_company).order_by('-date')
+    return render(request, 'sales/quotation_list.html', {'quotations': quotations})
+
+@login_required
+def quotation_create(request):
+    """Crear nueva cotización"""
     if request.method == 'POST':
-        form = InvoiceForm(request.POST, company=company)
+        form = QuotationForm(request.POST)
         if form.is_valid():
-            invoice = form.save(commit=False)
-            invoice.company = company
-            invoice.pending_amount = invoice.total # Al inicio, todo está pendiente
-            invoice.save()
-            return redirect('workspace')
+            quotation = form.save(commit=False)
+            quotation.company = request.user.current_company
+            quotation.save()
+            messages.success(request, "Cotización creada (Borrador).")
+            return redirect('quotation_list')
     else:
-        form = InvoiceForm(company=company)
+        # Filtramos clientes por empresa
+        form = QuotationForm()
+        form.fields['client'].queryset = Client.objects.filter(company=request.user.current_company)
     
-    return render(request, 'sales/invoice_form.html', {'form': form, 'company': company})
+    return render(request, 'sales/quotation_form.html', {'form': form})
 
-# sales/views.py
-from .forms import PaymentForm
-from .models import Payment, Invoice
-
-def create_payment_view(request):
-    company_id = request.session.get('active_company_id')
-    company = Company.objects.get(id=company_id)
-    
-    if request.method == 'POST':
-        form = PaymentForm(request.POST, company=company)
-        if form.is_valid():
-            payment = form.save(commit=False)
-            
-            # LÓGICA DE SALDOS
-            invoice = payment.invoice
-            invoice.pending_amount -= payment.amount
-            
-            # Si ya no debe nada, marcamos como pagada
-            if invoice.pending_amount <= 0:
-                invoice.pending_amount = 0
-                invoice.status = 'PAID'
-            
-            invoice.save()
-            payment.save()
-            return redirect('workspace')
-    else:
-        form = PaymentForm(company=company)
-    
-    return render(request, 'sales/payment_form.html', {'form': form, 'company': company})
-
-# sales/views.py
-from django.db.models import Sum
-from .models import Invoice, BusinessPartner
-
-def cxc_report_view(request):
-    company_id = request.session.get('active_company_id')
-    
-    # Obtenemos todos los clientes que tienen deuda (pending_amount > 0)
-    customers_with_debt = BusinessPartner.objects.filter(
-        company_id=company_id,
-        invoice__pending_amount__gt=0
-    ).annotate(
-        total_debt=Sum('invoice__pending_amount')
-    ).distinct()
-
-    # Obtenemos el detalle de facturas pendientes
-    pending_invoices = Invoice.objects.filter(
-        company_id=company_id, 
-        status='OPEN'
-    ).order_by('due_date')
-
-    return render(request, 'sales/cxc_report.html', {
-        'customers': customers_with_debt,
-        'invoices': pending_invoices
-    })
+@login_required
+def client_list(request):
+    """Directorio de Clientes"""
+    clients = Client.objects.filter(company=request.user.current_company)
+    return render(request, 'sales/client_list.html', {'clients': clients})
