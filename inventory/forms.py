@@ -1,6 +1,7 @@
 from django import forms
-from .models import StockMovement, Product, Warehouse
+from .models import StockMovement, Product, Warehouse, Company
 from core.models import Branch # Asegúrate de importar Branch
+from anaira.middleware import get_current_company
 
 # ==========================================
 # 1. FORMULARIO DE MOVIMIENTOS (Kardex)
@@ -8,36 +9,29 @@ from core.models import Branch # Asegúrate de importar Branch
 class StockMovementForm(forms.ModelForm):
     class Meta:
         model = StockMovement
-        # AGREGAMOS 'warehouse' AQUÍ:
-        fields = ['warehouse', 'product', 'movement_type', 'quantity', 'reference', 'description']
+        fields = ['product', 'warehouse', 'movement_type', 'quantity', 'comments']
         widgets = {
-            # Selector de Bodega
-            'warehouse': forms.Select(attrs={'class': 'form-select'}),
-            
             'product': forms.Select(attrs={'class': 'form-select select2'}),
+            'warehouse': forms.Select(attrs={'class': 'form-select'}),
             'movement_type': forms.Select(attrs={'class': 'form-select'}),
-            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
-            'reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej. Factura #123'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-        }
-        labels = {
-            'warehouse': 'Seleccionar Bodega',  # Etiqueta nueva
-            'product': 'Producto',
-            'movement_type': 'Tipo',
-            'quantity': 'Cantidad',
-            'reference': 'Ref.',
-            'description': 'Notas',
+            'quantity': forms.NumberInput(attrs={'class': 'form-control'}),
+            'comments': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
 
     def __init__(self, *args, **kwargs):
-        company_id = kwargs.pop('company_id', None)
         super().__init__(*args, **kwargs)
         
-        if company_id:
-            self.fields['product'].queryset = Product.objects.filter(company_id=company_id)
-            # FILTRO IMPORTANTE: Solo mostrar bodegas de ESTA empresa (vía sucursales)
-            from core.models import Warehouse
-            self.fields['warehouse'].queryset = Warehouse.objects.filter(branch__company_id=company_id, active=True)
+        # Obtenemos la empresa actual de forma segura
+        company = get_current_company()
+        
+        if company:
+            # Filtramos los selectores para mostrar solo datos de la empresa activa
+            self.fields['product'].queryset = Product.objects.filter(company=company)
+            self.fields['warehouse'].queryset = Warehouse.objects.filter(company=company)
+        else:
+            # Si no hay empresa (ej: error de carga), lista vacía para seguridad
+            self.fields['product'].queryset = Product.objects.none()
+            self.fields['warehouse'].queryset = Warehouse.objects.none()
 
 
 # ==========================================
