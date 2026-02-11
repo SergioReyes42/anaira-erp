@@ -1,11 +1,11 @@
 from django import forms
-from core.models import StockMovement, Product, Warehouse, Company
+from core.models import StockMovement, Product, Warehouse, Company, Branch
 from anaira.middleware import get_current_company
 
+# 1. FORMULARIO DE MOVIMIENTOS
 class StockMovementForm(forms.ModelForm):
     class Meta:
         model = StockMovement
-        # Aseguramos que 'comments' esté aquí
         fields = ['product', 'warehouse', 'movement_type', 'quantity', 'comments']
         widgets = {
             'product': forms.Select(attrs={'class': 'form-select select2'}),
@@ -18,19 +18,16 @@ class StockMovementForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # 1. Definimos los querysets vacíos por seguridad inicial
+        # Inicializamos vacíos por seguridad
         self.fields['product'].queryset = Product.objects.none()
         self.fields['warehouse'].queryset = Warehouse.objects.none()
 
-        # 2. Obtenemos la empresa del hilo actual
         company = get_current_company()
-        
-        # 3. Si hay empresa, filtramos. Si no, se queda vacío.
         if company:
-            # Aquí es donde ocurre la magia segura
             self.fields['product'].queryset = Product.objects.filter(company=company)
             self.fields['warehouse'].queryset = Warehouse.objects.filter(company=company)
 
+# 2. FORMULARIO DE PRODUCTOS
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
@@ -44,9 +41,31 @@ class ProductForm(forms.ModelForm):
             'image': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
+# 3. FORMULARIO DE BODEGAS (¡ESTE FALTABA!)
+class WarehouseForm(forms.ModelForm):
+    class Meta:
+        model = Warehouse
+        fields = ['name', 'branch', 'address', 'active']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'branch': forms.Select(attrs={'class': 'form-select'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtramos las sucursales por empresa
+        company = get_current_company()
+        if company:
+            self.fields['branch'].queryset = Branch.objects.filter(company=company)
+        else:
+            self.fields['branch'].queryset = Branch.objects.none()
+
+# 4. FORMULARIO DE TRASLADOS MANUALES
 class TransferForm(forms.Form):
     product = forms.ModelChoiceField(
-        queryset=Product.objects.none(), # Iniciamos vacío para evitar error al importar
+        queryset=Product.objects.none(), 
         label="Producto", 
         widget=forms.Select(attrs={'class': 'form-select'})
     )
