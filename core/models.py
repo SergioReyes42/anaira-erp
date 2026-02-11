@@ -91,10 +91,16 @@ class CompanyProfile(models.Model):
     def __str__(self): return self.name
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    allowed_companies = models.ManyToManyField(Company, verbose_name="Empresas Permitidas")
-    active_company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True, related_name='active_users')
-    def __str__(self): return f"Perfil de {self.user.username}"
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    # Cambiamos CompanyProfile por Company
+    company = models.ForeignKey('Company', on_delete=models.CASCADE, null=True, blank=True, verbose_name="Empresa Principal")
+    
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    phone = models.CharField(max_length=20, null=True, blank=True)
+    address = models.CharField(max_length=200, null=True, blank=True)
+
+    def __str__(self):
+        return f"Perfil de {self.user.username}"
 
 class Role(models.Model):
     name = models.CharField(max_length=80, unique=True)
