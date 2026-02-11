@@ -2,15 +2,14 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Ruta vacía = Dashboard
+    # Inventario General
     path('', views.dashboard, name='inventory_dashboard'),
-    
-    # Ruta /productos/ = Lista de productos
     path('productos/', views.product_list, name='product_list'),
-    
-    # Ruta /movimientos/ = Historial
     path('movimientos/', views.movement_list, name='inventory_list'),
-    
-    # Ruta /movimientos/nuevo/ = Crear movimiento
     path('movimientos/nuevo/', views.create_movement, name='create_movement'),
+
+    # Compras (Las que faltaban y daban error)
+    path('compras/', views.purchase_list, name='purchase_list'),
+    path('compras/nueva/', views.create_purchase, name='create_purchase'),
+    path('proveedores/', views.supplier_list, name='supplier_list'),
 ]

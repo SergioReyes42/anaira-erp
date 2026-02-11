@@ -2,6 +2,11 @@ from django import forms
 from core.models import Product, Warehouse, Company, Branch
 from .models import StockMovement  # <--- AHORA LO IMPORTAMOS DE AQUÍ (LOCAL)
 
+from django import forms
+from core.models import Product, Warehouse, Supplier
+from .models import StockMovement, Purchase
+
+# --- FORMULARIOS DE MOVIMIENTOS ---
 class StockMovementForm(forms.ModelForm):
     class Meta:
         model = StockMovement
@@ -18,7 +23,6 @@ class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
         fields = ['name', 'code', 'description', 'price', 'cost'] 
-        # 'stock' y 'company' se manejan internamente
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'code': forms.TextInput(attrs={'class': 'form-control'}),
@@ -27,6 +31,15 @@ class ProductForm(forms.ModelForm):
             'cost': forms.NumberInput(attrs={'class': 'form-control'}),
         }
 
+# --- NUEVO: FORMULARIO DE COMPRA ---
+class PurchaseForm(forms.ModelForm):
+    class Meta:
+        model = Purchase
+        fields = ['supplier', 'invoice_number']
+        widgets = {
+            'supplier': forms.Select(attrs={'class': 'form-select'}),
+            'invoice_number': forms.TextInput(attrs={'class': 'form-control'}),
+        }
 class TransferForm(forms.Form):
     """
     Formulario especial para mover inventario entre bodegas
