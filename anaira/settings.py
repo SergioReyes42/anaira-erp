@@ -56,7 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'anaira.middleware.ActiveUserMiddleware',
+    # 'anaira.middleware.ActiveUserMiddleware',
     'anaira.middleware.ActiveCompanyMiddleware', # <--- TU NUEVO GUARDIAN DE EMPRESA ACTIVA
 ]
 
