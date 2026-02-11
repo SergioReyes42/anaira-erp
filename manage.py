@@ -5,6 +5,7 @@ def main():
     """Run administrative tasks."""
     # Intentamos con 'anaira.settings' que es tu carpeta interna real
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'anaira.settings')
+    
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
