@@ -3,7 +3,19 @@ from django.conf import settings
 from django.utils import timezone
 from core.models import CompanyAwareModel
 
-# --- GASTOS (LO QUE YA TENÍAS) ---
+# --- NUEVO: VEHÍCULOS (FLOTILLA) ---
+class Vehicle(CompanyAwareModel):
+    brand = models.CharField(max_length=50, verbose_name="Marca")
+    model = models.CharField(max_length=50, verbose_name="Modelo")
+    plate = models.CharField(max_length=20, verbose_name="Placa/Matrícula")
+    year = models.IntegerField(verbose_name="Año", null=True, blank=True)
+    color = models.CharField(max_length=30, null=True, blank=True, verbose_name="Color")
+    driver_name = models.CharField(max_length=100, null=True, blank=True, verbose_name="Piloto Asignado")
+    
+    def __str__(self):
+        return f"{self.brand} {self.model} - {self.plate}"
+
+# --- GASTOS ---
 class Expense(CompanyAwareModel):
     STATUS_CHOICES = [
         ('PENDING', 'Pendiente'),
@@ -11,6 +23,9 @@ class Expense(CompanyAwareModel):
         ('REJECTED', 'Rechazado'),
     ]
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Usuario")
+    # Agregamos relación opcional con Vehículo
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Vehículo (Opcional)")
+    
     photo = models.ImageField(upload_to='expenses/', verbose_name="Foto del Recibo")
     description = models.TextField(verbose_name="Descripción", null=True, blank=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Monto Total", null=True, blank=True)
@@ -20,7 +35,7 @@ class Expense(CompanyAwareModel):
     def __str__(self):
         return f"Gasto {self.id} - {self.user}"
 
-# --- NUEVO: BANCOS Y TRANSACCIONES ---
+# --- BANCOS Y TRANSACCIONES ---
 class BankAccount(CompanyAwareModel):
     bank_name = models.CharField(max_length=100, verbose_name="Nombre del Banco")
     account_number = models.CharField(max_length=50, verbose_name="Número de Cuenta")
@@ -43,8 +58,7 @@ class BankTransaction(CompanyAwareModel):
     description = models.CharField(max_length=255, verbose_name="Descripción")
 
     def save(self, *args, **kwargs):
-        # Actualizar saldo de la cuenta al guardar
-        if not self.pk: # Solo si es nueva transacción
+        if not self.pk:
             if self.transaction_type == 'IN':
                 self.bank_account.balance += self.amount
             elif self.transaction_type == 'OUT':
