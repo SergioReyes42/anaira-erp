@@ -2,13 +2,19 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Inventario General
+    # Dashboard
     path('', views.dashboard, name='inventory_dashboard'),
+    
+    # Productos (Aquí está la que fallaba)
     path('productos/', views.product_list, name='product_list'),
+    path('productos/nuevo/', views.product_create, name='product_create'), # <--- ESTA FALTABA
+    
+    # Bodegas (Esta también la pide el menú)
+    path('bodegas/', views.warehouse_management, name='warehouse_management'), 
+
+    # Movimientos
     path('movimientos/', views.movement_list, name='inventory_list'),
     path('movimientos/nuevo/', views.create_movement, name='create_movement'),
-
-    # --- LAS NUEVAS RUTAS QUE FALTABAN ---
     path('kardex/', views.inventory_kardex, name='inventory_kardex'),
     path('transferencia/', views.make_transfer, name='make_transfer'),
 
