@@ -660,7 +660,7 @@ class CompanyAwareModel(models.Model):
     3. Filtra automáticamente al consultar.
     """
     company = models.ForeignKey(
-        'CompanyProfile', 
+        'Company',
         on_delete=models.CASCADE, 
         verbose_name="Empresa Propietaria",
         null=True, blank=True # Opcional al principio para no romper migraciones
