@@ -5,6 +5,7 @@ from django.contrib import messages
 # Nota: Ya no importamos 'User' directamente de models
 from .forms import CustomUserForm, UserProfileForm, CompanySelectForm
 from .models import UserProfile, Company
+from .forms import CompanyForm
 
 def home(request):
     """Vista principal (Landing page o Dashboard general)"""
@@ -76,3 +77,35 @@ def control_panel(request):
         'companies': companies, 
         'users': users
     })
+
+@login_required
+def company_list(request):
+    """Listado de Empresas"""
+    # Si no es staff, lo sacamos (opcional, depende de tu regla de negocio)
+    if not request.user.is_staff:
+        messages.error(request, "Acceso restringido a administración.")
+        return redirect('home')
+        
+    companies = Company.objects.all()
+    # Contamos cuántas hay para mostrar en el dashboard si es necesario
+    return render(request, 'core/company_list.html', {'companies': companies})
+
+@login_required
+def company_create(request):
+    """Crear Nueva Empresa"""
+    if not request.user.is_staff:
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = CompanyForm(request.POST, request.FILES)
+        if form.is_valid():
+            company = form.save()
+            # Si el usuario no tiene empresa, le asignamos esta
+            if not request.user.current_company:
+                request.user.current_company = company
+                request.user.save()
+            messages.success(request, f"Empresa {company.name} creada.")
+            return redirect('company_list')
+    else:
+        form = CompanyForm()
+    return render(request, 'core/company_form.html', {'form': form})
