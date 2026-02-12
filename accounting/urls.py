@@ -2,6 +2,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # --- SMART SCANNER (El botón mágico del menú) ---
+    # Apuntamos 'smart_hub' a la misma vista de subir fotos por ahora
+    path('smart-scanner/', views.upload_expense_photo, name='smart_hub'),
+
     # Gastos
     path('subir-foto/', views.upload_expense_photo, name='upload_expense_photo'),
     path('gasto-manual/', views.gasto_manual, name='gasto_manual'),
@@ -12,7 +16,10 @@ urlpatterns = [
     path('gastos/aprobar/<int:pk>/', views.approve_expense, name='approve_expense'),
     path('gastos/rechazar/<int:pk>/', views.reject_expense, name='reject_expense'),
 
-    # Libros y Estados Financieros (Aquí estaban los errores)
+    # Plan de Cuentas (NIIF)
+    path('plan-cuentas/', views.chart_of_accounts, name='chart_of_accounts'),
+
+    # Libros y Estados Financieros
     path('libros/diario/', views.libro_diario, name='libro_diario'),
     path('libros/mayor/', views.libro_mayor, name='libro_mayor'),
     path('libros/balance-saldos/', views.balance_saldos, name='balance_saldos'),
@@ -27,7 +34,4 @@ urlpatterns = [
     path('bancos/', views.bank_list, name='bank_list'),
     path('bancos/nueva-cuenta/', views.bank_create, name='bank_create'),
     path('bancos/transaccion/', views.bank_transaction_create, name='bank_transaction_create'),
-
-    #Plan de Cuentas
-    path('plan-cuentas/', views.chart_of_accounts, name='chart_of_accounts'),
 ]
