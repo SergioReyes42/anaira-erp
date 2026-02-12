@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold"><i class="bi bi-building me-2"></i>Gestión de Empresas</h2>
+        <a href="{% url 'company_create' %}" class="btn btn-primary fw-bold">
+            <i class="bi bi-plus-lg me-2"></i>Nueva Empresa
+        </a>
+    </div>
+
+    <div class="row">
+        {% for emp in empresas %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body text-center">
+                    {% if emp.logo %}
+                        <img src="{{ emp.logo.url }}" alt="Logo" class="img-fluid mb-3" style="height: 60px;">
+                    {% else %}
+                        <i class="bi bi-building text-muted mb-3" style="font-size: 3rem;"></i>
+                    {% endif %}
+                    <h5 class="fw-bold text-dark">{{ emp.name }}</h5>
+                    <p class="text-muted small mb-1">{{ emp.address }}</p>
+                    <span class="badge bg-light text-dark border">NIT: {{ emp.nit }}</span>
+                </div>
+                <div class="card-footer bg-white border-0 text-center pb-3">
+                    <button class="btn btn-outline-primary btn-sm w-100">Editar Datos</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
