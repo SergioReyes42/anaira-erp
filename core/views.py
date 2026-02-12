@@ -109,3 +109,35 @@ def company_create(request):
     else:
         form = CompanyForm()
     return render(request, 'core/company_form.html', {'form': form})
+
+@login_required
+def user_list(request):
+    """Listado de Usuarios del Sistema"""
+    if not request.user.is_staff:
+        messages.error(request, "Acceso restringido.")
+        return redirect('home')
+    
+    User = get_user_model()
+    users = User.objects.all()
+    return render(request, 'core/user_list.html', {'users': users})
+
+@login_required
+def user_create(request):
+    """Crear Nuevo Usuario"""
+    if not request.user.is_staff:
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = CustomUserForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Opcional: Asignar empresa actual al nuevo usuario si se requiere
+            if hasattr(request.user, 'current_company') and request.user.current_company:
+                user.current_company = request.user.current_company
+                user.save()
+            
+            messages.success(request, f"Usuario {user.username} creado exitosamente.")
+            return redirect('user_list')
+    else:
+        form = CustomUserForm()
+    return render(request, 'core/user_form.html', {'form': form})

@@ -11,7 +11,11 @@ urlpatterns = [
     path('panel-sistema/', views.control_panel, name='control_panel'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
 
-    # --- RUTAS DE EMPRESAS (¡ESTO ES LO QUE FALTABA!) ---
+    # --- EMPRESAS ---
     path('empresas/', views.company_list, name='company_list'),
     path('empresas/nueva/', views.company_create, name='company_create'),
+
+    # --- USUARIOS (¡ESTO ES LO QUE FALTABA!) ---
+    path('usuarios/', views.user_list, name='user_list'),
+    path('usuarios/nuevo/', views.user_create, name='user_create'),
 ]
