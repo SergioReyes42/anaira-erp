@@ -3,13 +3,13 @@ from . import views
 
 urlpatterns = [
     # --- ALIAS PARA EL MENÚ (Solución de errores NoReverseMatch) ---
-    # El menú pide 'dashboard_gastos', lo mandamos al reporte de gastos
     path('gastos/dashboard/', views.expense_list, name='dashboard_gastos'),
-    # El menú pide 'mobile_expense' (OCR), lo mandamos a subir foto
     path('gastos/ocr/', views.upload_expense_photo, name='mobile_expense'),
-    # El menú pide 'fleet_report', lo mandamos a la lista de vehículos
     path('flota/reporte/', views.vehicle_list, name='fleet_report'),
     
+    # NUEVO ALIAS: El menú pide 'reports_dashboard', lo mandamos al Balance de Saldos
+    path('reportes/generales/', views.balance_saldos, name='reports_dashboard'),
+
     # --- SMART SCANNER ---
     path('smart-scanner/', views.upload_expense_photo, name='smart_hub'),
 
