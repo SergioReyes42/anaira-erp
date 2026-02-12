@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+    
+    <div class="mb-4">
+        <h2 class="fw-bold text-dark"><i class="bi bi-speedometer2 me-2"></i>Panel de Control</h2>
+        <p class="text-muted">Seleccione un módulo para administrar</p>
+    </div>
+
+    <div class="row g-4">
+        
+        <div class="col-md-4">
+            <a href="{% url 'company_list' %}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-0 hover-card">
+                    <div class="card-body text-center py-5">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex p-3 mb-3">
+                            <i class="bi bi-building-fill" style="font-size: 2.5rem;"></i>
+                        </div>
+                        <h4 class="fw-bold text-dark">Empresas</h4>
+                        <p class="text-muted small">Configurar Logo, NIT y Dirección</p>
+                        <h2 class="text-primary fw-bold mt-3">{{ total_empresas }}</h2>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'user_list' %}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-0 hover-card">
+                    <div class="card-body text-center py-5">
+                        <div class="bg-success bg-opacity-10 text-success rounded-circle d-inline-flex p-3 mb-3">
+                            <i class="bi bi-people-fill" style="font-size: 2.5rem;"></i>
+                        </div>
+                        <h4 class="fw-bold text-dark">Usuarios</h4>
+                        <p class="text-muted small">Crear vendedores y asignar claves</p>
+                        <h2 class="text-success fw-bold mt-3">{{ total_usuarios }}</h2>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'quotation_list' %}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-0 hover-card">
+                    <div class="card-body text-center py-5">
+                        <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-inline-flex p-3 mb-3">
+                            <i class="bi bi-file-earmark-text-fill" style="font-size: 2.5rem;"></i>
+                        </div>
+                        <h4 class="fw-bold text-dark">Registros</h4>
+                        <p class="text-muted small">Cotizaciones y Facturación</p>
+                        <h2 class="text-warning fw-bold mt-3">{{ total_gastos }}</h2>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    /* Efecto para que se sienta clickeable */
+    .hover-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        border: 1px solid #0d6efd !important;
+    }
+</style>
+{% endblock %}
