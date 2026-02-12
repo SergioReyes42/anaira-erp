@@ -2,14 +2,15 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Dashboard
+    # Dashboard Principal de Inventario
+    # CORRECCIÓN: Usamos 'dashboard', no 'home'
     path('', views.dashboard, name='inventory_dashboard'),
     
-    # Productos (Aquí está la que fallaba)
+    # Productos
     path('productos/', views.product_list, name='product_list'),
-    path('productos/nuevo/', views.product_create, name='product_create'), # <--- ESTA FALTABA
+    path('productos/nuevo/', views.product_create, name='product_create'),
     
-    # Bodegas (Esta también la pide el menú)
+    # Bodegas
     path('bodegas/', views.warehouse_management, name='warehouse_management'), 
 
     # Movimientos

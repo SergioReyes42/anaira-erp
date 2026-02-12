@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from core.models import Product, Warehouse, Supplier
+# CORRECCIÓN: Importamos los modelos base desde CORE, incluyendo Company y Branch
+from core.models import Product, Warehouse, Supplier, Company, Branch
+# Importamos los modelos propios de INVENTARIO desde .models
 from .models import StockMovement, Purchase
 from .forms import StockMovementForm, PurchaseForm, TransferForm, ProductForm, WarehouseForm
 
@@ -47,8 +49,6 @@ def warehouse_management(request):
     
     if request.method == 'POST':
         form = WarehouseForm(request.POST)
-        # Hack para filtrar sucursales por empresa en el formulario
-        # (En una versión avanzada esto se hace en el __init__ del form)
         if form.is_valid():
             warehouse = form.save(commit=False)
             warehouse.company = request.user.current_company
@@ -57,8 +57,7 @@ def warehouse_management(request):
             return redirect('warehouse_management')
     else:
         form = WarehouseForm()
-        # Filtramos las sucursales del select para que sean de la empresa
-        from core.models import Branch
+        # Filtramos las sucursales para que sean de la empresa actual
         form.fields['branch'].queryset = Branch.objects.filter(company=request.user.current_company)
 
     return render(request, 'inventory/warehouse_list.html', {'warehouses': warehouses, 'form': form})
@@ -105,6 +104,7 @@ def create_movement(request):
 def make_transfer(request):
     if request.method == 'POST':
         form = TransferForm(request.POST)
+        # Hack para validar queryset en POST
         form.fields['product'].queryset = Product.objects.filter(company=request.user.current_company)
         form.fields['from_warehouse'].queryset = Warehouse.objects.filter(company=request.user.current_company)
         form.fields['to_warehouse'].queryset = Warehouse.objects.filter(company=request.user.current_company)
@@ -117,6 +117,7 @@ def make_transfer(request):
             if product.stock < qty:
                 messages.error(request, "No hay stock suficiente.")
             else:
+                # Salida
                 StockMovement.objects.create(
                     company=request.user.current_company,
                     product=product,
@@ -125,6 +126,7 @@ def make_transfer(request):
                     movement_type='TRF',
                     reason=f"Salida traslado a {data['to_warehouse'].name}"
                 )
+                # Entrada
                 StockMovement.objects.create(
                     company=request.user.current_company,
                     product=product,
