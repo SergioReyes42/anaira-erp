@@ -4,7 +4,7 @@ from .models import (
     Company, Branch, Warehouse, Product, 
     Client, Supplier, UserProfile
 )
-from accounts.models import User
+from accounts.models import User  # Mantenemos tu modelo de usuario correcto
 
 # ==========================================
 # 1. SELECCIÓN DE EMPRESA Y USUARIOS
@@ -12,7 +12,7 @@ from accounts.models import User
 
 class CompanySelectForm(forms.Form):
     company = forms.ModelChoiceField(
-        queryset=Company.objects.all(), # Filtraremos en la vista si es necesario
+        queryset=Company.objects.all(),
         label="Seleccionar Empresa",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
@@ -40,15 +40,17 @@ class UserProfileForm(forms.ModelForm):
         }
 
 # ==========================================
-# 2. CONFIGURACIÓN ESTRUCTURAL
+# 2. CONFIGURACIÓN ESTRUCTURAL (Empresas, Sucursales, Bodegas)
 # ==========================================
 
 class CompanyForm(forms.ModelForm):
+    # NOTA: Usamos los campos que tienes definidos en tu modelo actual.
+    # Si agregaste 'logo', 'tax_id' o 'address' a tu modelo Company, agrégalos a la lista 'fields' abajo.
     class Meta:
         model = Company
-        fields = ['name', 'active']
+        fields = ['name', 'active'] 
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre de la Empresa'}),
             'active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
