@@ -158,3 +158,25 @@ def bank_transaction_create(request):
 
     context = {'form': form, 'tx_type': tx_type, 'title': 'Registrar Depósito' if tx_type == 'IN' else 'Registrar Retiro'}
     return render(request, 'accounting/transaction_form.html', context)
+
+@login_required
+def chart_of_accounts(request):
+    """
+    Dashboard del Plan de Cuentas (NIC/NIIF).
+    Aquí se gestionará la jerarquía de cuentas contables.
+    """
+    # En el futuro, esto vendrá de la base de datos (Modelo Account)
+    # Por ahora simulamos la estructura NIIF para la visualización
+    simulated_accounts = [
+        {'code': '1', 'name': 'ACTIVO', 'level': 1, 'type': 'Rurbro', 'niif_tag': 'Estado de Situación Financiera'},
+        {'code': '1.1', 'name': 'ACTIVO CORRIENTE', 'level': 2, 'type': 'Grupo', 'niif_tag': 'NIC 1'},
+        {'code': '1.1.01', 'name': 'Efectivo y Equivalentes', 'level': 3, 'type': 'Cuenta Mayor', 'niif_tag': 'NIC 7'},
+        {'code': '1.1.01.001', 'name': 'Caja General', 'level': 4, 'type': 'Sub-cuenta', 'niif_tag': ''},
+        {'code': '1.1.01.002', 'name': 'Banco Industrial Monetaria', 'level': 4, 'type': 'Sub-cuenta', 'niif_tag': ''},
+        {'code': '1.2', 'name': 'ACTIVO NO CORRIENTE', 'level': 2, 'type': 'Grupo', 'niif_tag': 'NIC 16'},
+        {'code': '2', 'name': 'PASIVO', 'level': 1, 'type': 'Rubro', 'niif_tag': 'Estado de Situación Financiera'},
+        {'code': '2.1', 'name': 'PASIVO CORRIENTE', 'level': 2, 'type': 'Grupo', 'niif_tag': 'NIC 1'},
+        {'code': '2.1.01', 'name': 'Cuentas por Pagar Comerciales', 'level': 3, 'type': 'Cuenta Mayor', 'niif_tag': 'NIIF 9'},
+    ]
+    
+    return render(request, 'accounting/chart_of_accounts.html', {'accounts': simulated_accounts})
