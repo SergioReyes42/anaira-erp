@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>🏛️ Balance General</h2>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card border-success mb-3">
+                <div class="card-header bg-success text-white fw-bold">ACTIVO (Bancos)</div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for acc in accounts %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>{{ acc.bank_name }}</span>
+                            <span class="fw-bold">Q{{ acc.balance }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-danger mb-3">
+                <div class="card-header bg-danger text-white fw-bold">PASIVO (Por Pagar)</div>
+                <div class="card-body">
+                    <p class="text-center text-muted my-3">Sin pasivos registrados aún.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

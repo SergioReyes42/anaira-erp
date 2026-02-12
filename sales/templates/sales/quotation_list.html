@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between">
+        <h2>📜 Cotizaciones</h2>
+        <a href="{% url 'quotation_create' %}" class="btn btn-primary">Nueva Cotización</a>
+    </div>
+    <ul class="list-group mt-3">
+        {% for q in quotations %}
+        <li class="list-group-item">{{ q.client }} - {{ q.date }} - Q{{ q.total }}</li>
+        {% empty %}<p>No hay cotizaciones.</p>{% endfor %}
+    </ul>
+</div>
+{% endblock %}

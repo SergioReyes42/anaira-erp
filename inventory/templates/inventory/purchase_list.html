@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between">
+        <h2>🛒 Historial de Compras</h2>
+        <a href="{% url 'create_purchase' %}" class="btn btn-primary">Nueva Compra</a>
+    </div>
+    <table class="table mt-3">
+        <thead><tr><th>Proveedor</th><th>Fecha</th><th>Factura</th><th>Total</th></tr></thead>
+        <tbody>
+            {% for p in purchases %}
+            <tr><td>{{ p.supplier.name }}</td><td>{{ p.date }}</td><td>{{ p.invoice_number }}</td><td>Q{{ p.total }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

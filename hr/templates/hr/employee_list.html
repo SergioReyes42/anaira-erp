@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between">
+        <h2>👔 Empleados</h2>
+        <a href="{% url 'employee_create' %}" class="btn btn-primary">Nuevo Empleado</a>
+    </div>
+    <ul class="list-group mt-3">
+        {% for e in employees %}
+        <li class="list-group-item">{{ e.first_name }} {{ e.last_name }} - {{ e.position }}</li>
+        {% empty %}<p>No hay empleados registrados.</p>{% endfor %}
+    </ul>
+</div>
+{% endblock %}

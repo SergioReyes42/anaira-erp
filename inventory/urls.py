@@ -9,15 +9,13 @@ urlpatterns = [
     path('productos/', views.product_list, name='product_list'),
     path('productos/nuevo/', views.product_create, name='product_create'),
     
-    # Bodegas (CORREGIDO: Ahora hay dos rutas)
-    # 1. La lista (que antes se llamaba management, ahora warehouse_list)
-    # Nota: Mantenemos el nombre 'warehouse_management' apuntando a la lista por si el menú lo usa.
+    # Bodegas
     path('bodegas/', views.warehouse_list, name='warehouse_management'), 
-    # 2. La creación (que es la que daba el error)
     path('bodegas/nueva/', views.warehouse_create, name='warehouse_create'),
 
     # Movimientos
-    path('movimientos/', views.movement_list, name='inventory_list'),
+    # CORRECCIÓN: El name debe ser 'movement_list' (antes decía 'inventory_list')
+    path('movimientos/', views.movement_list, name='movement_list'), 
     path('movimientos/nuevo/', views.create_movement, name='create_movement'),
     path('kardex/', views.inventory_kardex, name='inventory_kardex'),
     path('transferencia/', views.make_transfer, name='make_transfer'),

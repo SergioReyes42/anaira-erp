@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between mb-3">
+        <h2>🚛 Flotilla de Vehículos</h2>
+        <a href="{% url 'vehicle_create' %}" class="btn btn-primary">Nuevo Vehículo</a>
+    </div>
+    <table class="table table-striped">
+        <thead><tr><th>Placa</th><th>Marca/Modelo</th><th>Piloto</th><th>Estado</th></tr></thead>
+        <tbody>
+            {% for v in vehicles %}
+            <tr>
+                <td>{{ v.plate }}</td>
+                <td>{{ v.brand }} {{ v.model }}</td>
+                <td>{{ v.driver_name }}</td>
+                <td><span class="badge bg-success">Activo</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

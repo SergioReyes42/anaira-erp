@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>📚 Libro Mayor</h2>
+    <p class="text-muted">Resumen de cuentas activas.</p>
+
+    <div class="row">
+        {% for acc in accounts %}
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-start border-4 border-primary">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">{{ acc.bank_name }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">Cuenta: {{ acc.account_number }}</h6>
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">Saldo Actual:</span>
+                        <span class="h4 mb-0 text-success">Q{{ acc.balance }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">No hay cuentas bancarias registradas.</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

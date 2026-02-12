@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>🚛 Proveedores</h2>
+    <ul>
+        {% for s in suppliers %}
+        <li>{{ s.name }} - {{ s.phone }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

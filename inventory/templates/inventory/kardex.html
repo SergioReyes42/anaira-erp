@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>🔄 Kardex (Movimientos)</h2>
+    <table class="table table-sm">
+        <thead><tr><th>Fecha</th><th>Producto</th><th>Bodega</th><th>Tipo</th><th>Cant</th><th>Motivo</th></tr></thead>
+        <tbody>
+            {% for m in movements %}
+            <tr>
+                <td>{{ m.date|date:"d/m H:i" }}</td>
+                <td>{{ m.product.name }}</td>
+                <td>{{ m.warehouse.name }}</td>
+                <td>
+                    <span class="badge {% if m.movement_type == 'IN' %}bg-success{% elif m.movement_type == 'OUT' %}bg-danger{% else %}bg-warning{% endif %}">
+                        {{ m.get_movement_type_display }}
+                    </span>
+                </td>
+                <td>{{ m.quantity }}</td>
+                <td>{{ m.reason }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

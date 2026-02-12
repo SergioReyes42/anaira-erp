@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>⏳ Gastos por Aprobar</h2>
+    <div class="list-group">
+        {% for e in expenses %}
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <h5>{{ e.user.username }} - Q{{ e.total_amount }}</h5>
+                <p>{{ e.description }}</p>
+                {% if e.photo %}<a href="{{ e.photo.url }}" target="_blank">Ver Foto</a>{% endif %}
+            </div>
+            <div>
+                <a href="{% url 'approve_expense' e.id %}" class="btn btn-success btn-sm">Aprobar</a>
+                <a href="{% url 'reject_expense' e.id %}" class="btn btn-danger btn-sm">Rechazar</a>
+            </div>
+        </div>
+        {% empty %}
+        <p>No hay gastos pendientes.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

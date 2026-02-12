@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>📦 Monitor de Inventario</h2>
+    <div class="row text-center">
+        <div class="col-md-4"><div class="card p-3 bg-info text-white"><h3>{{ total_products }}</h3><p>Productos</p></div></div>
+        <div class="col-md-4"><div class="card p-3 bg-danger text-white"><h3>{{ stock_alert }}</h3><p>Alerta Stock Bajo</p></div></div>
+    </div>
+    <h4 class="mt-4">Movimientos Recientes</h4>
+    <ul>
+        {% for m in recent_movements %}
+        <li>{{ m.product.name }} - {{ m.get_movement_type_display }} ({{ m.quantity }})</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
