@@ -1,9 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-# CORRECCIÓN: Importamos los modelos base desde CORE, incluyendo Company y Branch
 from core.models import Product, Warehouse, Supplier, Company, Branch
-# Importamos los modelos propios de INVENTARIO desde .models
 from .models import StockMovement, Purchase
 from .forms import StockMovementForm, PurchaseForm, TransferForm, ProductForm, WarehouseForm
 
@@ -28,7 +26,6 @@ def product_list(request):
 
 @login_required
 def product_create(request):
-    """Crear nuevo producto"""
     if request.method == 'POST':
         form = ProductForm(request.POST)
         if form.is_valid():
@@ -41,12 +38,17 @@ def product_create(request):
         form = ProductForm()
     return render(request, 'inventory/product_form.html', {'form': form})
 
-# --- GESTIÓN DE BODEGAS ---
+# --- GESTIÓN DE BODEGAS (Aquí estaba el conflicto) ---
+
 @login_required
-def warehouse_management(request):
-    """Listar y Crear Bodegas"""
+def warehouse_list(request):
+    """Listar Bodegas"""
     warehouses = Warehouse.objects.filter(company=request.user.current_company)
-    
+    return render(request, 'inventory/warehouse_list.html', {'warehouses': warehouses})
+
+@login_required
+def warehouse_create(request):
+    """Crear Bodega"""
     if request.method == 'POST':
         form = WarehouseForm(request.POST)
         if form.is_valid():
@@ -54,13 +56,13 @@ def warehouse_management(request):
             warehouse.company = request.user.current_company
             warehouse.save()
             messages.success(request, "Bodega creada exitosamente.")
-            return redirect('warehouse_management')
+            return redirect('warehouse_list') # Redirige a la lista
     else:
         form = WarehouseForm()
-        # Filtramos las sucursales para que sean de la empresa actual
         form.fields['branch'].queryset = Branch.objects.filter(company=request.user.current_company)
 
-    return render(request, 'inventory/warehouse_list.html', {'warehouses': warehouses, 'form': form})
+    # Reutilizamos el diseño de formulario genérico o creamos uno nuevo
+    return render(request, 'inventory/warehouse_form.html', {'form': form})
 
 # --- MOVIMIENTOS Y KARDEX ---
 @login_required
@@ -104,7 +106,6 @@ def create_movement(request):
 def make_transfer(request):
     if request.method == 'POST':
         form = TransferForm(request.POST)
-        # Hack para validar queryset en POST
         form.fields['product'].queryset = Product.objects.filter(company=request.user.current_company)
         form.fields['from_warehouse'].queryset = Warehouse.objects.filter(company=request.user.current_company)
         form.fields['to_warehouse'].queryset = Warehouse.objects.filter(company=request.user.current_company)
@@ -117,7 +118,6 @@ def make_transfer(request):
             if product.stock < qty:
                 messages.error(request, "No hay stock suficiente.")
             else:
-                # Salida
                 StockMovement.objects.create(
                     company=request.user.current_company,
                     product=product,
@@ -126,7 +126,6 @@ def make_transfer(request):
                     movement_type='TRF',
                     reason=f"Salida traslado a {data['to_warehouse'].name}"
                 )
-                # Entrada
                 StockMovement.objects.create(
                     company=request.user.current_company,
                     product=product,
