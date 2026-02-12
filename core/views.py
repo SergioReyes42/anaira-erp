@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login
+from django.contrib.auth import login, get_user_model # <--- IMPORTANTE: Importamos get_user_model
 from django.contrib import messages
-from django.contrib.auth.models import User
+# Nota: Ya no importamos 'User' directamente de models
 from .forms import CustomUserForm, UserProfileForm, CompanySelectForm
 from .models import UserProfile, Company
 
@@ -57,7 +57,6 @@ def select_company(request):
         form = CompanySelectForm()
     return render(request, 'core/select_company.html', {'form': form})
 
-# --- ESTA ES LA FUNCIÓN QUE FALTABA ---
 @login_required
 def control_panel(request):
     """Panel de Administración del Sistema"""
@@ -65,8 +64,13 @@ def control_panel(request):
         messages.error(request, "No tienes permisos para acceder al panel.")
         return redirect('home')
         
-    companies = Company.objects.all()
+    # --- CORRECCIÓN AQUÍ ---
+    # Obtenemos el modelo de usuario dinámicamente
+    User = get_user_model() 
     users = User.objects.all()
+    # -----------------------
+
+    companies = Company.objects.all()
     
     return render(request, 'core/control_panel.html', {
         'companies': companies, 
