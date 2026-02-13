@@ -41,4 +41,7 @@ urlpatterns = [
     path('bancos/', views.bank_list, name='bank_list'),
     path('bancos/nueva-cuenta/', views.bank_create, name='bank_create'),
     path('bancos/transaccion/', views.bank_transaction_create, name='bank_transaction_create'),
+
+    path('subir-foto/', views.upload_expense_photo, name='upload_expense_photo'), # Apunta a la función nueva
+    path('smart-scanner/', views.upload_expense_photo, name='smart_hub'), # Alias para el menú
 ]

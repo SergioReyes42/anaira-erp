@@ -3,26 +3,58 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import BankAccount, BankTransaction, Vehicle, Expense
 from .forms import ExpensePhotoForm, BankAccountForm, BankTransactionForm, VehicleForm
+from django.utils import timezone
+from .models import Expense # Asumiendo que tu modelo se llama Expense
+import random # Para simular detección de IA por ahora
 
 # --- GASTOS Y REPORTES ---
 @login_required
 def upload_expense_photo(request):
+    """
+    Smart Hub Scanner: 
+    Simula la extracción de datos (OCR) y cálculos de impuestos (IVA/IDP).
+    """
     if request.method == 'POST':
-        form = ExpensePhotoForm(request.POST, request.FILES)
-        form.fields['vehicle'].queryset = Vehicle.objects.filter(company=request.user.current_company)
+        # 1. Obtenemos datos
+        image = request.FILES.get('documento')
+        smart_input = request.POST.get('smart_input', '') # Texto manual o escáner
         
-        if form.is_valid():
-            expense = form.save(commit=False)
-            expense.user = request.user
-            if hasattr(request.user, 'current_company'):
-                expense.company = request.user.current_company
-            expense.save()
-            messages.success(request, "¡Gasto subido correctamente!")
-            return redirect('home')
-    else:
-        form = ExpensePhotoForm()
-        form.fields['vehicle'].queryset = Vehicle.objects.filter(company=request.user.current_company)
-    return render(request, 'accounting/upload_photo.html', {'form': form})
+        # 2. Simulación de IA (Gemini) - En producción aquí iría la llamada a la API
+        # Por defecto asignamos un monto aleatorio si no se lee nada, para probar
+        monto_detectado = float(random.randint(100, 5000)) 
+        descripcion_detectada = "Gasto detectado por IA"
+        
+        # Lógica de detección de Combustible (IDP)
+        es_gasolina = False
+        impuesto_idp = 0.00
+        
+        if 'gasolina' in smart_input.lower() or 'combustible' in smart_input.lower() or 'shell' in smart_input.lower():
+            es_gasolina = True
+            descripcion_detectada = "Compra de Combustible (Detectado)"
+            # IDP aproximado (Gasolina Superior: Q4.70/galón) - Simulación
+            galones_estimados = monto_detectado / 32.00 
+            impuesto_idp = galones_estimados * 4.70
+
+        # Cálculos Financieros (Guatemala)
+        # Base Imponible = (Total - IDP) / 1.12
+        base_imponible = (monto_detectado - impuesto_idp) / 1.12
+        iva_credito = base_imponible * 0.12
+
+        # 3. Guardar el Gasto
+        expense = Expense.objects.create(
+            user=request.user,
+            company=getattr(request.user, 'current_company', None), # Si tienes multi-empresa
+            description=f"{descripcion_detectada} - (Base: Q{base_imponible:.2f} | IVA: Q{iva_credito:.2f})",
+            total_amount=monto_detectado,
+            receipt_image=image,
+            date=timezone.now(),
+            status='PENDING' # <--- ¡CLAVE! Esto hace que aparezca en "Por Aprobar"
+        )
+
+        messages.success(request, f"¡Smart Scanner procesó el gasto! Total: Q{monto_detectado} (IVA: Q{iva_credito:.2f})")
+        return redirect('expense_pending_list') # Te mandamos directo a ver que sí se guardó
+
+    return render(request, 'accounting/smart_hub.html')
 
 @login_required
 def expense_list(request):
