@@ -203,4 +203,5 @@ def chart_of_accounts(request):
         {'code': '1.1', 'name': 'ACTIVO CORRIENTE', 'level': 2, 'type': 'Grupo', 'niif_tag': 'NIC 1'},
         {'code': '1.1.01', 'name': 'Efectivo y Equivalentes', 'level': 3, 'type': 'Cuenta Mayor', 'niif_tag': 'NIC 7'},
     ]
+    
     return render(request, 'accounting/chart_of_accounts.html', {'accounts': simulated_accounts})
