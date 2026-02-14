@@ -1,23 +1,39 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="container mt-4">
-    <h2>⏳ Gastos por Aprobar</h2>
-    <div class="list-group">
-        {% for e in expenses %}
-        <div class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-                <h5>{{ e.user.username }} - Q{{ e.total_amount }}</h5>
-                <p>{{ e.description }}</p>
-                {% if e.photo %}<a href="{{ e.photo.url }}" target="_blank">Ver Foto</a>{% endif %}
-            </div>
-            <div>
-                <a href="{% url 'approve_expense' e.id %}" class="btn btn-success btn-sm">Aprobar</a>
-                <a href="{% url 'reject_expense' e.id %}" class="btn btn-danger btn-sm">Rechazar</a>
-            </div>
-        </div>
-        {% empty %}
-        <p>No hay gastos pendientes.</p>
-        {% endfor %}
-    </div>
-</div>
-{% endblock %}
+<div class="card-footer bg-light border-top-0 pb-3 pt-3">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button type="button" class="btn btn-outline-primary w-100 fw-bold" data-bs-toggle="modal" data-bs-target="#modalView{{ expense.id }}">
+                                <i class="bi bi-eye me-1"></i> Revisar
+                            </button>
+                        </div>
+                        
+                        <div class="col-6">
+                            <a href="{% url 'approve_expense' expense.id %}" class="btn btn-success w-100 fw-bold shadow-sm">
+                                <i class="bi bi-check-lg me-1"></i> Aprobar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="modalView{{ expense.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Detalle del Gasto</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                {% if expense.receipt_image %}
+                                    <img src="{{ expense.receipt_image.url }}" class="img-fluid rounded mb-3" alt="Recibo">
+                                {% else %}
+                                    <div class="alert alert-secondary">Sin imagen adjunta</div>
+                                {% endif %}
+                                <p class="fw-bold">{{ expense.description }}</p>
+                                <h2 class="text-primary">Q{{ expense.total_amount }}</h2>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="{% url 'reject_expense' expense.id %}" class="btn btn-danger">Rechazar</a>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>

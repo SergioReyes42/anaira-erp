@@ -1,7 +1,9 @@
+import decimal  # <--- ¡ESTA ES LA QUE FALTA! (Agrégala al principio)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from .models import Expense, JournalEntry, JournalItem, BankAccount
 import random 
 
 # Importación de Modelos (Asegúrate que existen en accounting/models.py)
@@ -84,10 +86,106 @@ def expense_pending_list(request):
 
 @login_required
 def approve_expense(request, pk):
+    # 1. Obtener el gasto
     expense = get_object_or_404(Expense, pk=pk, company=request.user.current_company)
-    expense.status = 'APPROVED'
-    expense.save()
-    messages.success(request, f"Gasto #{expense.id} aprobado.")
+    
+    if expense.status == 'APPROVED':
+        messages.warning(request, "Este gasto ya fue contabilizado.")
+        return redirect('expense_pending_list')
+
+    try:
+        # --- CÁLCULOS FINANCIEROS INTELIGENTES ---
+        monto_total = float(expense.total_amount)
+        descripcion = expense.description.lower()
+        
+        # Variables iniciales
+        idp = 0.00
+        base = 0.00
+        iva = 0.00
+        cuenta_gasto = "Gastos Generales" # Cuenta por defecto
+
+        # DETECCIÓN DE GASOLINA (Lógica Guatemala)
+        if 'gasolina' in descripcion or 'combustible' in descripcion or 'shell' in descripcion or 'texaco' in descripcion or 'puma' in descripcion:
+            cuenta_gasto = "Combustibles y Lubricantes"
+            
+            # Estimación de Galones (Precio aprox Q32/gal para calcular IDP)
+            # En un sistema real, podrías pedir ingresar galones exactos, aquí estimamos.
+            galones_estimados = monto_total / 32.00 
+            
+            # IDP Promedio (Superior Q4.70, Regular Q4.60). Usamos Q4.70 por seguridad fiscal.
+            idp = galones_estimados * 4.70
+            
+            # Fórmula: Base = (Total - IDP) / 1.12
+            base = (monto_total - idp) / 1.12
+            iva = base * 0.12
+            
+        else:
+            # GASTO NORMAL (Solo IVA)
+            base = monto_total / 1.12
+            iva = base * 0.12
+
+        # --- CREAR PARTIDA CONTABLE (LIBRO DIARIO) ---
+        
+        # A) Encabezado de la Partida
+        entry = JournalEntry.objects.create(
+            company=request.user.current_company,
+            description=f"Pago: {expense.description[:40]} (Ref Gasto #{expense.id})",
+            created_by=request.user,
+            total=monto_total,
+            expense_ref=expense
+        )
+
+        # B) DEBE: Gasto Neto (Base)
+        JournalItem.objects.create(
+            entry=entry, 
+            account_name=cuenta_gasto, 
+            debit=round(base, 2), 
+            credit=0
+        )
+
+        # C) DEBE: IVA por Cobrar
+        JournalItem.objects.create(
+            entry=entry, 
+            account_name="IVA por Cobrar", 
+            debit=round(iva, 2), 
+            credit=0
+        )
+
+        # D) DEBE: IDP (Solo si existe)
+        if idp > 0:
+            JournalItem.objects.create(
+                entry=entry, 
+                account_name="Impuesto IDP (Gasto no deducible)", 
+                debit=round(idp, 2), 
+                credit=0
+            )
+
+        # E) HABER: Banco / Caja (Salida de dinero completa)
+        # Aquí asumimos que sale de la primera cuenta bancaria que encuentre (o podrías pedir seleccionarla)
+        cuenta_banco = BankAccount.objects.filter(company=request.user.current_company).first()
+        nombre_banco = cuenta_banco.bank_name if cuenta_banco else "Caja General"
+        
+        JournalItem.objects.create(
+            entry=entry, 
+            account_name=nombre_banco, 
+            debit=0, 
+            credit=round(monto_total, 2)
+        )
+        
+        # Si existe cuenta bancaria, restamos el saldo real
+        if cuenta_banco:
+            cuenta_banco.balance -=  decimal.Decimal(monto_total)
+            cuenta_banco.save()
+
+        # 4. Actualizar Estado del Gasto
+        expense.status = 'APPROVED'
+        expense.save()
+        
+        messages.success(request, f"✅ Gasto Aprobado. Partida #{entry.id} generada con desglose de impuestos.")
+
+    except Exception as e:
+        messages.error(request, f"Error generando partida: {e}")
+
     return redirect('expense_pending_list')
 
 @login_required

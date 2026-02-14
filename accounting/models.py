@@ -75,3 +75,28 @@ class BankTransaction(models.Model):
 
     def __str__(self):
         return f"{self.get_transaction_type_display()} - Q{self.amount}"
+    
+# --- AGREGAR AL FINAL DE accounting/models.py ---
+
+class JournalEntry(models.Model):
+    """Encabezado de la Partida Contable"""
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    date = models.DateField(auto_now_add=True)
+    description = models.CharField(max_length=255, verbose_name="Concepto")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    total = models.DecimalField(max_digits=12, decimal_places=2)
+    # Vinculamos al gasto original para saber de dónde salió
+    expense_ref = models.OneToOneField(Expense, on_delete=models.SET_NULL, null=True, blank=True, related_name='journal_entry')
+
+    def __str__(self):
+        return f"Partida #{self.id} - {self.description}"
+
+class JournalItem(models.Model):
+    """Detalle de la Partida (Debe / Haber)"""
+    entry = models.ForeignKey(JournalEntry, related_name='items', on_delete=models.CASCADE)
+    account_name = models.CharField(max_length=100) # Ej: Combustibles, IVA, IDP, Banco
+    debit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)  # Debe
+    credit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00) # Haber
+
+    def __str__(self):
+        return f"{self.account_name} | D:{self.debit} H:{self.credit}"
