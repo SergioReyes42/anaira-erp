@@ -61,7 +61,7 @@ def upload_expense_photo(request):
             messages.error(request, f"Error al guardar: {str(e)}")
             return redirect('upload_expense_photo')
 
-    return render(request, 'accounting/smart_hub.html')
+    return render(request, 'inventory/smart_hub.html')
 
 @login_required
 def expense_list(request):
