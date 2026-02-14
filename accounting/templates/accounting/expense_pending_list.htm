@@ -5,7 +5,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark"><i class="bi bi-ui-checks me-2"></i>Aprobación de Gastos</h2>
-            <p class="text-muted">Revisión contable y generación de partidas</p>
+            <p class="text-muted">Revisión y Generación Automática de Partidas</p>
         </div>
         <div class="badge bg-warning text-dark fs-6 px-3 py-2 shadow-sm">
             Pendientes: {{ expenses.count }}
@@ -16,6 +16,7 @@
         {% for expense in expenses %}
         <div class="col-md-6 col-lg-4 mb-4">
             <div class="card h-100 shadow-sm border-0">
+                
                 <div class="card-header bg-white border-bottom-0 pt-3 d-flex justify-content-between">
                     <span class="fw-bold text-primary">
                         <i class="bi bi-person-circle me-1"></i> {{ expense.user.first_name|default:expense.user.username }}
@@ -30,11 +31,11 @@
                     </p>
 
                     {% if expense.receipt_image %}
-                        <div class="badge bg-light text-success border border-success mb-2">
+                        <div class="badge bg-light text-success border border-success">
                             <i class="bi bi-image me-1"></i> Comprobante Adjunto
                         </div>
                     {% else %}
-                        <div class="badge bg-light text-danger border border-danger mb-2">
+                        <div class="badge bg-light text-danger border border-danger">
                             <i class="bi bi-exclamation-circle me-1"></i> Sin Foto
                         </div>
                     {% endif %}
@@ -62,12 +63,12 @@
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content border-0 shadow">
                     <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title fs-6">Detalle del Gasto #{{ expense.id }}</h5>
+                        <h5 class="modal-title fs-6">Detalle Gasto #{{ expense.id }}</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body text-center bg-light">
                         {% if expense.receipt_image %}
-                            <img src="{{ expense.receipt_image.url }}" class="img-fluid rounded shadow-sm mb-3" style="max-height: 400px; object-fit: contain;" alt="Recibo">
+                            <img src="{{ expense.receipt_image.url }}" class="img-fluid rounded shadow-sm mb-3" style="max-height: 400px;" alt="Recibo">
                         {% else %}
                             <div class="py-5 text-muted">
                                 <i class="bi bi-camera-video-off display-4"></i>
@@ -78,8 +79,7 @@
                         <div class="bg-white p-3 rounded text-start border">
                             <label class="small text-muted fw-bold text-uppercase">Concepto</label>
                             <p class="mb-2">{{ expense.description }}</p>
-                            
-                            <label class="small text-muted fw-bold text-uppercase">Total a Contabilizar</label>
+                            <label class="small text-muted fw-bold text-uppercase">Total</label>
                             <h4 class="text-dark fw-bold mb-0">Q{{ expense.total_amount }}</h4>
                         </div>
                     </div>
@@ -98,9 +98,9 @@
             <div class="text-center py-5 bg-white rounded shadow-sm">
                 <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
                 <h3 class="mt-3 fw-bold">¡Todo al día!</h3>
-                <p class="text-muted">No hay gastos pendientes de aprobación.</p>
+                <p class="text-muted">No hay gastos pendientes.</p>
                 <a href="{% url 'upload_expense_photo' %}" class="btn btn-primary mt-2">
-                    <i class="bi bi-plus-lg me-1"></i>Subir Nuevo Gasto
+                    Subir Nuevo Gasto
                 </a>
             </div>
         </div>
