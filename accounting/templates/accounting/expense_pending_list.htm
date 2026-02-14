@@ -30,11 +30,11 @@
                     </p>
 
                     {% if expense.receipt_image %}
-                        <div class="badge bg-light text-success border border-success">
+                        <div class="badge bg-light text-success border border-success mb-2">
                             <i class="bi bi-image me-1"></i> Comprobante Adjunto
                         </div>
                     {% else %}
-                        <div class="badge bg-light text-danger border border-danger">
+                        <div class="badge bg-light text-danger border border-danger mb-2">
                             <i class="bi bi-exclamation-circle me-1"></i> Sin Foto
                         </div>
                     {% endif %}
@@ -67,7 +67,7 @@
                     </div>
                     <div class="modal-body text-center bg-light">
                         {% if expense.receipt_image %}
-                            <img src="{{ expense.receipt_image.url }}" class="img-fluid rounded shadow-sm mb-3" style="max-height: 400px;" alt="Recibo">
+                            <img src="{{ expense.receipt_image.url }}" class="img-fluid rounded shadow-sm mb-3" style="max-height: 400px; object-fit: contain;" alt="Recibo">
                         {% else %}
                             <div class="py-5 text-muted">
                                 <i class="bi bi-camera-video-off display-4"></i>
@@ -76,16 +76,16 @@
                         {% endif %}
                         
                         <div class="bg-white p-3 rounded text-start border">
-                            <label class="small text-muted fw-bold text-uppercase">Descripción Completa</label>
+                            <label class="small text-muted fw-bold text-uppercase">Concepto</label>
                             <p class="mb-2">{{ expense.description }}</p>
                             
-                            <label class="small text-muted fw-bold text-uppercase">Monto Total</label>
+                            <label class="small text-muted fw-bold text-uppercase">Total a Contabilizar</label>
                             <h4 class="text-dark fw-bold mb-0">Q{{ expense.total_amount }}</h4>
                         </div>
                     </div>
                     <div class="modal-footer justify-content-between">
                         <a href="{% url 'reject_expense' expense.id %}" class="btn btn-danger btn-sm">
-                            <i class="bi bi-x-circle me-1"></i>Rechazar Gasto
+                            <i class="bi bi-x-circle me-1"></i> Rechazar
                         </a>
                         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
                     </div>
