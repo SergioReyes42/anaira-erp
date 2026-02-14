@@ -12,37 +12,56 @@ from .forms import ExpensePhotoForm, BankAccountForm, BankTransactionForm, Vehic
 # --- GASTOS Y SMART SCANNER ---
 @login_required
 def upload_expense_photo(request):
-    # Si el piloto envía el formulario (POST)
+    """
+    Smart Hub Scanner: 
+    Simula la extracción de datos (OCR) y cálculos de impuestos (IVA/IDP).
+    """
+    # 1. Si necesitas pasar vehículos al template, hazlo SIN filtrar por status:
+    # vehicles = Vehicle.objects.filter(company=request.user.current_company)
+    
     if request.method == 'POST':
-        foto = request.FILES.get('invoice_file')
-        vehicle_id = request.POST.get('vehicle_id')
+        image = request.FILES.get('documento')
+        smart_input = request.POST.get('smart_input', '')
         
-        if foto:
-            # Creamos el gasto en modo "Borrador"
-            gasto = Expense.objects.create(
-                user=request.user,
-                invoice_file=foto,
-                date=timezone.now().date(),      # Fecha de hoy
-                provider="Pendiente de Revisión",# Texto temporal
-                description="Gasto reportado por Piloto",
-                total_amount=0,                  # Monto 0 (Contador lo llenará)
-                status='PENDING',                # <--- ESTADO CLAVE
-                is_fuel=False                    # Por defecto false
-            )
-            
-            # Si seleccionó placa, la guardamos
-            if vehicle_id:
-                gasto.vehicle_id = vehicle_id
-                gasto.save()
-            
-            messages.success(request, "✅ ¡Foto enviada! Contabilidad revisará tu gasto.")
-            return redirect('home') # Lo regresa al inicio
-        else:
-            messages.error(request, "⚠️ Debes tomar una foto o subir un archivo.")
+        # --- Simulación de IA ---
+        import random
+        monto_detectado = float(random.randint(100, 5000)) 
+        descripcion_detectada = "Gasto detectado por IA"
+        
+        # --- Lógica de Combustible ---
+        impuesto_idp = 0.00
+        texto_busqueda = smart_input.lower()
+        
+        if 'gasolina' in texto_busqueda or 'combustible' in texto_busqueda:
+            descripcion_detectada = "Compra de Combustible (Detectado)"
+            # IDP aproximado (Gasolina Superior: Q4.70/galón)
+            galones_estimados = monto_detectado / 32.00 
+            impuesto_idp = galones_estimados * 4.70
 
-    # Si entra a la página (GET), le mostramos los vehículos
-    vehiculos = Vehicle.objects.filter(status='ACTIVO')
-    return render(request, 'accounting/pilot_upload.html', {'vehiculos': vehiculos})
+        # --- Cálculos Financieros ---
+        base_imponible = (monto_detectado - impuesto_idp) / 1.12
+        iva_credito = base_imponible * 0.12
+
+        # --- Guardar ---
+        try:
+            Expense.objects.create(
+                user=request.user,
+                company=getattr(request.user, 'current_company', None),
+                description=f"{descripcion_detectada} - (Base: Q{base_imponible:.2f} | IVA: Q{iva_credito:.2f})",
+                total_amount=monto_detectado,
+                receipt_image=image,
+                date=timezone.now(),
+                status='PENDING' # <--- Expense SÍ tiene status, esto es correcto.
+            )
+            messages.success(request, f"¡Procesado! Total: Q{monto_detectado}")
+            return redirect('expense_pending_list')
+            
+        except Exception as e:
+            messages.error(request, f"Error al guardar: {str(e)}")
+            return redirect('upload_expense_photo')
+
+    # Renderizamos sin pasar vehículos filtrados por status
+    return render(request, 'accounting/pilot_upload.html')
 
 @login_required
 def expense_list(request):
