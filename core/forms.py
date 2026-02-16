@@ -1,32 +1,48 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+# Usamos get_user_model para evitar errores si cambia la ubicación del modelo User
+from django.contrib.auth import get_user_model 
 from .models import (
     Company, Branch, Warehouse, Product, 
     Client, Supplier, UserProfile
 )
-from accounts.models import User  # Mantenemos tu modelo de usuario correcto
+
+User = get_user_model()
 
 # ==========================================
-# 1. SELECCIÓN DE EMPRESA Y USUARIOS
+# 1. SELECCIÓN DE EMPRESA (CORREGIDO)
 # ==========================================
 
-class CompanySelectForm(forms.Form):
+class CompanySelectionForm(forms.Form):  # <--- Renombrado para coincidir con views.py
     company = forms.ModelChoiceField(
-        queryset=Company.objects.all(),
+        queryset=Company.objects.none(), # Se llena dinámicamente abajo
         label="Seleccionar Empresa",
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.Select(attrs={'class': 'form-select form-select-lg'}),
+        empty_label="--- Selecciona una opción ---"
     )
+
+    def __init__(self, *args, **kwargs):
+        # Extraemos el usuario para mostrar solo SUS empresas
+        user = kwargs.pop('user', None)
+        super(CompanySelectionForm, self).__init__(*args, **kwargs)
+        
+        if user:
+            # Filtramos: Solo empresas activas donde el usuario es miembro
+            self.fields['company'].queryset = user.companies.filter(active=True)
+
+# ==========================================
+# 2. USUARIOS Y PERFILES
+# ==========================================
 
 class CustomUserForm(UserCreationForm):
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email', 'avatar']
+        fields = ['username', 'first_name', 'last_name', 'email'] # Quitamos avatar si User no lo tiene nativo
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control'}),
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'avatar': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
 class UserProfileForm(forms.ModelForm):
@@ -40,12 +56,10 @@ class UserProfileForm(forms.ModelForm):
         }
 
 # ==========================================
-# 2. CONFIGURACIÓN ESTRUCTURAL (Empresas, Sucursales, Bodegas)
+# 3. EMPRESAS Y SUCURSALES
 # ==========================================
 
 class CompanyForm(forms.ModelForm):
-    # NOTA: Usamos los campos que tienes definidos en tu modelo actual.
-    # Si agregaste 'logo', 'tax_id' o 'address' a tu modelo Company, agrégalos a la lista 'fields' abajo.
     class Meta:
         model = Company
         fields = ['name', 'active'] 
@@ -75,7 +89,7 @@ class WarehouseForm(forms.ModelForm):
         }
 
 # ==========================================
-# 3. TERCEROS (CLIENTES Y PROVEEDORES)
+# 4. TERCEROS (CLIENTES Y PROVEEDORES)
 # ==========================================
 
 class ClientForm(forms.ModelForm):
@@ -98,6 +112,5 @@ class SupplierForm(forms.ModelForm):
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'nit': forms.TextInput(attrs={'class': 'form-control'}),
             'contact_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'phone': forms
         }
