@@ -35,7 +35,7 @@ def home(request):
         'total_bancos': total_bancos,
         'total_ventas': total_ventas,
     }
-    return render(request, 'core/home.html', context)
+    return render(request, 'core/landing.html', context)
 
 def register(request):
     """Registro de nuevos usuarios"""
