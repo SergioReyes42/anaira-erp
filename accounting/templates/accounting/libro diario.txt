@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark"><i class="bi bi-journal-bookmark-fill me-2"></i>Libro Diario</h2>
+        <a href="{% url 'expense_pending_list' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Nuevo Movimiento
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-secondary">
+                        <tr>
+                            <th class="ps-4">Fecha / Partida #</th>
+                            <th>Concepto</th>
+                            <th>Cuentas (Debe / Haber)</th>
+                            <th class="text-end pe-4">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in entries %}
+                        <tr class="border-bottom">
+                            <td class="ps-4" style="width: 15%;">
+                                <div class="fw-bold text-primary">Partida #{{ entry.id }}</div>
+                                <small class="text-muted">{{ entry.date|date:"d/m/Y" }}</small>
+                            </td>
+                            
+                            <td style="width: 25%;">
+                                <div class="fw-bold text-dark">{{ entry.description }}</div>
+                                <small class="text-muted">Ref: {{ entry.expense_ref.description|default:"Manual" }}</small>
+                            </td>
+
+                            <td style="width: 45%;">
+                                <table class="table table-sm table-borderless mb-0 small">
+                                    {% for item in entry.items.all %}
+                                    <tr>
+                                        <td class="text-start {% if item.credit > 0 %}ps-4 text-muted{% else %}fw-bold{% endif %}">
+                                            {{ item.account_name }}
+                                        </td>
+                                        <td class="text-end text-success">
+                                            {% if item.debit > 0 %}Q{{ item.debit|intcomma }}{% endif %}
+                                        </td>
+                                        <td class="text-end text-danger">
+                                            {% if item.credit > 0 %}Q{{ item.credit|intcomma }}{% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </table>
+                            </td>
+
+                            <td class="text-end pe-4 fw-bold text-dark" style="width: 15%;">
+                                Q{{ entry.total|intcomma }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <i class="bi bi-journal-x display-4"></i>
+                                <p class="mt-2">No hay partidas registradas aún.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

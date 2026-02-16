@@ -6,15 +6,36 @@ from django.contrib import messages
 from .forms import CustomUserForm, UserProfileForm, CompanySelectForm
 from .models import UserProfile, Company
 from .forms import CompanyForm
+from sales.models import Sale
+from django.db.models import Sum
+from accounting.models import Expense, BankAccount
 
+@login_required
 def home(request):
-    """Vista principal (Landing page o Dashboard general)"""
-    if request.user.is_authenticated:
-        if hasattr(request.user, 'current_company') and request.user.current_company:
-            return render(request, 'core/home.html')
-        else:
-            return redirect('select_company')
-    return render(request, 'core/landing.html')
+    company = getattr(request.user, 'current_company', None)
+    
+    # 1. Si no hay empresa seleccionada, mandar a seleccionarla
+    if not company:
+        return redirect('select_company')
+
+    # 2. Calcular Totales Reales
+    # Gastos del Mes
+    total_gastos = Expense.objects.filter(company=company, status='APPROVED').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    
+    # Bancos (Disponible)
+    total_bancos = BankAccount.objects.filter(company=company).aggregate(Sum('balance'))['balance__sum'] or 0
+    
+    # Ventas (Placeholder hasta que activemos ventas)
+    total_ventas = 0 
+    # total_ventas = Sale.objects.filter(company=company).aggregate(Sum('total'))['total__sum'] or 0
+
+    context = {
+        'company': company,
+        'total_gastos': total_gastos,
+        'total_bancos': total_bancos,
+        'total_ventas': total_ventas,
+    }
+    return render(request, 'core/home.html', context)
 
 def register(request):
     """Registro de nuevos usuarios"""
