@@ -1,51 +1,101 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seleccionar Empresa | ANAIRA ERP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <style>
+        body {
+            background-color: #f4f6f9;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card-selection {
+            max-width: 450px;
+            width: 100%;
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        .brand-logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #0d2339; /* Azul Anaira */
+            letter-spacing: -1px;
+        }
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #0d6efd, #0a58ca);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            color: white;
+            font-size: 2rem;
+            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+        }
+    </style>
+</head>
+<body>
 
-{% block content %}
-<div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
-    <div class="col-md-5 col-lg-4">
-        
-        <div class="text-center mb-4">
-            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm" style="width: 60px; height: 60px;">
-                <i class="bi bi-building fs-3"></i>
-            </div>
-            <h3 class="fw-bold mt-3 text-dark">Bienvenido, {{ user.first_name }}</h3>
-            <p class="text-muted">Selecciona el espacio de trabajo</p>
-        </div>
-
-        <div class="card shadow-lg border-0 rounded-4">
-            <div class="card-body p-4">
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-secondary text-uppercase small">Empresa</label>
-                        {{ form.company }}
-                        <div class="form-text mt-2">
-                            <i class="bi bi-info-circle me-1"></i>
-                            Estás accediendo como <strong>{{ user.username }}</strong>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                
+                <div class="card card-selection bg-white p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <div class="icon-circle">
+                            <i class="bi bi-buildings-fill"></i>
                         </div>
+                        <h2 class="brand-logo mb-1">ANAIRA ERP</h2>
+                        <p class="text-muted">Sistema de Gestión Empresarial</p>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg fw-bold shadow-sm">
-                            Ingresar al Sistema <i class="bi bi-arrow-right-short"></i>
-                        </button>
+                    <h5 class="text-center fw-bold mb-4">Hola, {{ user.first_name|default:user.username }} 👋</h5>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label text-uppercase small fw-bold text-secondary">Selecciona tu Espacio</label>
+                            {{ form.company }}
+                            {% if form.company.errors %}
+                                <div class="text-danger small mt-1">{{ form.company.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg fw-bold py-3">
+                                Ingresar al Sistema <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4 pt-3 border-top">
+                        <p class="small text-muted mb-2">¿Es tu primera vez o no aparece tu empresa?</p>
+                        <a href="{% url 'company_create' %}" class="btn btn-outline-secondary btn-sm rounded-pill px-4">
+                            <i class="bi bi-plus-lg me-1"></i>Crear Nueva Empresa
+                        </a>
                     </div>
-                </form>
-            </div>
-            
-            <div class="card-footer bg-light text-center border-top-0 py-3 rounded-bottom-4">
-                <small class="text-muted">¿No encuentras tu empresa?</small><br>
-                <a href="{% url 'company_create' %}" class="text-decoration-none fw-bold small">
-                    <i class="bi bi-plus-circle me-1"></i>Crear Nueva Empresa
-                </a>
+                </div>
+
+                <div class="text-center mt-3">
+                    <a href="{% url 'logout' %}" class="text-decoration-none text-muted small hover-danger">
+                        <i class="bi bi-box-arrow-left me-1"></i> Cerrar Sesión
+                    </a>
+                </div>
+
             </div>
         </div>
-
-        <div class="text-center mt-4 text-muted small">
-            &copy; 2026 Anaira ERP System
-        </div>
-
     </div>
-</div>
-{% endblock %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
