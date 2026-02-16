@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.utils import timezone
 from .models import Expense, JournalEntry, JournalItem, BankAccount
 import random 
+from .utils import analyze_invoice_image  # <--- Importar el cerebro que creamos
 
 # Importación de Modelos (Asegúrate que existen en accounting/models.py)
 from .models import BankAccount, BankTransaction, Vehicle, Expense
@@ -14,56 +15,68 @@ from .forms import ExpensePhotoForm, BankAccountForm, BankTransactionForm, Vehic
 # --- GASTOS Y SMART SCANNER ---
 @login_required
 def upload_expense_photo(request):
-    """
-    Smart Hub Scanner: 
-    Simula la extracción de datos (OCR) y cálculos de impuestos (IVA/IDP).
-    """
-    # 1. Si necesitas pasar vehículos al template, hazlo SIN filtrar por status:
-    # vehicles = Vehicle.objects.filter(company=request.user.current_company)
-    
     if request.method == 'POST':
         image = request.FILES.get('documento')
-        smart_input = request.POST.get('smart_input', '')
+        smart_input = request.POST.get('smart_input', '') # Texto manual o del OCR
         
-        # --- Simulación de IA ---
-        import random
-        monto_detectado = float(random.randint(100, 5000)) 
-        descripcion_detectada = "Gasto detectado por IA"
+        # 1. ANALISIS IA (Extraer datos y categorizar)
+        ai_data = analyze_invoice_image(image, smart_input)
         
-        # --- Lógica de Combustible ---
-        impuesto_idp = 0.00
-        texto_busqueda = smart_input.lower()
-        
-        if 'gasolina' in texto_busqueda or 'combustible' in texto_busqueda:
-            descripcion_detectada = "Compra de Combustible (Detectado)"
-            # IDP aproximado (Gasolina Superior: Q4.70/galón)
-            galones_estimados = monto_detectado / 32.00 
-            impuesto_idp = galones_estimados * 4.70
+        # 2. MATEMÁTICA FINANCIERA (Cálculo de Impuestos)
+        total = ai_data['total']
+        idp = 0.00
+        base = 0.00
+        iva = 0.00
 
-        # --- Cálculos Financieros ---
-        base_imponible = (monto_detectado - impuesto_idp) / 1.12
-        iva_credito = base_imponible * 0.12
-
-        # --- Guardar ---
-        try:
-            Expense.objects.create(
-                user=request.user,
-                company=getattr(request.user, 'current_company', None),
-                description=f"{descripcion_detectada} - (Base: Q{base_imponible:.2f} | IVA: Q{iva_credito:.2f})",
-                total_amount=monto_detectado,
-                receipt_image=image,
-                date=timezone.now(),
-                status='PENDING' # <--- Expense SÍ tiene status, esto es correcto.
-            )
-            messages.success(request, f"¡Procesado! Total: Q{monto_detectado}")
-            return redirect('expense_pending_list')
+        if ai_data['is_fuel']:
+            # Lógica de IDP (Impuesto Distribución Petróleo - Guatemala)
+            # Precios aprox para sacar galones: Super Q32, Diesel Q28
+            precio_galon = 28.00 if ai_data['fuel_type'] == 'diesel' else 32.00
             
-        except Exception as e:
-            messages.error(request, f"Error al guardar: {str(e)}")
-            return redirect('upload_expense_photo')
+            # Impuesto por galón: Super Q4.70, Regular Q4.60, Diesel Q1.30
+            tasa_idp = 4.70
+            if ai_data['fuel_type'] == 'regular': tasa_idp = 4.60
+            elif ai_data['fuel_type'] == 'diesel': tasa_idp = 1.30
 
-    # Renderizamos sin pasar vehículos filtrados por status
-    return render(request, 'accounting/pilot_upload.html')
+            galones = total / precio_galon
+            idp = galones * tasa_idp
+            
+            # Base = (Total - IDP) / 1.12
+            base = (total - idp) / 1.12
+        else:
+            # Gasto Normal: Base = Total / 1.12
+            base = total / 1.12
+            
+        # IVA siempre es 12% sobre la base
+        iva = base * 0.12
+
+        # 3. GUARDAR RESULTADO (Pendiente de Aprobar)
+        Expense.objects.create(
+            user=request.user,
+            company=request.user.current_company,
+            receipt_image=image,
+            
+            # Datos extraídos
+            provider_name=ai_data['provider_name'],
+            provider_nit=ai_data['provider_nit'],
+            invoice_series=ai_data['invoice_series'],
+            invoice_number=ai_data['invoice_number'],
+            description=ai_data['description'],
+            suggested_account=ai_data['account_type'], # <--- AQUÍ LA IA DICE LA CUENTA
+            
+            # Desglose Financiero guardado
+            total_amount=total,
+            tax_base=base,
+            tax_iva=iva,
+            tax_idp=idp,
+            
+            status='PENDING'
+        )
+        
+        messages.success(request, f"✅ Factura analizada: Clasificada como '{ai_data['account_type']}'")
+        return redirect('expense_pending_list')
+
+    return render(request, 'accounting/smart_hub.html')
 
 @login_required
 def expense_list(request):
