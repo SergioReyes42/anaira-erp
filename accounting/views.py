@@ -78,6 +78,7 @@ def upload_expense_photo(request):
 
     return render(request, 'accounting/smart_hub.html')
 
+
 @login_required
 def expense_list(request):
     expenses = Expense.objects.filter(company=request.user.current_company).order_by('-date')
