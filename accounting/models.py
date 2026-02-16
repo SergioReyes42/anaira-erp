@@ -18,7 +18,7 @@ class Expense(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
 
     # --- DATOS EXTRAÍDOS POR LA IA (SCANNER) ---
-    provider_name = models.CharField(max_length=150, verbose_name="Proveedor", null=True, blank=True)
+    provider_name = models.CharField(max_length=150, verbose_name="Nombre del Proveedor", null=True, blank=True)
     provider_nit = models.CharField(max_length=20, verbose_name="NIT", null=True, blank=True)
     invoice_series = models.CharField(max_length=20, verbose_name="Serie", null=True, blank=True)
     invoice_number = models.CharField(max_length=50, verbose_name="No. Factura", null=True, blank=True)
