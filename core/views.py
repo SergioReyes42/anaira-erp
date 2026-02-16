@@ -1,33 +1,40 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, get_user_model # <--- IMPORTANTE: Importamos get_user_model
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
-# Nota: Ya no importamos 'User' directamente de models
-from .forms import CustomUserForm, UserProfileForm, CompanySelectForm
-from .models import UserProfile, Company
-from .forms import CompanyForm
-from sales.models import Sale
 from django.db.models import Sum
-from accounting.models import Expense, BankAccount
+from .forms import CompanySelectionForm, CompanyForm # Asegúrate de que existan o usa los genéricos abajo
 
+# Importamos modelos necesarios
+from accounting.models import Expense, BankAccount
+from .models import Company
+
+# --- 1. LANDING PAGE (PÚBLICA) ---
+def landing(request):
+    """Página de bienvenida. Si ya entró, lo manda al Dashboard."""
+    if request.user.is_authenticated:
+        return redirect('home')
+    return render(request, 'core/landing.html')
+
+# --- 2. DASHBOARD (SISTEMA PRIVADO) ---
 @login_required
 def home(request):
+    """Panel Principal con Totales Reales"""
     company = getattr(request.user, 'current_company', None)
     
-    # 1. Si no hay empresa seleccionada, mandar a seleccionarla
+    # Si no ha seleccionado empresa, forzar selección
     if not company:
         return redirect('select_company')
 
-    # 2. Calcular Totales Reales
-    # Gastos del Mes
-    total_gastos = Expense.objects.filter(company=company, status='APPROVED').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    # Calcular Totales Reales
+    gastos_query = Expense.objects.filter(company=company, status='APPROVED').aggregate(total=Sum('total_amount'))
+    total_gastos = gastos_query['total'] or 0
     
-    # Bancos (Disponible)
-    total_bancos = BankAccount.objects.filter(company=company).aggregate(Sum('balance'))['balance__sum'] or 0
+    bancos_query = BankAccount.objects.filter(company=company).aggregate(total=Sum('balance'))
+    total_bancos = bancos_query['total'] or 0
     
-    # Ventas (Placeholder hasta que activemos ventas)
+    # Placeholder ventas
     total_ventas = 0 
-    # total_ventas = Sale.objects.filter(company=company).aggregate(Sum('total'))['total__sum'] or 0
 
     context = {
         'company': company,
@@ -35,130 +42,79 @@ def home(request):
         'total_bancos': total_bancos,
         'total_ventas': total_ventas,
     }
-    return render(request, 'core/landing.html', context)
+    return render(request, 'core/home.html', context)
 
-def register(request):
-    """Registro de nuevos usuarios"""
-    if request.method == 'POST':
-        form = CustomUserForm(request.POST, request.FILES)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, "¡Registro exitoso! Bienvenido.")
-            return redirect('home')
-    else:
-        form = CustomUserForm()
-    return render(request, 'registration/register.html', {'form': form})
-
-@login_required
-def profile_view(request):
-    """Ver y editar perfil"""
-    profile, created = UserProfile.objects.get_or_create(user=request.user)
-    if request.method == 'POST':
-        form = UserProfileForm(request.POST, request.FILES, instance=profile)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Perfil actualizado.")
-            return redirect('profile')
-    else:
-        form = UserProfileForm(instance=profile)
-    return render(request, 'core/profile.html', {'form': form})
+# --- 3. GESTIÓN DE EMPRESA Y SESIÓN ---
 
 @login_required
 def select_company(request):
-    """Vista para cambiar de empresa"""
+    # Intentamos importar el form, si falla usamos uno genérico en la vista (por seguridad)
+    try:
+        from .forms import CompanySelectionForm
+    except ImportError:
+        # Si no existe el form, redirigimos a crear (parche temporal)
+        return redirect('company_create')
+
     if request.method == 'POST':
-        form = CompanySelectForm(request.POST)
+        form = CompanySelectionForm(request.POST, user=request.user)
         if form.is_valid():
             company = form.cleaned_data['company']
             request.user.current_company = company
             request.user.save()
-            messages.success(request, f"Cambiado a empresa: {company.name}")
             return redirect('home')
     else:
-        form = CompanySelectForm()
+        form = CompanySelectionForm(user=request.user)
+        
     return render(request, 'core/select_company.html', {'form': form})
+
+def register(request):
+    """Vista de Registro de Usuarios Nuevos"""
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Aquí podrías loguearlo directamente o mandar al login
+            messages.success(request, "Cuenta creada exitosamente. Inicia sesión.")
+            return redirect('login')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/register.html', {'form': form})
+
+# --- 4. VISTAS ADICIONALES (Para evitar errores en urls.py) ---
+
+@login_required
+def profile_view(request):
+    return render(request, 'core/profile.html', {'user': request.user})
 
 @login_required
 def control_panel(request):
-    """Panel de Administración del Sistema"""
-    if not request.user.is_staff and not request.user.is_superuser:
-        messages.error(request, "No tienes permisos para acceder al panel.")
-        return redirect('home')
-        
-    # --- CORRECCIÓN AQUÍ ---
-    # Obtenemos el modelo de usuario dinámicamente
-    User = get_user_model() 
-    users = User.objects.all()
-    # -----------------------
-
-    companies = Company.objects.all()
-    
-    return render(request, 'core/control_panel.html', {
-        'companies': companies, 
-        'users': users
-    })
+    return render(request, 'core/control_panel.html')
 
 @login_required
 def company_list(request):
-    """Listado de Empresas"""
-    # Si no es staff, lo sacamos (opcional, depende de tu regla de negocio)
-    if not request.user.is_staff:
-        messages.error(request, "Acceso restringido a administración.")
-        return redirect('home')
-        
-    companies = Company.objects.all()
-    # Contamos cuántas hay para mostrar en el dashboard si es necesario
+    companies = request.user.companies.all()
     return render(request, 'core/company_list.html', {'companies': companies})
 
 @login_required
 def company_create(request):
-    """Crear Nueva Empresa"""
-    if not request.user.is_staff:
-        return redirect('home')
-
+    # Lógica simple para crear empresa
     if request.method == 'POST':
-        form = CompanyForm(request.POST, request.FILES)
-        if form.is_valid():
-            company = form.save()
-            # Si el usuario no tiene empresa, le asignamos esta
-            if not request.user.current_company:
-                request.user.current_company = company
-                request.user.save()
-            messages.success(request, f"Empresa {company.name} creada.")
-            return redirect('company_list')
-    else:
-        form = CompanyForm()
-    return render(request, 'core/company_form.html', {'form': form})
+        name = request.POST.get('name')
+        if name:
+            company = Company.objects.create(name=name, active=True)
+            company.users.add(request.user)
+            request.user.current_company = company
+            request.user.save()
+            return redirect('home')
+    # Renderizamos un template genérico o el específico
+    return render(request, 'core/company_form.html')
 
 @login_required
 def user_list(request):
-    """Listado de Usuarios del Sistema"""
-    if not request.user.is_staff:
-        messages.error(request, "Acceso restringido.")
-        return redirect('home')
-    
-    User = get_user_model()
-    users = User.objects.all()
-    return render(request, 'core/user_list.html', {'users': users})
+    # Placeholder
+    return render(request, 'core/user_list.html')
 
 @login_required
 def user_create(request):
-    """Crear Nuevo Usuario"""
-    if not request.user.is_staff:
-        return redirect('home')
-
-    if request.method == 'POST':
-        form = CustomUserForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            # Opcional: Asignar empresa actual al nuevo usuario si se requiere
-            if hasattr(request.user, 'current_company') and request.user.current_company:
-                user.current_company = request.user.current_company
-                user.save()
-            
-            messages.success(request, f"Usuario {user.username} creado exitosamente.")
-            return redirect('user_list')
-    else:
-        form = CustomUserForm()
-    return render(request, 'core/user_form.html', {'form': form})
+    # Placeholder
+    return redirect('user_list')
