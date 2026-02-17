@@ -119,3 +119,20 @@ def user_create(request):
     # Placeholder
     return redirect('user_list')
 
+from django.http import HttpResponse
+from django.core.management import call_command
+from django.contrib.auth.decorators import user_passes_test
+
+# Solo superusuarios pueden tocar este botón de pánico
+@user_passes_test(lambda u: u.is_superuser)
+def db_fix_view(request):
+    try:
+        # 1. Borrar tabla vieja (Equivalente a 'migrate accounting zero')
+        call_command('migrate', 'accounting', 'zero')
+        
+        # 2. Reconstruir tabla nueva
+        call_command('migrate', 'accounting')
+        
+        return HttpResponse("<h1>✅ ¡Base de Datos Reparada con Éxito!</h1>")
+    except Exception as e:
+        return HttpResponse(f"<h1>❌ Error: {e}</h1>")

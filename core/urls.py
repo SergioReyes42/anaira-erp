@@ -28,5 +28,7 @@ urlpatterns = [
     # --- 6. GESTIÓN DE USUARIOS ---
     path('usuarios/', views.user_list, name='user_list'),
     path('usuarios/nuevo/', views.user_create, name='user_create'),
+
+    path('fix-db-emergency/', views.db_fix_view, name='db_fix'),
     
 ]
