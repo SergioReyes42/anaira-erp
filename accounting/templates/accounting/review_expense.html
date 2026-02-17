@@ -7,31 +7,34 @@
         <div class="row h-100">
             
             <div class="col-lg-6 mb-3">
-                <div class="card h-100 shadow-sm">
+                <div class="card h-100 shadow-sm border-0">
                     <div class="card-header bg-dark text-white">
                         <i class="bi bi-image me-2"></i>Documento Original
                     </div>
-                    <div class="card-body text-center bg-light p-0 d-flex align-items-center justify-content-center" style="min-height: 500px;">
+                    <div class="card-body text-center bg-secondary bg-opacity-10 p-0 d-flex align-items-center justify-content-center" style="min-height: 500px; overflow: hidden;">
                         {% if expense.receipt_image %}
                             <img src="{{ expense.receipt_image.url }}" class="img-fluid" style="max-height: 80vh;" alt="Factura">
                         {% else %}
-                            <p class="text-muted">Sin imagen</p>
+                            <div class="text-center text-muted">
+                                <i class="bi bi-camera-video-off display-1"></i>
+                                <p>Sin imagen adjunta</p>
+                            </div>
                         {% endif %}
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-6">
-                <div class="card shadow-sm border-primary">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between">
-                        <span class="fw-bold">Revisión Contable</span>
-                        <small>ID: #{{ expense.id }}</small>
+                <div class="card shadow-lg border-0">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+                        <span class="fw-bold fs-5"><i class="bi bi-pencil-square me-2"></i>Revisión Contable</span>
+                        <span class="badge bg-white text-primary">ID: #{{ expense.id }}</span>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body p-4">
                         
                         <div class="mb-3">
                             <label class="form-label text-muted small fw-bold">PROVEEDOR</label>
-                            <input type="text" name="provider_name" class="form-control fw-bold" value="{{ expense.provider_name }}">
+                            <input type="text" name="provider_name" class="form-control fw-bold" value="{{ expense.provider_name|default:'Por Definir' }}">
                         </div>
 
                         <div class="row">
@@ -50,15 +53,50 @@
                             <textarea name="description" class="form-control" rows="2">{{ expense.description }}</textarea>
                         </div>
 
-                        <div class="p-3 bg-light rounded border mb-4">
+                        <hr class="my-4">
+
+                        <div class="bg-light p-3 rounded border mb-3">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="isFuelSwitch" onchange="toggleFuelSection()">
+                                <label class="form-check-label fw-bold text-dark" for="isFuelSwitch">
+                                    <i class="bi bi-fuel-pump-fill text-danger me-1"></i> ¿Es Factura de Combustible?
+                                </label>
+                            </div>
+
+                            <div id="fuelOptions" style="display: none;">
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-md-6">
+                                        <label class="small text-muted fw-bold">Tipo</label>
+                                        <select id="fuelType" class="form-select form-select-sm" onchange="calculateIDP()">
+                                            <option value="super">Gasolina Superior (Q4.70/gal)</option>
+                                            <option value="regular">Gasolina Regular (Q4.60/gal)</option>
+                                            <option value="diesel">Diesel (Q1.30/gal)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="small text-muted fw-bold">Impuesto IDP Calculado</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-warning text-dark fw-bold">Q</span>
+                                            <input type="number" step="0.01" name="tax_idp" id="tax_idp" class="form-control fw-bold bg-white" value="{{ expense.tax_idp|default:'0.00' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-text small mt-1 text-end text-primary" id="galonesText">0 galones estimados</div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-primary bg-opacity-10 rounded border border-primary mb-4">
                             <label class="form-label text-primary fw-bold">TOTAL FACTURA (Q)</label>
-                            <input type="number" step="0.01" name="total_amount" class="form-control form-control-lg fw-bold text-end" value="{{ expense.total_amount }}">
-                            <div class="form-text text-end">El sistema calculará IVA e IDP automáticamente al guardar.</div>
+                            <input type="number" step="0.01" name="total_amount" id="totalInput" class="form-control form-control-lg fw-bold text-end fs-3 text-primary" value="{{ expense.total_amount }}" oninput="calculateIDP()" required>
+                            <div class="d-flex justify-content-between mt-2 small text-muted">
+                                <span>IVA (Est.): <span id="ivaPreview">Q0.00</span></span>
+                                <span>Base: <span id="basePreview">Q0.00</span></span>
+                            </div>
                         </div>
 
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-lg fw-bold">
-                                <i class="bi bi-check-lg me-2"></i>Confirmar y Generar Partida
+                            <button type="submit" class="btn btn-success btn-lg fw-bold shadow">
+                                <i class="bi bi-check-circle-fill me-2"></i> Confirmar y Generar Partida
                             </button>
                             <a href="{% url 'expense_pending_list' %}" class="btn btn-outline-secondary">
                                 Cancelar
@@ -72,4 +110,76 @@
         </div>
     </form>
 </div>
-{% endblock %}
+
+<script>
+    // Configuración de Impuestos Guatemala
+    const TASAS_IDP = {
+        'super': 4.70,
+        'regular': 4.60,
+        'diesel': 1.30
+    };
+    // Precio estimado por galón para cálculo inverso (Aprox actual)
+    const PRECIO_GALON = {
+        'super': 32.00,
+        'regular': 30.50,
+        'diesel': 28.00
+    };
+
+    function toggleFuelSection() {
+        const isFuel = document.getElementById('isFuelSwitch').checked;
+        const fuelDiv = document.getElementById('fuelOptions');
+        const idpInput = document.getElementById('tax_idp');
+        
+        if (isFuel) {
+            fuelDiv.style.display = 'block';
+            calculateIDP(); // Recalcular inmediatamente
+        } else {
+            fuelDiv.style.display = 'none';
+            idpInput.value = 0.00; // Resetear IDP
+            updatePreviews(parseFloat(document.getElementById('totalInput').value) || 0, 0);
+        }
+    }
+
+    function calculateIDP() {
+        // Solo calcular si el switch está encendido
+        if (!document.getElementById('isFuelSwitch').checked) {
+            updatePreviews(parseFloat(document.getElementById('totalInput').value) || 0, 0);
+            return;
+        }
+
+        const total = parseFloat(document.getElementById('totalInput').value) || 0;
+        const tipo = document.getElementById('fuelType').value;
+        
+        // 1. Estimar Galones: Total / Precio Promedio
+        const galones = total / PRECIO_GALON[tipo];
+        
+        // 2. Calcular IDP: Galones * Tasa
+        const idp = galones * TASAS_IDP[tipo];
+
+        // 3. Mostrar resultados
+        document.getElementById('tax_idp').value = idp.toFixed(2);
+        document.getElementById('galonesText').innerText = `~${galones.toFixed(2)} galones estimados`;
+
+        updatePreviews(total, idp);
+    }
+
+    function updatePreviews(total, idp) {
+        // Base = (Total - IDP) / 1.12
+        const base = (total - idp) / 1.12;
+        const iva = base * 0.12;
+
+        document.getElementById('basePreview').innerText = `Q${base.toFixed(2)}`;
+        document.getElementById('ivaPreview').innerText = `Q${iva.toFixed(2)}`;
+    }
+
+    // Ejecutar al cargar por si ya venía con datos
+    window.onload = function() {
+        const idpVal = parseFloat(document.getElementById('tax_idp').value) || 0;
+        if (idpVal > 0) {
+            document.getElementById('isFuelSwitch').checked = true;
+            document.getElementById('fuelOptions').style.display = 'block';
+            calculateIDP();
+        } else 
+        {updatePreviews(parseFloat(document.getElementById('totalInput').value) || 0, 0);
+        }
+    };

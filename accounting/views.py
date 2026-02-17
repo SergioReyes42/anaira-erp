@@ -145,19 +145,38 @@ def expense_pending_list(request):
 @login_required
 def review_expense(request, pk):
     """
-    El contador entra aquí para poner el MONTO REAL y corregir datos.
+    El contador revisa, edita el monto y define si hubo IDP.
     """
     expense = get_object_or_404(Expense, pk=pk, company=request.user.current_company)
     
     if request.method == 'POST':
+        # 1. Guardar datos básicos
         expense.provider_name = request.POST.get('provider_name')
         expense.provider_nit = request.POST.get('provider_nit')
         expense.invoice_number = request.POST.get('invoice_number')
         expense.description = request.POST.get('description')
-        # Aquí el contador ingresa el monto final
-        expense.total_amount = decimal.Decimal(request.POST.get('total_amount'))
+        
+        # 2. Guardar Montos e Impuestos (Calculados en el HTML)
+        total = decimal.Decimal(request.POST.get('total_amount', 0))
+        idp = decimal.Decimal(request.POST.get('tax_idp', 0))
+        
+        expense.total_amount = total
+        expense.tax_idp = idp
+        
+        # Recalcular Base e IVA aquí también por seguridad
+        base = (float(total) - float(idp)) / 1.12
+        iva = base * 0.12
+        
+        expense.tax_base = decimal.Decimal(base)
+        expense.tax_iva = decimal.Decimal(iva)
+        
+        # Si hay IDP, sugerimos la cuenta de Combustibles
+        if idp > 0:
+            expense.suggested_account = "Combustibles y Lubricantes"
         
         expense.save()
+        
+        # Redirigir a la aprobación final (generar partida)
         return redirect('approve_expense', pk=expense.id)
 
     return render(request, 'accounting/review_expense.html', {'expense': expense})

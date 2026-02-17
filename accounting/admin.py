@@ -1,25 +1,85 @@
 from django.contrib import admin
-from .models import Expense, BankAccount, BankTransaction
+from .models import (
+    Vehicle, Expense, BankAccount, BankTransaction, 
+    JournalEntry, JournalItem
+)
+
+# ==========================================
+# 1. CONFIGURACIÓN PARA PARTIDAS CONTABLES
+# ==========================================
+
+class JournalItemInline(admin.TabularInline):
+    """
+    Esto permite editar el DEBE y HABER dentro de la misma Partida.
+    """
+    model = JournalItem
+    extra = 0 # No muestra filas vacías extra
+    classes = ('collapse',) # Permite colapsar si es muy largo
+
+@admin.register(JournalEntry)
+class JournalEntryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'date', 'description', 'total', 'company', 'created_by')
+    list_filter = ('company', 'date')
+    search_fields = ('description', 'id')
+    date_hierarchy = 'date' # Navegación por fechas arriba
+    inlines = [JournalItemInline] # <--- ¡Aquí está la magia!
+    list_per_page = 20
+
+# ==========================================
+# 2. CONFIGURACIÓN PARA GASTOS
+# ==========================================
 
 @admin.register(Expense)
 class ExpenseAdmin(admin.ModelAdmin):
-    list_display = ['date', 'user', 'description', 'total_amount', 'status', 'company']
-    list_filter = ['status', 'date', 'company']
-    search_fields = ['description', 'user__username']
-    date_hierarchy = 'date'
+    list_display = ('id', 'date', 'description', 'total_amount', 'status', 'vehicle', 'user')
+    list_filter = ('status', 'company', 'date', 'vehicle')
+    search_fields = ('description', 'provider_name', 'invoice_number')
+    readonly_fields = ('date',) # Evita que manipulen la fecha de creación
     
-    # Hacemos readonly la foto para que no la cambien por error desde el admin
-    readonly_fields = ['date']
+    fieldsets = (
+        ('Información General', {
+            'fields': ('company', 'user', 'date', 'description', 'receipt_image')
+        }),
+        ('Detalle Financiero', {
+            'fields': ('total_amount', ('tax_base', 'tax_iva', 'tax_idp'), 'status')
+        }),
+        ('Datos del Proveedor (IA)', {
+            'classes': ('collapse',),
+            'fields': ('provider_name', 'provider_nit', 'invoice_series', 'invoice_number')
+        }),
+    )
+
+# ==========================================
+# 3. CONFIGURACIÓN PARA BANCOS
+# ==========================================
+
+class BankTransactionInline(admin.TabularInline):
+    model = BankTransaction
+    extra = 0
+    readonly_fields = ('date', 'transaction_type', 'amount', 'description')
+    can_delete = False # Por seguridad, no borrar transacciones desde aquí
 
 @admin.register(BankAccount)
 class BankAccountAdmin(admin.ModelAdmin):
-    list_display = ['bank_name', 'account_number', 'currency', 'balance', 'company']
-    list_filter = ['currency', 'company']
-    search_fields = ['bank_name', 'account_number']
+    list_display = ('bank_name', 'account_number', 'currency', 'balance', 'company')
+    list_filter = ('company', 'currency')
+    search_fields = ('bank_name', 'account_number')
+    inlines = [BankTransactionInline] # Ver movimientos dentro de la cuenta
 
 @admin.register(BankTransaction)
 class BankTransactionAdmin(admin.ModelAdmin):
-    list_display = ['date', 'transaction_type', 'amount', 'bank_account', 'reference', 'company']
-    list_filter = ['transaction_type', 'date', 'bank_account']
-    search_fields = ['reference', 'description']
+    list_display = ('date', 'transaction_type', 'amount', 'description', 'bank_account')
+    list_filter = ('transaction_type', 'date', 'bank_account')
+    search_fields = ('description', 'reference')
     date_hierarchy = 'date'
+
+# ==========================================
+# 4. CONFIGURACIÓN PARA FLOTILLA
+# ==========================================
+
+@admin.register(Vehicle)
+class VehicleAdmin(admin.ModelAdmin):
+    list_display = ('plate', 'brand', 'line', 'driver_name', 'active', 'company')
+    list_filter = ('active', 'company', 'brand')
+    search_fields = ('plate', 'driver_name')
+    list_editable = ('active', 'driver_name') # ¡Editar rápido desde la lista!
