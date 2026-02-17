@@ -177,9 +177,11 @@
         const idpVal = parseFloat(document.getElementById('tax_idp').value) || 0;
         if (idpVal > 0) {
             document.getElementById('isFuelSwitch').checked = true;
-            document.getElementById('fuelOptions').style.display = 'block';
-            calculateIDP();
-        } else 
-        {updatePreviews(parseFloat(document.getElementById('totalInput').value) || 0, 0);
+            toggleFuelSection();
+        } else {
+            // Inicializar preview de IVA normal
+            calculateIDP(); 
         }
     };
+</script>
+{% endblock %}
