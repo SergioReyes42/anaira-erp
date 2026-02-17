@@ -25,9 +25,10 @@ from .utils import analyze_invoice_image
 def pilot_upload(request):
     """
     VISTA PILOTOS: Carga rápida.
-    No pide monto (se guarda en 0.00). Solo pide Foto y Placa.
+    CORRECCIÓN: Quitamos el filtro 'active=True' que daba error.
     """
-    vehicles = Vehicle.objects.filter(company=request.user.current_company, active=True)
+    # 1. Obtenemos todos los vehículos de la empresa (sin filtrar por active)
+    vehicles = Vehicle.objects.filter(company=request.user.current_company)
 
     if request.method == 'POST':
         image = request.FILES.get('documento')
@@ -45,11 +46,7 @@ def pilot_upload(request):
                 company=request.user.current_company,
                 receipt_image=image,
                 description=description,
-                
-                # AUTOMÁTICO: Ponemos 0.00 para que la DB no falle.
-                # El contador pondrá el precio real al revisar.
-                total_amount=0.00, 
-                
+                total_amount=0.00, # Automático en 0
                 vehicle=vehicle_obj,
                 status='PENDING',
                 provider_name="Pendiente",
