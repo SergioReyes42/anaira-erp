@@ -24,7 +24,7 @@
                             <select name="vehicle" class="form-select form-select-lg">
                                 <option value="" selected>-- Seleccionar Placa --</option>
                                 {% for v in vehicles %}
-                                    <option value="{{ v.id }}">{{ v.license_plate }} - {{ v.brand }}</option>
+                                    <option value="{{ v.id }}">{{ v.plate }} - {{ v.brand }}</option>
                                 {% endfor %}
                                 <option value="">Otro / No Aplica</option>
                             </select>
