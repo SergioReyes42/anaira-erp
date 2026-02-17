@@ -364,3 +364,51 @@ def bank_create(request):
         if form.is_valid():
             bank = form.save(commit=False)
             bank.company = request.user.current_
+
+@login_required
+def bank_transaction_create(request):
+    """Registrar Depósito o Retiro"""
+    tx_type = request.GET.get('type', 'IN') 
+    
+    if request.method == 'POST':
+        form = BankTransactionForm(request.POST)
+        # Filtramos para que solo salgan cuentas de esta empresa
+        form.fields['bank_account'].queryset = BankAccount.objects.filter(company=request.user.current_company)
+        
+        if form.is_valid():
+            tx = form.save(commit=False)
+            tx.company = request.user.current_company
+            tx.transaction_type = tx_type
+            tx.save()
+            
+            # Actualizar Saldo de la Cuenta
+            account = tx.bank_account
+            if tx_type == 'IN':
+                account.balance += tx.amount
+            else:
+                account.balance -= tx.amount
+            account.save()
+
+            messages.success(request, "Transacción registrada exitosamente.")
+            return redirect('bank_list')
+    else:
+        form = BankTransactionForm()
+        form.fields['bank_account'].queryset = BankAccount.objects.filter(company=request.user.current_company)
+
+    context = {
+        'form': form, 
+        'tx_type': tx_type, 
+        'title': 'Registrar Depósito' if tx_type == 'IN' else 'Registrar Retiro'
+    }
+    return render(request, 'accounting/transaction_form.html', context)
+
+
+@login_required
+def chart_of_accounts(request):
+    """Simulación del Plan de Cuentas NIIF"""
+    simulated_accounts = [
+        {'code': '1', 'name': 'ACTIVO', 'level': 1, 'type': 'Rubro', 'niif_tag': 'ESF'},
+        {'code': '1.1', 'name': 'ACTIVO CORRIENTE', 'level': 2, 'type': 'Grupo', 'niif_tag': 'NIC 1'},
+        {'code': '1.1.01', 'name': 'Efectivo y Equivalentes', 'level': 3, 'type': 'Cuenta Mayor', 'niif_tag': 'NIC 7'},
+    ]
+    return render(request, 'accounting/chart_of_accounts.html', {'accounts': simulated_accounts})
