@@ -1,11 +1,92 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2>{{ title }}</h2>
-    <form method="post" class="card p-4 shadow-sm">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary mt-3">Registrar Transacción</button>
-    </form>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                
+                <div class="card-header py-4 text-center text-white 
+                    {% if tx_type == 'IN' %}bg-success bg-gradient{% else %}bg-danger bg-gradient{% endif %}">
+                    
+                    <div class="mb-2">
+                        {% if tx_type == 'IN' %}
+                            <i class="bi bi-arrow-down-circle-fill display-3"></i>
+                        {% else %}
+                            <i class="bi bi-arrow-up-circle-fill display-3"></i>
+                        {% endif %}
+                    </div>
+                    <h3 class="fw-bold m-0">{{ title }}</h3>
+                    <p class="opacity-75 mb-0 small text-uppercase fw-bold tracking-wider">
+                        {% if tx_type == 'IN' %}Ingreso a Cuenta{% else %}Salida de Dinero{% endif %}
+                    </p>
+                </div>
+
+                <div class="card-body p-5 bg-white">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">CUENTA BANCARIA</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-bank2"></i></span>
+                                {{ form.bank_account }}
+                            </div>
+                            <script>
+                                document.getElementById('id_bank_account').classList.add('form-select', 'form-select-lg', 'border-start-0', 'bg-light');
+                            </script>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">FECHA TRANSACCIÓN</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-calendar-event"></i></span>
+                                {{ form.date }}
+                            </div>
+                            <script>
+                                document.getElementById('id_date').classList.add('form-control', 'border-start-0', 'bg-light');
+                                document.getElementById('id_date').type = 'date'; // Forzar selector de fecha
+                            </script>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">MONTO DE LA OPERACIÓN</label>
+                            <div class="input-group input-group-lg border rounded-3 overflow-hidden shadow-sm">
+                                <span class="input-group-text bg-white border-0 text-secondary fw-bold">Q</span>
+                                {{ form.amount }}
+                            </div>
+                            <script>
+                                document.getElementById('id_amount').classList.add('form-control', 'border-0', 'fw-bold', 'text-end');
+                                document.getElementById('id_amount').placeholder = '0.00';
+                            </script>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">REFERENCIA / NOTA</label>
+                            {{ form.reference }}
+                            <script>
+                                document.getElementById('id_reference').classList.add('form-control');
+                                document.getElementById('id_reference').placeholder = 'Ej: Pago Factura #123, Depósito Cliente X';
+                                document.getElementById('id_reference').rows = 2;
+                            </script>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-5">
+                            <button type="submit" class="btn btn-lg fw-bold text-white shadow-sm
+                                {% if tx_type == 'IN' %}btn-success{% else %}btn-danger{% endif %}">
+                                <i class="bi bi-check-lg me-2"></i> Confirmar Operación
+                            </button>
+                            <a href="{% url 'bank_list' %}" class="btn btn-light text-muted fw-bold">
+                                Cancelar
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
 </div>
 {% endblock %}
