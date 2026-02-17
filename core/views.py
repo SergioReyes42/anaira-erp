@@ -127,12 +127,12 @@ from django.contrib.auth.decorators import user_passes_test
 @user_passes_test(lambda u: u.is_superuser)
 def db_fix_view(request):
     try:
-        # 1. Borrar tabla vieja (Equivalente a 'migrate accounting zero')
-        call_command('migrate', 'accounting', 'zero')
+        # 1. Crear las migraciones automáticamente (Detectar el campo 'vehicle')
+        call_command('makemigrations', 'accounting')
         
-        # 2. Reconstruir tabla nueva
-        call_command('migrate', 'accounting')
+        # 2. Aplicar los cambios a la base de datos
+        call_command('migrate')
         
-        return HttpResponse("<h1>✅ ¡Base de Datos Reparada con Éxito!</h1>")
+        return HttpResponse("<h1>✅ ¡Base de Datos Actualizada! Se agregó la columna Vehículo.</h1>")
     except Exception as e:
         return HttpResponse(f"<h1>❌ Error: {e}</h1>")
