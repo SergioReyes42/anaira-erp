@@ -80,7 +80,7 @@
             {% endif %}
             
             {% if request.user|has_group:"Pilotos" or request.user|has_group:"Vendedores" or request.user|has_group:"Gerencia" or request.user.is_superuser %}
-            <a href="{% url 'gasto_manual' %}"class="list-group-item list-group-item-action text-warning fw-bold">
+            <a href="{% url 'smart_scanner' %}" class="list-group-item list-group-item-action text-warning fw-bold">
                 <i class="bi bi-qr-code-scan me-2"></i> Smart Scanner IA
             </a>
             {% endif %}
@@ -126,7 +126,7 @@
                 <a href="{% url 'supplier_list' %}" class="list-group-item list-group-item-action">
                     <i class="bi bi-truck me-1"></i> Proveedores
                 </a>
-                <a href="{% url 'gasto_manual' %}" class="list-group-item list-group-item-action">
+                <a href="{% url 'smart_scanner' %}" class="list-group-item list-group-item-action">
                     <i class="bi bi-robot me-1"></i> Registrar Gasto (IA) <span class="badge bg-primary badge-sidebar">New</span>
                 </a>
                 <a href="#" class="list-group-item list-group-item-action">
@@ -206,13 +206,13 @@
                 <a href="{% url 'vehicle_list' %}" class="list-group-item list-group-item-action text-warning">
                     <i class="bi bi-truck-front-fill me-1"></i> Fichas de Vehículos
                 </a>
-                <a href="{% url 'expense_list' %}" class="list-group-item list-group-item-action">
+                <a href="{% url 'expense_pending_list' %}" class="list-group-item list-group-item-action">
                     <i class="bi bi-clipboard-data me-1"></i> Reporte Gastos por Placa
                 </a>
                 <a href="{% url 'vehicle_list' %}" class="list-group-item list-group-item-action text-info">
                     <i class="bi bi-truck-front-fill me-1"></i> Flotilla de Vehículos
                 </a>
-                <a href="{% url 'expense_list' %}" class="list-group-item list-group-item-action">
+                <a href="{% url 'expense_pending_list' %}" class="list-group-item list-group-item-action">
                     <i class="bi bi-list-columns-reverse me-1"></i> Reporte de Gastos
                 </a>
                                 <div class="dropdown-divider border-secondary mt-2"></div>            
@@ -351,7 +351,7 @@
 
         <footer class="bg-light text-center text-muted py-3 border-top mt-auto" style="font-size: 0.8rem;">
             &copy; {% now "Y" %} ©Copyrigh Corporación Sermaworld | Todos Los Derechos Reservados | Desarrollado por Ing Sergio Marroquin 
-                                                                |  Anaira ERP v2.0 |
+                                                                    |  Anaira ERP v2.0 |
         </footer>
     </div>
 </div>
