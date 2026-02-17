@@ -44,4 +44,6 @@ urlpatterns = [
 
     path('subir-foto/', views.upload_expense_photo, name='upload_expense_photo'), # Apunta a la función nueva
     path('smart-scanner/', views.upload_expense_photo, name='smart_hub'), # Alias para el menú
+
+    path('gasto/revisar/<int:pk>/', views.review_expense, name='review_expense'),
 ]

@@ -1,70 +1,113 @@
-import decimal  # <--- ¡ESTA ES LA QUE FALTA! (Agrégala al principio)
+import decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from .models import Expense, JournalEntry, JournalItem, BankAccount
-import random 
-from .utils import analyze_invoice_image  # <--- Importar el cerebro que creamos
+from django.db.models import Sum
 
-# Importación de Modelos (Asegúrate que existen en accounting/models.py)
-from .models import BankAccount, BankTransaction, Vehicle, Expense
-# Importación de Formularios (Los que acabamos de crear)
-from .forms import ExpensePhotoForm, BankAccountForm, BankTransactionForm, VehicleForm
+# --- IMPORTACIÓN DE MODELOS ---
+from .models import (
+    Expense, 
+    JournalEntry, 
+    JournalItem, 
+    BankAccount, 
+    BankTransaction, 
+    Vehicle
+)
+# --- IMPORTACIÓN DE FORMULARIOS ---
+# (Si alguno no existe, coméntalo, pero aquí están los estándar)
+from .forms import (
+    # ExpensePhotoForm,  <-- Usamos HTML directo para fotos, no es estricto el form
+    BankAccountForm, 
+    BankTransactionForm, 
+    VehicleForm
+)
 
-# --- GASTOS Y SMART SCANNER ---
+# --- CEREBRO IA ---
+from .utils import analyze_invoice_image
+
+# ========================================================
+# 1. FLUJO DE GASTOS (PILOTOS - SCANNER - REVISIÓN)
+# ========================================================
+
 @login_required
-def upload_expense_photo(request):
+def pilot_upload(request):
+    """
+    Vista para Pilotos: Carga rápida de foto y monto.
+    """
     if request.method == 'POST':
         image = request.FILES.get('documento')
-        smart_input = request.POST.get('smart_input', '') # Texto manual o del OCR
+        description = request.POST.get('description', 'Gasto de Ruta')
+        amount = request.POST.get('amount')
         
-        # 1. ANALISIS IA (Extraer datos y categorizar)
+        try:
+            Expense.objects.create(
+                user=request.user,
+                company=request.user.current_company,
+                receipt_image=image,
+                description=description,
+                total_amount=amount,
+                status='PENDING',
+                # Valores por defecto
+                provider_name="Pendiente Revisión",
+                tax_base=0, tax_iva=0, tax_idp=0,
+                suggested_account="Por Asignar"
+            )
+            messages.success(request, "¡Gasto enviado a contabilidad!")
+            return redirect('home')
+        except Exception as e:
+            messages.error(request, f"Error al subir: {e}")
+            
+    return render(request, 'accounting/pilot_upload.html')
+
+
+@login_required
+def smart_scanner(request):
+    """
+    Vista para Contador: Escaneo con IA y desglose automático.
+    (Antes llamada upload_expense_photo)
+    """
+    if request.method == 'POST':
+        image = request.FILES.get('documento')
+        smart_input = request.POST.get('smart_input', '') # Texto de ayuda
+        
+        # 1. ANALISIS IA
         ai_data = analyze_invoice_image(image, smart_input)
         
-        # 2. MATEMÁTICA FINANCIERA (Cálculo de Impuestos)
+        # 2. CÁLCULO PRELIMINAR DE IMPUESTOS
         total = ai_data['total']
         idp = 0.00
         base = 0.00
         iva = 0.00
 
         if ai_data['is_fuel']:
-            # Lógica de IDP (Impuesto Distribución Petróleo - Guatemala)
-            # Precios aprox para sacar galones: Super Q32, Diesel Q28
+            # Lógica IDP Guatemala
             precio_galon = 28.00 if ai_data['fuel_type'] == 'diesel' else 32.00
-            
-            # Impuesto por galón: Super Q4.70, Regular Q4.60, Diesel Q1.30
             tasa_idp = 4.70
             if ai_data['fuel_type'] == 'regular': tasa_idp = 4.60
             elif ai_data['fuel_type'] == 'diesel': tasa_idp = 1.30
 
             galones = total / precio_galon
             idp = galones * tasa_idp
-            
-            # Base = (Total - IDP) / 1.12
             base = (total - idp) / 1.12
         else:
-            # Gasto Normal: Base = Total / 1.12
             base = total / 1.12
             
-        # IVA siempre es 12% sobre la base
         iva = base * 0.12
 
-        # 3. GUARDAR RESULTADO (Pendiente de Aprobar)
+        # 3. GUARDAR RESULTADO
         Expense.objects.create(
             user=request.user,
             company=request.user.current_company,
             receipt_image=image,
             
-            # Datos extraídos
             provider_name=ai_data['provider_name'],
             provider_nit=ai_data['provider_nit'],
             invoice_series=ai_data['invoice_series'],
             invoice_number=ai_data['invoice_number'],
             description=ai_data['description'],
-            suggested_account=ai_data['account_type'], # <--- AQUÍ LA IA DICE LA CUENTA
+            suggested_account=ai_data['account_type'],
             
-            # Desglose Financiero guardado
             total_amount=total,
             tax_base=base,
             tax_iva=iva,
@@ -73,34 +116,58 @@ def upload_expense_photo(request):
             status='PENDING'
         )
         
-        messages.success(request, f"✅ Factura analizada: Clasificada como '{ai_data['account_type']}'")
+        messages.success(request, f"✅ IA Detectó: {ai_data['account_type']}")
         return redirect('expense_pending_list')
 
     return render(request, 'accounting/smart_hub.html')
 
 
+# Mantenemos compatibilidad por si alguna url vieja llama a esta función
 @login_required
-def expense_list(request):
-    expenses = Expense.objects.filter(company=request.user.current_company).order_by('-date')
-    return render(request, 'accounting/expense_list.html', {'expenses': expenses})
+def upload_expense_photo(request):
+    return redirect('smart_scanner')
 
-@login_required
-def gasto_manual(request):
-    # Por ahora redirigimos al scanner o podrías crear una vista específica
-    return redirect('pilot_upload.html')
 
-# --- APROBACIÓN DE GASTOS ---
 @login_required
 def expense_pending_list(request):
+    """Bandeja de Entrada de Gastos (Pilotos + Scanner)"""
     expenses = Expense.objects.filter(
         company=request.user.current_company, 
         status='PENDING'
     ).order_by('-date')
     return render(request, 'accounting/expense_pending_list.html', {'expenses': expenses})
 
+
+@login_required
+def review_expense(request, pk):
+    """
+    Paso Intermedio: El contador revisa/corrige datos antes de aprobar.
+    """
+    expense = get_object_or_404(Expense, pk=pk, company=request.user.current_company)
+    
+    if request.method == 'POST':
+        # Actualizamos con lo que el contador corrigió
+        expense.provider_name = request.POST.get('provider_name')
+        expense.provider_nit = request.POST.get('provider_nit')
+        expense.invoice_number = request.POST.get('invoice_number')
+        expense.description = request.POST.get('description')
+        expense.total_amount = decimal.Decimal(request.POST.get('total_amount'))
+        
+        # Aquí podrías recalcular impuestos si cambió el monto, 
+        # pero por ahora confiamos en la aprobación final.
+        expense.save()
+        
+        # Redirigir directo a aprobar
+        return redirect('approve_expense', pk=expense.id)
+
+    return render(request, 'accounting/review_expense.html', {'expense': expense})
+
+
 @login_required
 def approve_expense(request, pk):
-    # 1. Obtener el gasto
+    """
+    GENERADOR DE PARTIDA CONTABLE (LIBRO DIARIO)
+    """
     expense = get_object_or_404(Expense, pk=pk, company=request.user.current_company)
     
     if expense.status == 'APPROVED':
@@ -108,48 +175,46 @@ def approve_expense(request, pk):
         return redirect('expense_pending_list')
 
     try:
-        # --- CÁLCULOS FINANCIEROS INTELIGENTES ---
+        # --- CÁLCULOS FINALES ---
+        # Usamos float para cálculos, luego decimal para DB si es necesario
         monto_total = float(expense.total_amount)
         descripcion = expense.description.lower()
         
-        # Variables iniciales
         idp = 0.00
         base = 0.00
         iva = 0.00
-        cuenta_gasto = "Gastos Generales" # Cuenta por defecto
+        cuenta_gasto = expense.suggested_account or "Gastos Generales"
 
-        # DETECCIÓN DE GASOLINA (Lógica Guatemala)
-        if 'gasolina' in descripcion or 'combustible' in descripcion or 'shell' in descripcion or 'texaco' in descripcion or 'puma' in descripcion:
+        # RE-VERIFICACIÓN DE COMBUSTIBLE (Por si el contador editó la descripción)
+        es_combustible = any(x in descripcion for x in ['gasolina', 'combustible', 'shell', 'texaco', 'puma', 'diesel'])
+        
+        if es_combustible:
             cuenta_gasto = "Combustibles y Lubricantes"
-            
-            # Estimación de Galones (Precio aprox Q32/gal para calcular IDP)
-            # En un sistema real, podrías pedir ingresar galones exactos, aquí estimamos.
+            # Recálculo de IDP seguro
             galones_estimados = monto_total / 32.00 
-            
-            # IDP Promedio (Superior Q4.70, Regular Q4.60). Usamos Q4.70 por seguridad fiscal.
             idp = galones_estimados * 4.70
-            
-            # Fórmula: Base = (Total - IDP) / 1.12
             base = (monto_total - idp) / 1.12
             iva = base * 0.12
-            
         else:
-            # GASTO NORMAL (Solo IVA)
+            # Gasto Normal
             base = monto_total / 1.12
             iva = base * 0.12
 
-        # --- CREAR PARTIDA CONTABLE (LIBRO DIARIO) ---
+        # Actualizamos los valores fiscales en el objeto expense por si cambiaron
+        expense.tax_base = decimal.Decimal(base)
+        expense.tax_iva = decimal.Decimal(iva)
+        expense.tax_idp = decimal.Decimal(idp)
         
-        # A) Encabezado de la Partida
+        # --- CREAR PARTIDA (JOURNAL ENTRY) ---
         entry = JournalEntry.objects.create(
             company=request.user.current_company,
-            description=f"Pago: {expense.description[:40]} (Ref Gasto #{expense.id})",
+            description=f"Prov: {expense.provider_name} - {expense.description[:30]}",
             created_by=request.user,
             total=monto_total,
             expense_ref=expense
         )
 
-        # B) DEBE: Gasto Neto (Base)
+        # 1. DEBE: Gasto Neto
         JournalItem.objects.create(
             entry=entry, 
             account_name=cuenta_gasto, 
@@ -157,7 +222,7 @@ def approve_expense(request, pk):
             credit=0
         )
 
-        # C) DEBE: IVA por Cobrar
+        # 2. DEBE: IVA
         JournalItem.objects.create(
             entry=entry, 
             account_name="IVA por Cobrar", 
@@ -165,17 +230,16 @@ def approve_expense(request, pk):
             credit=0
         )
 
-        # D) DEBE: IDP (Solo si existe)
+        # 3. DEBE: IDP (Si aplica)
         if idp > 0:
             JournalItem.objects.create(
                 entry=entry, 
-                account_name="Impuesto IDP (Gasto no deducible)", 
+                account_name="Impuesto IDP (No deducible)", 
                 debit=round(idp, 2), 
                 credit=0
             )
 
-        # E) HABER: Banco / Caja (Salida de dinero completa)
-        # Aquí asumimos que sale de la primera cuenta bancaria que encuentre (o podrías pedir seleccionarla)
+        # 4. HABER: Salida de Banco
         cuenta_banco = BankAccount.objects.filter(company=request.user.current_company).first()
         nombre_banco = cuenta_banco.bank_name if cuenta_banco else "Caja General"
         
@@ -186,21 +250,22 @@ def approve_expense(request, pk):
             credit=round(monto_total, 2)
         )
         
-        # Si existe cuenta bancaria, restamos el saldo real
+        # Restar saldo
         if cuenta_banco:
-            cuenta_banco.balance -=  decimal.Decimal(monto_total)
+            cuenta_banco.balance -= decimal.Decimal(monto_total)
             cuenta_banco.save()
 
-        # 4. Actualizar Estado del Gasto
+        # Finalizar
         expense.status = 'APPROVED'
         expense.save()
         
-        messages.success(request, f"✅ Gasto Aprobado. Partida #{entry.id} generada con desglose de impuestos.")
+        messages.success(request, f"✅ Partida #{entry.id} generada con éxito.")
 
     except Exception as e:
         messages.error(request, f"Error generando partida: {e}")
 
     return redirect('expense_pending_list')
+
 
 @login_required
 def reject_expense(request, pk):
@@ -210,11 +275,18 @@ def reject_expense(request, pk):
     messages.warning(request, f"Gasto #{expense.id} rechazado.")
     return redirect('expense_pending_list')
 
-# --- LIBROS Y ESTADOS FINANCIEROS ---
+
+# ========================================================
+# 2. LIBROS CONTABLES Y ESTADOS FINANCIEROS
+# ========================================================
+
 @login_required
 def libro_diario(request):
-    transactions = BankTransaction.objects.filter(company=request.user.current_company).order_by('-date')
-    return render(request, 'accounting/libro_diario.html', {'transactions': transactions})
+    # Ahora mostramos las PARTIDAS (JournalEntry), no solo transacciones de banco
+    entries = JournalEntry.objects.filter(
+        company=request.user.current_company
+    ).order_by('-date', '-id').prefetch_related('items')
+    return render(request, 'accounting/libro_diario.html', {'entries': entries})
 
 @login_required
 def libro_mayor(request):
@@ -236,7 +308,21 @@ def balance_general(request):
     accounts = BankAccount.objects.filter(company=request.user.current_company)
     return render(request, 'accounting/balance_general.html', {'accounts': accounts})
 
-# --- FLOTILLA ---
+@login_required
+def chart_of_accounts(request):
+    """Simulación del Plan de Cuentas NIIF"""
+    simulated_accounts = [
+        {'code': '1', 'name': 'ACTIVO', 'level': 1, 'type': 'Rubro', 'niif_tag': 'ESF'},
+        {'code': '1.1', 'name': 'ACTIVO CORRIENTE', 'level': 2, 'type': 'Grupo', 'niif_tag': 'NIC 1'},
+        {'code': '1.1.01', 'name': 'Efectivo y Equivalentes', 'level': 3, 'type': 'Cuenta Mayor', 'niif_tag': 'NIC 7'},
+    ]
+    return render(request, 'accounting/chart_of_accounts.html', {'accounts': simulated_accounts})
+
+
+# ========================================================
+# 3. MÓDULOS AUXILIARES (FLOTILLA Y BANCOS)
+# ========================================================
+
 @login_required
 def vehicle_list(request):
     vehicles = Vehicle.objects.filter(company=request.user.current_company)
@@ -256,11 +342,11 @@ def vehicle_create(request):
         form = VehicleForm()
     return render(request, 'accounting/vehicle_form.html', {'form': form})
 
-# --- BANCOS ---
 @login_required
 def bank_list(request):
     accounts = BankAccount.objects.filter(company=request.user.current_company)
     total_balance = sum(acc.balance for acc in accounts)
+    # Mostramos ultimas transacciones
     recent_transactions = BankTransaction.objects.filter(
         company=request.user.current_company
     ).order_by('-date', '-id')[:10]
@@ -277,43 +363,4 @@ def bank_create(request):
         form = BankAccountForm(request.POST)
         if form.is_valid():
             bank = form.save(commit=False)
-            bank.company = request.user.current_company
-            bank.save()
-            messages.success(request, "Cuenta bancaria creada.")
-            return redirect('bank_list')
-    else:
-        form = BankAccountForm()
-    return render(request, 'accounting/bank_form.html', {'form': form})
-
-@login_required
-def bank_transaction_create(request):
-    tx_type = request.GET.get('type', 'IN') 
-    if request.method == 'POST':
-        form = BankTransactionForm(request.POST)
-        # Filtramos cuentas solo de la empresa actual
-        form.fields['bank_account'].queryset = BankAccount.objects.filter(company=request.user.current_company)
-        
-        if form.is_valid():
-            tx = form.save(commit=False)
-            tx.company = request.user.current_company
-            tx.transaction_type = tx_type
-            tx.save()
-            messages.success(request, "Transacción registrada.")
-            return redirect('bank_list')
-    else:
-        form = BankTransactionForm()
-        form.fields['bank_account'].queryset = BankAccount.objects.filter(company=request.user.current_company)
-
-    context = {'form': form, 'tx_type': tx_type, 'title': 'Registrar Depósito' if tx_type == 'IN' else 'Registrar Retiro'}
-    return render(request, 'accounting/transaction_form.html', context)
-
-@login_required
-def chart_of_accounts(request):
-    """Dashboard del Plan de Cuentas (NIC/NIIF)"""
-    simulated_accounts = [
-        {'code': '1', 'name': 'ACTIVO', 'level': 1, 'type': 'Rurbro', 'niif_tag': 'Estado de Situación Financiera'},
-        {'code': '1.1', 'name': 'ACTIVO CORRIENTE', 'level': 2, 'type': 'Grupo', 'niif_tag': 'NIC 1'},
-        {'code': '1.1.01', 'name': 'Efectivo y Equivalentes', 'level': 3, 'type': 'Cuenta Mayor', 'niif_tag': 'NIC 7'},
-    ]
-    
-    return render(request, 'accounting/chart_of_accounts.html', {'accounts': simulated_accounts})
+            bank.company = request.user.current_

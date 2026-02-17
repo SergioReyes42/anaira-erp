@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <form method="post">
+        {% csrf_token %}
+        <div class="row h-100">
+            
+            <div class="col-lg-6 mb-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-dark text-white">
+                        <i class="bi bi-image me-2"></i>Documento Original
+                    </div>
+                    <div class="card-body text-center bg-light p-0 d-flex align-items-center justify-content-center" style="min-height: 500px;">
+                        {% if expense.receipt_image %}
+                            <img src="{{ expense.receipt_image.url }}" class="img-fluid" style="max-height: 80vh;" alt="Factura">
+                        {% else %}
+                            <p class="text-muted">Sin imagen</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-primary">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between">
+                        <span class="fw-bold">Revisión Contable</span>
+                        <small>ID: #{{ expense.id }}</small>
+                    </div>
+                    <div class="card-body">
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">PROVEEDOR</label>
+                            <input type="text" name="provider_name" class="form-control fw-bold" value="{{ expense.provider_name }}">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted small fw-bold">NIT</label>
+                                <input type="text" name="provider_nit" class="form-control" value="{{ expense.provider_nit|default:'' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted small fw-bold">SERIE/FACTURA</label>
+                                <input type="text" name="invoice_number" class="form-control" value="{{ expense.invoice_number|default:'' }}">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">DESCRIPCIÓN DEL GASTO</label>
+                            <textarea name="description" class="form-control" rows="2">{{ expense.description }}</textarea>
+                        </div>
+
+                        <div class="p-3 bg-light rounded border mb-4">
+                            <label class="form-label text-primary fw-bold">TOTAL FACTURA (Q)</label>
+                            <input type="number" step="0.01" name="total_amount" class="form-control form-control-lg fw-bold text-end" value="{{ expense.total_amount }}">
+                            <div class="form-text text-end">El sistema calculará IVA e IDP automáticamente al guardar.</div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg fw-bold">
+                                <i class="bi bi-check-lg me-2"></i>Confirmar y Generar Partida
+                            </button>
+                            <a href="{% url 'expense_pending_list' %}" class="btn btn-outline-secondary">
+                                Cancelar
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </form>
+</div>
+{% endblock %}
