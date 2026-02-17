@@ -74,7 +74,7 @@
             </a>
             
             {% if request.user|has_group:"Pilotos" or request.user|has_group:"Vendedores" or request.user.is_superuser %}
-            <a href="{% url 'upload_expense_photo' %}" class="list-group-item list-group-item-action text-warning fw-bold">
+            <a href="{% url 'pilot_upload' %}" class="list-group-item list-group-item-action text-warning fw-bold">
                 <i class="bi bi-camera-fill me-2"></i> Subir Gasto (Foto)
             </a>
             {% endif %}

@@ -87,7 +87,7 @@ def expense_list(request):
 @login_required
 def gasto_manual(request):
     # Por ahora redirigimos al scanner o podrías crear una vista específica
-    return redirect('upload_expense_photo')
+    return redirect('pilot_upload.html')
 
 # --- APROBACIÓN DE GASTOS ---
 @login_required
