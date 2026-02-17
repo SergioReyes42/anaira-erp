@@ -32,94 +32,41 @@ from .utils import analyze_invoice_image
 
 @login_required
 def pilot_upload(request):
-    """
-    Vista para Pilotos: Carga rápida de foto y monto.
-    """
+    # Filtramos solo vehículos activos
+    vehicles = Vehicle.objects.filter(company=request.user.current_company, active=True)
+
     if request.method == 'POST':
         image = request.FILES.get('documento')
         description = request.POST.get('description', 'Gasto de Ruta')
-        amount = request.POST.get('amount')
+        vehicle_id = request.POST.get('vehicle')
         
+        # BUSCAR VEHÍCULO
+        vehicle_obj = None
+        if vehicle_id:
+            vehicle_obj = Vehicle.objects.filter(id=vehicle_id).first()
+
         try:
             Expense.objects.create(
                 user=request.user,
                 company=request.user.current_company,
                 receipt_image=image,
                 description=description,
-                total_amount=amount,
+                
+                # TRUCO: Guardamos 0.00 porque el piloto no tiene tiempo.
+                # El contador pondrá el valor real en la revisión.
+                total_amount=0.00, 
+                
+                vehicle=vehicle_obj,
                 status='PENDING',
-                # Valores por defecto
-                provider_name="Pendiente Revisión",
-                tax_base=0, tax_iva=0, tax_idp=0,
+                provider_name="Pendiente",
                 suggested_account="Por Asignar"
             )
-            messages.success(request, "¡Gasto enviado a contabilidad!")
+            messages.success(request, "🚀 Gasto enviado. Contabilidad lo revisará.")
             return redirect('home')
         except Exception as e:
-            messages.error(request, f"Error al subir: {e}")
+            messages.error(request, f"Error: {e}")
             
-    return render(request, 'accounting/pilot_upload.html')
-
-
-@login_required
-def smart_scanner(request):
-    """
-    Vista para Contador: Escaneo con IA y desglose automático.
-    (Antes llamada upload_expense_photo)
-    """
-    if request.method == 'POST':
-        image = request.FILES.get('documento')
-        smart_input = request.POST.get('smart_input', '') # Texto de ayuda
-        
-        # 1. ANALISIS IA
-        ai_data = analyze_invoice_image(image, smart_input)
-        
-        # 2. CÁLCULO PRELIMINAR DE IMPUESTOS
-        total = ai_data['total']
-        idp = 0.00
-        base = 0.00
-        iva = 0.00
-
-        if ai_data['is_fuel']:
-            # Lógica IDP Guatemala
-            precio_galon = 28.00 if ai_data['fuel_type'] == 'diesel' else 32.00
-            tasa_idp = 4.70
-            if ai_data['fuel_type'] == 'regular': tasa_idp = 4.60
-            elif ai_data['fuel_type'] == 'diesel': tasa_idp = 1.30
-
-            galones = total / precio_galon
-            idp = galones * tasa_idp
-            base = (total - idp) / 1.12
-        else:
-            base = total / 1.12
-            
-        iva = base * 0.12
-
-        # 3. GUARDAR RESULTADO
-        Expense.objects.create(
-            user=request.user,
-            company=request.user.current_company,
-            receipt_image=image,
-            
-            provider_name=ai_data['provider_name'],
-            provider_nit=ai_data['provider_nit'],
-            invoice_series=ai_data['invoice_series'],
-            invoice_number=ai_data['invoice_number'],
-            description=ai_data['description'],
-            suggested_account=ai_data['account_type'],
-            
-            total_amount=total,
-            tax_base=base,
-            tax_iva=iva,
-            tax_idp=idp,
-            
-            status='PENDING'
-        )
-        
-        messages.success(request, f"✅ IA Detectó: {ai_data['account_type']}")
-        return redirect('expense_pending_list')
-
-    return render(request, 'accounting/smart_hub.html')
+    return render(request, 'accounting/pilot_upload.html', {'vehicles': vehicles})
 
 
 # Mantenemos compatibilidad por si alguna url vieja llama a esta función

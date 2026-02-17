@@ -5,61 +5,45 @@
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
             <div class="card shadow-lg border-0 rounded-4">
-                <div class="card-header bg-primary text-white text-center py-3">
-                    <h4 class="mb-0 fw-bold"><i class="bi bi-camera-fill me-2"></i>Subir Gasto</h4>
+                <div class="card-header bg-warning text-dark text-center py-3">
+                    <h4 class="mb-0 fw-bold"><i class="bi bi-speedometer2 me-2"></i>Reporte Rápido</h4>
                 </div>
                 
                 <div class="card-body p-4">
-                    <div class="text-center mb-4">
-                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                            <i class="bi bi-cloud-arrow-up-fill text-primary display-4"></i>
-                        </div>
-                        <p class="text-muted small mt-2">Toma una foto clara de la factura</p>
-                    </div>
-
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         
-                        <div class="mb-4">
-                            <label class="form-label fw-bold text-uppercase small text-muted">Evidencia</label>
+                        <div class="mb-4 text-center">
+                            <label class="form-label fw-bold text-uppercase small text-muted">1. FOTO DEL VALE/FACTURA</label>
                             <input type="file" name="documento" class="form-control form-control-lg" accept="image/*" capture="environment" required>
+                            <div class="form-text">Toma la foto clara. Contabilidad pondrá el monto.</div>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold text-uppercase small text-muted">¿Qué vehículo es?</label>
+                            <label class="form-label fw-bold text-uppercase small text-muted">2. VEHÍCULO</label>
                             <select name="vehicle" class="form-select form-select-lg">
                                 <option value="" selected>-- Seleccionar Placa --</option>
                                 {% for v in vehicles %}
                                     <option value="{{ v.id }}">{{ v.license_plate }} - {{ v.brand }}</option>
                                 {% endfor %}
-                                <option value="">No aplica / Otro</option>
+                                <option value="">Otro / No Aplica</option>
                             </select>
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label fw-bold text-uppercase small text-muted">Monto Total (Q)</label>
-                            <div class="input-group input-group-lg">
-                                <span class="input-group-text bg-light border-end-0 fw-bold">Q</span>
-                                <input type="number" step="0.01" name="amount" class="form-control border-start-0 fw-bold" placeholder="0.00" required>
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label fw-bold text-uppercase small text-muted">Tipo de Gasto</label>
+                            <label class="form-label fw-bold text-uppercase small text-muted">3. TIPO</label>
                             <select name="description" class="form-select">
                                 <option value="Combustible Diesel">Combustible Diesel</option>
                                 <option value="Combustible Gasolina">Combustible Gasolina</option>
-                                <option value="Viáticos / Comida">Viáticos / Comida</option>
-                                <option value="Mantenimiento">Mantenimiento / Taller</option>
-                                <option value="Otros">Otros</option>
+                                <option value="Viáticos">Viáticos / Comida</option>
+                                <option value="Mantenimiento">Mantenimiento</option>
                             </select>
                         </div>
 
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-success btn-lg fw-bold rounded-pill shadow-sm">
+                            <button type="submit" class="btn btn-dark btn-lg fw-bold rounded-pill shadow-sm">
                                 <i class="bi bi-send-fill me-2"></i> ENVIAR AHORA
                             </button>
-                            <a href="{% url 'home' %}" class="btn btn-link text-muted mt-2 text-decoration-none">Cancelar</a>
                         </div>
                     </form>
                 </div>
