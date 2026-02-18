@@ -1,0 +1,30 @@
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+
+User = get_user_model()
+
+# 1. CREAR SU ADMINISTRADOR (Usuario: admin / Clave: 123456)
+if not User.objects.filter(username="admin").exists():
+    # create_superuser se encarga de todo
+    User.objects.create_superuser("admin", "admin@anaira.com", "123456")
+    print("✅ Usuario 'admin' creado exitosamente.")
+else:
+    print("ℹ️ El usuario 'admin' ya existía.")
+
+# 2. CREAR A PEDRO (Usuario: Pedro / Clave: 123456)
+if not User.objects.filter(username="Pedro").exists():
+    pedro = User.objects.create_user("Pedro", "pedro@anaira.com", "123456")
+    print("✅ Usuario 'Pedro' creado exitosamente.")
+else:
+    pedro = User.objects.get(username="Pedro")
+    pedro.set_password("123456")
+    pedro.save()
+    print("ℹ️ Pedro ya existía (contraseña reseteada a 123456).")
+
+# 3. ASIGNAR GRUPO CONTABILIDAD
+grupo, created = Group.objects.get_or_create(name="Contabilidad")
+pedro.groups.add(grupo)
+print(f"✅ Pedro asignado al grupo '{grupo.name}'.")
+
+python manage.py shell
+

@@ -1,61 +1,72 @@
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
-from core.models import CompanyAwareModel, Client, Product
 
-class Sale(CompanyAwareModel):
-    """Encabezado de la Venta"""
+# 1. IMPORTAMOS LO NECESARIO DE CORE (Solo la base de la empresa)
+# ¡OJO! Aquí quitamos 'Client' y 'Product' porque ya no están en Core.
+from core.models import Company, CompanyAwareModel
+
+# 2. IMPORTAMOS PRODUCTOS Y BODEGAS DESDE INVENTARIO
+from inventory.models import Product, Warehouse
+
+# ==========================================
+# 3. CLIENTES (Definido aquí mismo en Ventas)
+# ==========================================
+class Client(CompanyAwareModel):
+    name = models.CharField(max_length=200, verbose_name="Nombre / Razón Social")
+    nit = models.CharField(max_length=20, verbose_name="NIT", null=True, blank=True)
+    phone = models.CharField(max_length=20, verbose_name="Teléfono", null=True, blank=True)
+    email = models.EmailField(verbose_name="Correo Electrónico", null=True, blank=True)
+    address = models.TextField(verbose_name="Dirección", null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.nit or 'C/F'})"
+
+# ==========================================
+# 4. COTIZACIONES
+# ==========================================
+class Quotation(CompanyAwareModel):
+    # Relaciones
     client = models.ForeignKey(Client, on_delete=models.CASCADE, verbose_name="Cliente")
-    date = models.DateTimeField(default=timezone.now, verbose_name="Fecha")
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Vendedor")
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.SET_NULL, null=True, verbose_name="Bodega de Salida")
+    
+    # Datos de la Cotización
+    date = models.DateField(default=timezone.now, verbose_name="Fecha de Emisión")
+    valid_until = models.DateField(null=True, blank=True, verbose_name="Válida hasta")
+    notes = models.TextField(blank=True, verbose_name="Notas Internas")
+    
+    # Totales Financieros
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    tax_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00) # IVA
     total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     
-    PAYMENT_CHOICES = [
-        ('EFECTIVO', 'Efectivo'),
-        ('TARJETA', 'Tarjeta de Crédito/Débito'),
-        ('TRANSFERENCIA', 'Transferencia Bancaria'),
-    ]
-    payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default='EFECTIVO')
-
-    def __str__(self):
-        return f"Venta #{self.id} - {self.client.name}"
-
-class SaleDetail(models.Model):
-    """Detalle de productos en la venta"""
-    sale = models.ForeignKey(Sale, related_name='details', on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.IntegerField(default=1)
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
-    subtotal = models.DecimalField(max_digits=12, decimal_places=2)
-
-    def save(self, *args, **kwargs):
-        self.subtotal = self.quantity * self.unit_price
-        super().save(*args, **kwargs)
-
-class Invoice(CompanyAwareModel):
-    """Factura Electrónica (FEL)"""
-    sale = models.OneToOneField(Sale, on_delete=models.CASCADE, verbose_name="Venta Original")
-    fel_number = models.CharField(max_length=100, verbose_name="Número FEL (UUID)")
-    serie = models.CharField(max_length=50, verbose_name="Serie")
-    numero = models.CharField(max_length=50, verbose_name="Número DTE")
-    authorization_date = models.DateTimeField(verbose_name="Fecha de Autorización")
-    client = models.ForeignKey(Client, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"Factura {self.serie}-{self.numero}"
-
-# --- NUEVO: MODELO DE COTIZACIÓN ---
-class Quotation(CompanyAwareModel):
-    STATUS_CHOICES = [
+    # Estado del Flujo
+    status = models.CharField(max_length=20, default='DRAFT', choices=[
         ('DRAFT', 'Borrador'),
         ('SENT', 'Enviada'),
-        ('ACCEPTED', 'Aceptada'),
-        ('REJECTED', 'Rechazada'),
-    ]
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, verbose_name="Cliente")
-    date = models.DateTimeField(default=timezone.now, verbose_name="Fecha Emisión")
-    valid_until = models.DateField(null=True, blank=True, verbose_name="Válida hasta")
-    total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
-    notes = models.TextField(null=True, blank=True, verbose_name="Notas")
+        ('INVOICED', 'Facturada/Cerrada'),
+        ('CANCELED', 'Anulada')
+    ])
 
     def __str__(self):
-        return f"Cotización #{self.id} - {self.client.name}"
+        return f"Cotización #{self.id} - {self.client}"
+
+# ==========================================
+# 5. DETALLE DE PRODUCTOS (ITEMS)
+# ==========================================
+class QuotationItem(models.Model):
+    quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    
+    quantity = models.IntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2) 
+    total_line = models.DecimalField(max_digits=12, decimal_places=2) 
+
+    def save(self, *args, **kwargs):
+        self.total_line = self.quantity * self.unit_price
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.name}"

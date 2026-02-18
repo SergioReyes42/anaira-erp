@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            <div class="text-center mb-5">
+                <div class="d-inline-flex align-items-center justify-content-center bg-white shadow-sm rounded-circle p-3 mb-3">
+                    <i class="bi bi-stars text-warning fs-1"></i>
+                </div>
+                <h1 class="fw-bold text-dark">Smart Hub <span class="text-primary">Scanner</span></h1>
+                <p class="text-muted">
+                    Motor de procesamiento contable impulsado por IA. <br>
+                    Detecta automáticamente: <span class="badge bg-light text-dark border">Base</span> <span class="badge bg-light text-dark border">IVA</span> <span class="badge bg-light text-dark border">IDP (Combustibles)</span>
+                </p>
+            </div>
+
+            <div class="card shadow-lg border-0 overflow-hidden" style="border-radius: 20px;">
+                <div id="ai-loader" class="progress" style="height: 4px; display: none;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 100%"></div>
+                </div>
+
+                <div class="card-body p-5">
+                    <form method="post" enctype="multipart/form-data" id="smartForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-5">
+                            <label class="form-label fw-bold text-uppercase small text-muted ls-1">Entrada Rápida / Palabras Clave</label>
+                            <div class="input-group input-group-lg shadow-sm">
+                                <span class="input-group-text bg-white border-end-0 text-primary">
+                                    <i class="bi bi-upc-scan"></i>
+                                </span>
+                                <input type="text" name="smart_input" class="form-control border-start-0" 
+                                       placeholder="Ej: Gasolina Shell, Factura #123..." autofocus autocomplete="off">
+                                <button class="btn btn-primary px-4 fw-bold" type="submit" onclick="activateLoader()">
+                                    <i class="bi bi-cpu me-2"></i>PROCESAR
+                                </button>
+                            </div>
+                            <div class="form-text mt-2"><i class="bi bi-info-circle me-1"></i>Escribe "Gasolina" para activar cálculo de IDP.</div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-center my-4">
+                            <hr class="w-25 border-secondary">
+                            <span class="mx-3 text-muted fw-bold small text-uppercase">O sube el documento</span>
+                            <hr class="w-25 border-secondary">
+                        </div>
+
+                        <div class="mb-3">
+                            <input type="file" name="documento" id="fileUpload" class="d-none" onchange="activateLoader(); this.form.submit()">
+                            <label for="fileUpload" class="upload-zone w-100 p-5 text-center border rounded-3 bg-light cursor-pointer">
+                                <div class="mb-3">
+                                    <i class="bi bi-cloud-arrow-up text-primary" style="font-size: 3rem;"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark">Arrastra tu factura aquí</h5>
+                                <p class="text-muted small mb-0">Soporta PDF, JPG, PNG. El sistema extraerá los datos automáticamente.</p>
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-light p-3 text-center border-top-0">
+                    <small class="text-muted"><i class="bi bi-shield-lock me-1"></i>Tus datos son procesados de forma segura y asignados a "Por Aprobar".</small>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex justify-content-center gap-3">
+                <a href="{% url 'gasto_manual' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                    <i class="bi bi-keyboard me-2"></i>Ingreso Manual
+                </a>
+                <a href="{% url 'expense_pending_list' %}" class="btn btn-outline-primary rounded-pill px-4">
+                    <i class="bi bi-list-check me-2"></i>Ver Pendientes
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    .upload-zone {
+        border: 2px dashed #cbd5e1 !important;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .upload-zone:hover {
+        border-color: #0d6efd !important;
+        background-color: #eef2ff !important;
+        transform: translateY(-2px);
+    }
+    .ls-1 { letter-spacing: 1px; }
+</style>
+
+<script>
+    function activateLoader() {
+        document.getElementById('ai-loader').style.display = 'flex';
+        // Opcional: Deshabilitar la zona de carga para evitar doble envío
+        document.querySelector('.upload-zone').style.opacity = '0.5';
+        document.querySelector('.upload-zone').style.pointerEvents = 'none';
+    }
+</script>
+{% endblock %}

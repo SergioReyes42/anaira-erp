@@ -14,7 +14,6 @@ urlpatterns = [
     path('bodegas/nueva/', views.warehouse_create, name='warehouse_create'),
 
     # Movimientos
-    # CORRECCIÓN: El name debe ser 'movement_list' (antes decía 'inventory_list')
     path('movimientos/', views.movement_list, name='movement_list'), 
     path('movimientos/nuevo/', views.create_movement, name='create_movement'),
     path('kardex/', views.inventory_kardex, name='inventory_kardex'),

@@ -1,73 +1,26 @@
 from django import forms
-from core.models import Product, Warehouse, Supplier, Branch
-from .models import StockMovement, Purchase
+from core.models import Warehouse
+from .models import Product, StockMovement, Category, Supplier
 
-# --- FORMULARIOS DE PRODUCTOS Y BODEGAS ---
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'code', 'description', 'price', 'cost'] 
+        fields = ['sku', 'name', 'category', 'brand', 'supplier', 'cost_price', 'sale_price', 'image']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'code': forms.TextInput(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'price': forms.NumberInput(attrs={'class': 'form-control'}),
-            'cost': forms.NumberInput(attrs={'class': 'form-control'}),
         }
 
 class WarehouseForm(forms.ModelForm):
     class Meta:
         model = Warehouse
-        fields = ['name', 'branch', 'active']
-        widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'branch': forms.Select(attrs={'class': 'form-select'}),
-            'active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        }
+        fields = ['name', 'address', 'active']
 
-# --- FORMULARIOS DE MOVIMIENTOS ---
-class StockMovementForm(forms.ModelForm):
+class SupplierForm(forms.ModelForm):
+    class Meta:
+        model = Supplier
+        fields = ['name', 'nit', 'phone', 'email']
+
+class InventoryMovementForm(forms.ModelForm):
     class Meta:
         model = StockMovement
-        fields = ['product', 'warehouse', 'quantity', 'movement_type', 'reason']
-        widgets = {
-            'product': forms.Select(attrs={'class': 'form-select'}),
-            'warehouse': forms.Select(attrs={'class': 'form-select'}),
-            'quantity': forms.NumberInput(attrs={'class': 'form-control'}),
-            'movement_type': forms.Select(attrs={'class': 'form-select'}),
-            'reason': forms.TextInput(attrs={'class': 'form-control'}),
-        }
-
-class TransferForm(forms.Form):
-    product = forms.ModelChoiceField(
-        queryset=Product.objects.none(), 
-        widget=forms.Select(attrs={'class': 'form-select'}),
-        label="Producto"
-    )
-    from_warehouse = forms.ModelChoiceField(
-        queryset=Warehouse.objects.none(),
-        widget=forms.Select(attrs={'class': 'form-select'}),
-        label="Bodega Origen"
-    )
-    to_warehouse = forms.ModelChoiceField(
-        queryset=Warehouse.objects.none(),
-        widget=forms.Select(attrs={'class': 'form-select'}),
-        label="Bodega Destino"
-    )
-    quantity = forms.IntegerField(
-        widget=forms.NumberInput(attrs={'class': 'form-control'}),
-        label="Cantidad"
-    )
-    reason = forms.CharField(
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-        required=False
-    )
-
-class PurchaseForm(forms.ModelForm):
-    class Meta:
-        model = Purchase
-        fields = ['supplier', 'invoice_number']
-        widgets = {
-            'supplier': forms.Select(attrs={'class': 'form-select'}),
-            'invoice_number': forms.TextInput(attrs={'class': 'form-control'}),
-        }
+        fields = ['product', 'warehouse', 'movement_type', 'quantity', 'reference', 'description']
