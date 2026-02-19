@@ -3,148 +3,229 @@
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold text-dark">Anaira: Control de Flota y Gastos</h2>
-        <div>
-            <a href="{% url 'export_expenses_csv' %}" class="btn btn-outline-success me-2">
-                <i class="bi bi-file-earmark-spreadsheet"></i> Datos para Power BI
-            </a>
-            <a href="{% url 'mobile_expense' %}" class="btn btn-primary">
-                <i class="bi bi-camera"></i> Nuevo Gasto
-            </a>
-        </div>
+        <h2 class="fw-bold text-dark">
+            <i class="bi bi-receipt-cutoff me-2"></i>Registrar Nuevo Gasto
+        </h2>
+        <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a la Lista
+        </a>
     </div>
 
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card bg-dark text-white shadow-sm border-0">
-                <div class="card-body text-center">
-                    <h6 class="small text-uppercase opacity-75">Total Facturado</h6>
-                    <h3 class="fw-bold mb-0">Q.{{ totales.total_gral|default:"0.00" }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-primary text-white shadow-sm border-0">
-                <div class="card-body text-center">
-                    <h6 class="small text-uppercase opacity-75">IDP Acumulado</h6>
-                    <h3 class="fw-bold mb-0">Q.{{ totales.total_idp|default:"0.00" }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-danger text-white shadow-sm border-0">
-                <div class="card-body text-center">
-                    <h6 class="small text-uppercase opacity-75">IVA por Cobrar</h6>
-                    <h3 class="fw-bold mb-0">Q.{{ totales.total_iva|default:"0.00" }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-info text-dark shadow-sm border-0">
-                <div class="card-body text-center">
-                    <h6 class="small text-uppercase opacity-75">Galones Totales</h6>
-                    <h3 class="fw-bold mb-0">{{ totales.total_galones|default:"0" }} Gal.</h3>
-                </div>
-            </div>
-        </div>
-    </div>
+    <form method="POST" enctype="multipart/form-data" id="expenseForm">
+        {% csrf_token %}
+        <div class="row g-4">
+            
+            <div class="col-lg-6">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <span class="small text-uppercase fw-bold">📷 Documento / Factura</span>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-secondary" onclick="rotateImage(-90)" title="Rotar Izquierda"><i class="bi bi-arrow-counterclockwise"></i></button>
+                            <button type="button" class="btn btn-secondary" onclick="rotateImage(90)" title="Rotar Derecha"><i class="bi bi-arrow-clockwise"></i></button>
+                            <button type="button" class="btn btn-secondary" onclick="zoomImage(0.1)" title="Acercar"><i class="bi bi-zoom-in"></i></button>
+                            <button type="button" class="btn btn-secondary" onclick="zoomImage(-0.1)" title="Alejar"><i class="bi bi-zoom-out"></i></button>
+                            <button type="button" class="btn btn-secondary" onclick="resetImage()" title="Restaurar"><i class="bi bi-arrows-fullscreen"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body p-0 bg-secondary bg-opacity-25 d-flex align-items-center justify-content-center position-relative" style="height: 600px; overflow: hidden;">
+                        <div id="imageContainer" style="transition: transform 0.2s ease;">
+                            <img id="preview" src="https://via.placeholder.com/400x600?text=Sube+una+foto" class="img-fluid shadow-lg" style="max-height: 550px;">
+                        </div>
 
-    <div class="card shadow-sm border-0 mb-4 bg-light">
-        <div class="card-body">
-            <form method="GET" class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="small fw-bold">Filtrar por Placa</label>
-                    <input type="text" name="placa" class="form-control" placeholder="P-123..." value="{{ placa_query|default:'' }}">
+                        <div class="position-absolute bottom-0 start-0 w-100 p-3 bg-white bg-opacity-75 backdrop-blur">
+                            <label for="id_receipt_image" class="form-label fw-bold small text-dark mb-1">Seleccionar Foto o PDF:</label>
+                            <input type="file" name="receipt_image" id="id_receipt_image" class="form-control form-control-sm" accept="image/*" onchange="previewImage(this)">
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="small fw-bold">Fecha Inicio</label>
-                    <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="small fw-bold">Fecha Fin</label>
-                    <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
-                </div>
-                <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-dark w-100">Aplicar</button>
-                    <a href="{% url 'expense_list' %}" class="btn btn-outline-secondary w-100">Limpiar</a>
-                </div>
-            </form>
-        </div>
-    </div>
+            </div>
 
-    <div class="card shadow border-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
-                <thead class="table-light text-center">
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Proveedor / NIT</th>
-                        <th>Documento</th>
-                        <th>Placa</th>
-                        <th>Total</th>
-                        <th>IDP</th>
-                        <th>IVA</th>
-                        <th>Galones / Rend.</th>
-                        <th>Foto</th>
-                    </tr>
-                </thead>
-                <tbody class="text-center">
-                    {% for expense in expenses %}
-                    <tr>
-                        <td>{{ expense.date|date:"d/m/Y" }}</td>
-                        <td class="text-start">
-                            <div class="fw-bold text-truncate" style="max-width: 150px;">{{ expense.vendor_name|default:"---" }}</div>
-                            <small class="text-muted">NIT: {{ expense.vendor_nit|default:"C/F" }}</small>
-                        </td>
-                        <td>
-                            <small class="d-block text-uppercase text-muted" style="font-size: 0.7rem;">{{ expense.invoice_series|default:"" }}</small>
-                            <span class="fw-bold">{{ expense.invoice_number|default:"---" }}</span>
-                        </td>
-                        <td>
-                            {% if expense.vehicle_plate %}
-                                <span class="badge bg-warning text-dark">{{ expense.vehicle_plate }}</span>
-                            {% else %}
-                                <span class="badge bg-secondary">General</span>
-                            {% endif %}
-                        </td>
-                        <td class="fw-bold">Q.{{ expense.total_amount|floatformat:2 }}</td>
-                        <td class="text-primary">Q.{{ expense.idp_amount|floatformat:2 }}</td>
-                        <td class="text-danger">Q.{{ expense.iva_amount|floatformat:2 }}</td>
-                        <td>
-                            {% if expense.gallons > 0 %}
-                                <strong>{{ expense.gallons }} Gal.</strong>
-                                <div class="{% if expense.precio_galon > 40 %}text-danger fw-bold{% else %}text-muted{% endif %}" style="font-size: 0.75rem;">
-                                    Q.{{ expense.precio_galon|stringformat:".2f" }}/G
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">✏️ Datos de Facturación</span>
+                        <button type="button" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm" onclick="analyzeReceiptWithGemini()">
+                            <i class="bi bi-stars"></i> Auto-Completar con IA
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted">NIT Proveedor</label>
+                                <div class="input-group">
+                                    <input type="text" name="vendor_nit" id="id_vendor_nit" class="form-control fw-bold" placeholder="Ej: 737810-6">
+                                    <button class="btn btn-outline-secondary" type="button"><i class="bi bi-search"></i></button>
                                 </div>
-                            {% else %} --- {% endif %}
-                        </td>
-                        <td>
-                            {% if expense.receipt_image %}
-                                <a href="{{ expense.receipt_image.url }}" target="_blank" class="text-primary"><i class="bi bi-image"></i></a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="9" class="text-muted py-5 text-center">
-                            <i class="bi bi-folder-x fs-1 d-block mb-2"></i>
-                            No hay registros encontrados.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot class="table-secondary fw-bold text-center">
-                    <tr>
-                        <td colspan="4">TOTALES FILTRADOS</td>
-                        <td>Q.{{ totales.total_gral|default:"0.00" }}</td>
-                        <td>Q.{{ totales.total_idp|default:"0.00" }}</td>
-                        <td>Q.{{ totales.total_iva|default:"0.00" }}</td>
-                        <td>{{ totales.total_galones|default:"0" }} Gal.</td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label small fw-bold text-muted">Nombre Proveedor</label>
+                                <input type="text" name="vendor_name" id="id_vendor_name" class="form-control" placeholder="Ej: OPERADORA DE TIENDAS S.A.">
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted">Fecha</label>
+                                <input type="date" name="date" id="id_date" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted">Serie</label>
+                                <input type="text" name="invoice_series" id="id_invoice_series" class="form-control text-uppercase">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-muted">Número (DTE)</label>
+                                <input type="text" name="invoice_number" id="id_invoice_number" class="form-control fw-bold text-primary">
+                            </div>
+                        </div>
+
+                        <hr class="text-muted">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold h5 text-dark">Total Facturado (Q)</label>
+                            <input type="number" step="0.01" name="total_amount" id="id_total_amount" class="form-control form-control-lg fs-2 fw-bold text-success text-end" placeholder="0.00" oninput="calculateTaxes()">
+                        </div>
+
+                        <div class="row g-2 bg-light p-3 rounded mb-3">
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold">IDP (Combustible)</label>
+                                <input type="number" step="0.01" name="idp_amount" id="id_idp_amount" class="form-control form-control-sm text-end" value="0.00" oninput="calculateIVAFromBase()">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted fw-bold">IVA (12% Crédito)</label>
+                                <input type="number" step="0.01" name="iva_amount" id="id_iva_amount" class="form-control form-control-sm text-end text-danger fw-bold" readonly>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold text-muted mt-4"><i class="bi bi-truck me-1"></i> Datos de Flota (Opcional)</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small">Vehículo / Placa</label>
+                                <select name="vehicle_plate" id="id_vehicle_plate" class="form-select">
+                                    <option value="">-- General / No Aplica --</option>
+                                    {% for v in vehicles %}
+                                    <option value="{{ v.plate }}">{{ v.plate }} - {{ v.alias }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Galones</label>
+                                <input type="number" step="0.1" name="gallons" id="id_gallons" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Kilometraje</label>
+                                <input type="number" name="odometer" id="id_odometer" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-success btn-lg shadow">
+                                <i class="bi bi-save me-2"></i> Guardar Gasto
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
+    </form>
 </div>
+
+<script>
+    // 1. VISOR DE IMÁGENES
+    let zoom = 1;
+    let rotation = 0;
+    const imgContainer = document.getElementById('imageContainer');
+    const img = document.getElementById('preview');
+
+    function updateTransform() {
+        img.style.transform = `scale(${zoom}) rotate(${rotation}deg)`;
+    }
+    function zoomImage(delta) { zoom += delta; if(zoom < 0.2) zoom=0.2; updateTransform(); }
+    function rotateImage(deg) { rotation += deg; updateTransform(); }
+    function resetImage() { zoom = 1; rotation = 0; updateTransform(); }
+
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) { img.src = e.target.result; }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // 2. CÁLCULO DE IMPUESTOS (GUATEMALA)
+    function calculateTaxes() {
+        let total = parseFloat(document.getElementById('id_total_amount').value) || 0;
+        let idp = parseFloat(document.getElementById('id_idp_amount').value) || 0;
+        
+        // Fórmula: (Total - IDP) / 1.12 = Base Imponible
+        // IVA = Total - IDP - Base Imponible
+        
+        let base = (total - idp) / 1.12;
+        let iva = (total - idp) - base;
+        
+        document.getElementById('id_iva_amount').value = iva.toFixed(2);
+    }
+    
+    // Si cambian el IDP, recalcular IVA
+    function calculateIVAFromBase() { calculateTaxes(); }
+
+    // 3. CONEXIÓN CON GEMINI IA (BACKEND)
+    async function analyzeReceiptWithGemini() {
+        const fileInput = document.getElementById('id_receipt_image');
+        if (!fileInput.files[0]) {
+            alert('⚠️ Por favor sube una imagen primero.');
+            return;
+        }
+
+        const btn = document.querySelector('.btn-warning');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Analizando con Gemini...';
+        btn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('image', fileInput.files[0]);
+
+        try {
+            const response = await fetch('/api/analizar-factura/', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                // Llenar campos
+                if(data.nit) document.getElementById('id_vendor_nit').value = data.nit;
+                if(data.supplier) document.getElementById('id_vendor_name').value = data.supplier;
+                if(data.date) document.getElementById('id_date').value = data.date;
+                if(data.serie) document.getElementById('id_invoice_series').value = data.serie;
+                if(data.number) document.getElementById('id_invoice_number').value = data.number;
+                
+                // Montos
+                if(data.total) {
+                    document.getElementById('id_total_amount').value = data.total;
+                    calculateTaxes(); // Disparar cálculo automático
+                }
+                
+                // Si la IA detectó que es gasolina (IDP)
+                if(data.is_fuel && data.idp) {
+                    document.getElementById('id_idp_amount').value = data.idp;
+                    calculateTaxes();
+                }
+
+                alert('✅ Factura analizada con éxito.');
+            } else {
+                alert('⚠️ No se pudieron extraer datos: ' + data.error);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('❌ Error de conexión.');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+</script>
 {% endblock %}

@@ -38,4 +38,6 @@ urlpatterns = [
     
     path('flotilla/', views.vehicle_list, name='vehicle_list'),
     path('flotilla/nuevo/', views.vehicle_create, name='vehicle_create'),
+
+    path('api/analizar-factura/', views.analyze_receipt_api, name='analyze_receipt_api'),
 ]

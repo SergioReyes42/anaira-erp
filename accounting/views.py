@@ -366,3 +366,58 @@ def chart_of_accounts(request):
         {'code': '1.1', 'name': 'ACTIVO CORRIENTE', 'level': 2, 'type': 'Grupo', 'niif_tag': 'NIC 1'},
     ]
     return render(request, 'accounting/chart_of_accounts.html', {'accounts': simulated_accounts})
+
+import google.generativeai as genai
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from PIL import Image
+import json
+import os
+
+# --- CONFIGURACIÓN DE GEMINI ---
+# ¡IMPORTANTE! Reemplaza esto con tu API KEY real
+GENAI_API_KEY = "AIzaSyCZkHsDpbhRWiQvUJcuEdRLlI8s-192VU0" 
+genai.configure(api_key=GENAI_API_KEY)
+
+def analyze_receipt_api(request):
+    """
+    Recibe una imagen por POST, la manda a Gemini Pro Vision
+    y devuelve el JSON estructurado con los datos de la factura.
+    """
+    if request.method == 'POST' and request.FILES.get('image'):
+        try:
+            image_file = request.FILES['image']
+            img = Image.open(image_file)
+
+            # Prompt Maestro para Gemini
+            prompt = """
+            Actúa como un asistente contable experto en facturas de Guatemala.
+            Analiza esta imagen y extrae la siguiente información en formato JSON estricto:
+            {
+                "supplier": "Nombre del proveedor",
+                "nit": "NIT sin guiones ni espacios extra",
+                "date": "YYYY-MM-DD",
+                "serie": "Serie de la factura",
+                "number": "Número de factura o DTE",
+                "total": 0.00 (número decimal),
+                "is_fuel": true/false (si es factura de gasolina),
+                "idp": 0.00 (si encuentras desglose de IDP, extráelo, si no 0)
+            }
+            Si algún dato no es visible, pon null. No inventes datos.
+            """
+
+            # Llamamos al modelo Gemini 1.5 Flash (Más rápido y barato para esto)
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            response = model.generate_content([prompt, img])
+            
+            # Limpiamos la respuesta (Gemini a veces pone ```json ... ```)
+            text_response = response.text.replace('```json', '').replace('```', '').strip()
+            data = json.loads(text_response)
+
+            return JsonResponse({'success': True, **data})
+
+        except Exception as e:
+            print(f"Error IA: {e}")
+            return JsonResponse({'success': False, 'error': str(e)})
+
+    return JsonResponse({'success': False, 'error': 'No image provided'})
