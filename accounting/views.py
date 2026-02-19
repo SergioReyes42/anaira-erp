@@ -421,3 +421,17 @@ def analyze_receipt_api(request):
             return JsonResponse({'success': False, 'error': str(e)})
 
     return JsonResponse({'success': False, 'error': 'No image provided'})
+
+login_required
+def mobile_expense(request):
+    """Vista para crear un nuevo gasto con IA"""
+    if request.method == 'POST':
+        # ... aquí va tu lógica de guardar el gasto ...
+        # (Si ya la tenías, déjala igual, solo cambia el render del final)
+        pass 
+    
+    # IMPORTANTE: Aquí pasamos la lista de vehículos para el select
+    vehicles = Vehicle.objects.filter(company=request.user.current_company, active=True)
+    
+    # OJO AQUÍ: Asegúrate que apunte al nuevo archivo 'expense_form.html'
+    return render(request, 'accounting/expense_form.html', {'vehicles': vehicles})
