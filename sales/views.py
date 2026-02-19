@@ -44,3 +44,9 @@ def quotation_create(request):
     
     products = Product.objects.filter(company=request.user.current_company)
     return render(request, 'sales/quotation_form.html', {'form': form, 'products': products})
+
+@login_required
+def client_list(request):
+    """Lista de clientes"""
+    clients = Client.objects.filter(company=request.user.current_company)
+    return render(request, 'sales/client_list.html', {'clients': clients})
