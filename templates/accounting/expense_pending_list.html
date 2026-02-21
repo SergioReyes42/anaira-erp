@@ -1,0 +1,71 @@
+{% extends 'base.html' %} {% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Bandeja de Gastos Pendientes</h2>
+        <span class="badge bg-danger fs-6">{{ expenses|length }} Pendientes</span>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Origen</th>
+                            <th>Proveedor / Descripción</th>
+                            <th>Monto Total</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for expense in expenses %}
+                        <tr>
+                            <td>{{ expense.date|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                {% if expense.origin == 'PILOT' %}
+                                    <span class="badge bg-info text-dark"><i class="bi bi-truck"></i> App Piloto</span>
+                                {% elif expense.origin == 'SCANNER' %}
+                                    <span class="badge bg-primary"><i class="bi bi-upc-scan"></i> Scanner IA</span>
+                                {% else %}
+                                    <span class="badge bg-secondary"><i class="bi bi-keyboard"></i> Manual</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ expense.provider_name|default:"Pendiente" }}</strong><br>
+                                <small class="text-muted">{{ expense.description|truncatechars:40 }}</small>
+                            </td>
+                            <td><strong>Q. {{ expense.total_amount }}</strong></td>
+                            <td>
+                                <a href="{% url 'review_expense' expense.id %}" class="btn btn-warning btn-sm">
+                                    <i class="bi bi-pencil-square"></i> Revisar y Aprobar
+                                </a>
+                                <a href="{% url 'reject_expense' expense.id %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Estás seguro de rechazar este gasto?');">
+                                    <i class="bi bi-trash"></i> Rechazar
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                <i class="bi bi-check-circle fs-2"></i><br>
+                                No hay gastos pendientes de aprobación. ¡Todo al día!
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
