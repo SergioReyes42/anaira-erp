@@ -27,12 +27,19 @@ class Expense(models.Model):
         ('APPROVED', 'Contabilizado'),
         ('REJECTED', 'Rechazado'),
     ]
+    
+    ORIGIN_CHOICES = [
+        ('PILOT', 'App Piloto'),
+        ('SCANNER', 'Smart Scanner IA'),
+        ('MANUAL', 'Ingreso Manual'),
+    ]
 
     # --- DATOS GENERALES ---
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    origin = models.CharField(max_length=20, choices=ORIGIN_CHOICES, default='MANUAL') # NUEVO: Para saber de dónde viene
 
     # --- DATOS DEL DOCUMENTO (IA SCANNER) ---
     receipt_image = models.ImageField(upload_to='expenses_receipts/', verbose_name="Foto Factura")
@@ -89,7 +96,6 @@ class BankTransaction(models.Model):
     reference = models.CharField(max_length=50, null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        # Actualizar saldo de la cuenta automáticamente al crear
         if not self.pk: 
             if self.transaction_type == 'IN':
                 self.bank_account.balance += self.amount
@@ -106,24 +112,21 @@ class BankTransaction(models.Model):
 # ==========================================
 
 class JournalEntry(models.Model):
-    """Encabezado de la Partida Contable"""
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=True)
     description = models.CharField(max_length=255, verbose_name="Concepto")
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     total = models.DecimalField(max_digits=12, decimal_places=2)
-    # Vinculamos al gasto original para saber de dónde salió
     expense_ref = models.OneToOneField(Expense, on_delete=models.SET_NULL, null=True, blank=True, related_name='journal_entry')
 
     def __str__(self):
         return f"Partida #{self.id} - {self.description}"
 
 class JournalItem(models.Model):
-    """Detalle de la Partida (Debe / Haber)"""
     entry = models.ForeignKey(JournalEntry, related_name='items', on_delete=models.CASCADE)
-    account_name = models.CharField(max_length=100) # Ej: Combustibles, IVA, IDP, Banco
-    debit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)  # Debe
-    credit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00) # Haber
+    account_name = models.CharField(max_length=100)
+    debit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    credit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
 
     def __str__(self):
         return f"{self.account_name} | D:{self.debit} H:{self.credit}"
