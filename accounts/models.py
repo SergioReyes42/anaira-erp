@@ -13,7 +13,7 @@ class User(AbstractUser):
         max_length=20,
         choices=Roles.choices,
         default=Roles.VIEWER,
-        help_text="Rol dentro de Anaira Systems"
+        help_text="Rol dentro de Anaira ERP"
     )
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True, verbose_name="Foto de Perfil")
     
@@ -35,26 +35,31 @@ class User(AbstractUser):
 
     totp_secret = models.CharField(max_length=64, blank=True, null=True)
 
-    def is_admin_or_staff(self):
-        return self.role in [self.Roles.ADMIN, self.Roles.STAFF]
-
-    def __str__(self):
-        return self.username
-
-
+    # -----------------------------------------------------
+    # CONTROL MULTI-EMPRESA
+    # -----------------------------------------------------
     
-    # NUEVO CAMPO: Rastreador de ubicación
+    # 1. ¿En qué empresa está metido en este momento? (ForeignKey = Solo 1)
     current_company = models.ForeignKey(
-        'core.Company',  # Apunta a su modelo en Core
-        on_delete=models.SET_NULL, # Si borran la empresa, el usuario no se borra
+        'core.Company',  
+        on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
         related_name='users_working_here',
         verbose_name="Trabajando actualmente en"
     )
 
-    # Para saber si está "Online" usaremos la lógica:
-    # Si su último click fue hace menos de 5 min = Online 🟢
-    
+    # 2. ¿A qué empresas tiene derecho a entrar? (ManyToMany = Puede ser a varias)
+    allowed_companies = models.ManyToManyField(
+        'core.Company',
+        blank=True,
+        related_name='allowed_users',
+        verbose_name="Empresas Permitidas",
+        help_text="Selecciona a qué empresas puede acceder este usuario."
+    )
+
+    def is_admin_or_staff(self):
+        return self.role in [self.Roles.ADMIN, self.Roles.STAFF]
+
     def __str__(self):
-        return self.email
+        return self.username
