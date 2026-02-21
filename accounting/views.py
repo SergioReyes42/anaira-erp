@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Sum
+from django.core.paginator import Paginator # Agrega esto arriba si no lo tienes
 
 # --- IMPORTACIÓN DE MODELOS ---
 from .models import (
@@ -225,7 +226,26 @@ def reject_expense(request, pk):
 @login_required
 def libro_diario(request):
     entries = JournalEntry.objects.filter(company=request.user.current_company).order_by('-date', '-id')
-    return render(request, 'accounting/libro_diario.html', {'entries': entries})
+    
+    # 1. Filtro por fechas
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    
+    if fecha_inicio:
+        entries = entries.filter(date__gte=fecha_inicio)
+    if fecha_fin:
+        entries = entries.filter(date__lte=fecha_fin)
+
+    # 2. Paginación (10 partidas por "hoja")
+    paginator = Paginator(entries, 10) 
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'accounting/libro_diario.html', {
+        'page_obj': page_obj,
+        'fecha_inicio': fecha_inicio,
+        'fecha_fin': fecha_fin
+    })
 
 @login_required
 def libro_mayor(request):

@@ -1,69 +1,90 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-4 mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-book"></i> Libro Diario General</h2>
-        <button class="btn btn-outline-primary" onclick="window.print()">
-            <i class="bi bi-printer"></i> Imprimir / PDF
-        </button>
+<div class="container-fluid py-2">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <div>
+            <h2 class="mb-0 text-primary fw-bold"><i class="bi bi-journal-bookmark-fill me-2"></i>Libro Diario General</h2>
+            <small class="text-muted">Registro cronológico de operaciones contables</small>
+        </div>
+        <div>
+            <button class="btn btn-outline-dark me-2" onclick="window.print()">
+                <i class="bi bi-printer-fill me-1"></i> Imprimir Hoja
+            </button>
+            <a href="#" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel-fill me-1"></i> Exportar
+            </a>
+        </div>
     </div>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
+    <div class="card shadow-sm mb-4 border-0 bg-light">
+        <div class="card-body py-3">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary mb-1" style="font-size: 0.85rem;">Desde Fecha:</label>
+                    <input type="date" name="fecha_inicio" class="form-control form-control-sm" value="{{ fecha_inicio|default_if_none:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary mb-1" style="font-size: 0.85rem;">Hasta Fecha:</label>
+                    <input type="date" name="fecha_fin" class="form-control form-control-sm" value="{{ fecha_fin|default_if_none:'' }}">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary btn-sm me-2"><i class="bi bi-search"></i> Filtrar</button>
+                    <a href="{% url 'libro_diario' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-clockwise"></i> Limpiar</a>
+                </div>
+            </form>
+        </div>
+    </div>
 
-    <div class="card shadow-sm">
+    <div class="card shadow border-0 print-section">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-bordered mb-0 table-sm align-middle">
-                    <thead class="table-dark">
+                <table class="table table-hover table-bordered mb-0" style="font-family: 'Courier New', Courier, monospace; font-size: 0.95rem;">
+                    <thead class="bg-dark text-white text-center align-middle" style="letter-spacing: 1px;">
                         <tr>
-                            <th class="text-center" style="width: 12%;">Fecha</th>
-                            <th style="width: 48%;">Concepto / Cuentas</th>
-                            <th class="text-end" style="width: 20%;">Debe (Q.)</th>
-                            <th class="text-end" style="width: 20%;">Haber (Q.)</th>
+                            <th style="width: 10%;">FECHA</th>
+                            <th style="width: 50%;">CÓDIGO / CONCEPTO DE LA CUENTA</th>
+                            <th style="width: 20%;">DEBE (Q.)</th>
+                            <th style="width: 20%;">HABER (Q.)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for entry in entries %}
-                            <tr class="table-light">
-                                <td class="text-center fw-bold">{{ entry.date|date:"d/m/Y" }}</td>
-                                <td colspan="3" class="fw-bold text-primary">
-                                    Partida #{{ entry.id }} - {{ entry.description }}
+                        {% for entry in page_obj %}
+                            <tr class="table-secondary border-dark">
+                                <td class="text-center fw-bold align-middle">{{ entry.date|date:"d/m/Y" }}</td>
+                                <td colspan="3" class="fw-bold text-dark">
+                                    <span class="badge bg-dark me-2">Pda #{{ entry.id }}</span> 
+                                    <u>{{ entry.description }}</u>
                                 </td>
                             </tr>
                             
                             {% for item in entry.items.all %}
                             <tr>
-                                <td></td> <td class="{% if item.credit > 0 %}ps-5 text-muted{% else %}fw-semibold{% endif %}">
-                                    {{ item.account_name }}
+                                <td class="border-end-0"></td>
+                                
+                                <td class="{% if item.credit > 0 %}ps-5 text-muted{% else %}fw-bold text-dark{% endif %}">
+                                    {% if item.credit > 0 %}<i class="bi bi-arrow-return-right me-1"></i>{% endif %}
+                                    {{ item.account_name|upper }}
                                 </td>
                                 
-                                <td class="text-end text-success fw-bold">
-                                    {% if item.debit > 0 %}{{ item.debit }}{% endif %}
+                                <td class="text-end fw-bold text-success" style="background-color: #f8fff8;">
+                                    {% if item.debit > 0 %}{{ item.debit|floatformat:2 }}{% endif %}
                                 </td>
                                 
-                                <td class="text-end text-danger fw-bold">
-                                    {% if item.credit > 0 %}{{ item.credit }}{% endif %}
+                                <td class="text-end fw-bold text-danger" style="background-color: #fff8f8;">
+                                    {% if item.credit > 0 %}{{ item.credit|floatformat:2 }}{% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
                             
                             <tr>
-                                <td colspan="4" class="p-1 border-bottom border-2 border-dark"></td>
+                                <td colspan="4" class="p-0 border-bottom border-2 border-dark" style="height: 4px;"></td>
                             </tr>
-                            
                         {% empty %}
                             <tr>
-                                <td colspan="4" class="text-center py-5 text-muted">
-                                    <i class="bi bi-journal-x fs-1"></i><br>
-                                    No hay partidas registradas en el libro diario todavía.
+                                <td colspan="4" class="text-center py-5">
+                                    <i class="bi bi-file-earmark-x text-muted" style="font-size: 3rem;"></i>
+                                    <p class="mt-3 text-muted fw-bold">No se encontraron partidas contables en este rango de fechas.</p>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -71,6 +92,36 @@
                 </table>
             </div>
         </div>
+        
+        {% if page_obj.has_other_pages %}
+        <div class="card-footer bg-white py-3 border-top-0">
+            <nav aria-label="Navegación de hojas contables">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page=1{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}"><i class="bi bi-chevron-double-left"></i> Inicio</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}">Anterior</a></li>
+                    {% endif %}
+
+                    <li class="page-item active"><span class="page-link">Hoja {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}">Siguiente</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}">Fin <i class="bi bi-chevron-double-right"></i></a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
     </div>
 </div>
+
+<style>
+    @media print {
+        body * { visibility: hidden; }
+        .print-section, .print-section * { visibility: visible; }
+        .print-section { position: absolute; left: 0; top: 0; width: 100%; }
+        .card-footer, .badge { display: none !important; }
+        table { font-size: 10px !important; }
+    }
+</style>
 {% endblock %}
