@@ -74,11 +74,18 @@
                     <i class="bi bi-camera-fill me-2"></i> Subir Gasto (Foyo)
                 </a>
             {% else %}
+
+            {% if request.user|has_group:"Pilotos, Ruteros" %}
+            <a href="{% url 'pilot_upload' %}" class="list-group-item list-group-item-action text-warning fw-bold">
+                <i class="bi bi-camera-fill me-2"></i> Subir Gasto
+            </a>
+            {% endif %}
             
            <a href="{% url 'home' %}" class="list-group-item list-group-item-action">
                 <i class="bi bi-grid-1x2-fill me-2 text-info"></i> Mi Tablero
             </a>
-                     
+            
+                       
             {% if request.user|has_group:"Contadora, Auxiliar Contable, Gerente" %}
             <a href="{% url 'smart_hub' %}" class="list-group-item list-group-item-action text-info">
                 <i class="bi bi-magic me-2"></i> Smart Scanner IA
@@ -292,8 +299,6 @@
                 </a>   
             </div>
             {% endif %}
-
-        {% endif %}
 
              <div class="mt-4 border-top border-secondary pt-2">
                  <a class="list-group-item list-group-item-action" href="{% url 'control_panel' %}">
