@@ -68,17 +68,17 @@
         </div>
         
         <div class="list-group list-group-flush pt-3">
-
-            {% if request.user|has_group:"Pilotos" %}
-                <a href="{% url 'pilot_upload' %}" class="list-group-item list-group-item-action text-warning fw-bold" style="font-size: 1.1rem;">
-                    <i class="bi bi-camera-fill me-2"></i> Subir Gasto (Foyo)
-                </a>
-            {% else %}
-          
+         
            <a href="{% url 'home' %}" class="list-group-item list-group-item-action">
                 <i class="bi bi-grid-1x2-fill me-2 text-info"></i> Mi Tablero
             </a>
-            
+            {% if request.user|has_group:"Pilotos, Ruteros" %}
+            <a href="{% url 'pilot_upload' %}" class="list-group-item list-group-item-action text-warning fw-bold" style="font-size: 1.05rem;">
+                <i class="bi bi-camera-fill me-2"></i> Subir Gasto (Foto)
+            </a>
+            {% endif %}
+
+            {% if request.user.is_superuser or request.user|has_group:"Contadora, Auxiliar Contable, Gerente, Administrador, Ventas, Despacho, RRHH" %}
                        
             {% if request.user|has_group:"Contadora, Auxiliar Contable, Gerente" %}
             <a href="{% url 'smart_hub' %}" class="list-group-item list-group-item-action text-info">
