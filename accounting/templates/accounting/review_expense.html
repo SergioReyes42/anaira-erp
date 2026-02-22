@@ -19,7 +19,6 @@
                 </div>
                 <div class="card-body d-flex flex-column align-items-center justify-content-center bg-light p-2">
                     {% if expense.receipt_image %}
-                        
                         <div class="lupa-container shadow-sm border rounded bg-white" 
                              onmousemove="hacerZoom(event)" 
                              onmouseleave="quitarZoom(event)"
@@ -66,11 +65,11 @@
 
                         <h6 class="text-primary border-bottom pb-2 mt-4">Datos del Documento</h6>
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label fw-bold">Serie</label>
                                 <input type="text" name="invoice_series" class="form-control" value="{{ expense.invoice_series|default:'' }}">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-8">
                                 <label class="form-label fw-bold">No. Factura / DTE</label>
                                 <input type="text" name="invoice_number" class="form-control" value="{{ expense.invoice_number|default:'' }}">
                             </div>
@@ -81,16 +80,35 @@
                             <textarea name="description" class="form-control" rows="2" required>{{ expense.description|default:'' }}</textarea>
                         </div>
 
-                        <h6 class="text-primary border-bottom pb-2 mt-4">Valores Financieros</h6>
+                        <h6 class="text-primary border-bottom pb-2 mt-4">Clasificación y Valores Financieros</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">¿Qué tipo de gasto es?</label>
+                            <select id="expense_type" name="expense_type" class="form-select border-primary">
+                                <option value="GENERAL" {% if expense.expense_type != 'FUEL' %}selected{% endif %}>Gasto General / Compra Convencional</option>
+                                <option value="FUEL" {% if expense.expense_type == 'FUEL' %}selected{% endif %}>Combustible (Aplica IDP)</option>
+                            </select>
+                        </div>
+
                         <div class="row mb-4 bg-light p-3 rounded border">
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold text-success">Total Factura (Q.)</label>
-                                <input type="number" step="0.01" name="total_amount" class="form-control form-control-lg border-success" value="{{ expense.total_amount }}" required>
+                                <input type="number" step="0.01" id="total_amount" name="total_amount" class="form-control form-control-lg border-success fw-bold" value="{{ expense.total_amount }}" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3" id="div_idp" style="display: none;">
+                                <label class="form-label fw-bold text-danger">Impuesto IDP (Q.)</label>
+                                <input type="number" step="0.01" id="tax_idp" name="tax_idp" class="form-control border-danger" value="{{ expense.tax_idp|default:'0.00' }}">
+                                <small class="text-muted" style="font-size: 0.75rem;">Ingresa el IDP según el galonaje.</small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-muted">Base Imponible (Q.)</label>
+                                <input type="number" step="0.01" id="tax_base" name="tax_base" class="form-control bg-white" value="{{ expense.tax_base }}" readonly>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-bold text-muted">Impuesto IDP (Q.) - Si aplica</label>
-                                <input type="number" step="0.01" name="tax_idp" class="form-control" value="{{ expense.tax_idp }}">
-                                <small class="text-muted" style="font-size: 0.8rem;">La Base y el IVA se calcularán automáticamente al guardar.</small>
+                                <label class="form-label fw-bold text-muted">IVA (12%) (Q.)</label>
+                                <input type="number" step="0.01" id="tax_iva" name="tax_iva" class="form-control bg-white" value="{{ expense.tax_iva }}" readonly>
                             </div>
                         </div>
 
@@ -107,56 +125,70 @@
 </div>
 
 <style>
-    /* Configuración del contenedor de la imagen */
+    /* Estilos del Zoom */
     .lupa-container {
-        width: 100%;
-        height: 600px; /* Altura fija para que no deforme la pantalla */
-        overflow: hidden;
-        position: relative;
-        cursor: crosshair; /* Cambia el puntero a una cruz */
-        
-        /* El fondo es la factura real, inicialmente se ve normal */
-        background-repeat: no-repeat;
-        background-position: center;
-        background-size: contain; 
+        width: 100%; height: 600px; overflow: hidden; position: relative; cursor: crosshair;
+        background-repeat: no-repeat; background-position: center; background-size: contain; 
     }
-
-    /* Configuración de la imagen base (la que se ve antes del hover) */
     .lupa-container .imagen-base {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        transition: opacity 0.1s ease-in-out;
+        width: 100%; height: 100%; object-fit: contain; transition: opacity 0.1s ease-in-out;
     }
-
-    /* Magia: Cuando pasas el mouse, ocultamos la imagen base y agrandamos el fondo */
-    .lupa-container:hover .imagen-base {
-        opacity: 0; 
-    }
-    
-    .lupa-container:hover {
-        /* Aumenta este 250% a 300% o 400% si quieres que acerque más */
-        background-size: 250%; 
-    }
+    .lupa-container:hover .imagen-base { opacity: 0; }
+    .lupa-container:hover { background-size: 250%; }
 </style>
 
 <script>
-    // Función que mueve el fondo agrandado siguiendo las coordenadas del mouse
+    // 1. SCRIPT DE LA LUPA
     function hacerZoom(e) {
         const contenedor = e.currentTarget;
-        
-        // Calcula dónde está el mouse en porcentaje (0 a 100%)
         const x = (e.offsetX / contenedor.offsetWidth) * 100;
         const y = (e.offsetY / contenedor.offsetHeight) * 100;
-        
-        // Mueve la imagen de fondo a esa posición exacta
         contenedor.style.backgroundPosition = `${x}% ${y}%`;
     }
+    function quitarZoom(e) { e.currentTarget.style.backgroundPosition = 'center'; }
 
-    // Función que resetea la vista cuando quitas el mouse
-    function quitarZoom(e) {
-        const contenedor = e.currentTarget;
-        contenedor.style.backgroundPosition = 'center';
-    }
+    // 2. SCRIPT DE LA CALCULADORA INTELIGENTE (IVA, BASE, IDP)
+    document.addEventListener("DOMContentLoaded", function() {
+        const selectTipo = document.getElementById("expense_type");
+        const divIdp = document.getElementById("div_idp");
+        const inputTotal = document.getElementById("total_amount");
+        const inputIdp = document.getElementById("tax_idp");
+        const inputBase = document.getElementById("tax_base");
+        const inputIva = document.getElementById("tax_iva");
+
+        function calcularImpuestos() {
+            let total = parseFloat(inputTotal.value) || 0;
+            let idp = 0;
+
+            // Si es Combustible, mostrar campo IDP y tomar su valor
+            if (selectTipo.value === 'FUEL') {
+                divIdp.style.display = 'block';
+                idp = parseFloat(inputIdp.value) || 0;
+            } else {
+                divIdp.style.display = 'none';
+                inputIdp.value = '0.00';
+            }
+
+            // FÓRMULA GUATEMALA: Base = (Total - IDP) / 1.12
+            let base = (total - idp) / 1.12;
+            let iva = base * 0.12;
+
+            // Evitar números negativos si el contador teclea mal
+            if (base < 0) base = 0;
+            if (iva < 0) iva = 0;
+
+            // Mostrar resultados con 2 decimales
+            inputBase.value = base.toFixed(2);
+            inputIva.value = iva.toFixed(2);
+        }
+
+        // Ejecutar el cálculo cada vez que cambien los valores o el tipo de gasto
+        selectTipo.addEventListener("change", calcularImpuestos);
+        inputTotal.addEventListener("input", calcularImpuestos);
+        inputIdp.addEventListener("input", calcularImpuestos);
+
+        // Calcular al abrir la pantalla por primera vez
+        calcularImpuestos();
+    });
 </script>
 {% endblock %}
