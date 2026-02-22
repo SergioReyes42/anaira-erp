@@ -70,17 +70,11 @@
         <div class="list-group list-group-flush pt-3">
 
             {% if request.user|has_group:"Pilotos" %}
-                <a href="{% url 'expense_create' %}" class="list-group-item list-group-item-action text-warning fw-bold" style="font-size: 1.1rem;">
+                <a href="{% url 'pilot_upload' %}" class="list-group-item list-group-item-action text-warning fw-bold" style="font-size: 1.1rem;">
                     <i class="bi bi-camera-fill me-2"></i> Subir Gasto (Foyo)
                 </a>
             {% else %}
-
-            {% if request.user|has_group:"Pilotos, Ruteros" %}
-            <a href="{% url 'pilot_upload' %}" class="list-group-item list-group-item-action text-warning fw-bold">
-                <i class="bi bi-camera-fill me-2"></i> Subir Gasto
-            </a>
-            {% endif %}
-            
+          
            <a href="{% url 'home' %}" class="list-group-item list-group-item-action">
                 <i class="bi bi-grid-1x2-fill me-2 text-info"></i> Mi Tablero
             </a>
@@ -299,6 +293,8 @@
                 </a>   
             </div>
             {% endif %}
+
+        {% endif %}
 
              <div class="mt-4 border-top border-secondary pt-2">
                  <a class="list-group-item list-group-item-action" href="{% url 'control_panel' %}">
