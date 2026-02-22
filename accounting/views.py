@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Sum
 from django.core.paginator import Paginator # Agrega esto arriba si no lo tienes
+from .decorators import group_required  # <--- Importas el candado
 
 # --- IMPORTACIÓN DE MODELOS ---
 from .models import (
@@ -23,6 +24,7 @@ from .utils import analyze_invoice_image
 # ========================================================
 
 @login_required
+@group_required('Pilotos', 'Contadora', 'Gerente') # Todos estos pueden subir gastos
 def pilot_upload(request):
     """VISTA PILOTOS: Carga rápida sin IA, va a Pendientes"""
     vehicles = Vehicle.objects.filter(company=request.user.current_company)
@@ -55,8 +57,9 @@ def pilot_upload(request):
             
     return render(request, 'accounting/pilot_upload.html', {'vehicles': vehicles})
 
-
+# 3. La Aprobación de IA es solo para Contabilidad
 @login_required
+@group_required('Contadora') 
 def smart_scanner(request):
     """VISTA CONTADOR: Escaneo masivo con IA, va a Pendientes"""
     if request.method == 'POST':
@@ -223,7 +226,9 @@ def reject_expense(request, pk):
 # ========================================================
 # 3. ESTADOS FINANCIEROS Y LIBROS
 # ========================================================
+# 2. ¡Pero el Libro Diario lo BLINDAMOS!
 @login_required
+@group_required('Contadora', 'Auxiliar Contable', 'Gerente') # Un piloto jamás pasará de aquí
 def libro_diario(request):
     entries = JournalEntry.objects.filter(company=request.user.current_company).order_by('-date', '-id')
     
@@ -351,29 +356,51 @@ def analyze_receipt_api(request):
             image_file = request.FILES['image']
             img = Image.open(image_file)
 
+            # PROMPT MEJORADO: IA con Rol de Contador NIIF
             prompt = """
-            Actúa como un asistente contable experto en facturas de Guatemala.
-            Analiza esta imagen y extrae la siguiente información en formato JSON estricto:
+            Actúa como un Contador Público y Auditor experto en NIIF (Normas Internacionales de Información Financiera) y en contabilidad de Guatemala.
+            Analiza esta factura/recibo y extrae la información solicitada.
+
+            REGLA DE CLASIFICACIÓN (NIIF):
+            Para el campo "account_type", DEBES analizar el concepto de la compra y asignarlo a UNA Y SOLO UNA de estas cuentas exactas de nuestro catálogo:
+            - "Combustibles y Lubricantes" (Gasolina, diésel, aditivos)
+            - "Mantenimiento y Reparación de Vehículos" (Repuestos, llantas, talleres, servicios)
+            - "Papelería y Útiles de Oficina" (Hojas, tinta, cuadernos)
+            - "Atenciones al Personal y Clientes" (Comidas, restaurantes, refacciones)
+            - "Servicios Públicos y Telefonía" (Luz, agua, internet, recargas)
+            - "Mobiliario y Equipo de Computo" (PCs, teclados, herramientas mayores)
+            - "Inventario de Mercadería" (Si es compra de mercancía para la venta)
+            - "Gastos Generales" (ÚNETE a esta solo si no encaja en ninguna de las anteriores)
+
+            Devuelve UNICAMENTE el siguiente formato JSON estricto:
             {
-                "supplier": "Nombre del proveedor",
-                "nit": "NIT sin guiones ni espacios extra",
+                "supplier": "Nombre del proveedor comercial",
+                "nit": "NIT sin guiones ni letras extra, solo números y K",
                 "date": "YYYY-MM-DD",
-                "serie": "Serie de la factura",
+                "serie": "Serie de la factura (si aplica)",
                 "number": "Número de factura o DTE",
                 "total": 0.00,
                 "is_fuel": true/false,
-                "idp": 0.00
+                "idp": 0.00,
+                "account_type": "CUENTA_EXACTA_DEL_LISTADO_DE_ARRIBA"
             }
-            Si algún dato no es visible, pon null. No inventes datos.
+            Si algún dato no es visible, pon null. No inventes datos. No incluyas markdown como ```json.
             """
+            
+            # Usamos Gemini 1.5 Flash (ideal para OCR rápido y barato)
             model = genai.GenerativeModel('gemini-1.5-flash')
             response = model.generate_content([prompt, img])
+            
+            # Limpiamos posibles caracteres basura antes de parsear el JSON
             text_response = response.text.replace('```json', '').replace('```', '').strip()
             data = json.loads(text_response)
+            
             return JsonResponse({'success': True, **data})
+            
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
-    return JsonResponse({'success': False, 'error': 'No image provided'})
+            
+    return JsonResponse({'success': False, 'error': 'No se proporcionó ninguna imagen'})
 
 @login_required
 def mobile_expense(request):

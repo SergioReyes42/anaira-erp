@@ -73,9 +73,9 @@
                 <i class="bi bi-grid-1x2-fill me-2 text-info"></i> Mi Tablero
             </a>
             
-            {% if request.user|has_group:"Pilotos" or request.user|has_group:"Vendedores" or request.user.is_superuser %}
+            {% if request.user|has_group:"Pilotos, Ruteros" %}
             <a href="{% url 'pilot_upload' %}" class="list-group-item list-group-item-action text-warning fw-bold">
-                <i class="bi bi-camera-fill me-2"></i> Subir Gasto (Foto)
+                <i class="bi bi-camera-fill me-2"></i> Subir Gasto
             </a>
             {% endif %}
             
