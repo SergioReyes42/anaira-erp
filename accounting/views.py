@@ -25,32 +25,34 @@ from .utils import analyze_invoice_image
 # ========================================================
 
 @login_required
-@group_required('Pilotos', 'Contadora', 'Gerente') # Todos estos pueden subir gastos
+@group_required('Pilotos', 'Contadora', 'Gerente', 'Administrador') # Agregué Administrador por si acaso
 def pilot_upload(request):
     """VISTA PILOTOS: Carga rápida sin IA, va a Pendientes"""
-    vehicles = Vehicle.objects.filter(company=request.user.current_company)
-
-    # --- ESCUDO ANTI-ERRORES ---
+    
+    # 1. ESCUDO ANTI-ERRORES (Debe ir siempre hasta arriba)
     if not request.user.current_company:
         messages.error(request, "⛔ Tu usuario no tiene una empresa asignada. Contacta al Administrador.")
         return redirect('home')
 
-    # ==========================================
-    # MAGIA DE FILTRADO DE VEHÍCULOS
-    # ==========================================
-    # Si es el Superusuario, Contadora o Gerente, puede ver TODOS los vehículos de la empresa
-    if request.user.is_superuser or request.user.groups.filter(name__in=['Contadora', 'Gerente']).exists():
+    # 2. MAGIA DE FILTRADO DE VEHÍCULOS
+    # Si es Superusuario, Contadora, Gerente o Administrador: Ve TODOS
+    if request.user.is_superuser or request.user.groups.filter(name__in=['Contadora', 'Gerente', 'Administrador']).exists():
         vehicles = Vehicle.objects.filter(company=request.user.current_company)
     else:
-        # Si es un Piloto normal, SOLO ve los vehículos donde él está asignado
+        # Si es un Piloto normal: SOLO ve sus vehículos asignados
         vehicles = request.user.vehiculos_asignados.filter(company=request.user.current_company)
 
+    # 3. PROCESAMIENTO DEL FORMULARIO
     if request.method == 'POST':
         image = request.FILES.get('documento')
         description = request.POST.get('description', 'Gasto de Ruta')
         vehicle_id = request.POST.get('vehicle')
         
-        vehicle_obj = Vehicle.objects.filter(id=vehicle_id).first() if vehicle_id else None
+        # Validación segura: Solo busca en la DB si enviaron un número válido (evita el error si eligen "Otro")
+        if vehicle_id and vehicle_id.isdigit():
+            vehicle_obj = Vehicle.objects.filter(id=vehicle_id).first()
+        else:
+            vehicle_obj = None
 
         try:
             with transaction.atomic():
