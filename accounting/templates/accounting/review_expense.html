@@ -51,6 +51,8 @@
                     <form method="POST" action="{% url 'review_expense' expense.id %}">
                         {% csrf_token %}
                         
+                        <input type="hidden" name="expense_type" id="hidden_expense_type" value="{% if expense.expense_type == 'FUEL' %}FUEL{% else %}GENERAL{% endif %}">
+                        
                         <h6 class="text-primary border-bottom pb-2 mt-2">Datos del Proveedor</h6>
                         <div class="row mb-3">
                             <div class="col-md-8">
@@ -80,14 +82,18 @@
                             <textarea name="description" class="form-control" rows="2" required>{{ expense.description|default:'' }}</textarea>
                         </div>
 
-                        <h6 class="text-primary border-bottom pb-2 mt-4">Clasificación y Valores Financieros</h6>
+                        <h6 class="text-primary border-bottom pb-2 mt-4">Valores Financieros</h6>
                         
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">¿Qué tipo de gasto es?</label>
-                            <select id="expense_type" name="expense_type" class="form-select border-primary">
-                                <option value="GENERAL" {% if expense.expense_type != 'FUEL' %}selected{% endif %}>Gasto General / Compra Convencional</option>
-                                <option value="FUEL" {% if expense.expense_type == 'FUEL' %}selected{% endif %}>Combustible (Aplica IDP)</option>
-                            </select>
+                        <div class="card border-0 mb-3" style="background-color: #e0f2fe;">
+                            <div class="card-body p-3 rounded d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="bi bi-fuel-pump-fill fs-3 text-primary me-2"></i>
+                                    <span class="fw-bold fs-6 text-dark">¿Es factura de Combustible?</span>
+                                </div>
+                                <div class="form-check form-switch fs-3 mb-0">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="toggle_fuel" style="cursor: pointer;" {% if expense.expense_type == 'FUEL' %}checked{% endif %}>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="row mb-4 bg-light p-3 rounded border">
@@ -99,7 +105,7 @@
                             <div class="col-md-6 mb-3" id="div_idp" style="display: none;">
                                 <label class="form-label fw-bold text-danger">Impuesto IDP (Q.)</label>
                                 <input type="number" step="0.01" id="tax_idp" name="tax_idp" class="form-control border-danger" value="{{ expense.tax_idp|default:'0.00' }}">
-                                <small class="text-muted" style="font-size: 0.75rem;">Ingresa el IDP según el galonaje.</small>
+                                <small class="text-muted" style="font-size: 0.75rem;">Ingresa el monto exacto del IDP.</small>
                             </div>
 
                             <div class="col-md-6">
@@ -107,14 +113,14 @@
                                 <input type="number" step="0.01" id="tax_base" name="tax_base" class="form-control bg-white" value="{{ expense.tax_base }}" readonly>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-bold text-muted">IVA (12%) (Q.)</label>
+                                <label class="form-label fw-bold text-muted">IVA por cobrar (12%) (Q.)</label>
                                 <input type="number" step="0.01" id="tax_iva" name="tax_iva" class="form-control bg-white" value="{{ expense.tax_iva }}" readonly>
                             </div>
                         </div>
 
                         <div class="d-grid gap-2 mt-4">
                             <button type="submit" class="btn btn-success btn-lg">
-                                <i class="bi bi-check-circle"></i> Aprobar Gasto y Generar Partida Contable
+                                <i class="bi bi-check-circle"></i> Aprobar Gasto y Generar Partida
                             </button>
                         </div>
                     </form>
@@ -147,9 +153,10 @@
     }
     function quitarZoom(e) { e.currentTarget.style.backgroundPosition = 'center'; }
 
-    // 2. SCRIPT DE LA CALCULADORA INTELIGENTE (IVA, BASE, IDP)
+    // 2. SCRIPT DE LA CALCULADORA INTELIGENTE Y EL SWITCH
     document.addEventListener("DOMContentLoaded", function() {
-        const selectTipo = document.getElementById("expense_type");
+        const toggleFuel = document.getElementById("toggle_fuel");
+        const hiddenExpenseType = document.getElementById("hidden_expense_type");
         const divIdp = document.getElementById("div_idp");
         const inputTotal = document.getElementById("total_amount");
         const inputIdp = document.getElementById("tax_idp");
@@ -160,12 +167,15 @@
             let total = parseFloat(inputTotal.value) || 0;
             let idp = 0;
 
-            // Si es Combustible, mostrar campo IDP y tomar su valor
-            if (selectTipo.value === 'FUEL') {
+            // Si el switch está encendido (Es Combustible)
+            if (toggleFuel.checked) {
                 divIdp.style.display = 'block';
+                hiddenExpenseType.value = 'FUEL';
                 idp = parseFloat(inputIdp.value) || 0;
             } else {
+                // Si es un gasto normal
                 divIdp.style.display = 'none';
+                hiddenExpenseType.value = 'GENERAL';
                 inputIdp.value = '0.00';
             }
 
@@ -173,21 +183,21 @@
             let base = (total - idp) / 1.12;
             let iva = base * 0.12;
 
-            // Evitar números negativos si el contador teclea mal
+            // Evitar números negativos
             if (base < 0) base = 0;
             if (iva < 0) iva = 0;
 
-            // Mostrar resultados con 2 decimales
+            // Formatear a 2 decimales
             inputBase.value = base.toFixed(2);
             inputIva.value = iva.toFixed(2);
         }
 
-        // Ejecutar el cálculo cada vez que cambien los valores o el tipo de gasto
-        selectTipo.addEventListener("change", calcularImpuestos);
+        // Detectar clics en el interruptor y cambios en los números
+        toggleFuel.addEventListener("change", calcularImpuestos);
         inputTotal.addEventListener("input", calcularImpuestos);
         inputIdp.addEventListener("input", calcularImpuestos);
 
-        // Calcular al abrir la pantalla por primera vez
+        // Hacer un cálculo inicial al cargar la página
         calcularImpuestos();
     });
 </script>
