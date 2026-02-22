@@ -82,7 +82,7 @@
             {% if request.user.is_superuser or request.user|has_group:"Contadora, Auxiliar Contable, Gerente, Administrador, Ventas, Despacho, RRHH" %}
                        
                 {% if request.user|has_group:"Contadora, Auxiliar Contable, Gerente" %}
-                <a href="{% url 'smart_hub' %}" class="list-group-item list-group-item-action text-info">
+                <a href="#" class="list-group-item list-group-item-action text-info">
                     <i class="bi bi-magic me-2"></i> Smart Scanner IA
                 </a>
                 {% endif %}
@@ -92,13 +92,13 @@
                     <i class="bi bi-cart-fill me-2 text-warning"></i> Ventas & CRM
                 </a>
                 <div class="collapse submenu" id="menuVentas">
-                    <a href="{% url 'quotation_create' %}" class="list-group-item list-group-item-action text-white fw-bold">
+                    <a href="#" class="list-group-item list-group-item-action text-white fw-bold">
                         <i class="bi bi-plus-lg me-1"></i> Nueva Cotización                  
                     </a>
-                    <a href="{% url 'client_list' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-people-fill me-1"></i> Directorio Clientes
                     </a>
-                    <a href="{% url 'quotation_list' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-list-check me-1"></i> Historial
                     </a>
                     <a href="#" class="list-group-item list-group-item-action">
@@ -122,16 +122,16 @@
                     <i class="bi bi-bag-check-fill me-2 text-success"></i> Compras
                 </a>
                 <div class="collapse submenu" id="menuCompras">
-                    <a href="{% url 'purchase_list' %}" class="list-group-item list-group-item-action fw-bold text-white">
+                    <a href="#" class="list-group-item list-group-item-action fw-bold text-white">
                         <i class="bi bi-clock-history me-1"></i> Historial de Compras
                     </a>
-                    <a href="{% url 'create_purchase' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-cart-plus me-1"></i> Nueva Compra
                     </a>
-                    <a href="{% url 'supplier_list' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-truck me-1"></i> Proveedores
                     </a>
-                    <a href="{% url 'smart_scanner' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-robot me-1"></i> Registrar Gasto (IA) <span class="badge bg-primary badge-sidebar">New</span>
                     </a>
                     <a href="#" class="list-group-item list-group-item-action">
@@ -151,22 +151,22 @@
                     <i class="bi bi-box-seam-fill me-2 text-warning"></i> Logistica
                 </a>
                 <div class="collapse submenu" id="menuLogistica">
-                    <a href="{% url 'product_list' %}" class="list-group-item list-group-item-action fw-bold text-white">
+                    <a href="#" class="list-group-item list-group-item-action fw-bold text-white">
                         <i class="bi bi-tags-fill me-1"></i> Catálogo de Productos
                     </a>
-                    <a href="{% url 'inventory_kardex' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-arrow-left-right me-1"></i> Kardex de Inventario
                     </a>
-                    <a href="{% url 'inventory_dashboard' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-speedometer2"></i> Monitor de Existencias
                     </a>
-                     <a href="{% url 'make_transfer' %}" class="list-group-item list-group-item-action">
+                     <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-arrow-left-right me-1"></i> Traslados a Bodegas
                     </a>   
-                    <a href="{% url 'product_create' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-plus-square me-1"></i> Crear Producto
                     </a>
-                    <a href="{% url 'warehouse_management' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-building-lock me-1"></i> Gestión de Bodegas
                     </a>
                     <a href="#" class="list-group-item list-group-item-action">
@@ -183,24 +183,24 @@
                     <i class="bi bi-cash-coin me-2 text-warning"></i> Tesorería & Flotilla
                 </a>
                 <div class="collapse submenu" id="menuFinanzas">
-                     <a href="{% url 'bank_list' %}" class="list-group-item list-group-item-action text-white">
+                     <a href="#" class="list-group-item list-group-item-action text-white">
                          <i class="bi bi-bank2 me-1"></i> Panel de Bancos
                     </a>
-                    <a href="{% url 'bank_transaction_create' %}?type=IN" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-arrow-down-circle-fill text-success me-1"></i> Registrar Depósito
                     </a>
-                    <a href="{% url 'bank_transaction_create' %}?type=OUT" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-arrow-up-circle-fill text-danger me-1"></i> Registrar Retiro
                     </a>
-                    <a href="{% url 'bank_create' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-plus-circle me-1"></i> Crear Nueva Cuenta
                     </a>
-                    <a href="{% url 'bank_list' %}" class="list-group-item list-group-item-action text-info">
+                    <a href="#" class="list-group-item list-group-item-action text-info">
                         <i class="bi bi-credit-card-2-back me-1"></i> Tarjetas Crédito
                     </a>
                     
                     <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Reportes & Cuentas</small>
-                    <a href="{% url 'bank_list' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-file-earmark-spreadsheet me-1"></i> Estados de Cuenta
                     </a>
 
@@ -222,7 +222,7 @@
                     
                     <div class="dropdown-divider border-secondary mt-2"></div>            
                     
-                    <a href="{% url 'supplier_list' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-wallet2 me-1"></i> Cuentas por Cobrar
                     </a>
                     <a href="#" class="list-group-item list-group-item-action">
@@ -244,13 +244,14 @@
                 
                 <div class="dropdown-divider border-secondary mt-2"></div>
                 <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Gestión de Gastos</small>
+                
                 <a href="{% url 'expense_pending_list' %}" class="list-group-item list-group-item-action text-warning fw-bold">
                     <i class="bi bi-inbox-fill me-1"></i> Por Aprobar
                     <span class="badge bg-danger ms-2 rounded-pill">!</span> 
                 </a>
                 
                 <div class="collapse submenu" id="menuConta">
-                    <a href="{% url 'chart_of_accounts' %}" class="list-group-item list-group-item-action fw-bold text-primary">
+                    <a href="#" class="list-group-item list-group-item-action fw-bold text-primary">
                         <i class="bi bi-diagram-3 me-1"></i> Plan de Cuentas (NIIF)
                     </a>
                     <a href="{% url 'libro_diario' %}" class="list-group-item list-group-item-action">
@@ -259,14 +260,14 @@
                     <a href="{% url 'libro_mayor' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-bookmarks me-1"></i> Libro Mayor
                     </a>
-                    <a href="{% url 'balance_saldos' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-calculator me-1"></i> Balance de Saldos
                     </a>
                     <div class="dropdown-divider border-secondary"></div>
                     <a href="{% url 'estado_resultados' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-pie-chart me-1"></i> Estado de Resultados
                     </a>
-                    <a href="{% url 'balance_general' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-bar-chart-steps me-1"></i> Balance General
                     </a>
                     <a href="#" class="list-group-item list-group-item-action">
@@ -280,10 +281,10 @@
                     <i class="bi bi-people-fill me-2 text-danger"></i> RRHH
                 </a>
                 <div class="collapse submenu" id="menuRRHH">
-                    <a href="{% url 'employee_list' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-person-badge me-1"></i> Empleados
                     </a>
-                    <a href="{% url 'nomina_create' %}" class="list-group-item list-group-item-action">
+                    <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-cash-coin me-1"></i> Generar Nómina
                     </a>
                     <a href="#" class="list-group-item list-group-item-action">
@@ -292,9 +293,11 @@
                 </div>
                 {% endif %}
 
-            {% endif %} <div class="mt-4 border-top border-secondary pt-2">
+            {% endif %} 
+            
+            <div class="mt-4 border-top border-secondary pt-2">
                 {% if request.user.is_superuser or request.user|has_group:"Gerente, Administrador" %}
-                 <a class="list-group-item list-group-item-action" href="{% url 'control_panel' %}">
+                 <a class="list-group-item list-group-item-action" href="#">
                     <i class="bi bi-gear-fill me-2"></i> Panel de Sistema
                 </a>
                 {% endif %}
@@ -306,7 +309,10 @@
                  </form>
             </div>
 
-        </div> </div> <div id="page-content-wrapper">
+        </div> 
+    </div> 
+
+    <div id="page-content-wrapper">
         <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
             <div class="container-fluid">
                 <button class="btn btn-outline-dark btn-sm me-3" id="menu-toggle"><i class="bi bi-list fs-5"></i></button>
@@ -332,7 +338,7 @@
                                 <span class="d-none d-sm-inline">{{ request.user.username|default:"Usuario" }}</span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="navbarDropdown">
-                                <a class="dropdown-item" href="{% url 'control_panel' %}"><i class="bi bi-gear me-2"></i> Configuración</a>
+                                <a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i> Configuración</a>
                                 <div class="dropdown-divider"></div>
                                 <form action="{% url 'logout' %}" method="post">
                                     {% csrf_token %}
