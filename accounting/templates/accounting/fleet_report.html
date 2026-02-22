@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark"><i class="bi bi-graph-up-arrow text-primary me-2"></i> Reporte de Flotilla</h2>
+        <button class="btn btn-outline-success" onclick="window.print()">
+            <i class="bi bi-printer"></i> Imprimir Reporte
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4 bg-white">
+        <div class="card-body">
+            <form method="GET" class="row g-3 align-items-end">
+                
+                <div class="col-md-4">
+                    <label class="form-label fw-bold text-muted small">FILTRAR POR VEHÍCULO</label>
+                    <select name="vehicle_id" class="form-select border-primary">
+                        <option value="">🏢 TODA LA FLOTILLA (Reporte General)</option>
+                        {% for v in vehicles %}
+                            <option value="{{ v.id }}" {% if selected_vehicle == v.id|stringformat:"s" %}selected{% endif %}>
+                                {{ v.placa }} - {{ v.marca }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <label class="form-label fw-bold text-muted small">TIPO DE GASTO</label>
+                    <select name="category" class="form-select border-warning">
+                        <option value="both" {% if selected_category == 'both' %}selected{% endif %}>⛽ Combustible + 🛠️ Mantenimiento</option>
+                        <option value="fuel" {% if selected_category == 'fuel' %}selected{% endif %}>⛽ Solo Combustible</option>
+                        <option value="maint" {% if selected_category == 'maint' %}selected{% endif %}>🛠️ Solo Mantenimiento</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">
+                        <i class="bi bi-funnel-fill me-1"></i> Generar Reporte
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-danger text-white shadow-sm border-0 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <i class="bi bi-fuel-pump-fill display-4 me-3 opacity-75"></i>
+                    <div>
+                        <h6 class="text-uppercase mb-1 fw-bold">Total Combustible</h6>
+                        <h3 class="mb-0">Q. {{ total_fuel|floatformat:2 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card bg-warning text-dark shadow-sm border-0 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <i class="bi bi-tools display-4 me-3 opacity-75"></i>
+                    <div>
+                        <h6 class="text-uppercase mb-1 fw-bold">Total Mantenimientos</h6>
+                        <h3 class="mb-0">Q. {{ total_maint|floatformat:2 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card bg-success text-white shadow-sm border-0 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <i class="bi bi-cash-stack display-4 me-3 opacity-75"></i>
+                    <div>
+                        <h6 class="text-uppercase mb-1 fw-bold">Gasto Total Vehicular</h6>
+                        <h3 class="mb-0">Q. {{ gran_total|floatformat:2 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white">
+            <h6 class="mb-0"><i class="bi bi-list-columns-reverse me-2"></i> Detalle de Movimientos</h6>
+        </div>
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-hover table-striped mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Vehículo</th>
+                        <th>Piloto</th>
+                        <th>Rubro</th>
+                        <th>Estado</th>
+                        <th class="text-end">Monto (Q)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in expenses %}
+                    <tr>
+                        <td class="text-muted small">{{ expense.date|date:"d/m/Y H:i" }}</td>
+                        <td class="fw-bold">{{ expense.vehicle.placa }} <br><small class="text-muted fw-normal">{{ expense.vehicle.marca }}</small></td>
+                        <td>{{ expense.user.get_full_name|default:expense.user.username }}</td>
+                        <td>
+                            {% if 'Combustible' in expense.description %}
+                                <span class="badge bg-danger text-white"><i class="bi bi-fuel-pump"></i> Combustible</span>
+                            {% elif 'Mantenimiento' in expense.description %}
+                                <span class="badge bg-warning text-dark"><i class="bi bi-tools"></i> Mantenimiento</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ expense.description }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if expense.status == 'PENDING' %}
+                                <span class="badge border border-warning text-warning">Pendiente</span>
+                            {% else %}
+                                <span class="badge bg-success">Aprobado</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end fw-bold">Q. {{ expense.total_amount|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <i class="bi bi-folder-x fs-1 d-block mb-2"></i> No se encontraron gastos con estos filtros.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
