@@ -25,30 +25,41 @@ from .utils import analyze_invoice_image
 # ========================================================
 
 @login_required
-@group_required('Pilotos', 'Contadora', 'Gerente', 'Administrador') # Agregué Administrador por si acaso
+@group_required('Pilotos', 'Contadora', 'Gerente', 'Administrador')
 def pilot_upload(request):
-    """VISTA PILOTOS: Carga rápida sin IA, va a Pendientes"""
+    """VISTA PILOTOS/GERENTES: Carga rápida de ticket personal"""
     
-    # 1. ESCUDO ANTI-ERRORES (Debe ir siempre hasta arriba)
+    # 1. ESCUDO ANTI-ERRORES
     if not request.user.current_company:
         messages.error(request, "⛔ Tu usuario no tiene una empresa asignada. Contacta al Administrador.")
         return redirect('home')
 
-    # 2. MAGIA DE FILTRADO DE VEHÍCULOS
-    # Si es Superusuario, Contadora, Gerente o Administrador: Ve TODOS
-    if request.user.is_superuser or request.user.groups.filter(name__in=['Contadora', 'Gerente', 'Administrador']).exists():
-        vehicles = Vehicle.objects.filter(company=request.user.current_company)
-    else:
-        # Si es un Piloto normal: SOLO ve sus vehículos asignados
-        vehicles = request.user.vehiculos_asignados.filter(company=request.user.current_company)
+    # ==========================================
+    # MAGIA DE FILTRADO DE VEHÍCULOS (INTELIGENTE)
+    # ==========================================
+    # Buscamos si el usuario actual tiene vehículos a su nombre
+    vehiculos_del_usuario = request.user.vehiculos_asignados.filter(company=request.user.current_company)
 
-    # 3. PROCESAMIENTO DEL FORMULARIO
+    if vehiculos_del_usuario.exists():
+        # REGLA 1: Si tiene un carro asignado (sea Gerente o Piloto), SOLO le mostramos su carro.
+        # Esto agiliza su trabajo y evita que le meta gastos a otra placa por error.
+        vehicles = vehiculos_del_usuario
+        
+    elif request.user.is_superuser or request.user.groups.filter(name__in=['Contadora', 'Administrador', 'Gerente']).exists():
+        # REGLA 2: Si NO tiene carro a su nombre, pero es Jefe o Contadora, 
+        # le mostramos TODA la flotilla por si está subiendo el gasto de alguien más.
+        vehicles = Vehicle.objects.filter(company=request.user.current_company)
+        
+    else:
+        # REGLA 3: Es un piloto, pero en el sistema olvidaron asignarle su placa.
+        vehicles = Vehicle.objects.none()
+    # ==========================================
+
     if request.method == 'POST':
         image = request.FILES.get('documento')
         description = request.POST.get('description', 'Gasto de Ruta')
         vehicle_id = request.POST.get('vehicle')
         
-        # Validación segura: Solo busca en la DB si enviaron un número válido (evita el error si eligen "Otro")
         if vehicle_id and vehicle_id.isdigit():
             vehicle_obj = Vehicle.objects.filter(id=vehicle_id).first()
         else:
