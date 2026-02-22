@@ -83,3 +83,4 @@ class VehicleAdmin(admin.ModelAdmin):
     list_filter = ('active', 'company', 'brand')
     search_fields = ('plate', 'driver_name')
     list_editable = ('active', 'driver_name') # ¡Editar rápido desde la lista!
+    filter_horizontal = ('conductores',)

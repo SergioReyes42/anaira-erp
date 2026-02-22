@@ -30,6 +30,21 @@ def pilot_upload(request):
     """VISTA PILOTOS: Carga rápida sin IA, va a Pendientes"""
     vehicles = Vehicle.objects.filter(company=request.user.current_company)
 
+    # --- ESCUDO ANTI-ERRORES ---
+    if not request.user.current_company:
+        messages.error(request, "⛔ Tu usuario no tiene una empresa asignada. Contacta al Administrador.")
+        return redirect('home')
+
+    # ==========================================
+    # MAGIA DE FILTRADO DE VEHÍCULOS
+    # ==========================================
+    # Si es el Superusuario, Contadora o Gerente, puede ver TODOS los vehículos de la empresa
+    if request.user.is_superuser or request.user.groups.filter(name__in=['Contadora', 'Gerente']).exists():
+        vehicles = Vehicle.objects.filter(company=request.user.current_company)
+    else:
+        # Si es un Piloto normal, SOLO ve los vehículos donde él está asignado
+        vehicles = request.user.vehiculos_asignados.filter(company=request.user.current_company)
+
     if request.method == 'POST':
         image = request.FILES.get('documento')
         description = request.POST.get('description', 'Gasto de Ruta')
@@ -38,20 +53,18 @@ def pilot_upload(request):
         vehicle_obj = Vehicle.objects.filter(id=vehicle_id).first() if vehicle_id else None
 
         try:
-            # Envolvemos en transaction.atomic para proteger la base de datos
             with transaction.atomic():
                 Expense.objects.create(
                     user=request.user,
                     company=request.user.current_company,
                     receipt_image=image,
                     description=description,
-                    total_amount=0.00, # El contador lo llenará después
+                    total_amount=0.00, 
                     vehicle=vehicle_obj,
                     status='PENDING',
-                    origin='PILOT', # Marcamos que viene del piloto
+                    origin='PILOT', 
                     provider_name="Pendiente",
-                    # account_type="Gastos Generales", # Usa el nombre real de tu campo si no es suggested_account
-                    date=timezone.now(), # <--- Agregamos la fecha por si es requerida
+                    date=timezone.now(), 
                     tax_base=0, 
                     tax_iva=0, 
                     tax_idp=0
@@ -60,9 +73,8 @@ def pilot_upload(request):
             return redirect('home')
             
         except Exception as e:
-            # Si hay error, lo mostramos, pero redirigimos para limpiar la petición
             messages.error(request, f"Error al guardar el gasto: {str(e)}")
-            return redirect('pilot_upload') # Asumiendo que esta URL se llama así
+            return redirect('pilot_upload') 
             
     return render(request, 'accounting/pilot_upload.html', {'vehicles': vehicles})
 

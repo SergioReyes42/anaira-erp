@@ -14,6 +14,15 @@ class Vehicle(models.Model):
     driver_name = models.CharField(max_length=100, null=True, blank=True, verbose_name="Conductor Asignado")
     active = models.BooleanField(default=True, verbose_name="Activo")
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # NUEVO CAMPO: Relación real con los usuarios del sistema
+    conductores = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name='vehiculos_asignados',
+        blank=True,
+        verbose_name="Pilotos Asignados",
+        help_text="Selecciona los usuarios que manejan este vehículo."
+    )
     
     def __str__(self):
         return f"{self.plate} - {self.brand} {self.line}"
