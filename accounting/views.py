@@ -2,6 +2,7 @@ import decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import transaction # <--- Importación vital
 from django.utils import timezone
 from django.db.models import Sum
 from django.core.paginator import Paginator # Agrega esto arriba si no lo tienes
@@ -37,23 +38,31 @@ def pilot_upload(request):
         vehicle_obj = Vehicle.objects.filter(id=vehicle_id).first() if vehicle_id else None
 
         try:
-            Expense.objects.create(
-                user=request.user,
-                company=request.user.current_company,
-                receipt_image=image,
-                description=description,
-                total_amount=0.00, # El contador lo llenará después
-                vehicle=vehicle_obj,
-                status='PENDING',
-                origin='PILOT', # Marcamos que viene del piloto
-                provider_name="Pendiente",
-                suggested_account="Por Asignar",
-                tax_base=0, tax_iva=0, tax_idp=0
-            )
+            # Envolvemos en transaction.atomic para proteger la base de datos
+            with transaction.atomic():
+                Expense.objects.create(
+                    user=request.user,
+                    company=request.user.current_company,
+                    receipt_image=image,
+                    description=description,
+                    total_amount=0.00, # El contador lo llenará después
+                    vehicle=vehicle_obj,
+                    status='PENDING',
+                    origin='PILOT', # Marcamos que viene del piloto
+                    provider_name="Pendiente",
+                    # account_type="Gastos Generales", # Usa el nombre real de tu campo si no es suggested_account
+                    date=timezone.now(), # <--- Agregamos la fecha por si es requerida
+                    tax_base=0, 
+                    tax_iva=0, 
+                    tax_idp=0
+                )
             messages.success(request, "🚀 Gasto enviado. Contabilidad lo revisará.")
             return redirect('home')
+            
         except Exception as e:
-            messages.error(request, f"Error: {e}")
+            # Si hay error, lo mostramos, pero redirigimos para limpiar la petición
+            messages.error(request, f"Error al guardar el gasto: {str(e)}")
+            return redirect('pilot_upload') # Asumiendo que esta URL se llama así
             
     return render(request, 'accounting/pilot_upload.html', {'vehicles': vehicles})
 
