@@ -60,10 +60,18 @@ def pilot_upload(request):
         description = request.POST.get('description', 'Gasto de Ruta')
         vehicle_id = request.POST.get('vehicle')
         
-        if vehicle_id and vehicle_id.isdigit():
+        # NUEVO: Capturamos la placa de emergencia si la escribió
+        placa_emergencia = request.POST.get('placa_emergencia', '').strip()
+        
+        vehicle_obj = None
+
+        # LÓGICA DE CONTINGENCIA
+        if vehicle_id == 'emergencia':
+            # Si eligió otro vehículo, modificamos la descripción para avisarle a Contabilidad
+            description = f"🚨 CONTINGENCIA | Placa reportada: {placa_emergencia} | {description}"
+        elif vehicle_id and vehicle_id.isdigit():
+            # Si eligió su vehículo normal
             vehicle_obj = Vehicle.objects.filter(id=vehicle_id).first()
-        else:
-            vehicle_obj = None
 
         try:
             with transaction.atomic():
@@ -73,7 +81,7 @@ def pilot_upload(request):
                     receipt_image=image,
                     description=description,
                     total_amount=0.00, 
-                    vehicle=vehicle_obj,
+                    vehicle=vehicle_obj, # Si fue emergencia, esto se guarda vacío
                     status='PENDING',
                     origin='PILOT', 
                     provider_name="Pendiente",

@@ -15,32 +15,42 @@
                         
                         <div class="mb-4 text-center">
                             <label class="form-label fw-bold text-uppercase small text-muted">1. FOTO DEL VALE/FACTURA</label>
-                            <input type="file" name="documento" class="form-control form-control-lg" accept="image/*" capture="environment" required>
+                            <input type="file" name="documento" class="form-control form-control-lg border-primary" accept="image/*" capture="environment" required>
                             <div class="form-text">Toma la foto clara. Contabilidad pondrá el monto.</div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-bold text-uppercase small text-muted">2. VEHÍCULO</label>
-                            <select name="vehicle" class="form-select form-select-lg">
-                                <option value="" selected>-- Seleccionar Placa --</option>
+                            <select name="vehicle" id="vehicle_select" class="form-select form-select-lg" required onchange="verificarEmergencia()">
+                                <option value="" selected disabled>-- Seleccionar Placa --</option>
+                                
                                 {% for v in vehicles %}
-                                    <option value="{{ v.id }}">{{ v.plate }} - {{ v.brand }}</option>
+                                    <option value="{{ v.id }}">{{ v.placa }} - {{ v.marca }}</option>
                                 {% endfor %}
-                                <option value="">Otro / No Aplica</option>
+                                
+                                <option value="emergencia" class="fw-bold text-danger">⚠️ Uso otro vehículo (Contingencia)</option>
+                                <option value="">No Aplica / Sin Vehículo</option>
                             </select>
+                        </div>
+
+                        <div id="div_placa_emergencia" class="mb-3 p-3 border border-danger rounded bg-light" style="display: none;">
+                            <label class="text-danger fw-bold small"><i class="bi bi-exclamation-triangle-fill me-1"></i> Placa en Contingencia:</label>
+                            <input type="text" name="placa_emergencia" id="input_placa_emergencia" class="form-control border-danger form-control-sm mt-1" placeholder="Ej. P-123ABC">
+                            <div class="form-text text-danger" style="font-size: 0.75rem;">Contabilidad asignará este gasto manualmente.</div>
                         </div>
 
                         <div class="mb-4">
                             <label class="form-label fw-bold text-uppercase small text-muted">3. TIPO</label>
-                            <select name="description" class="form-select">
+                            <select name="description" class="form-select form-select-lg">
                                 <option value="Combustible Diesel">Combustible Diesel</option>
                                 <option value="Combustible Gasolina">Combustible Gasolina</option>
-                                <option value="Viáticos">Viáticos / Comida</option>
+                                <option value="Viáticos / Comida">Viáticos / Comida</option>
                                 <option value="Mantenimiento">Mantenimiento</option>
+                                <option value="Peaje / Parqueo">Peaje / Parqueo</option>
                             </select>
                         </div>
 
-                        <div class="d-grid">
+                        <div class="d-grid mt-2">
                             <button type="submit" class="btn btn-dark btn-lg fw-bold rounded-pill shadow-sm">
                                 <i class="bi bi-send-fill me-2"></i> ENVIAR AHORA
                             </button>
@@ -51,4 +61,23 @@
         </div>
     </div>
 </div>
+
+<script>
+    function verificarEmergencia() {
+        var select = document.getElementById('vehicle_select');
+        var divPlaca = document.getElementById('div_placa_emergencia');
+        var inputPlaca = document.getElementById('input_placa_emergencia');
+        
+        if(select.value === 'emergencia') {
+            // Mostrar cuadro rojo y hacer obligatorio escribir la placa
+            divPlaca.style.display = 'block';
+            inputPlaca.required = true; 
+        } else {
+            // Ocultar cuadro, quitar lo obligatorio y borrar si escribió algo
+            divPlaca.style.display = 'none';
+            inputPlaca.required = false;
+            inputPlaca.value = ''; 
+        }
+    }
+</script>
 {% endblock %}
