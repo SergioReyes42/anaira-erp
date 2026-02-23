@@ -44,5 +44,7 @@ urlpatterns = [
     path('reporte-flotilla/', views.fleet_expense_report, name='fleet_report'),
 
     path('migracion-saldos/', views.opening_balance_migration, name='opening_balance'),
-    
+
+    path('aprobar-gasto/<int:expense_id>/', views.approve_expense, name='approve_expense'),
+
 ]

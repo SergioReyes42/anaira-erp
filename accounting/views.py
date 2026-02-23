@@ -1,3 +1,4 @@
+from django.db import transaction
 import decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -214,49 +215,74 @@ def review_expense(request, pk):
 
 @login_required
 def approve_expense(request, pk):
-    """Aprueba y genera partida contable"""
+    """Aprueba, descuenta del banco y genera partida contable NIIF"""
     expense = get_object_or_404(Expense, pk=pk, company=request.user.current_company)
     
     if expense.status == 'APPROVED':
         messages.warning(request, "Este gasto ya fue contabilizado.")
-        return redirect('expense_pending_list')
+        return redirect('expense_pending_list') # Tu redirección original
 
     try:
-        monto_total = float(expense.total_amount)
-        idp = float(expense.tax_idp)
-        base = float(expense.tax_base)
-        iva = float(expense.tax_iva)
-        cuenta_gasto = expense.suggested_account or "Gastos Generales"
+        # Usamos atomic para que si falla el descuento del banco, no se cree la partida a medias
+        with transaction.atomic(): 
+            monto_total = float(expense.total_amount)
+            idp = float(expense.tax_idp)
+            base = float(expense.tax_base)
+            iva = float(expense.tax_iva)
+            
+            # 1. CREACIÓN DE CUENTAS DINÁMICAS (Nuevo Modelo Account)
+            nombre_cuenta_gasto = expense.suggested_account or "Gastos Generales"
+            cuenta_gasto, _ = Account.objects.get_or_create(
+                code=f"5.1-{nombre_cuenta_gasto[:3].upper()}", 
+                defaults={'name': nombre_cuenta_gasto, 'account_type': 'EXPENSE'}
+            )
+            cuenta_iva, _ = Account.objects.get_or_create(code="1.1.2.01", defaults={'name': 'IVA por Cobrar', 'account_type': 'ASSET'})
+            cuenta_idp, _ = Account.objects.get_or_create(code="5.1.1.02", defaults={'name': 'Impuesto IDP', 'account_type': 'EXPENSE'})
 
-        entry = JournalEntry.objects.create(
-            company=request.user.current_company,
-            description=f"Prov: {expense.provider_name} - {expense.description[:30]}",
-            created_by=request.user,
-            total=monto_total,
-            expense_ref=expense
-        )
+            # 2. CREACIÓN DEL ENCABEZADO DE PARTIDA (Nuevo Modelo JournalEntry)
+            entry = JournalEntry.objects.create(
+                date=expense.date.date(),
+                company=request.user.current_company,
+                concept=f"Prov: {expense.provider_name} - {expense.description[:30]}",
+                is_opening_balance=False
+                # Ya no usamos created_by, total, ni expense_ref porque los borramos en la migración
+            )
 
-        JournalItem.objects.create(entry=entry, account_name=cuenta_gasto, debit=round(base, 2), credit=0)
-        JournalItem.objects.create(entry=entry, account_name="IVA por Cobrar", debit=round(iva, 2), credit=0)
-        if idp > 0:
-            JournalItem.objects.create(entry=entry, account_name="Impuesto IDP", debit=round(idp, 2), credit=0)
+            # 3. CREACIÓN DE LAS LÍNEAS DEL DEBE (Nuevo Modelo JournalEntryLine)
+            if base > 0:
+                JournalEntryLine.objects.create(entry=entry, account=cuenta_gasto, debit=round(base, 2), credit=0)
+            if iva > 0:
+                JournalEntryLine.objects.create(entry=entry, account=cuenta_iva, debit=round(iva, 2), credit=0)
+            if idp > 0:
+                JournalEntryLine.objects.create(entry=entry, account=cuenta_idp, debit=round(idp, 2), credit=0)
 
-        cuenta_banco = BankAccount.objects.filter(company=request.user.current_company).first()
-        nombre_banco = cuenta_banco.bank_name if cuenta_banco else "Caja General"
-        
-        JournalItem.objects.create(entry=entry, account_name=nombre_banco, debit=0, credit=round(monto_total, 2))
-        
-        if cuenta_banco:
-            cuenta_banco.balance -= decimal.Decimal(monto_total)
-            cuenta_banco.save()
+            # 4. LÓGICA DE BANCOS Y HABER (Tu lógica original adaptada)
+            cuenta_banco = BankAccount.objects.filter(company=request.user.current_company).first()
+            nombre_banco = cuenta_banco.bank_name if cuenta_banco else "Caja General"
+            
+            # Buscamos o creamos la cuenta contable para el banco
+            cuenta_pago, _ = Account.objects.get_or_create(
+                code="1.1.1.01", 
+                defaults={'name': nombre_banco, 'account_type': 'ASSET'}
+            )
+            
+            # Línea del Haber
+            JournalEntryLine.objects.create(entry=entry, account=cuenta_pago, debit=0, credit=round(monto_total, 2))
+            
+            # Rebajamos el saldo del módulo de bancos
+            if cuenta_banco:
+                cuenta_banco.balance -= decimal.Decimal(str(monto_total))
+                cuenta_banco.save()
 
-        expense.status = 'APPROVED'
-        expense.save()
-        messages.success(request, "✅ Gasto Contabilizado Exitosamente.")
+            # 5. FINALIZAR
+            expense.status = 'APPROVED'
+            expense.save()
+            messages.success(request, f"✅ Gasto Contabilizado Exitosamente (Partida #{entry.id}).")
 
     except Exception as e:
-        messages.error(request, f"Error: {e}")
+        messages.error(request, f"Error: {str(e)}")
 
+    # Redirige exactamente a donde tú lo tenías configurado
     return redirect('expense_pending_list')
 
 
