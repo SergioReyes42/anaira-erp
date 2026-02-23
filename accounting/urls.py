@@ -51,4 +51,8 @@ urlpatterns = [
 
     path('plan-de-cuentas/', views.chart_of_accounts, name='chart_of_accounts'),
 
+    path('libro-mayor/', views.general_ledger, name='general_ledger'),
+
+    path('balance-general/', views.balance_sheet, name='balance_sheet'),
+
 ]

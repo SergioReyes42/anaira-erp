@@ -1,4 +1,5 @@
 from django.db import transaction
+import datetime
 import decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -708,3 +709,77 @@ def general_ledger(request):
         'saldo_final': saldo_acumulado
     }
     return render(request, 'accounting/general_ledger.html', context)
+
+@login_required
+@group_required('Contadora', 'Gerente', 'Administrador')
+def balance_sheet(request):
+    """Estado de Situación Financiera (Balance General)"""
+    
+    anio = int(request.GET.get('anio', timezone.now().year))
+    mes = int(request.GET.get('mes', timezone.now().month))
+
+    # Calculamos el corte hasta el ÚLTIMO día del mes seleccionado
+    if mes == 12:
+        siguiente_mes = datetime.date(anio + 1, 1, 1)
+    else:
+        siguiente_mes = datetime.date(anio, mes + 1, 1)
+    
+    # Traemos la suma total de Debe y Haber de todas las cuentas hasta esa fecha
+    lineas = JournalEntryLine.objects.filter(
+        entry__date__lt=siguiente_mes,
+        entry__company=request.user.current_company
+    ).values('account__id', 'account__code', 'account__name', 'account__account_type').annotate(
+        total_debe=Sum('debit'),
+        total_haber=Sum('credit')
+    )
+
+    activos, pasivos, patrimonio = [], [], []
+    total_activos = total_pasivos = total_patrimonio = utilidad_ejercicio = 0
+
+    # Clasificamos y calculamos saldos según la NIIF
+    for linea in lineas:
+        tipo = linea['account__account_type']
+        debe = linea['total_debe'] or 0
+        haber = linea['total_haber'] or 0
+        
+        if tipo == 'ASSET':
+            saldo = debe - haber
+            if saldo != 0:
+                activos.append({'codigo': linea['account__code'], 'nombre': linea['account__name'], 'saldo': saldo})
+                total_activos += saldo
+                
+        elif tipo == 'LIABILITY':
+            saldo = haber - debe
+            if saldo != 0:
+                pasivos.append({'codigo': linea['account__code'], 'nombre': linea['account__name'], 'saldo': saldo})
+                total_pasivos += saldo
+                
+        elif tipo == 'EQUITY':
+            saldo = haber - debe
+            if saldo != 0:
+                patrimonio.append({'codigo': linea['account__code'], 'nombre': linea['account__name'], 'saldo': saldo})
+                total_patrimonio += saldo
+                
+        # Calculamos la utilidad en tiempo real (Ingresos - Gastos)
+        elif tipo == 'REVENUE':
+            utilidad_ejercicio += (haber - debe)
+        elif tipo == 'EXPENSE':
+            utilidad_ejercicio -= (debe - haber)
+
+    # Ordenamos las cuentas para que se vean presentables
+    activos.sort(key=lambda x: x['codigo'])
+    pasivos.sort(key=lambda x: x['codigo'])
+    patrimonio.sort(key=lambda x: x['codigo'])
+
+    # Ecuación Contable: Activo = Pasivo + Patrimonio + Utilidad
+    total_pasivo_patrimonio = total_pasivos + total_patrimonio + utilidad_ejercicio
+
+    context = {
+        'activos': activos, 'pasivos': pasivos, 'patrimonio': patrimonio,
+        'total_activos': total_activos, 'total_pasivos': total_pasivos, 
+        'total_patrimonio': total_patrimonio, 'utilidad_ejercicio': utilidad_ejercicio,
+        'total_pasivo_patrimonio': total_pasivo_patrimonio,
+        'mes_seleccionado': mes, 'anio_seleccionado': anio,
+        'meses': range(1, 13), 'anios': range(2025, 2030),
+    }
+    return render(request, 'accounting/balance_sheet.html', context)
