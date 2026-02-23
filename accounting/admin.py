@@ -1,12 +1,19 @@
 from django.contrib import admin
 from .models import (
     Vehicle, Expense, BankAccount, BankTransaction, 
-    JournalEntry, JournalItem
+    JournalEntry, JournalItem, Account, JournalEntryLine
 )
 
 # ==========================================
 # 1. CONFIGURACIÓN PARA PARTIDAS CONTABLES
 # ==========================================
+
+# --- NUEVOS MODELOS CONTABLES ---
+
+class JournalEntryLineInline(admin.TabularInline):
+    """Permite ver las líneas del Debe y Haber dentro de la Partida"""
+    model = JournalEntryLine
+    extra = 1
 
 class JournalItemInline(admin.TabularInline):
     """
@@ -18,12 +25,17 @@ class JournalItemInline(admin.TabularInline):
 
 @admin.register(JournalEntry)
 class JournalEntryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'date', 'description', 'total', 'company', 'created_by')
-    list_filter = ('company', 'date')
-    search_fields = ('description', 'id')
-    date_hierarchy = 'date' # Navegación por fechas arriba
-    inlines = [JournalItemInline] # <--- ¡Aquí está la magia!
-    list_per_page = 20
+    # Actualizado con los nombres exactos de tu nuevo modelo
+    # list_display = ('id', 'date', 'concept', 'company', 'is_opening_balance')
+    # list_filter = ('date', 'is_opening_balance', 'company')
+    search_fields = ('concept', 'company')
+    inlines = [JournalEntryLineInline] # Agrega las líneas adentro
+
+@admin.register(Account)
+class AccountAdmin(admin.ModelAdmin):
+    list_display = ('code', 'name', 'account_type', 'is_transactional')
+    search_fields = ('code', 'name')
+    list_filter = ('account_type', 'is_transactional')
 
 # ==========================================
 # 2. CONFIGURACIÓN PARA GASTOS

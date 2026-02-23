@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from core.models import Company 
+from django.utils import timezone
 
 # ==========================================
 # 1. FLOTILLA (VEHÍCULOS)
@@ -120,17 +121,48 @@ class BankTransaction(models.Model):
 # 4. PARTIDAS CONTABLES (LIBRO DIARIO)
 # ==========================================
 
-class JournalEntry(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    date = models.DateField(auto_now_add=True)
-    description = models.CharField(max_length=255, verbose_name="Concepto")
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    total = models.DecimalField(max_digits=12, decimal_places=2)
-    expense_ref = models.OneToOneField(Expense, on_delete=models.SET_NULL, null=True, blank=True, related_name='journal_entry')
+class Account(models.Model):
+    """El Catálogo de Cuentas (NIIF)"""
+    code = models.CharField(max_length=20, unique=True, verbose_name="Código NIIF")
+    name = models.CharField(max_length=100, verbose_name="Nombre de la Cuenta")
+    ACCOUNT_TYPES = [
+        ('ASSET', 'Activo'),
+        ('LIABILITY', 'Pasivo'),
+        ('EQUITY', 'Patrimonio'),
+        ('REVENUE', 'Ingresos'),
+        ('EXPENSE', 'Gastos'),
+    ]
+    account_type = models.CharField(max_length=15, choices=ACCOUNT_TYPES)
+    # Para saber si es cuenta sumatoria o de movimiento
+    is_transactional = models.BooleanField(default=True, verbose_name="Acepta Movimientos") 
 
     def __str__(self):
-        return f"Partida #{self.id} - {self.description}"
+        return f"{self.code} - {self.name}"
 
+class JournalEntry(models.Model):
+    """La Partida Contable o Asiento de Diario"""
+    date = models.DateField(default='2026-01-01', verbose_name="Fecha de Partida")    
+    concept = models.CharField(max_length=255, verbose_name="Concepto General")
+    company = models.CharField(max_length=100, blank=True, null=True) # Tu Sede
+    
+    # Campo clave para identificar la migración de Monica 8.5
+    is_opening_balance = models.BooleanField(default=False, verbose_name="Es Asiento de Apertura")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Partida {self.id} - {self.date} - {self.concept}"
+
+class JournalEntryLine(models.Model):
+    """Los detalles del Debe y Haber de la partida"""
+    entry = models.ForeignKey(JournalEntry, on_delete=models.CASCADE, related_name='lines')
+    account = models.ForeignKey(Account, on_delete=models.PROTECT, verbose_name="Cuenta Contable")
+    debit = models.DecimalField(max_digits=15, decimal_places=2, default=0.00, verbose_name="Debe")
+    credit = models.DecimalField(max_digits=15, decimal_places=2, default=0.00, verbose_name="Haber")
+
+    def __str__(self):
+        return f"{self.account.name} | Debe: {self.debit} | Haber: {self.credit}"
+    
 class JournalItem(models.Model):
     entry = models.ForeignKey(JournalEntry, related_name='items', on_delete=models.CASCADE)
     account_name = models.CharField(max_length=100)

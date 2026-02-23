@@ -7,11 +7,14 @@ from django.utils import timezone
 from django.db.models import Sum, Q
 from django.core.paginator import Paginator # Agrega esto arriba si no lo tienes
 from .decorators import group_required  # <--- Importas el candado
+from django.forms import modelformset_factory
 
 # --- IMPORTACIÓN DE MODELOS ---
 from .models import (
     Expense, 
-    JournalEntry, 
+    JournalEntry,
+    Account,
+    JournalEntryLine,
     JournalItem, 
     BankAccount, 
     BankTransaction, 
@@ -492,3 +495,62 @@ def fleet_expense_report(request):
         'selected_category': category,
     }
     return render(request, 'accounting/fleet_report.html', context)
+
+@login_required
+@group_required('Contadora', 'Gerente', 'Administrador')
+def opening_balance_migration(request):
+    """Pantalla para ingresar el Balance de Cierre 2025 de Monica 8.5"""
+    
+    # Traemos solo las cuentas donde se puede ingresar dinero
+    cuentas = Account.objects.filter(is_transactional=True).order_by('code')
+
+    if request.method == 'POST':
+        # 1. Creamos la Partida Contable Maestra
+        partida = JournalEntry.objects.create(
+            date=request.POST.get('fecha_apertura', '2026-01-01'),
+            concept="MIGRACIÓN DE SALDOS INICIALES - CIERRE 2025 (MONICA 8.5)",
+            company=request.user.current_company,
+            is_opening_balance=True # Marcamos que esta es la migración
+        )
+
+        # 2. Recorremos los datos que la contadora tecleó
+        total_debe = 0
+        total_haber = 0
+        
+        # Como es un formulario dinámico, leemos las listas de arrays que llegan del HTML
+        account_ids = request.POST.getlist('account_id[]')
+        debits = request.POST.getlist('debit[]')
+        credits = request.POST.getlist('credit[]')
+
+        try:
+            with transaction.atomic():
+                for i in range(len(account_ids)):
+                    if account_ids[i]: # Si seleccionó una cuenta
+                        debe_val = float(debits[i]) if debits[i] else 0.00
+                        haber_val = float(credits[i]) if credits[i] else 0.00
+                        
+                        if debe_val > 0 or haber_val > 0:
+                            cuenta = Account.objects.get(id=account_ids[i])
+                            JournalEntryLine.objects.create(
+                                entry=partida,
+                                account=cuenta,
+                                debit=debe_val,
+                                credit=haber_val
+                            )
+                            total_debe += debe_val
+                            total_haber += haber_val
+                
+                # REGLA DE ORO CONTABLE: El Debe y el Haber deben cuadrar
+                if round(total_debe, 2) != round(total_haber, 2):
+                    raise Exception(f"Descuadre contable: El Debe (Q{total_debe}) no cuadra con el Haber (Q{total_haber}). Revisa los datos de Monica 8.5.")
+
+            messages.success(request, "✅ ¡Migración de Saldos Iniciales guardada con éxito! El 2026 ha iniciado correctamente.")
+            return redirect('home')
+
+        except Exception as e:
+            # Si descuadra, borramos la partida fallida y le avisamos
+            partida.delete()
+            messages.error(request, str(e))
+            return redirect('opening_balance')
+
+    return render(request, 'accounting/opening_balance.html', {'cuentas': cuentas})
