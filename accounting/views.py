@@ -9,6 +9,7 @@ from django.db.models import Sum, Q
 from django.core.paginator import Paginator # Agrega esto arriba si no lo tienes
 from .decorators import group_required  # <--- Importas el candado
 from django.forms import modelformset_factory
+from django.db.models import Prefetch
 
 # --- IMPORTACIÓN DE MODELOS ---
 from .models import (
@@ -580,3 +581,40 @@ def opening_balance_migration(request):
             return redirect('opening_balance')
 
     return render(request, 'accounting/opening_balance.html', {'cuentas': cuentas})
+
+@login_required
+@group_required('Contadora', 'Gerente', 'Administrador')
+def general_journal(request):
+    """Libro Diario General Profesional (NIIF)"""
+    
+    # Por defecto, cargamos el mes y año actuales
+    mes_actual = timezone.now().month
+    anio_actual = timezone.now().year
+    
+    mes = int(request.GET.get('mes', mes_actual))
+    anio = int(request.GET.get('anio', anio_actual))
+
+    # TÉCNICA AVANZADA: prefetch_related trae todas las líneas y cuentas en 2 consultas a la BD, 
+    # en lugar de hacer 1 consulta por cada línea. ¡Velocidad pura!
+    partidas = JournalEntry.objects.filter(
+        company=request.user.current_company,
+        date__year=anio,
+        date__month=mes
+    ).prefetch_related(
+        Prefetch('lines', queryset=JournalEntryLine.objects.select_related('account'))
+    ).order_by('date', 'id')
+
+    # Calculamos los totales del mes en memoria para el pie de página
+    total_debe_mes = sum(linea.debit for partida in partidas for linea in partida.lines.all())
+    total_haber_mes = sum(linea.credit for partida in partidas for linea in partida.lines.all())
+
+    context = {
+        'partidas': partidas,
+        'mes_seleccionado': mes,
+        'anio_seleccionado': anio,
+        'meses': range(1, 13),
+        'anios': range(2025, 2030),
+        'total_debe_mes': total_debe_mes,
+        'total_haber_mes': total_haber_mes,
+    }
+    return render(request, 'accounting/general_journal.html', context)

@@ -47,4 +47,6 @@ urlpatterns = [
 
     path('aprobar-gasto/<int:expense_id>/', views.approve_expense, name='approve_expense'),
 
+    path('libro-diario/', views.general_journal, name='general_journal'),
+
 ]

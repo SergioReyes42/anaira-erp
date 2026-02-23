@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="fw-bold text-dark"><i class="bi bi-book-half text-primary me-2"></i> Libro Diario General</h2>
+            <p class="text-muted mb-0">Registro cronológico de partidas contables bajo estándares NIIF.</p>
+        </div>
+        <button class="btn btn-outline-dark fw-bold" onclick="window.print()">
+            <i class="bi bi-printer-fill me-1"></i> Imprimir / PDF
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4 bg-white d-print-none">
+        <div class="card-body">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-muted small">AÑO FISCAL</label>
+                    <select name="anio" class="form-select">
+                        {% for a in anios %}
+                            <option value="{{ a }}" {% if a == anio_seleccionado %}selected{% endif %}>{{ a }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-muted small">MES CONTABLE</label>
+                    <select name="mes" class="form-select">
+                        {% for m in meses %}
+                            <option value="{{ m }}" {% if m == mes_seleccionado %}selected{% endif %}>Mes {{ m }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold">
+                        <i class="bi bi-search me-1"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-lg border-0">
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-hover table-sm mb-0 align-middle" style="font-size: 0.9rem;">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th width="10%">Fecha</th>
+                        <th width="15%">Código Cta.</th>
+                        <th width="45%">Descripción de la Cuenta / Concepto</th>
+                        <th width="15%" class="text-end">Debe (Q)</th>
+                        <th width="15%" class="text-end">Haber (Q)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for partida in partidas %}
+                        <tr class="table-light border-top border-2 border-dark">
+                            <td class="fw-bold text-center text-primary">{{ partida.date|date:"d/m/Y" }}</td>
+                            <td colspan="4" class="fw-bold text-dark">
+                                <span class="badge bg-secondary me-2">P-{{ partida.id|stringformat:"04d" }}</span> 
+                                {{ partida.concept }}
+                                {% if partida.is_opening_balance %}
+                                    <span class="badge bg-warning text-dark ms-2"><i class="bi bi-star-fill"></i> Apertura</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        
+                        {% for linea in partida.lines.all %}
+                        <tr>
+                            <td></td>
+                            <td class="text-center font-monospace text-muted">{{ linea.account.code }}</td>
+                            <td>
+                                <span class="{% if linea.credit > 0 %}ms-4 text-muted{% else %}fw-semibold text-dark{% endif %}">
+                                    {{ linea.account.name }}
+                                </span>
+                            </td>
+                            <td class="text-end fw-bold {% if linea.debit > 0 %}text-success{% else %}text-white{% endif %}">
+                                {% if linea.debit > 0 %}{{ linea.debit|floatformat:2 }}{% endif %}
+                            </td>
+                            <td class="text-end fw-bold {% if linea.credit > 0 %}text-danger{% else %}text-white{% endif %}">
+                                {% if linea.credit > 0 %}{{ linea.credit|floatformat:2 }}{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        <tr><td colspan="5" class="border-0"></td></tr>
+                        
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-inboxes display-4 d-block mb-3"></i>
+                                <h5>No hay movimientos registrados en este período.</h5>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-dark fs-6">
+                    <tr>
+                        <td colspan="3" class="text-end fw-bold text-uppercase">Totales del Movimiento Mensual:</td>
+                        <td class="text-end fw-bold text-success">Q. {{ total_debe_mes|floatformat:2 }}</td>
+                        <td class="text-end fw-bold text-danger">Q. {{ total_haber_mes|floatformat:2 }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        body { background-color: white !important; }
+        .card { box-shadow: none !important; border: none !important; }
+        .badge { border: 1px solid #000; color: #000 !important; background: transparent !important; }
+        .table-dark { background-color: #f8f9fa !important; color: black !important; border-bottom: 2px solid black; }
+        tfoot.table-dark { background-color: #e9ecef !important; color: black !important; }
+    }
+</style>
+{% endblock %}
