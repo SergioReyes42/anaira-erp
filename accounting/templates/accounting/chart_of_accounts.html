@@ -1,72 +1,122 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container-fluid px-4 mt-4">
-    
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
-            <h2 class="fw-bold text-dark"><i class="bi bi-diagram-3-fill me-2 text-primary"></i>Plan de Cuentas Maestro</h2>
-            <p class="text-muted">Estructura financiera bajo normas NIIF para PYMES</p>
+            <h2 class="fw-bold text-dark"><i class="bi bi-diagram-3-fill text-primary me-2"></i> Plan de Cuentas (NIIF)</h2>
+            <p class="text-muted mb-0">Gestión del catálogo contable estructural de la corporación.</p>
         </div>
-        <button class="btn btn-outline-dark btn-sm">
-            <i class="bi bi-download me-1"></i> Exportar PDF
+        <button class="btn btn-success fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#nuevaCuentaModal">
+            <i class="bi bi-plus-circle-fill me-1"></i> Nueva Cuenta NIIF
         </button>
     </div>
 
+    <div class="card shadow-sm border-0 mb-4 bg-white">
+        <div class="card-body p-3">
+            <form method="GET" class="d-flex">
+                <input type="text" name="q" value="{{ search_query }}" class="form-control form-control-lg border-secondary me-2" placeholder="Buscar por código (Ej. 1.1.2) o nombre (Ej. Bancos)...">
+                <button type="submit" class="btn btn-dark px-4"><i class="bi bi-search"></i> Buscar</button>
+                {% if search_query %}
+                    <a href="{% url 'chart_of_accounts' %}" class="btn btn-outline-danger ms-2">Limpiar</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
     <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light text-uppercase small fw-bold text-secondary">
-                        <tr>
-                            <th class="ps-4" style="width: 15%;">Código</th>
-                            <th style="width: 40%;">Nombre de la Cuenta</th>
-                            <th style="width: 15%;">Nivel</th>
-                            <th style="width: 15%;">Tipo</th>
-                            <th class="text-end pe-4">Norma NIIF</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for acc in accounts %}
-                        <tr class="{% if acc.level == 1 %}bg-light fw-bold{% endif %}">
-                            <td class="ps-4 font-monospace text-primary fw-bold">
-                                {{ acc.code }}
-                            </td>
-                            
-                            <td>
-                                <span style="margin-left: {{ acc.level|add:'-1' }}rem;">
-                                    {% if acc.level == 1 %}<i class="bi bi-folder-fill me-2 text-warning"></i>{% endif %}
-                                    {% if acc.level == 3 %}<i class="bi bi-arrow-return-right me-2 text-muted small"></i>{% endif %}
-                                    {{ acc.name }}
-                                </span>
-                            </td>
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th width="15%" class="ps-4">Código NIIF</th>
+                        <th width="45%">Nombre de la Cuenta</th>
+                        <th width="20%">Clasificación</th>
+                        <th width="20%" class="text-center">Tipo de Cuenta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cuenta in cuentas %}
+                    <tr class="{% if not cuenta.is_transactional %}table-light fw-bold{% endif %}">
+                        <td class="ps-4 font-monospace">{{ cuenta.code }}</td>
+                        <td>
+                            {% if cuenta.is_transactional %}
+                                <span class="ms-3 text-muted"><i class="bi bi-arrow-return-right me-1"></i> {{ cuenta.name }}</span>
+                            {% else %}
+                                {{ cuenta.name }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if cuenta.account_type == 'ASSET' %}<span class="badge bg-primary">Activo</span>
+                            {% elif cuenta.account_type == 'LIABILITY' %}<span class="badge bg-danger">Pasivo</span>
+                            {% elif cuenta.account_type == 'EQUITY' %}<span class="badge bg-warning text-dark">Patrimonio</span>
+                            {% elif cuenta.account_type == 'REVENUE' %}<span class="badge bg-success">Ingresos</span>
+                            {% elif cuenta.account_type == 'EXPENSE' %}<span class="badge bg-secondary">Gastos</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if cuenta.is_transactional %}
+                                <span class="badge border border-success text-success"><i class="bi bi-check-circle"></i> Recibe Movimientos</span>
+                            {% else %}
+                                <span class="badge border border-dark text-dark"><i class="bi bi-folder-fill"></i> Cuenta Agrupadora (Mayor)</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <i class="bi bi-diagram-2 display-4 d-block mb-3"></i>
+                            El catálogo está vacío. Comienza agregando tus cuentas principales.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
-                            <td>
-                                <span class="badge rounded-pill bg-secondary bg-opacity-10 text-secondary">
-                                    Nivel {{ acc.level }}
-                                </span>
-                            </td>
-
-                            <td>
-                                {% if acc.type == 'Rubro' %}
-                                    <span class="badge bg-dark">RUBRO</span>
-                                {% elif acc.type == 'Grupo' %}
-                                    <span class="badge bg-primary">GRUPO</span>
-                                {% else %}
-                                    <span class="badge bg-info text-dark">CUENTA</span>
-                                {% endif %}
-                            </td>
-
-                            <td class="text-end pe-4">
-                                <span class="badge border border-secondary text-secondary fw-normal">
-                                    {{ acc.niif_tag }}
-                                </span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<div class="modal fade" id="nuevaCuentaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i> Crear Cuenta NIIF</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <form method="POST" action="{% url 'chart_of_accounts' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Código NIIF</label>
+                        <input type="text" name="code" class="form-control" placeholder="Ej. 1.1.1.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Nombre de la Cuenta</label>
+                        <input type="text" name="name" class="form-control" placeholder="Ej. CAJA CHICA" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Clasificación</label>
+                        <select name="account_type" class="form-select" required>
+                            <option value="ASSET">1. Activo</option>
+                            <option value="LIABILITY">2. Pasivo</option>
+                            <option value="EQUITY">3. Patrimonio</option>
+                            <option value="REVENUE">4. Ingresos</option>
+                            <option value="EXPENSE">5. Gastos</option>
+                        </select>
+                    </div>
+                    <div class="form-check form-switch mt-4">
+                        <input class="form-check-input" type="checkbox" name="is_transactional" id="isTrans" checked>
+                        <label class="form-check-label fw-bold" for="isTrans">
+                            ¿Acepta Movimientos? (Subcuenta)
+                        </label>
+                        <div class="form-text small">Desmárcalo si es una cuenta Padre/Agrupadora (Ej. "1. ACTIVOS" o "1.1 CIRCULANTE").</div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success fw-bold"><i class="bi bi-save me-1"></i> Guardar Cuenta</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

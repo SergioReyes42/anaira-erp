@@ -406,12 +406,43 @@ def vehicle_create(request):
     return render(request, 'accounting/vehicle_form.html', {'form': form})
 
 @login_required
+@group_required('Contadora', 'Gerente', 'Administrador')
 def chart_of_accounts(request):
-    simulated_accounts = [
-        {'code': '1', 'name': 'ACTIVO', 'level': 1, 'type': 'Rubro', 'niif_tag': 'ESF'},
-        {'code': '1.1', 'name': 'ACTIVO CORRIENTE', 'level': 2, 'type': 'Grupo', 'niif_tag': 'NIC 1'},
-    ]
-    return render(request, 'accounting/chart_of_accounts.html', {'accounts': simulated_accounts})
+    """Módulo: Plan de Cuentas (Catálogo NIIF)"""
+    
+    # Si la contadora envía el formulario para crear una nueva cuenta
+    if request.method == 'POST':
+        code = request.POST.get('code').strip()
+        name = request.POST.get('name').strip().upper()
+        account_type = request.POST.get('account_type')
+        is_transactional = request.POST.get('is_transactional') == 'on'
+
+        # Verificamos que el código no exista ya
+        if Account.objects.filter(code=code).exists():
+            messages.error(request, f"Error: El código de cuenta {code} ya existe en el catálogo.")
+        else:
+            Account.objects.create(
+                code=code,
+                name=name,
+                account_type=account_type,
+                is_transactional=is_transactional
+            )
+            messages.success(request, f"✅ Cuenta NIIF {code} - {name} agregada con éxito.")
+            return redirect('chart_of_accounts')
+
+    # Para mostrar el catálogo, buscamos si el usuario usó la barra de búsqueda
+    search_query = request.GET.get('q', '')
+    if search_query:
+        cuentas = Account.objects.filter(
+            Q(code__icontains=search_query) | Q(name__icontains=search_query)
+        ).order_by('code')
+    else:
+        cuentas = Account.objects.all().order_by('code')
+
+    return render(request, 'accounting/chart_of_accounts.html', {
+        'cuentas': cuentas, 
+        'search_query': search_query
+    })
 
 # --- API GEMINI ---
 import google.generativeai as genai

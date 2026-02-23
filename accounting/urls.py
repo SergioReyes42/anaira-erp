@@ -49,4 +49,6 @@ urlpatterns = [
 
     path('libro-diario/', views.general_journal, name='general_journal'),
 
+    path('plan-de-cuentas/', views.chart_of_accounts, name='chart_of_accounts'),
+
 ]
