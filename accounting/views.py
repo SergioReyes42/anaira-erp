@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction # <--- Importación vital
 from django.utils import timezone
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.core.paginator import Paginator # Agrega esto arriba si no lo tienes
 from .decorators import group_required  # <--- Importas el candado
 
@@ -448,3 +448,47 @@ def analyze_receipt_api(request):
 def mobile_expense(request):
     vehicles = Vehicle.objects.filter(company=request.user.current_company, active=True)
     return render(request, 'accounting/expense_form.html', {'vehicles': vehicles})
+
+@login_required
+@group_required('Contadora', 'Gerente', 'Administrador')
+def fleet_expense_report(request):
+    """Reporte de Gastos de Flotilla: Combustible vs Mantenimiento"""
+    
+    # 1. Traemos todos los vehículos de la empresa
+    vehicles = Vehicle.objects.filter(company=request.user.current_company)
+    
+    # 2. Filtramos los gastos base: Solo los que pertenecen a un vehículo y a esta empresa
+    # (Opcional: puedes agregar status='APPROVED' si solo quieres ver los ya revisados por contabilidad)
+    qs = Expense.objects.filter(company=request.user.current_company, vehicle__isnull=False)
+    
+    # 3. Leer los filtros que el usuario eligió en la pantalla
+    vehicle_id = request.GET.get('vehicle_id')
+    category = request.GET.get('category', 'both') # Por defecto muestra ambos
+    
+    # Aplicar filtro de vehículo si eligió uno específico
+    if vehicle_id:
+        qs = qs.filter(vehicle_id=vehicle_id)
+        
+    # Aplicar filtro de categoría (Buscamos la palabra clave en la descripción que manda el piloto)
+    if category == 'fuel':
+        qs = qs.filter(description__icontains='Combustible')
+    elif category == 'maint':
+        qs = qs.filter(description__icontains='Mantenimiento')
+    elif category == 'both':
+        qs = qs.filter(Q(description__icontains='Combustible') | Q(description__icontains='Mantenimiento'))
+
+    # 4. CALCULADORA MAESTRA (Suma los totales de la flotilla o del vehículo)
+    total_fuel = qs.filter(description__icontains='Combustible').aggregate(t=Sum('total_amount'))['t'] or 0
+    total_maint = qs.filter(description__icontains='Mantenimiento').aggregate(t=Sum('total_amount'))['t'] or 0
+    gran_total = total_fuel + total_maint
+
+    context = {
+        'expenses': qs.order_by('-date'), # Ordenados del más reciente al más viejo
+        'vehicles': vehicles,
+        'total_fuel': total_fuel,
+        'total_maint': total_maint,
+        'gran_total': gran_total,
+        'selected_vehicle': vehicle_id,
+        'selected_category': category,
+    }
+    return render(request, 'accounting/fleet_report.html', context)
