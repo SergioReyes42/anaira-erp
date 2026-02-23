@@ -649,3 +649,62 @@ def general_journal(request):
         'total_haber_mes': total_haber_mes,
     }
     return render(request, 'accounting/general_journal.html', context)
+
+@login_required
+@group_required('Contadora', 'Gerente', 'Administrador')
+def general_ledger(request):
+    """Libro Mayor General (Movimientos por Cuenta Específica)"""
+    
+    # Solo mostramos cuentas que reciben movimientos
+    cuentas = Account.objects.filter(is_transactional=True).order_by('code')
+    
+    mes_actual = timezone.now().month
+    anio_actual = timezone.now().year
+    
+    account_id = request.GET.get('account_id')
+    mes = int(request.GET.get('mes', mes_actual))
+    anio = int(request.GET.get('anio', anio_actual))
+    
+    lineas = []
+    cuenta_seleccionada = None
+    saldo_acumulado = 0
+    total_debe = 0
+    total_haber = 0
+
+    if account_id:
+        cuenta_seleccionada = Account.objects.get(id=account_id)
+        
+        # Traemos todas las líneas de esa cuenta en ese mes
+        lineas = JournalEntryLine.objects.filter(
+            account=cuenta_seleccionada,
+            entry__date__year=anio,
+            entry__date__month=mes
+        ).select_related('entry').order_by('entry__date', 'entry__id')
+        
+        # Calculamos el saldo dinámico fila por fila
+        for linea in lineas:
+            total_debe += linea.debit
+            total_haber += linea.credit
+            
+            # Naturaleza de las cuentas (NIIF)
+            if cuenta_seleccionada.account_type in ['ASSET', 'EXPENSE']:
+                saldo_acumulado += (linea.debit - linea.credit) # Naturaleza Deudora
+            else:
+                saldo_acumulado += (linea.credit - linea.debit) # Naturaleza Acreedora
+                
+            # Le inyectamos el saldo actual a la línea para mostrarlo en el HTML
+            linea.saldo_actual = saldo_acumulado 
+
+    context = {
+        'cuentas': cuentas,
+        'lineas': lineas,
+        'cuenta_seleccionada': cuenta_seleccionada,
+        'mes_seleccionado': mes,
+        'anio_seleccionado': anio,
+        'meses': range(1, 13),
+        'anios': range(2025, 2030),
+        'total_debe': total_debe,
+        'total_haber': total_haber,
+        'saldo_final': saldo_acumulado
+    }
+    return render(request, 'accounting/general_ledger.html', context)
