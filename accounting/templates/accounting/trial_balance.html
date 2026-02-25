@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 d-print-none">
+        <div>
+            <h2 class="fw-bold text-dark"><i class="bi bi-scales text-info me-2"></i> Balance de Comprobación</h2>
+            <p class="text-muted mb-0">Matriz de sumas y saldos para verificación de la Partida Doble.</p>
+        </div>
+        <button class="btn btn-outline-dark fw-bold" onclick="window.print()">
+            <i class="bi bi-printer-fill me-1"></i> Imprimir Reporte
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4 bg-white d-print-none">
+        <div class="card-body p-3">
+            <form method="GET" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-muted small">AÑO</label>
+                    <select name="anio" class="form-select border-info">
+                        {% for a in anios %}
+                            <option value="{{ a }}" {% if a == anio_seleccionado %}selected{% endif %}>{{ a }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-muted small">MES DE CORTE</label>
+                    <select name="mes" class="form-select border-info">
+                        {% for m in meses %}
+                            <option value="{{ m }}" {% if m == mes_seleccionado %}selected{% endif %}>Mes {{ m }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-info text-white w-100 fw-bold">Verificar Cuadre</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-lg border-0 print-friendly">
+        <div class="card-header bg-dark text-white text-center py-4">
+            <h4 class="mb-0 fw-bold text-uppercase">{{ request.user.current_company|default:"LA EMPRESA" }}</h4>
+            <h5 class="mb-0 text-info opacity-75">Balance de Comprobación de Sumas y Saldos</h5>
+            <small>Cifras expresadas en Quetzales (Q) - Al mes {{ mes_seleccionado }} del {{ anio_seleccionado }}</small>
+        </div>
+        
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-hover table-bordered table-sm mb-0 align-middle" style="font-size: 0.85rem;">
+                <thead class="text-center align-middle">
+                    <tr class="table-light">
+                        <th rowspan="2" width="10%">CÓDIGO</th>
+                        <th rowspan="2" width="30%">NOMBRE DE LA CUENTA</th>
+                        <th colspan="2" class="table-secondary border-bottom-0">SUMAS (Movimientos)</th>
+                        <th colspan="2" class="table-info border-bottom-0">SALDOS FINALES</th>
+                    </tr>
+                    <tr class="table-light">
+                        <th width="15%" class="text-primary">DEBE</th>
+                        <th width="15%" class="text-danger">HABER</th>
+                        <th width="15%" class="text-dark">DEUDOR</th>
+                        <th width="15%" class="text-dark">ACREEDOR</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cta in cuentas_balance %}
+                    <tr>
+                        <td class="text-center font-monospace text-muted">{{ cta.codigo }}</td>
+                        <td class="fw-semibold text-dark">{{ cta.nombre }}</td>
+                        
+                        <td class="text-end text-primary">{% if cta.debe > 0 %}{{ cta.debe|floatformat:2 }}{% endif %}</td>
+                        <td class="text-end text-danger">{% if cta.haber > 0 %}{{ cta.haber|floatformat:2 }}{% endif %}</td>
+                        
+                        <td class="text-end fw-bold">{% if cta.saldo_deudor > 0 %}{{ cta.saldo_deudor|floatformat:2 }}{% endif %}</td>
+                        <td class="text-end fw-bold">{% if cta.saldo_acreedor > 0 %}{{ cta.saldo_acreedor|floatformat:2 }}{% endif %}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">No existen movimientos contables para el período seleccionado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="fs-6 border-top border-dark border-2">
+                    <tr class="table-secondary">
+                        <td colspan="2" class="text-end fw-bold text-dark">SUMAS IGUALES:</td>
+                        <td class="text-end fw-bold text-primary">Q. {{ gran_total_debe|floatformat:2 }}</td>
+                        <td class="text-end fw-bold text-danger">Q. {{ gran_total_haber|floatformat:2 }}</td>
+                        <td colspan="2" class="text-center">
+                            {% if gran_total_debe == gran_total_haber and gran_total_debe > 0 %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Movimientos Cuadrados</span>
+                            {% elif gran_total_debe != gran_total_haber %}
+                                <span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill"></i> Descuadre</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr class="table-info">
+                        <td colspan="4" class="text-end fw-bold text-dark">SALDOS IGUALES:</td>
+                        <td class="text-end fw-bold text-dark border-start border-dark border-2">Q. {{ gran_total_deudor|floatformat:2 }}</td>
+                        <td class="text-end fw-bold text-dark">Q. {{ gran_total_acreedor|floatformat:2 }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        body { background-color: white !important; }
+        .card { box-shadow: none !important; border: none !important; }
+        .table-secondary, .table-info { background-color: #f8f9fa !important; color: black !important; }
+        .badge { border: 1px solid #000; color: #000 !important; background: transparent !important; }
+    }
+</style>
+{% endblock %}

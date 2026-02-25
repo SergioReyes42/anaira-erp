@@ -57,4 +57,6 @@ urlpatterns = [
 
     path('estado-resultados/', views.income_statement, name='income_statement'),
 
+    path('balance-comprobacion/', views.trial_balance, name='trial_balance'),
+
 ]

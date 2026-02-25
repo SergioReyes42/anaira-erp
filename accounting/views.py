@@ -848,3 +848,87 @@ def income_statement(request):
         'meses': range(1, 13), 'anios': range(2025, 2030),
     }
     return render(request, 'accounting/income_statement.html', context)
+
+@login_required
+@group_required('Contadora', 'Gerente', 'Administrador')
+def trial_balance(request):
+    """Balance de Comprobación de Sumas y Saldos"""
+    
+    anio = int(request.GET.get('anio', timezone.now().year))
+    mes = int(request.GET.get('mes', timezone.now().month))
+
+    # Corte hasta el último día del mes seleccionado
+    if mes == 12:
+        fecha_fin = datetime.date(anio + 1, 1, 1)
+    else:
+        fecha_fin = datetime.date(anio, mes + 1, 1)
+
+    # Traemos la suma de DEBE y HABER de todas las cuentas con movimientos
+    lineas = JournalEntryLine.objects.filter(
+        entry__date__lt=fecha_fin,
+        entry__company=request.user.current_company
+    ).values(
+        'account__id', 'account__code', 'account__name', 'account__account_type'
+    ).annotate(
+        total_debe=Sum('debit'),
+        total_haber=Sum('credit')
+    ).order_by('account__code')
+
+    cuentas_balance = []
+    gran_total_debe = gran_total_haber = 0
+    gran_total_deudor = gran_total_acreedor = 0
+
+    for linea in lineas:
+        debe = linea['total_debe'] or 0
+        haber = linea['total_haber'] or 0
+        tipo = linea['account__account_type']
+
+        # 1. Acumulamos las SUMAS
+        gran_total_debe += debe
+        gran_total_haber += haber
+
+        # 2. Calculamos los SALDOS según la naturaleza de la cuenta
+        saldo_deudor = 0
+        saldo_acreedor = 0
+
+        # Naturaleza Deudora (Activos y Gastos)
+        if tipo in ['ASSET', 'EXPENSE']: 
+            saldo = debe - haber
+            if saldo > 0:
+                saldo_deudor = saldo
+            elif saldo < 0:
+                saldo_acreedor = abs(saldo) # Caso atípico (Ej. sobregiro)
+                
+        # Naturaleza Acreedora (Pasivos, Patrimonio e Ingresos)
+        else: 
+            saldo = haber - debe
+            if saldo > 0:
+                saldo_acreedor = saldo
+            elif saldo < 0:
+                saldo_deudor = abs(saldo)
+
+        # 3. Acumulamos los SALDOS GLOBALES
+        gran_total_deudor += saldo_deudor
+        gran_total_acreedor += saldo_acreedor
+
+        cuentas_balance.append({
+            'codigo': linea['account__code'],
+            'nombre': linea['account__name'],
+            'debe': debe,
+            'haber': haber,
+            'saldo_deudor': saldo_deudor,
+            'saldo_acreedor': saldo_acreedor
+        })
+
+    context = {
+        'cuentas_balance': cuentas_balance,
+        'gran_total_debe': gran_total_debe,
+        'gran_total_haber': gran_total_haber,
+        'gran_total_deudor': gran_total_deudor,
+        'gran_total_acreedor': gran_total_acreedor,
+        'mes_seleccionado': mes,
+        'anio_seleccionado': anio,
+        'meses': range(1, 13),
+        'anios': range(2025, 2030),
+    }
+    return render(request, 'accounting/trial_balance.html', context)
