@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 d-print-none">
+        <div>
+            <h2 class="fw-bold text-dark"><i class="bi bi-receipt text-success me-2"></i> Libro de Ventas y Servicios</h2>
+            <p class="text-muted mb-0">Reporte auxiliar de Débito Fiscal para declaración mensual ante la SAT.</p>
+        </div>
+        <div>
+            <button class="btn btn-success fw-bold me-2" onclick="exportarExcelVentas()">
+                <i class="bi bi-file-earmark-excel-fill me-1"></i> Exportar CSV
+            </button>
+            <button class="btn btn-outline-dark fw-bold" onclick="window.print()">
+                <i class="bi bi-printer-fill me-1"></i> Imprimir Libro
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4 bg-white d-print-none">
+        <div class="card-body p-3">
+            <form method="GET" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-muted small">AÑO FISCAL</label>
+                    <select name="anio" class="form-select border-success">
+                        {% for a in anios %}
+                            <option value="{{ a }}" {% if a == anio_seleccionado %}selected{% endif %}>{{ a }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-muted small">MES DE DECLARACIÓN</label>
+                    <select name="mes" class="form-select border-success">
+                        {% for m in meses %}
+                            <option value="{{ m }}" {% if m == mes_seleccionado %}selected{% endif %}>Mes {{ m }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-success w-100 fw-bold">Generar Libro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-lg border-0 print-friendly">
+        <div class="card-header bg-dark text-white text-center py-3">
+            <h5 class="mb-0 fw-bold text-uppercase">{{ request.user.current_company|default:"LA EMPRESA" }}</h5>
+            <h6 class="mb-0 text-success opacity-75">LIBRO DE VENTAS Y SERVICIOS PRESTADOS</h6>
+            <small>Mes: {{ mes_seleccionado }} - Año: {{ anio_seleccionado }} (Cifras en Quetzales)</small>
+        </div>
+        
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-hover table-bordered table-sm mb-0 align-middle" style="font-size: 0.85rem;" id="tablaVentas">
+                <thead class="text-center align-middle table-light">
+                    <tr>
+                        <th width="8%">Fecha</th>
+                        <th width="8%">Doc.</th>
+                        <th width="8%">Serie / No.</th>
+                        <th width="10%">NIT Cliente</th>
+                        <th width="26%">Nombre del Cliente</th>
+                        <th width="12%" class="table-secondary">Valor Exento</th>
+                        <th width="10%" class="text-primary">Base Imponible</th>
+                        <th width="10%" class="text-danger">IVA (Débito)</th>
+                        <th width="15%" class="table-dark text-white">TOTAL FACTURA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for venta in ventas %}
+                    <tr>
+                        <td class="text-center">{{ venta.date|date:"d/m/Y" }}</td>
+                        <td class="text-center text-muted">FC</td>
+                        <td class="text-center font-monospace">{{ venta.serie|default:"A" }} - {{ venta.invoice_number|default:venta.id }}</td>
+                        <td class="text-center font-monospace">{{ venta.client_nit|default:"CF" }}</td>
+                        <td><span class="fw-bold text-dark">{{ venta.client_name|default:"Consumidor Final" }}</span></td>
+                        
+                        <td class="text-end fw-bold table-secondary">0.00</td>
+                        
+                        <td class="text-end fw-bold text-primary">{{ venta.tax_base|floatformat:2 }}</td>
+                        <td class="text-end fw-bold text-danger">{{ venta.tax_iva|floatformat:2 }}</td>
+                        <td class="text-end fw-bold table-dark text-white">{{ venta.total_amount|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">No hay facturas de ventas registradas en este mes.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="fs-6 border-top border-dark border-2 text-end">
+                    <tr class="table-light">
+                        <td colspan="5" class="fw-bold text-dark">TOTALES PARA DECLARAGUATE:</td>
+                        <td class="fw-bold table-secondary">Q. 0.00</td>
+                        <td class="fw-bold text-primary">Q. {{ total_base|floatformat:2 }}</td>
+                        <td class="fw-bold text-danger">Q. {{ total_iva|floatformat:2 }}</td>
+                        <td class="fw-bold table-dark text-white">Q. {{ gran_total|floatformat:2 }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function exportarExcelVentas() {
+        let csv = [];
+        let rows = document.querySelectorAll("#tablaVentas tr");
+        for (let i = 0; i < rows.length; i++) {
+            let row = [], cols = rows[i].querySelectorAll("td, th");
+            for (let j = 0; j < cols.length; j++) 
+                row.push(cols[j].innerText.replace(/,/g, ''));
+            csv.push(row.join(","));
+        }
+        let csvFile = new Blob([csv.join("\n")], {type: "text/csv"});
+        let downloadLink = document.createElement("a");
+        downloadLink.download = "Libro_Ventas_{{ mes_seleccionado }}_{{ anio_seleccionado }}.csv";
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.click();
+    }
+</script>
+
+<style>
+    @media print {
+        body { background-color: white !important; }
+        .card { box-shadow: none !important; border: none !important; }
+        .table-dark { background-color: #343a40 !important; color: white !important; -webkit-print-color-adjust: exact; }
+        .table-secondary { background-color: #e2e3e5 !important; -webkit-print-color-adjust: exact; }
+    }
+</style>
+{% endblock %}

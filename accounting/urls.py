@@ -61,4 +61,6 @@ urlpatterns = [
 
     path('libro-compras/', views.purchase_ledger, name='purchase_ledger'),
 
+    path('libro-ventas/', views.sales_ledger, name='sales_ledger'),
+
 ]
