@@ -11,7 +11,9 @@ from django.core.paginator import Paginator # Agrega esto arriba si no lo tienes
 from .decorators import group_required  # <--- Importas el candado
 from django.forms import modelformset_factory
 from django.db.models import Prefetch
+from .models import AccountingPeriod
 from sales.models import Sale
+
 
 # --- IMPORTACIÓN DE MODELOS ---
 from .models import (
@@ -971,22 +973,57 @@ def purchase_ledger(request):
 
 @login_required
 @group_required('Contadora', 'Gerente', 'Administrador')
+def fiscal_close(request):
+    """Módulo de Cierres Fiscales Mensuales"""
+    
+    # Traemos el historial de meses que ya han sido gestionados
+    periodos = AccountingPeriod.objects.filter(
+        company=request.user.current_company
+    ).order_by('-year', '-month')
+    
+    if request.method == 'POST':
+        anio = int(request.POST.get('year'))
+        mes = int(request.POST.get('month'))
+        
+        # Buscamos el mes o lo creamos si no existe en la tabla de control
+        periodo, created = AccountingPeriod.objects.get_or_create(
+            company=request.user.current_company,
+            year=anio,
+            month=mes
+        )
+        
+        if not periodo.is_closed:
+            periodo.is_closed = True
+            periodo.closed_by = request.user
+            periodo.closed_at = timezone.now()
+            periodo.save()
+            messages.success(request, f"🔒 Período {mes}/{anio} cerrado exitosamente. El candado fiscal está activo.")
+        else:
+            messages.warning(request, f"El período {mes}/{anio} ya estaba cerrado.")
+            
+        return redirect('fiscal_close')
+        
+    return render(request, 'accounting/fiscal_close.html', {
+        'periodos': periodos, 
+        'meses': range(1, 13), 
+        'anios': range(2025, 2030)
+    })
+
+@login_required
+@group_required('Contadora', 'Gerente', 'Administrador')
 def sales_ledger(request):
     """Libro de Ventas y Servicios Prestados (Formato SAT Guatemala)"""
     
     anio = int(request.GET.get('anio', timezone.now().year))
     mes = int(request.GET.get('mes', timezone.now().month))
 
-    # Filtramos las facturas emitidas en el mes. 
-    # (Ajusta 'status' o los nombres de campos según cómo esté tu modelo Sale)
     ventas = Sale.objects.filter(
         company=request.user.current_company,
         date__year=anio,
         date__month=mes,
-        status='APPROVED' # O 'INVOICED', 'PAID', según lo manejes
+        status='APPROVED' 
     ).order_by('date')
 
-    # Sumatorias para el formulario SAT-2046
     total_base = sum(v.tax_base for v in ventas)
     total_iva = sum(v.tax_iva for v in ventas)
     gran_total = sum(v.total_amount for v in ventas)

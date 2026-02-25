@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from core.models import Company 
 from django.utils import timezone
+from sales.models import Sale
 
 # ==========================================
 # 1. FLOTILLA (VEHÍCULOS)
@@ -171,3 +172,21 @@ class JournalItem(models.Model):
 
     def __str__(self):
         return f"{self.account_name} | D:{self.debit} H:{self.credit}"
+    
+class AccountingPeriod(models.Model):
+    company = models.CharField(max_length=100, blank=True, null=True)
+    year = models.IntegerField(verbose_name="Año Fiscal")
+    month = models.IntegerField(verbose_name="Mes")
+    is_closed = models.BooleanField(default=False, verbose_name="¿Mes Cerrado?")
+    closed_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+
+    closed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        # Evita que se duplique un mismo mes en el mismo año
+        unique_together = ('company', 'year', 'month')
+
+    def __str__(self):
+        estado = "CERRADO" if self.is_closed else "ABIERTO"
+        return f"{self.month}/{self.year} - {estado}"

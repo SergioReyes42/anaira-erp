@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <h2 class="fw-bold text-dark mb-3"><i class="bi bi-lock-fill text-danger me-2"></i> Cierre Fiscal Mensual</h2>
+            <p class="text-muted">Bloquea períodos contables para evitar modificaciones en facturas y partidas luego de declarar impuestos.</p>
+            <hr>
+
+            <div class="card shadow-sm border-danger mb-5">
+                <div class="card-header bg-danger text-white fw-bold py-3">
+                    <i class="bi bi-shield-lock-fill me-2"></i> Ejecutar Cierre Definitivo
+                </div>
+                <div class="card-body p-4 bg-light">
+                    <div class="alert alert-warning border-warning border-2 fw-bold">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> ¡ATENCIÓN! Al cerrar un mes, el sistema bloqueará la creación, edición o eliminación de cualquier gasto, factura o partida contable con fecha dentro de ese mes.
+                    </div>
+                    <form method="POST" action="{% url 'fiscal_close' %}" class="row g-3 align-items-end" onsubmit="return confirm('¿Estás seguro de cerrar este mes? Esta acción asegurará los saldos.');">
+                        {% csrf_token %}
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Año a Cerrar</label>
+                            <select name="year" class="form-select border-danger">
+                                {% for a in anios %}<option value="{{ a }}">{{ a }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Mes a Cerrar</label>
+                            <select name="month" class="form-select border-danger">
+                                {% for m in meses %}<option value="{{ m }}">Mes {{ m }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-danger w-100 fw-bold btn-lg">
+                                <i class="bi bi-lock-fill me-1"></i> Confirmar Cierre
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <h4 class="fw-bold mb-3"><i class="bi bi-clock-history me-2"></i> Historial de Períodos</h4>
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Período (Mes/Año)</th>
+                                <th>Estado</th>
+                                <th>Cerrado Por</th>
+                                <th>Fecha y Hora de Cierre</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in periodos %}
+                            <tr>
+                                <td class="fw-bold fs-5 ps-3">{{ p.month|stringformat:"02d" }} / {{ p.year }}</td>
+                                <td>
+                                    {% if p.is_closed %}
+                                        <span class="badge bg-danger fs-6"><i class="bi bi-lock-fill"></i> CERRADO</span>
+                                    {% else %}
+                                        <span class="badge bg-success fs-6"><i class="bi bi-unlock-fill"></i> ABIERTO</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted">{{ p.closed_by.get_full_name|default:p.closed_by.username }}</td>
+                                <td class="text-muted font-monospace">{{ p.closed_at|date:"d/m/Y H:i:s" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">No se ha registrado ningún cierre de período aún.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

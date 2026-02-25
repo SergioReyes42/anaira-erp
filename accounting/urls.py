@@ -63,4 +63,6 @@ urlpatterns = [
 
     path('libro-ventas/', views.sales_ledger, name='sales_ledger'),
 
+    path('cierre-fiscal/', views.fiscal_close, name='fiscal_close'),
+
 ]
