@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 from core.models import Company 
 from django.utils import timezone
-from sales.models import Sale
+
 
 # ==========================================
 # 1. FLOTILLA (VEHÍCULOS)
