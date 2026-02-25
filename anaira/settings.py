@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "inventory",
     "sales",
     "hr",
+    'imports',
     # Terceros
     "rest_framework",
     "corsheaders",
