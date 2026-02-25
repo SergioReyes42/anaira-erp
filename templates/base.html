@@ -140,12 +140,38 @@
                     <a href="#" class="list-group-item list-group-item-action">
                         <i class="bi bi-file-text me-1"></i> Órdenes de Compra
                     </a>
-                    <a href="{% url 'imports:duca_list' %}" class="list-group-item list-group-item-action fw-bold text-primary">
-                        <i class="bi bi-ship me-1"></i> Importaciones (DUCA)
-                    </a>
-                </div>
+                    </div>
                 {% endif %}
-
+            <li class="nav-item">
+    <a class="nav-link collapsed text-dark fw-bold" href="#menuImportaciones" data-bs-toggle="collapse" role="button" aria-expanded="false" aria-controls="menuImportaciones">
+        <i class="bi bi-ship text-primary me-2"></i> Importaciones
+        <i class="bi bi-chevron-down ms-auto" style="font-size: 0.8rem;"></i>
+    </a>
+    <div class="collapse" id="menuImportaciones">
+        <ul class="nav flex-column ms-3">
+            <li class="nav-item">
+                <a class="nav-link text-secondary py-1" href="{% url 'imports:duca_list' %}">
+                    <i class="bi bi-file-earmark-ruled me-1"></i> DUCAs / Pólizas
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-secondary py-1" href="#">
+                    <i class="bi bi-geo-alt me-1"></i> Tracking de Contenedores
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-secondary py-1" href="#">
+                    <i class="bi bi-box-arrow-in-down me-1"></i> Recepción a Bodega
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-secondary py-1" href="#">
+                    <i class="bi bi-graph-up me-1"></i> Reportería y Costeos
+                </a>
+            </li>
+        </ul>
+    </div>
+</li>
                 {% if request.user|has_group:"Despacho, Gerente" %}
                 <a href="#menuLogistica" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
                     <i class="bi bi-box-seam-fill me-2 text-warning"></i> Logistica
