@@ -59,4 +59,6 @@ urlpatterns = [
 
     path('balance-comprobacion/', views.trial_balance, name='trial_balance'),
 
+    path('libro-compras/', views.purchase_ledger, name='purchase_ledger'),
+
 ]

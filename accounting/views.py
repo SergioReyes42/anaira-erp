@@ -932,3 +932,38 @@ def trial_balance(request):
         'anios': range(2025, 2030),
     }
     return render(request, 'accounting/trial_balance.html', context)
+
+@login_required
+@group_required('Contadora', 'Gerente', 'Administrador')
+def purchase_ledger(request):
+    """Libro de Compras y Servicios (Formato SAT Guatemala)"""
+    
+    anio = int(request.GET.get('anio', timezone.now().year))
+    mes = int(request.GET.get('mes', timezone.now().month))
+
+    # Filtramos solo los gastos del mes que ya fueron contabilizados (APPROVED)
+    gastos = Expense.objects.filter(
+        company=request.user.current_company,
+        date__year=anio,
+        date__month=mes,
+        status='APPROVED'
+    ).order_by('date')
+
+    # Sumatorias automáticas para Declaraguate
+    total_base = sum(g.tax_base for g in gastos)
+    total_iva = sum(g.tax_iva for g in gastos)
+    total_idp = sum(g.tax_idp for g in gastos)
+    gran_total = sum(g.total_amount for g in gastos)
+
+    context = {
+        'gastos': gastos,
+        'total_base': total_base,
+        'total_iva': total_iva,
+        'total_idp': total_idp,
+        'gran_total': gran_total,
+        'mes_seleccionado': mes,
+        'anio_seleccionado': anio,
+        'meses': range(1, 13),
+        'anios': range(2025, 2030),
+    }
+    return render(request, 'accounting/purchase_ledger.html', context)
