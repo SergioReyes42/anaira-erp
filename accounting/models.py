@@ -183,6 +183,7 @@ class AccountingPeriod(models.Model):
 
     closed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
+
     class Meta:
         # Evita que se duplique un mismo mes en el mismo año
         unique_together = ('company', 'year', 'month')
