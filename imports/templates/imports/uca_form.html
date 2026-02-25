@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3 class="mb-4 text-primary"><i class="bi bi-file-earmark-ruled"></i> Registrar Póliza / DUCA</h3>
+    
+    <form method="post" class="card shadow-sm border-0 p-4">
+        {% csrf_token %}
+        
+        <h5 class="border-bottom pb-2 text-secondary">Datos Generales y Gastos Globales</h5>
+        <div class="row g-3 mb-4">
+            {% for field in form %}
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-muted small">{{ field.label }}</label>
+                    {{ field }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <h5 class="border-bottom pb-2 text-secondary mt-4">Detalle de Productos en el Contenedor</h5>
+        {{ formset.management_form }}
+        <table class="table table-bordered table-sm mt-3">
+            <thead class="table-light">
+                <tr>
+                    <th>Código/SKU</th>
+                    <th>Descripción</th>
+                    <th>Cantidad</th>
+                    <th>Costo Unitario FOB ($)</th>
+                    <th>Arancel DAI (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item_form in formset %}
+                <tr>
+                    <td>{{ item_form.product_code }}</td>
+                    <td>{{ item_form.description }}</td>
+                    <td>{{ item_form.quantity }}</td>
+                    <td>{{ item_form.fob_unit_usd }}</td>
+                    <td>{{ item_form.dai_rate }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="d-flex justify-content-end mt-4">
+            <a href="{% url 'imports:duca_list' %}" class="btn btn-secondary me-2">Cancelar</a>
+            <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> Guardar y Calcular Prorrateo</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

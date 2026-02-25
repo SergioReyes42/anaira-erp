@@ -101,6 +101,8 @@ urlpatterns = [
     path('ventas/', include('sales.urls')), 
     
     path('rrhh/', include('hr.urls')),
+
+    path('importaciones/', include('imports.urls')),
 ]
 
 # --- HABILITAR CARGA DE LOGOS EN MODO DEBUG ---
