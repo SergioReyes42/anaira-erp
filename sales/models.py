@@ -57,3 +57,27 @@ class QuotationItem(models.Model):
         self.total_line = self.quantity * self.unit_price
         super().save(*args, **kwargs)
 
+class Sale(models.Model):
+    STATUS_CHOICES = [
+        ('DRAFT', 'Borrador / Pendiente'),
+        ('APPROVED', 'Aprobada / Contabilizada'),
+        ('CANCELED', 'Anulada'),
+    ]
+    
+    company = models.CharField(max_length=100, blank=True, null=True) 
+    
+    date = models.DateField(default=timezone.now, verbose_name="Fecha de Factura")
+    serie = models.CharField(max_length=10, default="A", verbose_name="Serie")
+    invoice_number = models.CharField(max_length=50, verbose_name="Número de Factura")
+    
+    client_nit = models.CharField(max_length=15, default="CF", verbose_name="NIT del Cliente")
+    client_name = models.CharField(max_length=200, default="Consumidor Final", verbose_name="Nombre del Cliente")
+    
+    tax_base = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Base Imponible")
+    tax_iva = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="IVA (Débito)")
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Total Factura")
+    
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='DRAFT')
+    
+    def __str__(self):
+        return f"{self.serie}-{self.invoice_number} | {self.client_name} | Q.{self.total_amount}"

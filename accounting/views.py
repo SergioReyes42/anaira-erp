@@ -12,6 +12,7 @@ from .decorators import group_required  # <--- Importas el candado
 from django.forms import modelformset_factory
 from django.db.models import Prefetch
 from .models import AccountingPeriod
+from sales.models import Sale
 
 
 # --- IMPORTACIÓN DE MODELOS ---
@@ -1007,4 +1008,33 @@ def fiscal_close(request):
         'meses': range(1, 13), 
         'anios': range(2025, 2030)
     })
+@login_required
+@group_required('Contadora', 'Gerente', 'Administrador')
+def sales_ledger(request):
+    """Libro de Ventas y Servicios Prestados (Formato SAT Guatemala)"""
+    
+    anio = int(request.GET.get('anio', timezone.now().year))
+    mes = int(request.GET.get('mes', timezone.now().month))
 
+    ventas = Sale.objects.filter(
+        company=request.user.current_company,
+        date__year=anio,
+        date__month=mes,
+        status='APPROVED' 
+    ).order_by('date')
+
+    total_base = sum(v.tax_base for v in ventas)
+    total_iva = sum(v.tax_iva for v in ventas)
+    gran_total = sum(v.total_amount for v in ventas)
+
+    context = {
+        'ventas': ventas,
+        'total_base': total_base,
+        'total_iva': total_iva,
+        'gran_total': gran_total,
+        'mes_seleccionado': mes,
+        'anio_seleccionado': anio,
+        'meses': range(1, 13),
+        'anios': range(2025, 2030),
+    }
+    return render(request, 'accounting/sales_ledger.html', context)
