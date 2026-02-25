@@ -1,63 +1,134 @@
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
+from decimal import Decimal
 
 class Duca(models.Model):
     STATUS_CHOICES = [
-        ('DRAFT', 'Borrador / En Tránsito'),
-        ('CUSTOMS', 'En Aduana (Gestión)'),
-        ('LIQUIDATED', 'Liquidada (Costeada en Inventario)'),
+        ('DRAFT', '1. Borrador / En Tránsito'),
+        ('CUSTOMS', '2. En Aduana (Gestión)'),
+        ('LIQUIDATED', '3. Liquidada (Costo calculado)'),
+        ('RECEIVED', '4. Recibida en Bodega'),
         ('CANCELED', 'Anulada'),
     ]
 
     company = models.CharField(max_length=100, blank=True, null=True)
     
-    # 1. Datos Generales de la Póliza
+    # DATOS GENERALES
     duca_number = models.CharField(max_length=50, verbose_name="Número de DUCA / Póliza", unique=True)
     date_acceptance = models.DateField(default=timezone.now, verbose_name="Fecha de Aceptación SAT")
     customs_agent = models.CharField(max_length=150, verbose_name="Agente Aduanero", blank=True, null=True)
-    supplier_name = models.CharField(max_length=200, verbose_name="Proveedor en el Extranjero")
+    supplier_name = models.CharField(max_length=200, verbose_name="Proveedor (Extranjero)")
     
-    # 2. Valores Internacionales (Moneda Extranjera - Usualmente USD)
-    exchange_rate = models.DecimalField(max_digits=10, decimal_places=5, default=7.80000, verbose_name="Tipo de Cambio (BANGUAT)")
-    fob_usd = models.DecimalField(max_digits=15, decimal_places=2, default=0.00, verbose_name="Valor FOB (USD)")
-    freight_usd = models.DecimalField(max_digits=15, decimal_places=2, default=0.00, verbose_name="Flete (USD)")
-    insurance_usd = models.DecimalField(max_digits=15, decimal_places=2, default=0.00, verbose_name="Seguro (USD)")
+    # FACTORES MACRO (Lo que dicta la SAT y Banguat)
+    exchange_rate = models.DecimalField(max_digits=10, decimal_places=5, default=7.80000, verbose_name="Tipo de Cambio (GTQ/USD)")
     
-    # 3. Impuestos Aduanales y Liquidación SAT (En Quetzales - GTQ)
-    # El CIF se calcula sumando FOB + Flete + Seguro y multiplicando por el tipo de cambio.
-    dai_gtq = models.DecimalField(max_digits=15, decimal_places=2, default=0.00, verbose_name="DAI Pagado (Arancel en Q)")
+    # GASTOS GLOBALES EN DÓLARES (Para el CIF)
+    freight_usd = models.DecimalField(max_digits=15, decimal_places=2, default=0.00, verbose_name="Flete Total (USD)")
+    insurance_usd = models.DecimalField(max_digits=15, decimal_places=2, default=0.00, verbose_name="Seguro Total (USD)")
+    
+    # IMPUESTOS Y GASTOS LOCALES EN QUETZALES
     iva_gtq = models.DecimalField(max_digits=15, decimal_places=2, default=0.00, verbose_name="IVA de Importación (Crédito SAT en Q)")
-    other_expenses_gtq = models.DecimalField(max_digits=15, decimal_places=2, default=0.00, verbose_name="Otros Gastos (Almacenaje, Tramitador en Q)")
+    other_expenses_gtq = models.DecimalField(max_digits=15, decimal_places=2, default=0.00, verbose_name="Otros Gastos (Almacenaje, Tramitador, etc. en Q)")
     
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT', verbose_name="Estado de la Importación")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
     
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
-        verbose_name = "DUCA / Póliza de Importación"
-        verbose_name_plural = "DUCAs / Pólizas de Importación"
+        verbose_name = "DUCA / Póliza"
+        verbose_name_plural = "DUCAs / Pólizas"
         ordering = ['-date_acceptance']
 
     def __str__(self):
-        return f"DUCA: {self.duca_number} | {self.supplier_name} | FOB: ${self.fob_usd}"
+        return f"{self.duca_number} | {self.supplier_name}"
 
     @property
-    def cif_usd(self):
-        """Calcula el valor CIF en Dólares"""
-        return self.fob_usd + self.freight_usd + self.insurance_usd
+    def total_fob_usd(self):
+        """Suma el FOB de todos los productos dentro de esta DUCA"""
+        return sum(item.fob_total_usd for item in self.items.all())
 
     @property
-    def cif_gtq(self):
-        """Calcula el valor CIF convertido a Quetzales"""
-        return self.cif_usd * self.exchange_rate
+    def total_cif_usd(self):
+        """FOB + Flete + Seguro"""
+        return self.total_fob_usd + self.freight_usd + self.insurance_usd
 
     @property
-    def total_cost_gtq(self):
-        """
-        El costo real que se va al inventario.
-        Nota: El IVA de importación NO suma al costo del producto, es Crédito Fiscal.
-        Costo = CIF(Q) + DAI(Q) + Otros Gastos(Q)
-        """
-        return self.cif_gtq + self.dai_gtq + self.other_expenses_gtq
+    def total_dai_gtq(self):
+        """Suma de los aranceles individuales de cada producto"""
+        return sum(item.calculated_dai_gtq for item in self.items.all())
+
+    @property
+    def total_import_cost_gtq(self):
+        """Costo total de la importación puesto en bodega (Sin IVA)"""
+        cif_gtq = self.total_cif_usd * self.exchange_rate
+        return cif_gtq + self.total_dai_gtq + self.other_expenses_gtq
+
+
+class DucaItem(models.Model):
+    """Los productos que vienen dentro del contenedor/paquete"""
+    duca = models.ForeignKey(Duca, on_delete=models.CASCADE, related_name='items')
+    
+    # Aquí en el futuro puedes enlazarlo con tu modelo de Inventario:
+    # product = models.ForeignKey('inventory.Product', on_delete=models.SET_NULL, null=True)
+    product_code = models.CharField(max_length=50, verbose_name="SKU / Código")
+    description = models.CharField(max_length=200, verbose_name="Descripción del Producto")
+    
+    quantity = models.IntegerField(verbose_name="Cantidad")
+    fob_unit_usd = models.DecimalField(max_digits=15, decimal_places=2, verbose_name="Costo Unitario FOB (USD)")
+    
+    # SAT: Cada producto tiene su propio arancel (Ej: Laptops 0%, Ropa 15%)
+    dai_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, verbose_name="Tasa DAI (%)")
+
+    class Meta:
+        verbose_name = "Producto Importado"
+        verbose_name_plural = "Productos Importados"
+
+    @property
+    def fob_total_usd(self):
+        return Decimal(self.quantity) * self.fob_unit_usd
+
+    @property
+    def factor_prorrateo(self):
+        """¿Qué porcentaje del contenedor ocupa este producto en valor?"""
+        total_fob_duca = self.duca.total_fob_usd
+        if total_fob_duca == 0:
+            return Decimal('0.00')
+        return self.fob_total_usd / total_fob_duca
+
+    @property
+    def calculated_cif_usd(self):
+        """Le inyecta su porción exacta de flete y seguro a este producto"""
+        flete_asignado = self.duca.freight_usd * self.factor_prorrateo
+        seguro_asignado = self.duca.insurance_usd * self.factor_prorrateo
+        return self.fob_total_usd + flete_asignado + seguro_asignado
+
+    @property
+    def calculated_dai_gtq(self):
+        """Calcula el arancel en Quetzales sobre el valor CIF de este producto"""
+        cif_gtq = self.calculated_cif_usd * self.duca.exchange_rate
+        return cif_gtq * (self.dai_rate / Decimal('100.00'))
+
+    @property
+    def final_unit_cost_gtq(self):
+        """EL DATO MÁS IMPORTANTE: El costo real unitario para tu inventario en Quetzales"""
+        # 1. CIF en Quetzales
+        cif_gtq = self.calculated_cif_usd * self.duca.exchange_rate
+        
+        # 2. Le sumamos su DAI
+        dai_gtq = self.calculated_dai_gtq
+        
+        # 3. Le inyectamos su porción de los "Otros Gastos" (Almacenaje aduanal)
+        otros_gastos_asignados = self.duca.other_expenses_gtq * self.factor_prorrateo
+        
+        # Costo Total del lote de este producto
+        costo_total_lote = cif_gtq + dai_gtq + otros_gastos_asignados
+        
+        # Costo Unitario
+        if self.quantity == 0:
+            return Decimal('0.00')
+        return costo_total_lote / Decimal(self.quantity)
+
+    def __str__(self):
+        return f"{self.quantity}x {self.description} | Costo Final: Q.{self.final_unit_cost_gtq:.2f}"
