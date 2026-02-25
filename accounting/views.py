@@ -783,3 +783,68 @@ def balance_sheet(request):
         'meses': range(1, 13), 'anios': range(2025, 2030),
     }
     return render(request, 'accounting/balance_sheet.html', context)
+
+@login_required
+@group_required('Contadora', 'Gerente', 'Administrador')
+def income_statement(request):
+    """Estado de Resultados (Pérdidas y Ganancias)"""
+    
+    anio = int(request.GET.get('anio', timezone.now().year))
+    mes = int(request.GET.get('mes', timezone.now().month))
+
+    # Calculamos el rango exacto del mes seleccionado
+    fecha_inicio = datetime.date(anio, mes, 1)
+    if mes == 12:
+        fecha_fin = datetime.date(anio + 1, 1, 1)
+    else:
+        fecha_fin = datetime.date(anio, mes + 1, 1)
+
+    # Solo traemos cuentas de INGRESOS (REVENUE) y GASTOS (EXPENSE) de este mes
+    lineas = JournalEntryLine.objects.filter(
+        entry__date__gte=fecha_inicio,
+        entry__date__lt=fecha_fin,
+        entry__company=request.user.current_company,
+        account__account_type__in=['REVENUE', 'EXPENSE']
+    ).values('account__id', 'account__code', 'account__name', 'account__account_type').annotate(
+        total_debe=Sum('debit'),
+        total_haber=Sum('credit')
+    )
+
+    ingresos = []
+    gastos = []
+    total_ingresos = total_gastos = 0
+
+    for linea in lineas:
+        tipo = linea['account__account_type']
+        debe = linea['total_debe'] or 0
+        haber = linea['total_haber'] or 0
+
+        # Naturaleza Acreedora (Suma con el Haber)
+        if tipo == 'REVENUE':
+            saldo = haber - debe
+            if saldo != 0:
+                ingresos.append({'codigo': linea['account__code'], 'nombre': linea['account__name'], 'saldo': saldo})
+                total_ingresos += saldo
+                
+        # Naturaleza Deudora (Suma con el Debe)
+        elif tipo == 'EXPENSE':
+            saldo = debe - haber
+            if saldo != 0:
+                gastos.append({'codigo': linea['account__code'], 'nombre': linea['account__name'], 'saldo': saldo})
+                total_gastos += saldo
+
+    # Ordenar por código contable
+    ingresos.sort(key=lambda x: x['codigo'])
+    gastos.sort(key=lambda x: x['codigo'])
+
+    # El Número Mágico
+    utilidad_neta = total_ingresos - total_gastos
+
+    context = {
+        'ingresos': ingresos, 'gastos': gastos,
+        'total_ingresos': total_ingresos, 'total_gastos': total_gastos,
+        'utilidad_neta': utilidad_neta,
+        'mes_seleccionado': mes, 'anio_seleccionado': anio,
+        'meses': range(1, 13), 'anios': range(2025, 2030),
+    }
+    return render(request, 'accounting/income_statement.html', context)

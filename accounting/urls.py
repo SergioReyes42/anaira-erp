@@ -55,4 +55,6 @@ urlpatterns = [
 
     path('balance-general/', views.balance_sheet, name='balance_sheet'),
 
+    path('estado-resultados/', views.income_statement, name='income_statement'),
+
 ]
