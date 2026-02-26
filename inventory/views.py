@@ -14,14 +14,27 @@ from .forms import ProductForm, WarehouseForm, InventoryMovementForm, SupplierFo
 # ==========================================
 @login_required
 def dashboard(request):
-    products = Product.objects.filter(company=request.user.current_company)
-    total_stock = Stock.objects.filter(product__in=products).aggregate(total=Sum('quantity'))['total'] or 0
-    low_stock = products.filter(stock_quantity__lte=5).count()
+    """Dashboard gerencial de Logística (Monitor de Existencias)"""
+    company = request.user.current_company
+    
+    # 1. KPIs (Tarjetas Superiores)
+    total_products = Product.objects.filter(company=company).count()
+    
+    stock_data = Product.objects.filter(company=company).aggregate(total=Sum('stock_quantity'))
+    total_stock = stock_data['total'] or 0
+    
+    # 2. Alertas Críticas (Productos con 5 o menos unidades)
+    low_stock = Product.objects.filter(company=company, stock_quantity__lte=5).order_by('stock_quantity')[:6]
+    
+    # 3. Actividad Reciente (Últimos 6 movimientos del Kardex)
+    recent_movements = StockMovement.objects.filter(company=company).order_by('-date')[:6]
     
     context = {
-        'products': products,
+        'total_products': total_products,
         'total_stock': total_stock,
-        'low_stock': low_stock
+        'low_stock': low_stock,
+        'low_stock_count': Product.objects.filter(company=company, stock_quantity__lte=5).count(),
+        'recent_movements': recent_movements,
     }
     return render(request, 'inventory/dashboard.html', context)
 

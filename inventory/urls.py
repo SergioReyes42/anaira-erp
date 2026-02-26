@@ -5,7 +5,7 @@ app_name = 'inventory' # 🔥 ESTE CANDADO ES CLAVE PARA EL MENÚ
 
 urlpatterns = [
     # Dashboard
-    path('', views.dashboard, name='inventory_dashboard'),
+    path('', views.dashboard, name='dashboard'),
     
     # Productos
     path('productos/', views.product_list, name='product_list'),
