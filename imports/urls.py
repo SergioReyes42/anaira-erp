@@ -12,4 +12,8 @@ urlpatterns = [
     # Rutas para las Órdenes de Compra:
     path('ordenes-compra/', views.po_list, name='po_list'),
     path('ordenes-compra/nueva/', views.po_create, name='po_create'),
+
+    # Nueva ruta para Recepción a Bodega:
+    path('<int:pk>/recepcion/', views.reception_add, name='reception_add'),
+
 ]
