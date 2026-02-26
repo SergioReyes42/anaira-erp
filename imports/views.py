@@ -5,6 +5,8 @@ from .models import Duca, TrackingEvent
 from .forms import DucaForm, DucaItemFormSet, TrackingEventForm
 from .models import PurchaseOrder
 from .forms import PurchaseOrderForm
+from .models import WarehouseReception
+from .forms import WarehouseReceptionForm
 
 
 @login_required
@@ -87,3 +89,24 @@ def po_create(request):
         form = PurchaseOrderForm()
         
     return render(request, 'imports/po_form.html', {'form': form})
+
+@login_required
+def reception_add(request, pk):
+    """Registra el acta física de entrada a la bodega central"""
+    duca = get_object_or_404(Duca, pk=pk, company=request.user.current_company)
+    
+    # Buscamos si ya existe un acta previa, si no, la preparamos
+    reception, created = WarehouseReception.objects.get_or_create(duca=duca)
+    
+    if request.method == 'POST':
+        form = WarehouseReceptionForm(request.POST, instance=reception)
+        if form.is_valid():
+            rec = form.save(commit=False)
+            rec.received_by = request.user
+            rec.save()
+            messages.success(request, '¡Acta de Recepción en Bodega guardada exitosamente!')
+            return redirect('imports:duca_detail', pk=duca.pk)
+    else:
+        form = WarehouseReceptionForm(instance=reception)
+        
+    return render(request, 'imports/reception_form.html', {'form': form, 'duca': duca})
