@@ -74,8 +74,9 @@ class PurchaseOrderForm(forms.ModelForm):
 class WarehouseReceptionForm(forms.ModelForm):
     class Meta:
         model = WarehouseReception
-        fields = ['reception_date', 'seal_intact', 'condition', 'damages_notes']
+        fields = ['warehouse','reception_date', 'seal_intact', 'condition', 'damages_notes']
         widgets = {
+            'warehouse': forms.Select(attrs={'class': 'form-select fw-bold border-warning'}),
             'reception_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             'condition': forms.TextInput(attrs={'class': 'form-control'}),
             'damages_notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Detalla si hubo cajas mojadas, equipos quebrados, etc...'}),

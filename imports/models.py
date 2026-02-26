@@ -150,6 +150,7 @@ class DucaItem(models.Model):
     # Aquí en el futuro puedes enlazarlo con tu modelo de Inventario:
     # product = models.ForeignKey('inventory.Product', on_delete=models.SET_NULL, null=True)
     product_code = models.CharField(max_length=50, verbose_name="SKU / Código")
+    product_catalog = models.ForeignKey('inventory.Product', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Producto en Catálogo (Logística)")
     description = models.CharField(max_length=200, verbose_name="Descripción del Producto")
     
     quantity = models.IntegerField(verbose_name="Cantidad")
@@ -244,6 +245,8 @@ class WarehouseReception(models.Model):
     
     reception_date = models.DateTimeField(default=timezone.now, verbose_name="Fecha y Hora de Recepción")
     received_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name="Recibido por (Bodeguero)")
+    warehouse = models.ForeignKey('core.Warehouse', on_delete=models.PROTECT, null=True, verbose_name="Bodega de Destino")
+    inventory_processed = models.BooleanField(default=False, verbose_name="Inventario Inyectado al Kardex")
     
     # Checklists de seguridad al abrir el contenedor
     seal_intact = models.BooleanField(default=True, verbose_name="¿Marchamo de seguridad intacto?")

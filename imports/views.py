@@ -7,6 +7,7 @@ from .models import PurchaseOrder
 from .forms import PurchaseOrderForm
 from .models import WarehouseReception
 from .forms import WarehouseReceptionForm
+from inventory.models import StockMovement
 
 
 @login_required
@@ -92,10 +93,8 @@ def po_create(request):
 
 @login_required
 def reception_add(request, pk):
-    """Registra el acta física de entrada a la bodega central"""
+    """Registra el acta física y auto-inyecta los productos al Kardex"""
     duca = get_object_or_404(Duca, pk=pk, company=request.user.current_company)
-    
-    # Buscamos si ya existe un acta previa, si no, la preparamos
     reception, created = WarehouseReception.objects.get_or_create(duca=duca)
     
     if request.method == 'POST':
@@ -103,8 +102,28 @@ def reception_add(request, pk):
         if form.is_valid():
             rec = form.save(commit=False)
             rec.received_by = request.user
+            
+            # 🔥 LA MAGIA DE LA INYECCIÓN AUTOMÁTICA 🔥
+            # Solo inyecta si hay bodega seleccionada y si NO se ha procesado antes
+            if rec.warehouse and not rec.inventory_processed:
+                for item in duca.items.all():
+                    # Validamos que el ítem tenga un producto del catálogo asignado
+                    if item.product_catalog and item.quantity > 0:
+                        StockMovement.objects.create(
+                            company=duca.company,
+                            product=item.product_catalog,
+                            warehouse=rec.warehouse,
+                            movement_type='IN',
+                            quantity=item.quantity,
+                            user=request.user,
+                            reference=f"DUCA-{duca.duca_number}",
+                            description=f"Ingreso por Importación Automático - Póliza {duca.duca_number}"
+                        )
+                # Ponemos el candado para que no vuelva a sumar si editan el acta mañana
+                rec.inventory_processed = True
+                
             rec.save()
-            messages.success(request, '¡Acta de Recepción en Bodega guardada exitosamente!')
+            messages.success(request, '¡Acta de Recepción guardada e Inventario actualizado automáticamente!')
             return redirect('imports:duca_detail', pk=duca.pk)
     else:
         form = WarehouseReceptionForm(instance=reception)
