@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import inlineformset_factory
-from .models import Duca, DucaItem, TrackingEvent
+from .models import Duca, DucaItem, TrackingEvent, PurchaseOrder
 
 class DucaForm(forms.ModelForm):
     class Meta:
@@ -41,4 +41,15 @@ class TrackingEventForm(forms.ModelForm):
             'event_type': forms.Select(attrs={'class': 'form-select'}),
             'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Puerto Quetzal, Miami...'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Novedades del viaje...'}),
+        }
+
+class PurchaseOrderForm(forms.ModelForm):
+    class Meta:
+        model = PurchaseOrder
+        fields = ['po_number', 'supplier_name', 'status', 'total_amount_usd']
+        widgets = {
+            'po_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: OC-2026-001'}),
+            'supplier_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del Proveedor (Ej: Hikvision)'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'total_amount_usd': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }

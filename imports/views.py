@@ -3,6 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Duca, TrackingEvent
 from .forms import DucaForm, DucaItemFormSet, TrackingEventForm
+from .models import PurchaseOrder
+from .forms import PurchaseOrderForm
+
 
 @login_required
 def duca_list(request):
@@ -57,3 +60,23 @@ def tracking_add(request, pk):
         form = TrackingEventForm()
         
     return render(request, 'imports/tracking_form.html', {'form': form, 'duca': duca})
+
+@login_required
+def po_list(request):
+    """Muestra el listado de Órdenes de Compra"""
+    pos = PurchaseOrder.objects.all().order_by('-issue_date')
+    return render(request, 'imports/po_list.html', {'pos': pos})
+
+@login_required
+def po_create(request):
+    """Pantalla para registrar una nueva Orden de Compra"""
+    if request.method == 'POST':
+        form = PurchaseOrderForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Orden de Compra registrada exitosamente.')
+            return redirect('imports:po_list')
+    else:
+        form = PurchaseOrderForm()
+        
+    return render(request, 'imports/po_form.html', {'form': form})

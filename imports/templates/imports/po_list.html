@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary fw-bold">
+            <i class="bi bi-file-text me-2"></i> Órdenes de Compra Internacionales
+        </h2>
+        <a href="{% url 'imports:po_create' %}" class="btn btn-primary shadow-sm">
+            <i class="bi bi-plus-circle me-1"></i> Nueva Orden
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>No. Orden</th>
+                        <th>Proveedor</th>
+                        <th>Fecha Emisión</th>
+                        <th>Monto Total (USD)</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for po in pos %}
+                    <tr>
+                        <td class="fw-bold text-primary">{{ po.po_number }}</td>
+                        <td>{{ po.supplier_name }}</td>
+                        <td>{{ po.issue_date|date:"d/m/Y" }}</td>
+                        <td class="text-success fw-bold">${{ po.total_amount_usd|floatformat:2 }}</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ po.get_status_display }}</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No hay órdenes de compra registradas aún.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
