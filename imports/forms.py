@@ -3,6 +3,7 @@ from django.forms import inlineformset_factory
 from .models import Duca, DucaItem, TrackingEvent, PurchaseOrder, WarehouseReception
 from django.db.models import Q
 
+
 class DucaForm(forms.ModelForm):
     class Meta:
         model = Duca
@@ -38,7 +39,6 @@ class DucaForm(forms.ModelForm):
 class DucaItemForm(forms.ModelForm):
     class Meta:
         model = DucaItem
-        # Agregamos 'product_catalog' para que puedas vincularlo a Logística
         fields = ['product_catalog', 'product_code', 'description', 'quantity', 'fob_unit_usd', 'dai_rate']
         widgets = {
             'product_catalog': forms.Select(attrs={'class': 'form-select border-primary'}),
@@ -48,6 +48,11 @@ class DucaItemForm(forms.ModelForm):
             'fob_unit_usd': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'dai_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }
+
+# 🔥 ESTA ES LA LÍNEA MÁGICA QUE FALTABA 🔥
+DucaItemFormSet = inlineformset_factory(
+    Duca, DucaItem, form=DucaItemForm, extra=1, can_delete=True
+)
 
 class TrackingEventForm(forms.ModelForm):
     class Meta:
