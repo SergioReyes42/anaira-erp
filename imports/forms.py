@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import inlineformset_factory
-from .models import Duca, DucaItem, TrackingEvent, PurchaseOrder
+from .models import Duca, DucaItem, TrackingEvent, PurchaseOrder, WarehouseReception
 from django.db.models import Q
 
 class DucaForm(forms.ModelForm):
@@ -69,4 +69,15 @@ class PurchaseOrderForm(forms.ModelForm):
             'supplier_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del Proveedor (Ej: Hikvision)'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
             'total_amount_usd': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        }
+
+class WarehouseReceptionForm(forms.ModelForm):
+    class Meta:
+        model = WarehouseReception
+        fields = ['reception_date', 'seal_intact', 'condition', 'damages_notes']
+        widgets = {
+            'reception_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'condition': forms.TextInput(attrs={'class': 'form-control'}),
+            'damages_notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Detalla si hubo cajas mojadas, equipos quebrados, etc...'}),
+            'seal_intact': forms.CheckboxInput(attrs={'class': 'form-check-input', 'style': 'transform: scale(1.5); margin-right: 10px;'}),
         }
