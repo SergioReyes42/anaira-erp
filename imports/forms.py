@@ -5,17 +5,21 @@ from .models import Duca, DucaItem, TrackingEvent, PurchaseOrder
 class DucaForm(forms.ModelForm):
     class Meta:
         model = Duca
-        fields = ['duca_number', 'date_acceptance', 'supplier_name', 'customs_agent', 
+        fields = ['purchase_orders', 'duca_number', 'date_acceptance', 'supplier_name', 'customs_agent', 
                   'exchange_rate', 'freight_usd', 'insurance_usd', 'iva_gtq', 'other_expenses_gtq', 'status']
         widgets = {
             'date_acceptance': forms.DateInput(attrs={'type': 'date'}),
+            'purchase_orders': forms.SelectMultiple(attrs={'size': '4'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Le aplicamos diseño Bootstrap a todos los campos automáticamente
-        for field in self.fields.values():
-            field.widget.attrs['class'] = 'form-control'
+        for field_name, field in self.fields.items():
+            if field_name == 'purchase_orders':
+                field.widget.attrs['class'] = 'form-select'
+                field.help_text = "Mantén presionado 'Ctrl' para seleccionar múltiples órdenes."
+            else:
+                field.widget.attrs['class'] = 'form-control'
 
 # Esto permite agregar múltiples productos a una sola póliza (como una factura)
 DucaItemFormSet = inlineformset_factory(
