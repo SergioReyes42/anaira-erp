@@ -35,19 +35,19 @@ class DucaForm(forms.ModelForm):
                 field.widget.attrs['class'] = 'form-control'
 
 # Esto permite agregar múltiples productos a una sola póliza (como una factura)
-DucaItemFormSet = inlineformset_factory(
-    Duca, DucaItem,
-    fields=['product_code', 'description', 'quantity', 'fob_unit_usd', 'dai_rate'],
-    extra=1, # Muestra 1 fila vacía por defecto
-    can_delete=True,
-    widgets={
-        'product_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'SKU'}),
-        'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Descripción'}),
-        'quantity': forms.NumberInput(attrs={'class': 'form-control'}),
-        'fob_unit_usd': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-        'dai_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-    }
-)
+class DucaItemForm(forms.ModelForm):
+    class Meta:
+        model = DucaItem
+        # Agregamos 'product_catalog' para que puedas vincularlo a Logística
+        fields = ['product_catalog', 'product_code', 'description', 'quantity', 'fob_unit_usd', 'dai_rate']
+        widgets = {
+            'product_catalog': forms.Select(attrs={'class': 'form-select border-primary'}),
+            'product_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Código Proveedor'}),
+            'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Descripción en Factura'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control'}),
+            'fob_unit_usd': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'dai_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        }
 
 class TrackingEventForm(forms.ModelForm):
     class Meta:

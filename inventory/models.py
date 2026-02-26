@@ -45,6 +45,21 @@ class Product(models.Model):
 
     def __str__(self): return f"[{self.sku}] {self.name}"
 
+    @property
+    def in_transit(self):
+        """Calcula en tiempo real cuántas unidades vienen en barco/aduana"""
+        from imports.models import DucaItem
+        from django.db.models import Sum
+        
+        # Busca todas las DUCAs que aún NO han sido procesadas en bodega
+        transito = DucaItem.objects.filter(
+            product_catalog=self
+        ).exclude(
+            duca__warehousereception__inventory_processed=True
+        ).aggregate(total=Sum('quantity'))['total']
+        
+        return transito or 0
+
 # ==========================================
 # 3. STOCK POR BODEGA
 # ==========================================
@@ -91,7 +106,7 @@ class StockMovement(models.Model):
         else:
             stock_record.quantity -= self.quantity
             self.product.stock_quantity -= self.quantity # Global
-   
-            
+
+
         stock_record.save()
         self.product.save()
