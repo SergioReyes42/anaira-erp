@@ -88,6 +88,60 @@ class Duca(models.Model):
         cif_gtq = self.total_cif_usd * self.exchange_rate
         return cif_gtq + self.total_dai_gtq + self.other_expenses_gtq
 
+    def calcular_liquidaciones(self):
+        from decimal import Decimal
+        
+        # 1. Sumar todo el FOB de los productos que metiste
+        total_fob = sum(item.quantity * item.fob_unit_usd for item in self.items.all())
+        self.total_fob_usd = total_fob
+        
+        # 2. Calcular el CIF Internacional y pasarlo a Quetzales
+        self.total_cif_usd = total_fob + self.freight_usd + self.insurance_usd
+        cif_gtq = self.total_cif_usd * self.exchange_rate
+        
+        # 3. Prorrateo y cálculo de Aranceles (DAI) por cada producto
+        total_dai_gtq = Decimal('0.00')
+        for item in self.items.all():
+            # ¿Qué porcentaje del contenedor ocupa este producto?
+            if total_fob > 0:
+                item.factor_prorrateo = (item.quantity * item.fob_unit_usd) / total_fob
+            else:
+                item.factor_prorrateo = 0
+                
+            item.calculated_cif_usd = self.total_cif_usd * item.factor_prorrateo
+            cif_item_gtq = item.calculated_cif_usd * self.exchange_rate
+            
+            # Impuesto aduanero específico de esa línea
+            item.calculated_dai_gtq = cif_item_gtq * (item.dai_rate / Decimal('100.00'))
+            total_dai_gtq += item.calculated_dai_gtq
+            item.save()
+            
+        self.total_dai_gtq = total_dai_gtq
+        
+        # 4. 🔥 CÁLCULO INTELIGENTE DEL IVA (La magia de la SAT) 🔥
+        # Si el usuario dejó el campo vacío o en 0, el ERP lo calcula automático
+        if not self.iva_gtq or self.iva_gtq == 0:
+            base_imponible = cif_gtq + total_dai_gtq
+            self.iva_gtq = base_imponible * Decimal('0.12') # 12% de IVA
+            
+        # 5. Costo Final de Inventario (No incluye IVA porque es crédito fiscal)
+        self.total_import_cost_gtq = cif_gtq + total_dai_gtq + self.other_expenses_gtq
+        
+        # 6. Inyectarle el Costo Real final a cada camarita o cable
+        for item in self.items.all():
+            if self.total_cif_usd > 0:
+                factor_gasto_local = item.calculated_cif_usd / self.total_cif_usd
+            else:
+                factor_gasto_local = 0
+            
+            porcentaje_otros_gastos = self.other_expenses_gtq * factor_gasto_local
+            costo_total_item = (item.calculated_cif_usd * self.exchange_rate) + item.calculated_dai_gtq + porcentaje_otros_gastos
+            
+            if item.quantity > 0:
+                item.final_unit_cost_gtq = costo_total_item / item.quantity
+            item.save()
+            
+        self.save()
 
 class DucaItem(models.Model):
     """Los productos que vienen dentro del contenedor/paquete"""

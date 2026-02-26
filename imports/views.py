@@ -15,26 +15,33 @@ def duca_list(request):
 
 @login_required
 def duca_create(request):
-    """Pantalla para registrar una nueva póliza con sus productos"""
+    """Crea una nueva Póliza DUCA y sus productos"""
     if request.method == 'POST':
         form = DucaForm(request.POST)
         formset = DucaItemFormSet(request.POST)
         
         if form.is_valid() and formset.is_valid():
+            # 1. Guardar la cabecera
             duca = form.save(commit=False)
             duca.company = request.user.current_company
-            duca.created_by = request.user
             duca.save()
+            form.save_m2m() # Guarda las Órdenes de Compra vinculadas
             
-            formset.instance = duca
-            formset.save()
+            # 2. Guardar los productos
+            items = formset.save(commit=False)
+            for item in items:
+                item.duca = duca
+                item.save()
             
-            messages.success(request, f'Póliza {duca.duca_number} registrada con éxito.')
+            # 🔥 3. ENCENDER EL MOTOR MATEMÁTICO 🔥
+            duca.calcular_liquidaciones()
+            
+            messages.success(request, 'DUCA registrada y prorrateada con éxito.')
             return redirect('imports:duca_detail', pk=duca.pk)
     else:
         form = DucaForm()
         formset = DucaItemFormSet()
-    
+        
     return render(request, 'imports/duca_form.html', {'form': form, 'formset': formset})
 
 @login_required
