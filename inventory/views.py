@@ -95,7 +95,11 @@ def supplier_list(request):
     suppliers = Supplier.objects.filter(company=request.user.current_company)
     return render(request, 'inventory/supplier_list.html', {'suppliers': suppliers})
 
-def inventory_kardex(request): return redirect('movement_list')
+def inventory_kardex(request): 
+    """Muestra el historial completo de entradas y salidas de bodega"""
+    movements = StockMovement.objects.filter(company=request.user.current_company).order_by('-date')
+    return render(request, 'inventory/kardex_list.html', {'movements': movements})
+
 def make_transfer(request): return redirect('dashboard')
 def purchase_list(request): return redirect('dashboard')
 def create_purchase(request): return redirect('dashboard')

@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
 
+app_name = 'inventory' # 🔥 ESTE CANDADO ES CLAVE PARA EL MENÚ
+
 urlpatterns = [
     # Dashboard
     path('', views.dashboard, name='inventory_dashboard'),
