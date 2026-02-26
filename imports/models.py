@@ -3,6 +3,28 @@ from django.utils import timezone
 from django.conf import settings
 from decimal import Decimal
 
+class PurchaseOrder(models.Model):
+    """Orden de Compra Internacional a Proveedor"""
+    STATUS_CHOICES = [
+        ('PENDING', 'Pendiente de Envío'),
+        ('IN_TRANSIT', 'En Tránsito (Asignada a DUCA)'),
+        ('RECEIVED', 'Recibida en Bodega'),
+        ('CANCELLED', 'Cancelada'),
+    ]
+
+    po_number = models.CharField(max_length=50, unique=True, verbose_name="No. Orden de Compra")
+    supplier_name = models.CharField(max_length=150, verbose_name="Proveedor")
+    issue_date = models.DateField(auto_now_add=True, verbose_name="Fecha de Emisión")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    total_amount_usd = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Monto Total ($)")
+
+    class Meta:
+        verbose_name = "Orden de Compra"
+        verbose_name_plural = "Órdenes de Compra"
+
+    def __str__(self):
+        return f"{self.po_number} - {self.supplier_name} (${self.total_amount_usd})"
+
 class Duca(models.Model):
     STATUS_CHOICES = [
         ('DRAFT', '1. Borrador / En Tránsito'),
@@ -16,6 +38,7 @@ class Duca(models.Model):
     
     # DATOS GENERALES
     duca_number = models.CharField(max_length=50, verbose_name="Número de DUCA / Póliza", unique=True)
+    purchase_orders = models.ManyToManyField(PurchaseOrder, blank=True, related_name='ducas', verbose_name="Órdenes de Compra Vinculadas")
     date_acceptance = models.DateField(default=timezone.now, verbose_name="Fecha de Aceptación SAT")
     customs_agent = models.CharField(max_length=150, verbose_name="Agente Aduanero", blank=True, null=True)
     supplier_name = models.CharField(max_length=200, verbose_name="Proveedor (Extranjero)")

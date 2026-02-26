@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import inlineformset_factory
-from .models import Duca, DucaItem
+from .models import Duca, DucaItem, TrackingEvent
 
 class DucaForm(forms.ModelForm):
     class Meta:
@@ -31,3 +31,14 @@ DucaItemFormSet = inlineformset_factory(
         'dai_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
     }
 )
+
+class TrackingEventForm(forms.ModelForm):
+    class Meta:
+        model = TrackingEvent
+        fields = ['event_type', 'event_date', 'location', 'notes']
+        widgets = {
+            'event_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'event_type': forms.Select(attrs={'class': 'form-select'}),
+            'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Puerto Quetzal, Miami...'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Novedades del viaje...'}),
+        }
