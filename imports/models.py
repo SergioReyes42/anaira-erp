@@ -132,3 +132,53 @@ class DucaItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity}x {self.description} | Costo Final: Q.{self.final_unit_cost_gtq:.2f}"
+
+class TrackingEvent(models.Model):
+    """Línea de tiempo para saber dónde viene el contenedor"""
+    EVENT_CHOICES = [
+        ('FACTORY', '1. En Planta del Proveedor (Extranjero)'),
+        ('DEPARTURE', '2. Salida de Puerto/Aeropuerto Origen'),
+        ('TRANSIT', '3. En Tránsito (Marítimo/Aéreo)'),
+        ('ARRIVAL', '4. Llegada a Puerto en Guatemala (Santo Tomás/Quetzal)'),
+        ('CUSTOMS', '5. En Trámite Aduanal (Retenido/Revisión)'),
+        ('DISPATCHED', '6. Liberado y en Ruta a Bodega Sermaworld'),
+    ]
+
+    duca = models.ForeignKey(Duca, on_delete=models.CASCADE, related_name='tracking_events')
+    event_type = models.CharField(max_length=20, choices=EVENT_CHOICES, verbose_name="Tipo de Evento")
+    event_date = models.DateField(default=timezone.now, verbose_name="Fecha del Evento")
+    location = models.CharField(max_length=150, verbose_name="Ubicación / Puerto", help_text="Ej: Puerto Shenzen, Miami, Puerto Quetzal")
+    notes = models.TextField(blank=True, null=True, verbose_name="Observaciones / Novedades")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Evento de Tracking"
+        verbose_name_plural = "Tracking de Contenedores"
+        ordering = ['-event_date', '-created_at'] # Ordena del más reciente al más antiguo
+
+    def __str__(self):
+        return f"{self.get_event_type_display()} - {self.location}"
+
+
+class WarehouseReception(models.Model):
+    """Acta de Recepción: El documento que firma el bodeguero al recibir el contenedor"""
+    duca = models.OneToOneField(Duca, on_delete=models.CASCADE, related_name='reception', verbose_name="Póliza DUCA")
+    
+    reception_date = models.DateTimeField(default=timezone.now, verbose_name="Fecha y Hora de Recepción")
+    received_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, verbose_name="Recibido por (Bodeguero)")
+    
+    # Checklists de seguridad al abrir el contenedor
+    seal_intact = models.BooleanField(default=True, verbose_name="¿Marchamo de seguridad intacto?")
+    condition = models.CharField(max_length=100, default='Excelente - Mercadería en buen estado', verbose_name="Condición de la Carga")
+    damages_notes = models.TextField(blank=True, null=True, verbose_name="Notas de Daños o Faltantes")
+    
+    # Estado de la integración con el Kardex
+    integrated_to_inventory = models.BooleanField(default=False, verbose_name="¿Integrado al Kardex?")
+
+    class Meta:
+        verbose_name = "Recepción de Bodega"
+        verbose_name_plural = "Recepciones de Bodegas"
+
+    def __str__(self):
+        return f"Recepción de {self.duca.duca_number} el {self.reception_date.strftime('%d/%m/%Y')}"
