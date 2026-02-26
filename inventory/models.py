@@ -91,6 +91,7 @@ class StockMovement(models.Model):
         else:
             stock_record.quantity -= self.quantity
             self.product.stock_quantity -= self.quantity # Global
+   
             
         stock_record.save()
         self.product.save()
