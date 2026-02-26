@@ -1,6 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
 from .models import Duca, DucaItem, TrackingEvent, PurchaseOrder
+from django.db.models import Q
 
 class DucaForm(forms.ModelForm):
     class Meta:
@@ -14,10 +15,22 @@ class DucaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        # 🔥 EL FILTRO INTELIGENTE 🔥
+        # Si estamos creando una DUCA nueva, solo muestra las órdenes "huérfanas" (que no tienen DUCA)
+        if not self.instance.pk:
+            self.fields['purchase_orders'].queryset = PurchaseOrder.objects.filter(ducas__isnull=True)
+        else:
+            # Si estamos editando una DUCA vieja, muestra las huérfanas + las que ya tiene esta DUCA
+            self.fields['purchase_orders'].queryset = PurchaseOrder.objects.filter(
+                Q(ducas__isnull=True) | Q(ducas=self.instance)
+            ).distinct()
+
+        # Aplicamos diseño Bootstrap a todos los campos
         for field_name, field in self.fields.items():
             if field_name == 'purchase_orders':
                 field.widget.attrs['class'] = 'form-select'
-                field.help_text = "Mantén presionado 'Ctrl' para seleccionar múltiples órdenes."
+                field.help_text = "Solo se muestran órdenes pendientes. Mantén presionado 'Ctrl' para seleccionar múltiples."
             else:
                 field.widget.attrs['class'] = 'form-control'
 
