@@ -51,12 +51,12 @@
 
                         <div class="mb-3 p-3 bg-light border border-2 border-secondary rounded-3">
                             <label class="fw-bold text-dark mb-2">1. Foto de la Factura (NIT)</label>
-                            {{ form.receipt_image }}
+                            <input type="file" name="receipt_image" id="foto_factura" class="form-control form-control-lg" accept="image/*" capture="environment" required>
                         </div>
 
                         <div class="mb-4 p-3 bg-light border border-2 border-warning rounded-3">
                             <label class="fw-bold text-dark mb-2">2. Foto de la Bomba / Tablero</label>
-                            {{ form.pump_image }}
+                            <input type="file" name="pump_image" id="foto_bomba" class="form-control form-control-lg border-warning" accept="image/*" capture="environment" required>
                             <small class="text-muted d-block mt-1">Galones en pantalla o millaje del vehículo.</small>
                         </div>
 
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusDiv.className = "alert alert-danger py-2 small text-center fw-bold shadow-sm";
                 statusDiv.innerHTML = '<i class="bi bi-geo-alt-fill me-1"></i> ERROR: GPS Apagado o denegado.';
             },
-            { enableHighAccuracy: true, timeout: 10000 }
+            { enableHighAccuracy: true, timeout: 30000 }
         );
     }
 

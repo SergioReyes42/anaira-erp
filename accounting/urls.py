@@ -65,4 +65,6 @@ urlpatterns = [
 
     path('cierre-fiscal/', views.fiscal_close, name='fiscal_close'),
 
+    path('supervision-gastos/', views.expense_pre_review_list, name='expense_pre_review_list'),
+
 ]

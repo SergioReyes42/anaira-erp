@@ -1038,3 +1038,38 @@ def sales_ledger(request):
         'anios': range(2025, 2030),
     }
     return render(request, 'accounting/sales_ledger.html', context)
+@login_required
+def expense_pre_review_list(request):
+    """Bandeja para que los 3 Supervisores aprueben el gasto del piloto"""
+    # Solo mostramos los gastos de la empresa actual que estén en fase PRE_REVIEW
+    expenses = Expense.objects.filter(status='PRE_REVIEW', company=request.user.current_company).order_by('-date')
+    
+    if request.method == 'POST':
+        expense_id = request.POST.get('expense_id')
+        action = request.POST.get('action') # Puede ser 'sup1', 'sup2', 'asist', 'reject'
+        
+        if expense_id and action:
+            gasto = get_object_or_404(Expense, id=expense_id, company=request.user.current_company)
+            
+            # Aplicamos la firma digital según el botón que presionaron
+            if action == 'sup1':
+                gasto.supervisor_1_ok = True
+                messages.success(request, f"Firma de Supervisor 1 aplicada al gasto de Q{gasto.total_amount}.")
+            elif action == 'sup2':
+                gasto.supervisor_2_ok = True
+                messages.success(request, "Firma de Supervisor 2 aplicada.")
+            elif action == 'asist':
+                gasto.assistant_ok = True
+                messages.success(request, "Firma de Asistente aplicada.")
+            elif action == 'reject':
+                gasto.status = 'REJECTED'
+                messages.error(request, "Gasto rechazado definitivamente.")
+                
+            gasto.save()
+            
+            # 🔥 MAGIA: Verifica si ya están los 3. Si sí, lo manda al Contador automáticamente.
+            gasto.check_and_advance_status() 
+            
+            return redirect('expense_pre_review_list') # Asegúrate de tener esta ruta en urls.py
+            
+    return render(request, 'expense_pre_review_list.html', {'expenses': expenses})
