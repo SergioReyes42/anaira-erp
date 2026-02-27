@@ -12,10 +12,8 @@ def quotation_list(request):
     quotations = Quotation.objects.filter(company=request.user.current_company).order_by('-date')
     return render(request, 'sales/quotation_list.html', {'quotations': quotations})
 
-@login_required
 def quotation_create(request):
     """Crea cotizaciones aislando las bodegas por sucursal y aplicando el Libro Negro"""
-    # 1. Identificamos la sucursal exacta del usuario
     company = request.user.current_company
     
     if request.method == 'POST':
@@ -32,33 +30,43 @@ def quotation_create(request):
                 )
                 return redirect('sales:quotation_create')
             
-            # Asignamos la sucursal y el vendedor de forma invisible y segura
+            # Asignamos la sucursal y el vendedor
             quotation.company = company
             quotation.seller = request.user
             quotation.save()
             
-            # Procesamos las listas de productos que vienen del HTML
+            # 🔥 AQUÍ ESTÁ LA LÍNEA QUE FALTABA (Atrapamos el descuento) 🔥
             products = request.POST.getlist('products[]')
             quantities = request.POST.getlist('quantities[]')
             prices = request.POST.getlist('prices[]')
+            discounts = request.POST.getlist('discounts[]') 
             
             total_cotizacion = 0
             
             for i, prod_id in enumerate(products):
                 if prod_id:
-                    # 🔥 CANDADO 2: AISLAMIENTO DE SUCURSAL 🔥
-                    # Nos aseguramos de que el producto extraído pertenezca a la sucursal actual
+                    # CANDADO 2: AISLAMIENTO DE SUCURSAL
                     product = get_object_or_404(Product, id=prod_id, company=company)
                     qty = int(quantities[i])
                     price = float(prices[i])
+                    
+                    # Extraemos el descuento con seguridad (por si viene vacío)
+                    discount = 0.0
+                    if discounts and i < len(discounts) and discounts[i]:
+                        discount = float(discounts[i])
+                    
+                    # Calculamos el subtotal con el descuento aplicado
+                    line_total = (qty * price) * (1 - (discount / 100))
                     
                     QuotationItem.objects.create(
                         quotation=quotation,
                         product=product,
                         quantity=qty,
-                        unit_price=price
+                        unit_price=price,
+                        discount_percent=discount,
+                        total_line=line_total
                     )
-                    total_cotizacion += (qty * price)
+                    total_cotizacion += line_total
             
             # Calculamos totales y guardamos
             quotation.total = total_cotizacion
@@ -68,13 +76,13 @@ def quotation_create(request):
             return redirect('sales:quotation_list')
     else:
         form = QuotationForm()
-        # 🔥 MAGIA DE AISLAMIENTO: Filtramos los menús desplegables del formulario
+        # Filtramos los menús desplegables del formulario para la sucursal actual
         form.fields['client'].queryset = Client.objects.filter(company=company)
         form.fields['warehouse'].queryset = Warehouse.objects.filter(company=company)
     
-    # Enviamos al HTML solo los productos de la sucursal actual
     products = Product.objects.filter(company=company)
     return render(request, 'sales/quotation_form.html', {'form': form, 'products': products})
+    
 
 @login_required
 def client_list(request):

@@ -76,11 +76,18 @@ class QuotationItem(models.Model):
     quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
-    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Precio Unitario")
+    
+    # 🔥 NUEVO: EL CUADRO DE DESCUENTO 🔥
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, verbose_name="Descuento (%)")
+    
     total_line = models.DecimalField(max_digits=12, decimal_places=2)
 
     def save(self, *args, **kwargs):
-        self.total_line = self.quantity * self.unit_price
+        # La matemática mágica: Calcula subtotal y le resta el porcentaje de descuento
+        base_total = self.quantity * self.unit_price
+        discount_amount = base_total * (self.discount_percent / 100)
+        self.total_line = base_total - discount_amount
         super().save(*args, **kwargs)
 
 # ==========================================
