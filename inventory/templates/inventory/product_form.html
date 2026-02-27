@@ -1,74 +1,110 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container-fluid mt-4 mb-5">
     <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card shadow-lg border-0">
-                <div class="card-header bg-primary text-white py-3">
-                    <h4 class="mb-0"><i class="bi bi-box-seam me-2"></i>Nuevo Producto</h4>
+        <div class="col-lg-10">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="text-dark fw-bold mb-0">
+                        <i class="bi bi-box-seam-fill text-primary me-2"></i>Registro de Producto
+                    </h2>
+                    <p class="text-muted">Agrega un nuevo SKU al catálogo maestro de tu empresa.</p>
                 </div>
-                <div class="card-body p-4 bg-light">
+                <a href="{% url 'inventory:product_list' %}" class="btn btn-outline-secondary shadow-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Volver al Catálogo
+                </a>
+            </div>
+
+            <form method="POST" enctype="multipart/form-data" class="needs-validation">
+                {% csrf_token %}
+                <div class="row g-4">
                     
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Código / SKU</label>
-                                {{ form.sku }} 
+                    <div class="col-md-7">
+                        <div class="card shadow-sm border-0 border-top border-primary border-4 h-100">
+                            <div class="card-header bg-white border-0 pt-4 pb-0">
+                                <h5 class="fw-bold text-dark"><i class="bi bi-info-circle-fill text-primary me-2"></i>Datos Generales</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold text-secondary">Código / SKU</label>
+                                        {{ form.sku }}
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="form-label fw-bold text-secondary">Nombre del Producto</label>
+                                        {{ form.name }}
+                                    </div>
                                 </div>
-                            <div class="col-md-8">
-                                <label class="form-label fw-bold">Nombre del Producto</label>
-                                {{ form.name }}
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-secondary">Fotografía del Producto</label>
+                                    <div class="p-3 border border-2 border-dashed rounded bg-light text-center">
+                                        <i class="bi bi-cloud-arrow-up-fill text-muted fs-1 mb-2 d-block"></i>
+                                        {{ form.image }}
+                                        <small class="text-muted mt-2 d-block">Formatos permitidos: JPG, PNG. Max: 2MB.</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Categoría</label>
-                                {{ form.category }}
+                    <div class="col-md-5">
+                        <div class="card shadow-sm border-0 border-top border-success border-4 mb-4">
+                            <div class="card-header bg-white border-0 pt-4 pb-0">
+                                <h5 class="fw-bold text-dark"><i class="bi bi-tags-fill text-success me-2"></i>Clasificación y Costos</h5>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Marca</label>
-                                {{ form.brand }}
-                            </div>
-                        </div>
-
-                        <div class="card p-3 mb-3 border-warning">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">Costo (Q)</label>
-                                    {{ form.cost_price }}
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold text-secondary">Categoría</label>
+                                        {{ form.category }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold text-secondary">Marca</label>
+                                        {{ form.brand }}
+                                    </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold text-success">Precio Venta (Q)</label>
-                                    {{ form.sale_price }}
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">Tipo</label>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-secondary">Tipo</label>
                                     {{ form.product_type }}
                                 </div>
+                                
+                                <hr class="my-4">
+                                
+                                <div class="row bg-success bg-opacity-10 p-3 rounded">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold text-secondary">Costo (Q)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white">Q</span>
+                                            {{ form.cost }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold text-success">Precio Venta (Q)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-success text-white">Q</span>
+                                            {{ form.sale_price }}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">Imagen del Producto</label>
-                            {{ form.image }}
-                        </div>
+                    </div>
 
-                        <hr>
-
-                        <div class="d-flex justify-content-end gap-2">
-                            <a href="{% url 'inventory:product_list' %}" class="btn btn-secondary">Cancelar</a>
-                            
-                            <button type="submit" class="btn btn-primary px-5">
-                                <i class="bi bi-check-circle me-1"></i> Guardar Producto
-                            </button>
-                        </div>
-                    </form>
                 </div>
-            </div>
+
+                <hr class="my-4">
+                
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'inventory:product_list' %}" class="btn btn-secondary px-4">Cancelar</a>
+                    <button type="submit" class="btn btn-primary px-5 fw-bold shadow-sm">
+                        <i class="bi bi-check-circle-fill me-1"></i> Guardar Producto
+                    </button>
+                </div>
+            </form>
+            
         </div>
     </div>
 </div>

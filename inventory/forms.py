@@ -7,7 +7,14 @@ class ProductForm(forms.ModelForm):
         model = Product
         fields = ['sku', 'name', 'category', 'brand', 'supplier', 'cost_price', 'sale_price', 'image']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'sku': forms.TextInput(attrs={'class': 'form-control text-uppercase', 'placeholder': 'Ej. DS-2CD2021G1-I'}),
+            'name': forms.TextInput(attrs={'class': 'form-control fw-bold', 'placeholder': 'Descripción del producto'}),
+            'category': forms.Select(attrs={'class': 'form-select'}),
+            'brand': forms.Select(attrs={'class': 'form-select'}),
+            'product_type': forms.Select(attrs={'class': 'form-select'}),
+            'cost': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'sale_price': forms.NumberInput(attrs={'class': 'form-control text-success fw-bold', 'step': '0.01'}),
+            'image': forms.FileInput(attrs={'class': 'form-control'}),
         }
 
 class WarehouseForm(forms.ModelForm):
