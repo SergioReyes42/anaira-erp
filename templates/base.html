@@ -405,7 +405,7 @@
 
                                 {% if request.user|has_group:"Gerente, Administrador" and count_pre_review > 0 %}
                                 <li>
-                                    <a class="dropdown-item py-3 border-bottom" href="{% url 'accounting:expense_pre_review_list' %}">
+                                    <a class="dropdown-item py-3 border-bottom" href="{% url 'expense_pre_review_list' %}">
                                         <div class="d-flex align-items-center">
                                             <div class="bg-warning bg-opacity-25 p-2 rounded-circle me-3">
                                                 <i class="bi bi-shield-lock-fill text-warning fs-5"></i>
@@ -421,7 +421,7 @@
 
                                 {% if request.user|has_group:"Contadora, Auxiliar Contable" and count_pending > 0 %}
                                 <li>
-                                    <a class="dropdown-item py-3 border-bottom" href="{% url 'accounting:expense_pending_list' %}">
+                                    <a class="dropdown-item py-3 border-bottom" href="{% url 'expense_pending_list' %}">
                                         <div class="d-flex align-items-center">
                                             <div class="bg-info bg-opacity-25 p-2 rounded-circle me-3">
                                                 <i class="bi bi-inbox-fill text-info fs-5"></i>
