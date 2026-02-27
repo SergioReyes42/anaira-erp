@@ -100,7 +100,7 @@ def pilot_upload(request):
                     tax_idp=0
                 )
             messages.success(request, "🚀 Gasto enviado. Contabilidad lo revisará.")
-            return redirect('home')
+            return redirect('core:home')
             
         except Exception as e:
             messages.error(request, f"Error al guardar el gasto: {str(e)}")
