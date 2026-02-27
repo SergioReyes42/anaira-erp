@@ -268,15 +268,19 @@
                 <div class="dropdown-divider border-secondary mt-2"></div>
                 <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Auditoría de Gastos</small>
                 
-                <a href="{% url 'expense_pre_review_list' %}" class="list-group-item list-group-item-action text-warning fw-bold">
+                <a href="{% url 'accounting:expense_pre_review_list' %}" class="list-group-item list-group-item-action text-warning fw-bold">
                     <i class="bi bi-shield-lock-fill me-1"></i> Auditoría (Supervisores)
-                    <span class="badge bg-danger ms-2 rounded-pill shadow-sm">!</span> 
+                    {% if count_pre_review > 0 %}
+                        <span class="badge bg-danger ms-2 rounded-pill shadow-sm">{{ count_pre_review }}</span> 
+                    {% endif %}
                 </a>
 
-                <a href="{% url 'expense_pending_list' %}" class="list-group-item list-group-item-action text-info fw-bold">
+                <a href="{% url 'accounting:expense_pending_list' %}" class="list-group-item list-group-item-action text-info fw-bold">
                     <i class="bi bi-inbox-fill me-1"></i> Contabilizar Gastos
+                    {% if count_pending > 0 %}
+                        <span class="badge bg-danger ms-2 rounded-pill shadow-sm">{{ count_pending }}</span> 
+                    {% endif %}
                 </a>
-                
                 <div class="collapse submenu" id="menuConta">
                     <a href="{% url 'chart_of_accounts' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-diagram-3-fill me-1"></i> Plan de Cuentas (NIIF)
@@ -384,6 +388,61 @@
                 {% endif %}
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav ms-auto mt-2 mt-lg-0 align-items-center">
+                        
+                        <li class="nav-item dropdown me-3 mt-1">
+                            <a class="nav-link position-relative" href="#" id="alertsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-bell-fill fs-5 text-secondary"></i>
+                                
+                                {% if count_pre_review > 0 or count_pending > 0 %}
+                                <span class="position-absolute top-25 start-75 translate-middle p-1 bg-danger border border-light rounded-circle">
+                                    <span class="visually-hidden">Nuevas alertas</span>
+                                </span>
+                                {% endif %}
+                            </a>
+                            
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2" aria-labelledby="alertsDropdown" style="width: 300px;">
+                                <li class="px-3 py-2 text-muted small fw-bold border-bottom bg-light">CENTRO DE NOTIFICACIONES</li>
+
+                                {% if request.user|has_group:"Gerente, Administrador" and count_pre_review > 0 %}
+                                <li>
+                                    <a class="dropdown-item py-3 border-bottom" href="{% url 'accounting:expense_pre_review_list' %}">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-warning bg-opacity-25 p-2 rounded-circle me-3">
+                                                <i class="bi bi-shield-lock-fill text-warning fs-5"></i>
+                                            </div>
+                                            <div>
+                                                <span class="d-block fw-bold text-dark">Auditoría Requerida</span>
+                                                <span class="small text-muted d-block text-wrap">Tienes {{ count_pre_review }} gasto(s) esperando firmas.</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </li>
+                                {% endif %}
+
+                                {% if request.user|has_group:"Contadora, Auxiliar Contable" and count_pending > 0 %}
+                                <li>
+                                    <a class="dropdown-item py-3 border-bottom" href="{% url 'accounting:expense_pending_list' %}">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-info bg-opacity-25 p-2 rounded-circle me-3">
+                                                <i class="bi bi-inbox-fill text-info fs-5"></i>
+                                            </div>
+                                            <div>
+                                                <span class="d-block fw-bold text-dark">Contabilización</span>
+                                                <span class="small text-muted d-block text-wrap">Hay {{ count_pending }} gasto(s) listos para partida.</span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </li>
+                                {% endif %}
+
+                                {% if count_pre_review == 0 and count_pending == 0 %}
+                                <li class="text-center py-4">
+                                    <i class="bi bi-bell-slash text-muted fs-3 d-block mb-2"></i>
+                                    <span class="text-muted small">Todo está al día.</span>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                                 <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-2" style="width:32px; height:32px; font-weight:bold;">

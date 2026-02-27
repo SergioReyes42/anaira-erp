@@ -116,6 +116,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.global_info',  # <--- AGREGA ESTA LÍNEA
+                'accounting.context_processors.expense_notifications',
             ],
         },
     },
