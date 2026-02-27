@@ -34,6 +34,7 @@ class Vehicle(models.Model):
 # ==========================================
 class Expense(models.Model):
     STATUS_CHOICES = [
+        ('PRE_REVIEW', 'Filtro de Supervisores'), # <-- NUEVO ESTADO INICIAL
         ('PENDING', 'Pendiente de Revisión'),
         ('APPROVED', 'Contabilizado'),
         ('REJECTED', 'Rechazado'),
@@ -78,6 +79,18 @@ class Expense(models.Model):
     tax_base = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Base Imponible")
     tax_iva = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="IVA Crédito")
     tax_idp = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Impuesto IDP")
+
+    # 🔥 FLUJO DE APROBACIÓN (TRIPLE CANDADO) 🔥
+    supervisor_1_ok = models.BooleanField(default=False, verbose_name="VoBo. Supervisor 1")
+    supervisor_2_ok = models.BooleanField(default=False, verbose_name="VoBo. Supervisor 2")
+    assistant_ok = models.BooleanField(default=False, verbose_name="VoBo. Asistente")
+
+    # Función inteligente: Revisa si ya están las 3 firmas para mandarlo al Contador
+    def check_and_advance_status(self):
+        if self.supervisor_1_ok and self.supervisor_2_ok and self.assistant_ok:
+            if self.status == 'PRE_REVIEW':
+                self.status = 'PENDING'
+                self.save()
 
     def __str__(self):
         return f"{self.provider_name or 'Gasto'} - Q{self.total_amount}"

@@ -58,3 +58,26 @@ class PilotExpenseForm(forms.ModelForm):
             'latitude': forms.HiddenInput(attrs={'id': 'lat_input'}),
             'longitude': forms.HiddenInput(attrs={'id': 'lng_input'}),
         }
+
+class ExpenseReviewForm(forms.ModelForm):
+    class Meta:
+        model = Expense
+        fields = ['provider_nit', 'invoice_series', 'invoice_number', 'total_amount', 'tax_base', 'tax_iva']
+
+    # 🔥 EL DETECTOR DE FRAUDES 🔥
+    def clean(self):
+        cleaned_data = super().clean()
+        nit = cleaned_data.get('provider_nit')
+        invoice_num = cleaned_data.get('invoice_number')
+
+        if nit and invoice_num:
+            # Buscamos si ya existe otra factura en la base de datos con ese mismo NIT y Número
+            duplicado = Expense.objects.filter(
+                provider_nit=nit, 
+                invoice_number=invoice_num
+            ).exclude(id=self.instance.id).exists() # Excluimos la actual por si solo la estamos editando
+
+            if duplicado:
+                raise forms.ValidationError("🚨 ¡ALERTA DE AUDITORÍA! Esta factura (NIT y Número) ya fue ingresada o pagada anteriormente en el sistema.")
+                
+        return cleaned_data
