@@ -8,10 +8,15 @@
         {% if user.company_profile.logo %}
             <img src="{{ user.company_profile.logo.url }}" alt="Logo Empresa" class="img-fluid mb-3" style="max-height: 180px;">
         {% else %}
-            <div class="bg-white p-4 rounded-circle shadow-sm d-inline-block mb-3">
-                <i class="bi bi-buildings text-secondary" style="font-size: 5rem;"></i>
-            </div>
-        {% endif %}
+            <div class="text-center mb-4">
+    {% if request.user.current_company.logo %}
+        <img src="{{ request.user.current_company.logo.url }}" alt="Logo de la Empresa" style="max-height: 120px; object-fit: contain;" class="shadow-sm p-2 bg-white rounded-3">
+    {% else %}
+        <div class="d-inline-flex justify-content-center align-items-center bg-light rounded-circle shadow-sm" style="width: 100px; height: 100px;">
+            <i class="bi bi-building fs-1 text-secondary"></i>
+        </div>
+    {% endif %}
+</div>
 
         <h1 class="display-4 fw-bold text-dark text-uppercase" style="letter-spacing: 1px;">
             {{ user.company_profile.name|default:"MI EMPRESA S.A." }}

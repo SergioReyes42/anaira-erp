@@ -19,8 +19,24 @@ def home(request):
 # --- 2. GESTIÓN DE EMPRESAS ---
 @login_required
 def select_company(request):
-    """Selección de empresa al iniciar sesión"""
-    companies = Company.objects.filter(active=True)
+    """Fase 2 del Login: Obliga al usuario a elegir su entorno de trabajo"""
+    
+    # Si manda el formulario eligiendo la empresa
+    if request.method == 'POST':
+        company_id = request.POST.get('company_id')
+        if company_id:
+            company = get_object_or_404(Company, id=company_id)
+            request.user.current_company = company
+            request.user.save()
+            
+            # ¡Ahora sí, lo dejamos entrar al Dashboard principal!
+            return redirect('home') 
+
+    # Si acaba de loguearse, le mostramos la pantalla para elegir
+    # (Aquí asumimos que el admin ve todas, ajusta si tus usuarios tienen empresas específicas)
+    companies = Company.objects.all() 
+    
+    # IMPORTANTE: Usamos un HTML especial sin el menú lateral para que no pueda navegar aún
     return render(request, 'core/select_company.html', {'companies': companies})
 
 @login_required

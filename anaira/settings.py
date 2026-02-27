@@ -100,7 +100,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 ROOT_URLCONF = 'anaira.urls'
 WSGI_APPLICATION = 'anaira.wsgi.application'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = 'core:select_company' # Ajusta 'core' al nombre de tu app
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # 7. TEMPLATES
