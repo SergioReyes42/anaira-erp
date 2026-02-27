@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
@@ -80,3 +80,48 @@ def control_panel(request):
 def db_fix_view(request):
     """Vista de reparación de emergencia"""
     return redirect('home')
+
+@login_required
+def switch_company(request, company_id):
+    """Cambia la sucursal activa del usuario y recarga la página"""
+    # Buscamos la empresa que seleccionó
+    company = get_object_or_404(Company, id=company_id)
+    
+    # Se la asignamos al usuario actual
+    request.user.current_company = company
+    request.user.save()
+    
+    messages.success(request, f"🏢 Cambio exitoso: Ahora estás operando en {company.name}")
+    
+    # Lo devolvemos a la página donde estaba (o al inicio si no hay historial)
+    next_url = request.META.get('HTTP_REFERER', '/')
+    return redirect(next_url)
+
+@login_required
+def login_router(request):
+    """
+    Enrutador Inteligente post-login:
+    - Si es Superusuario, lo manda al Dashboard (con selector habilitado arriba).
+    - Si es usuario normal, le asigna su sucursal fija y lo manda al Dashboard.
+    """
+    user = request.user
+    
+    # 1. Si es Administrador/Gerente
+    if user.is_superuser or user.groups.filter(name__in=['Gerente', 'Administrador']).exists():
+        # Asignamos la Sede Central por defecto si no tiene una activa
+        if not user.current_company:
+            # Aquí asumo que obtienes la sede central, ajusta a tu modelo real
+            # user.current_company = Company.objects.first() 
+            # user.save()
+            pass
+        return redirect('home') # Va al Dashboard (Mi Tablero)
+        
+    # 2. Si es un usuario normal (Ventas, Bodega, etc.)
+    else:
+        # Aseguramos que solo tenga activa la empresa a la que fue contratado
+        # asumiendo que tu usuario tiene un campo "assigned_company" o similar
+        if hasattr(user, 'assigned_company') and user.assigned_company:
+            user.current_company = user.assigned_company
+            user.save()
+            
+        return redirect('home') # Va directo al Dashboard de su sucursal

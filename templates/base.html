@@ -80,7 +80,7 @@
             {% endif %}
 
             {% if request.user.is_superuser or request.user|has_group:"Contadora, Auxiliar Contable, Gerente, Administrador, Ventas, Despacho, RRHH" %}
-                       
+                        
                 {% if request.user|has_group:"Contadora, Auxiliar Contable, Gerente" %}
                 <a href="#" class="list-group-item list-group-item-action text-info">
                     <i class="bi bi-magic me-2"></i> Smart Scanner IA
@@ -344,16 +344,37 @@
                 <button class="btn btn-outline-dark btn-sm me-3" id="menu-toggle"><i class="bi bi-list fs-5"></i></button>
 
                 <span class="navbar-brand fw-bold fs-6 text-uppercase text-secondary">
-                    {% if request.session.company_name %}
-                        <i class="bi bi-building-fill me-2"></i>{{ request.session.company_name }}
+                    {% if request.user.current_company %}
+                        <i class="bi bi-building-fill me-2"></i>{{ request.user.current_company.name }}
                     {% else %}
                         SISTEMA ERP
                     {% endif %}
                 </span>
-                <span class="badge bg-warning text-dark border border-dark ms-3">
-                    <i class="bi bi-shop-window me-1"></i> {{ GLOBAL_SUCURSAL }}
-                </span>
 
+                {% if request.user.is_superuser or request.user|has_group:"Gerente, Administrador" %}
+                <ul class="navbar-nav ms-3 mb-2 mb-lg-0">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle badge bg-warning text-dark border border-dark px-3 py-2" href="#" id="branchDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.9rem;">
+                            <i class="bi bi-shop-window me-1"></i> {{ request.user.current_company.name|default:"Seleccionar Sede" }}
+                        </a>
+                        <ul class="dropdown-menu shadow border-0 mt-2" aria-labelledby="branchDropdown">
+                            <li class="px-3 py-1 text-muted small fw-bold">CAMBIAR SUCURSAL:</li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% for comp in companies %}
+                                <li>
+                                    <a class="dropdown-item {% if comp == request.user.current_company %}active bg-warning text-dark fw-bold{% endif %}" href="{% url 'core:switch_company' comp.id %}">
+                                        <i class="bi {% if comp == request.user.current_company %}bi-check-circle-fill{% else %}bi-building{% endif %} me-2"></i>{{ comp.name }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                </ul>
+                {% else %}
+                <span class="badge bg-warning text-dark border border-dark ms-3 px-3 py-2" style="font-size: 0.9rem;">
+                    <i class="bi bi-shop-window me-1"></i> {{ request.user.current_company.name|default:"Mi Sucursal" }}
+                </span>
+                {% endif %}
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav ms-auto mt-2 mt-lg-0 align-items-center">
                         <li class="nav-item dropdown">
@@ -380,8 +401,8 @@
         <div class="container-fluid px-4 py-4">
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                        {{ message }}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm">
+                        <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 {% endfor %}

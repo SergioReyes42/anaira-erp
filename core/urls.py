@@ -2,6 +2,8 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
 
+app_name = 'core' # El candado de seguridad
+
 urlpatterns = [
     # --- 1. PÁGINA DE ATERRIZAJE (LANDING) ---
     # Esta es la raíz: Lo que ve el mundo antes de entrar.
@@ -30,5 +32,7 @@ urlpatterns = [
     path('usuarios/nuevo/', views.user_create, name='user_create'),
 
     path('fix-db-emergency/', views.db_fix_view, name='db_fix'),
+
+    path('cambiar-sucursal/<int:company_id>/', views.switch_company, name='switch_company'),
     
 ]
