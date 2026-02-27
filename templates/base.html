@@ -268,14 +268,14 @@
                 <div class="dropdown-divider border-secondary mt-2"></div>
                 <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Auditoría de Gastos</small>
                 
-                <a href="{% url 'accounting:expense_pre_review_list' %}" class="list-group-item list-group-item-action text-warning fw-bold">
+                <a href="{% url 'expense_pre_review_list' %}" class="list-group-item list-group-item-action text-warning fw-bold">
                     <i class="bi bi-shield-lock-fill me-1"></i> Auditoría (Supervisores)
                     {% if count_pre_review > 0 %}
                         <span class="badge bg-danger ms-2 rounded-pill shadow-sm">{{ count_pre_review }}</span> 
                     {% endif %}
                 </a>
 
-                <a href="{% url 'accounting:expense_pending_list' %}" class="list-group-item list-group-item-action text-info fw-bold">
+                <a href="{% url 'expense_pending_list' %}" class="list-group-item list-group-item-action text-info fw-bold">
                     <i class="bi bi-inbox-fill me-1"></i> Contabilizar Gastos
                     {% if count_pending > 0 %}
                         <span class="badge bg-danger ms-2 rounded-pill shadow-sm">{{ count_pending }}</span> 
