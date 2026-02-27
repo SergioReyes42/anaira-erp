@@ -1038,6 +1038,7 @@ def sales_ledger(request):
         'anios': range(2025, 2030),
     }
     return render(request, 'accounting/sales_ledger.html', context)
+
 @login_required
 def expense_pre_review_list(request):
     """Bandeja para que los 3 Supervisores aprueben el gasto del piloto"""
@@ -1070,6 +1071,10 @@ def expense_pre_review_list(request):
             # 🔥 MAGIA: Verifica si ya están los 3. Si sí, lo manda al Contador automáticamente.
             gasto.check_and_advance_status() 
             
-            return redirect('expense_pre_review_list') # Asegúrate de tener esta ruta en urls.py
+            # 🛠️ CORRECCIÓN 1: Agregamos el 'accounting:' (o el nombre de tu app) 
+            # para evitar que truene con el error "NoReverseMatch" al recargar.
+            return redirect('accounting:expense_pre_review_list') 
             
-    return render(request, 'expense_pre_review_list.html', {'expenses': expenses})
+    # 🛠️ CORRECCIÓN 2: Agregamos 'accounting/' antes del nombre del archivo
+    # para solucionar el "TemplateDoesNotExist".
+    return render(request, 'accounting/expense_pre_review_list.html', {'expenses': expenses})
