@@ -19,9 +19,19 @@
                 </div>
                 
                 <div class="card-body">
-                    <h3 class="fw-bold text-success mb-1">Q. {{ exp.total_amount }}</h3>
-                    <p class="text-dark mb-2 fw-bold"><i class="bi bi-person-badge text-muted me-1"></i>Piloto: {{ exp.user.username }}</p>
-                    <p class="text-muted small mb-3 border-start border-3 border-secondary ps-2">{{ exp.description }}</p>
+                    <h3 class="fw-bold text-success mb-2">Q. {{ exp.total_amount }}</h3>
+                    
+                    <div class="bg-light p-2 rounded mb-3 border">
+                        <p class="text-dark mb-1 fw-bold">
+                            <i class="bi bi-person-badge-fill text-primary me-1"></i> Piloto: <span class="text-uppercase">{{ exp.user.username }}</span>
+                        </p>
+                        <p class="text-dark mb-1 fw-bold">
+                            <i class="bi bi-truck-front-fill text-warning me-1"></i> Vehículo: <span class="text-danger">{{ exp.vehicle|default:"Sin Asignar" }}</span>
+                        </p>
+                        <p class="text-muted small mb-0 fw-bold">
+                            <i class="bi bi-calendar-check-fill text-success me-1"></i> Captura: {{ exp.date|date:"d M Y, h:i A" }}
+                        </p>
+                    </div>
 
                     <div class="row g-2 mb-3">
                         <div class="col-6 text-center">

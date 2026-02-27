@@ -42,22 +42,36 @@ class BankTransactionForm(forms.ModelForm):
             'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Concepto'}),
             'reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'No. Boleta / Cheque'}),
         }
+        
 class PilotExpenseForm(forms.ModelForm):
     class Meta:
         model = Expense
         fields = ['total_amount', 'vehicle', 'description', 'receipt_image', 'pump_image', 'latitude', 'longitude']
         widgets = {
-            'total_amount': forms.NumberInput(attrs={'class': 'form-control form-control-lg fw-bold text-success', 'step': '0.01', 'placeholder': 'Ej. 300.00'}),
+            'total_amount': forms.NumberInput(attrs={'class': 'form-control form-control-lg fw-bold text-success', 'step': '0.01'}),
             'vehicle': forms.Select(attrs={'class': 'form-select form-select-lg'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Ej. Gasolina para viaje a Escuintla...'}),
-            
-            # El atributo 'capture': 'environment' obliga al celular a usar la cámara trasera
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'receipt_image': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*', 'capture': 'environment', 'id': 'foto_factura'}),
             'pump_image': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*', 'capture': 'environment', 'id': 'foto_bomba'}),
-            
             'latitude': forms.HiddenInput(attrs={'id': 'lat_input'}),
             'longitude': forms.HiddenInput(attrs={'id': 'lng_input'}),
         }
+
+    # 🔥 RECUPERAMOS EL FILTRO DEL VEHÍCULO 🔥
+    def __init__(self, *args, **kwargs):
+        # Sacamos al usuario de los parámetros antes de iniciar el formulario
+        user = kwargs.pop('user', None)
+        super(PilotExpenseForm, self).__init__(*args, **kwargs)
+        
+        if user:
+            # Filtramos para que solo vea los vehículos que tiene asignados.
+            # OJO: Asumo que en tu modelo Vehicle tienes un campo llamado 'assigned_to' o 'driver' 
+            # que se relaciona con el User. Cambia 'assigned_to' por el nombre real de tu campo.
+            self.fields['vehicle'].queryset = self.fields['vehicle'].queryset.filter(assigned_to=user)
+            
+            # (Opcional) Si el piloto solo tiene 1 carro asignado, se lo seleccionamos por defecto
+            if self.fields['vehicle'].queryset.count() == 1:
+                self.fields['vehicle'].initial = self.fields['vehicle'].queryset.first()
 
 class ExpenseReviewForm(forms.ModelForm):
     class Meta:

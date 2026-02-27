@@ -36,12 +36,12 @@ from .utils import analyze_invoice_image
 @login_required
 @group_required('Pilotos', 'Contadora', 'Gerente', 'Administrador')
 def pilot_upload(request):
-    """VISTA PILOTOS/GERENTES: Carga rápida de ticket personal"""
+    """VISTA PILOTOS/GERENTES: Carga rápida de ticket personal con auditoría antifraude"""
     
     # 1. ESCUDO ANTI-ERRORES
     if not request.user.current_company:
         messages.error(request, "⛔ Tu usuario no tiene una empresa asignada. Contacta al Administrador.")
-        return redirect('home')
+        return redirect('core:home')
 
     # ==========================================
     # MAGIA DE FILTRADO DE VEHÍCULOS (INTELIGENTE)
@@ -50,36 +50,36 @@ def pilot_upload(request):
     vehiculos_del_usuario = request.user.vehiculos_asignados.filter(company=request.user.current_company)
 
     if vehiculos_del_usuario.exists():
-        # REGLA 1: Si tiene un carro asignado (sea Gerente o Piloto), SOLO le mostramos su carro.
-        # Esto agiliza su trabajo y evita que le meta gastos a otra placa por error.
+        # REGLA 1: Si tiene un carro asignado, SOLO le mostramos su carro.
         vehicles = vehiculos_del_usuario
         
     elif request.user.is_superuser or request.user.groups.filter(name__in=['Contadora', 'Administrador', 'Gerente']).exists():
-        # REGLA 2: Si NO tiene carro a su nombre, pero es Jefe o Contadora, 
-        # le mostramos TODA la flotilla por si está subiendo el gasto de alguien más.
+        # REGLA 2: Si es Jefe o Contadora, le mostramos TODA la flotilla.
         vehicles = Vehicle.objects.filter(company=request.user.current_company)
         
     else:
-        # REGLA 3: Es un piloto, pero en el sistema olvidaron asignarle su placa.
+        # REGLA 3: Piloto sin placa asignada.
         vehicles = Vehicle.objects.none()
     # ==========================================
 
     if request.method == 'POST':
-        image = request.FILES.get('documento')
+        # 🔥 CAPTURAMOS LOS NUEVOS DATOS DEL PERRO GUARDIÁN 🔥
+        receipt_image = request.FILES.get('receipt_image') # La foto de la factura (antes 'documento')
+        pump_image = request.FILES.get('pump_image')       # La foto de la bomba de gasolina
+        latitude = request.POST.get('latitude')            # GPS Latitud
+        longitude = request.POST.get('longitude')          # GPS Longitud
+        total_amount = request.POST.get('total_amount', 0.00) # Monto reportado
+        
         description = request.POST.get('description', 'Gasto de Ruta')
         vehicle_id = request.POST.get('vehicle')
-        
-        # NUEVO: Capturamos la placa de emergencia si la escribió
         placa_emergencia = request.POST.get('placa_emergencia', '').strip()
         
         vehicle_obj = None
 
-        # LÓGICA DE CONTINGENCIA
+        # LÓGICA DE CONTINGENCIA MANTENIDA
         if vehicle_id == 'emergencia':
-            # Si eligió otro vehículo, modificamos la descripción para avisarle a Contabilidad
             description = f"🚨 CONTINGENCIA | Placa reportada: {placa_emergencia} | {description}"
         elif vehicle_id and vehicle_id.isdigit():
-            # Si eligió su vehículo normal
             vehicle_obj = Vehicle.objects.filter(id=vehicle_id).first()
 
         try:
@@ -87,11 +87,22 @@ def pilot_upload(request):
                 Expense.objects.create(
                     user=request.user,
                     company=request.user.current_company,
-                    receipt_image=image,
+                    
+                    # --- ARCHIVOS FOTOGRÁFICOS ---
+                    receipt_image=receipt_image,
+                    pump_image=pump_image,
+                    
+                    # --- RASTREO GPS ---
+                    latitude=latitude,
+                    longitude=longitude,
+                    
+                    # --- DATOS DEL GASTO ---
                     description=description,
-                    total_amount=0.00, 
-                    vehicle=vehicle_obj, # Si fue emergencia, esto se guarda vacío
-                    status='PENDING',
+                    total_amount=total_amount, 
+                    vehicle=vehicle_obj, 
+                    
+                    # 🔥 ESTADO CAMBIADO: Ahora va a supervisión antes del Contador
+                    status='PRE_REVIEW', 
                     origin='PILOT', 
                     provider_name="Pendiente",
                     date=timezone.now(), 
@@ -99,12 +110,12 @@ def pilot_upload(request):
                     tax_iva=0, 
                     tax_idp=0
                 )
-            messages.success(request, "🚀 Gasto enviado. Contabilidad lo revisará.")
-            return redirect('core:home')
+            messages.success(request, "🚀 Gasto enviado. El equipo de Supervisión lo revisará.")
+            return redirect('core:home') # Redirige seguro al tablero
             
         except Exception as e:
             messages.error(request, f"Error al guardar el gasto: {str(e)}")
-            return redirect('pilot_upload') 
+            return redirect('pilot_upload') # Ajusta el nombre de la URL si es diferente
             
     return render(request, 'accounting/pilot_upload.html', {'vehicles': vehicles})
 
