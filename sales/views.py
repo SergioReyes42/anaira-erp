@@ -4,6 +4,7 @@ from django.contrib import messages
 from .models import Client, Quotation, QuotationItem
 from .forms import QuotationForm, ClientForm
 from inventory.models import Product
+from core.models import Warehouse  # 🔥 AQUÍ ESTÁ LA LÍNEA MÁGICA QUE FALTABA 🔥
 
 @login_required
 def quotation_list(request):
@@ -13,36 +14,66 @@ def quotation_list(request):
 
 @login_required
 def quotation_create(request):
-    """Crear nueva cotización"""
+    """Crea cotizaciones aislando las bodegas por sucursal y aplicando el Libro Negro"""
+    # 1. Identificamos la sucursal exacta del usuario
+    company = request.user.current_company
+    
     if request.method == 'POST':
         form = QuotationForm(request.POST)
+        
         if form.is_valid():
             quotation = form.save(commit=False)
-            quotation.company = request.user.current_company
+            
+            # 🔥 CANDADO 1: EL LIBRO NEGRO 🔥
+            if quotation.client.is_blacklisted:
+                messages.error(
+                    request, 
+                    f"⛔ ALERTA DE SISTEMA: Bloqueo activo. El cliente {quotation.client.name} está en el Libro Negro. Motivo: {quotation.client.blacklist_reason}"
+                )
+                return redirect('sales:quotation_create')
+            
+            # Asignamos la sucursal y el vendedor de forma invisible y segura
+            quotation.company = company
             quotation.seller = request.user
             quotation.save()
             
-            # Guardar productos (Lógica simple)
+            # Procesamos las listas de productos que vienen del HTML
             products = request.POST.getlist('products[]')
             quantities = request.POST.getlist('quantities[]')
             prices = request.POST.getlist('prices[]')
             
+            total_cotizacion = 0
+            
             for i, prod_id in enumerate(products):
                 if prod_id:
-                    product = Product.objects.get(id=prod_id)
+                    # 🔥 CANDADO 2: AISLAMIENTO DE SUCURSAL 🔥
+                    # Nos aseguramos de que el producto extraído pertenezca a la sucursal actual
+                    product = get_object_or_404(Product, id=prod_id, company=company)
+                    qty = int(quantities[i])
+                    price = float(prices[i])
+                    
                     QuotationItem.objects.create(
                         quotation=quotation,
                         product=product,
-                        quantity=int(quantities[i]),
-                        unit_price=float(prices[i])
+                        quantity=qty,
+                        unit_price=price
                     )
+                    total_cotizacion += (qty * price)
             
-            messages.success(request, "Cotización creada con éxito")
-            return redirect('quotation_list')
+            # Calculamos totales y guardamos
+            quotation.total = total_cotizacion
+            quotation.save()
+            
+            messages.success(request, f"¡Cotización #{quotation.id} generada y guardada con éxito!")
+            return redirect('sales:quotation_list')
     else:
         form = QuotationForm()
+        # 🔥 MAGIA DE AISLAMIENTO: Filtramos los menús desplegables del formulario
+        form.fields['client'].queryset = Client.objects.filter(company=company)
+        form.fields['warehouse'].queryset = Warehouse.objects.filter(company=company)
     
-    products = Product.objects.filter(company=request.user.current_company)
+    # Enviamos al HTML solo los productos de la sucursal actual
+    products = Product.objects.filter(company=company)
     return render(request, 'sales/quotation_form.html', {'form': form, 'products': products})
 
 @login_required
