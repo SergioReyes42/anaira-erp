@@ -1073,8 +1073,8 @@ def expense_pre_review_list(request):
             
             # 🛠️ CORRECCIÓN 1: Agregamos el 'accounting:' (o el nombre de tu app) 
             # para evitar que truene con el error "NoReverseMatch" al recargar.
-            return redirect('accounting:expense_pre_review_list') 
+            return redirect('expense_pre_review_list') 
             
     # 🛠️ CORRECCIÓN 2: Agregamos 'accounting/' antes del nombre del archivo
     # para solucionar el "TemplateDoesNotExist".
-    return render(request, 'accounting/expense_pre_review_list.html', {'expenses': expenses})
+    return render(request, 'expense_pre_review_list.html', {'expenses': expenses})
