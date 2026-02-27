@@ -24,7 +24,6 @@
                     <div class="col-md-6">
                         <label class="form-label fw-bold text-secondary">Cliente</label>
                         {{ form.client }}
-                        <small class="text-danger d-none" id="blacklistWarning"><i class="bi bi-exclamation-triangle-fill"></i> ¡Cuidado! Revisa si este cliente está bloqueado antes de guardar.</small>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold text-secondary">Bodega de Despacho (Solo tu sucursal)</label>
@@ -54,10 +53,11 @@
                     <table class="table table-hover align-middle mb-0" id="productsTable">
                         <thead class="bg-light">
                             <tr>
-                                <th class="ps-4" style="width: 45%;">Producto del Catálogo</th>
-                                <th style="width: 15%;">Cantidad</th>
-                                <th style="width: 20%;">Precio Unitario (Q)</th>
-                                <th style="width: 15%;">Subtotal (Q)</th>
+                                <th class="ps-4" style="width: 40%;">Producto del Catálogo</th>
+                                <th style="width: 12%;">Cantidad</th>
+                                <th style="width: 18%;">Precio Unitario (Q)</th>
+                                <th style="width: 12%;">Desc. (%)</th>
+                                <th style="width: 13%;">Subtotal (Q)</th>
                                 <th class="text-center" style="width: 5%;"></th>
                             </tr>
                         </thead>
@@ -65,7 +65,7 @@
                             </tbody>
                         <tfoot class="bg-light fw-bold">
                             <tr>
-                                <td colspan="3" class="text-end pe-4 fs-5 text-dark">TOTAL COTIZACIÓN:</td>
+                                <td colspan="4" class="text-end pe-4 fs-5 text-dark">TOTAL COTIZACIÓN:</td>
                                 <td colspan="2" class="ps-3 fs-4 text-primary">Q. <span id="grandTotal">0.00</span></td>
                             </tr>
                         </tfoot>
@@ -73,7 +73,6 @@
                 </div>
             </div>
         </div>
-
         <div class="d-flex justify-content-end gap-2">
             <button type="submit" class="btn btn-success px-5 fw-bold shadow-sm" id="saveBtn">
                 <i class="bi bi-send-check-fill me-1"></i> Generar Cotización
@@ -88,7 +87,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const addRowBtn = document.getElementById('addRowBtn');
     const grandTotalSpan = document.getElementById('grandTotal');
 
-    // Catálogo de productos inyectado desde Django a JS
     const productsOptions = `
         <option value="">-- Seleccione un producto --</option>
         {% for p in products %}
@@ -102,7 +100,11 @@ document.addEventListener('DOMContentLoaded', function() {
         rows.forEach(row => {
             const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
             const price = parseFloat(row.querySelector('.price-input').value) || 0;
-            const subtotal = qty * price;
+            const discount = parseFloat(row.querySelector('.discount-input').value) || 0;
+            
+            // Fórmula: (Cantidad * Precio) - Descuento%
+            const subtotal = (qty * price) * (1 - (discount / 100));
+            
             row.querySelector('.subtotal-cell').textContent = subtotal.toFixed(2);
             total += subtotal;
         });
@@ -122,8 +124,14 @@ document.addEventListener('DOMContentLoaded', function() {
             </td>
             <td>
                 <div class="input-group">
-                    <span class="input-group-text bg-light">Q</span>
-                    <input type="number" name="prices[]" class="form-control price-input" step="0.01" min="0" required>
+                    <span class="input-group-text bg-light text-muted border-end-0">Q</span>
+                    <input type="number" name="prices[]" class="form-control price-input bg-light" step="0.01" min="0" readonly required>
+                </div>
+            </td>
+            <td>
+                <div class="input-group">
+                    <input type="number" name="discounts[]" class="form-control discount-input border-warning" step="0.01" min="0" max="100" value="0">
+                    <span class="input-group-text bg-warning bg-opacity-10">%</span>
                 </div>
             </td>
             <td class="fw-bold text-secondary text-end pe-4">
@@ -137,13 +145,12 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         tableBody.appendChild(tr);
 
-        // Eventos para la nueva fila
         const productSelect = tr.querySelector('.product-select');
         const priceInput = tr.querySelector('.price-input');
         const qtyInput = tr.querySelector('.qty-input');
+        const discountInput = tr.querySelector('.discount-input');
         const removeBtn = tr.querySelector('.remove-btn');
 
-        // Cuando elijan un producto, auto-llenar el precio
         productSelect.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             if(selectedOption.value) {
@@ -154,21 +161,18 @@ document.addEventListener('DOMContentLoaded', function() {
             calculateTotals();
         });
 
-        // Recalcular al cambiar cantidad o precio
         qtyInput.addEventListener('input', calculateTotals);
-        priceInput.addEventListener('input', calculateTotals);
+        // Si el usuario intenta hacer trampa y le quita el readonly desde el navegador, igual recalcula
+        priceInput.addEventListener('input', calculateTotals); 
+        discountInput.addEventListener('input', calculateTotals); 
 
-        // Eliminar fila
         removeBtn.addEventListener('click', function() {
             tr.remove();
             calculateTotals();
         });
     }
 
-    // Agregar la primera fila vacía por defecto
     addRow();
-
-    // Evento del botón azul superior
     addRowBtn.addEventListener('click', addRow);
 });
 </script>
