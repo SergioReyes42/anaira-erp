@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Client, Quotation, QuotationItem
-from .forms import QuotationForm
+from .forms import QuotationForm, ClientForm
 from inventory.models import Product
 
 @login_required
@@ -50,3 +50,19 @@ def client_list(request):
     """Lista de clientes"""
     clients = Client.objects.filter(company=request.user.current_company)
     return render(request, 'sales/client_list.html', {'clients': clients})
+
+@login_required
+def client_create(request):
+    """Crea un nuevo cliente y lo vincula a la empresa del usuario"""
+    if request.method == 'POST':
+        form = ClientForm(request.POST)
+        if form.is_valid():
+            client = form.save(commit=False)
+            client.company = request.user.current_company # <-- Lo amarramos a tu sucursal
+            client.save()
+            messages.success(request, f'¡El cliente {client.name} ha sido registrado con éxito!')
+            return redirect('sales:client_list')
+    else:
+        form = ClientForm()
+        
+    return render(request, 'sales/client_form.html', {'form': form})

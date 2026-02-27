@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="text-dark fw-bold mb-0"><i class="bi bi-person-plus text-primary me-2"></i>Registrar Cliente</h2>
+                    <p class="text-muted">Ingresa los datos para cotización y facturación.</p>
+                </div>
+                <a href="{% url 'sales:client_list' %}" class="btn btn-outline-secondary shadow-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Volver al Directorio
+                </a>
+            </div>
+
+            <form method="POST" class="needs-validation">
+                {% csrf_token %}
+                <div class="row g-4">
+                    
+                    <div class="col-md-7">
+                        <div class="card shadow-sm border-0 border-top border-primary border-4 h-100">
+                            <div class="card-header bg-white border-0 pt-4 pb-0">
+                                <h5 class="fw-bold text-dark"><i class="bi bi-card-text text-primary me-2"></i>Datos Generales y Facturación</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-secondary">Razón Social / Nombre</label>
+                                    {{ form.name }}
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold text-secondary">NIT</label>
+                                        {{ form.nit }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold text-secondary">Teléfono</label>
+                                        {{ form.phone }}
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-secondary">Correo Electrónico</label>
+                                    {{ form.email }}
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-secondary">Dirección Exacta</label>
+                                    {{ form.address }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-5">
+                        <div class="card shadow-sm border-0 border-top border-warning border-4 mb-4">
+                            <div class="card-header bg-white border-0 pt-4 pb-0">
+                                <h5 class="fw-bold text-dark"><i class="bi bi-graph-up-arrow text-warning me-2"></i>Gestión de Crédito (CRM)</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-secondary">Tipo de Cliente</label>
+                                    {{ form.client_type }}
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label fw-bold text-secondary">Límite de Crédito Aprobado (Q)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-success text-white fw-bold">Q.</span>
+                                        {{ form.credit_limit }}
+                                    </div>
+                                    <small class="text-muted">Si es de contado, déjalo en 0.00</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm border-0 border-top border-danger border-4 bg-danger bg-opacity-10">
+                            <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                                <h5 class="fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Zona de Restricción</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-3 ms-2">
+                                    {{ form.is_blacklisted }}
+                                    <label class="form-check-label fw-bold text-danger ms-2" style="padding-top: 3px;">
+                                        Bloquear Cliente (Libro Negro)
+                                    </label>
+                                </div>
+                                <div>
+                                    <label class="form-label fw-bold text-danger">Motivo del Bloqueo</label>
+                                    {{ form.blacklist_reason }}
+                                    <small class="text-danger">Esta alerta aparecerá cada vez que le intenten cotizar.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <hr class="my-4">
+                
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'sales:client_list' %}" class="btn btn-secondary px-4">Cancelar</a>
+                    <button type="submit" class="btn btn-primary px-5 fw-bold shadow-sm">
+                        <i class="bi bi-save-fill me-1"></i> Guardar Cliente
+                    </button>
+                </div>
+            </form>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}
