@@ -42,3 +42,19 @@ class BankTransactionForm(forms.ModelForm):
             'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Concepto'}),
             'reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'No. Boleta / Cheque'}),
         }
+class PilotExpenseForm(forms.ModelForm):
+    class Meta:
+        model = Expense
+        fields = ['total_amount', 'vehicle', 'description', 'receipt_image', 'pump_image', 'latitude', 'longitude']
+        widgets = {
+            'total_amount': forms.NumberInput(attrs={'class': 'form-control form-control-lg fw-bold text-success', 'step': '0.01', 'placeholder': 'Ej. 300.00'}),
+            'vehicle': forms.Select(attrs={'class': 'form-select form-select-lg'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Ej. Gasolina para viaje a Escuintla...'}),
+            
+            # El atributo 'capture': 'environment' obliga al celular a usar la cámara trasera
+            'receipt_image': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*', 'capture': 'environment', 'id': 'foto_factura'}),
+            'pump_image': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*', 'capture': 'environment', 'id': 'foto_bomba'}),
+            
+            'latitude': forms.HiddenInput(attrs={'id': 'lat_input'}),
+            'longitude': forms.HiddenInput(attrs={'id': 'lng_input'}),
+        }

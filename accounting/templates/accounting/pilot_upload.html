@@ -1,83 +1,138 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid mt-4 mb-5">
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
-            <div class="card shadow-lg border-0 rounded-4">
-                <div class="card-header bg-warning text-dark text-center py-3">
-                    <h4 class="mb-0 fw-bold"><i class="bi bi-speedometer2 me-2"></i>Reporte Rápido</h4>
+            
+            <div class="card shadow-lg border-0 border-top border-warning border-4 rounded-4">
+                <div class="card-header bg-white border-0 text-center pt-4">
+                    <h4 class="fw-bold text-dark"><i class="bi bi-ev-front-fill text-warning me-2"></i>Reporte de Combustible</h4>
+                    <p class="text-muted small">El sistema registrará tu ubicación y hora para auditoría.</p>
                 </div>
                 
-                <div class="card-body p-4">
-                    <form method="post" enctype="multipart/form-data">
+                <div class="card-body px-4 pb-4">
+                    
+                    <div id="gps-status" class="alert alert-secondary py-2 small text-center fw-bold shadow-sm">
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Calibrando GPS... Por favor, permite el acceso a tu ubicación.
+                    </div>
+
+                    <div id="error-box" class="alert alert-danger d-none shadow-sm fw-bold" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> <span id="error-message"></span>
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data" id="expenseForm">
                         {% csrf_token %}
                         
-                        <div class="mb-4 text-center">
-                            <label class="form-label fw-bold text-uppercase small text-muted">1. FOTO DEL VALE/FACTURA</label>
-                            <input type="file" name="documento" class="form-control form-control-lg border-primary" accept="image/*" capture="environment" required>
-                            <div class="form-text">Toma la foto clara. Contabilidad pondrá el monto.</div>
+                        {{ form.latitude }}
+                        {{ form.longitude }}
+
+                        <div class="mb-3">
+                            <label class="fw-bold text-secondary mb-1">Monto Gastado (Q)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-success text-white fw-bold">Q</span>
+                                {{ form.total_amount }}
+                            </div>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold text-uppercase small text-muted">2. VEHÍCULO</label>
-                            <select name="vehicle" id="vehicle_select" class="form-select form-select-lg" required onchange="verificarEmergencia()">
-                                <option value="" selected disabled>-- Seleccionar Placa --</option>
-                                
-                                {% for v in vehicles %}
-                                    <option value="{{ v.id }}">{{ v.placa }} - {{ v.marca }}</option>
-                                {% endfor %}
-                                
-                                <option value="emergencia" class="fw-bold text-danger">⚠️ Uso otro vehículo (Contingencia)</option>
-                                <option value="">No Aplica / Sin Vehículo</option>
-                            </select>
-                        </div>
-
-                        <div id="div_placa_emergencia" class="mb-3 p-3 border border-danger rounded bg-light" style="display: none;">
-                            <label class="text-danger fw-bold small"><i class="bi bi-exclamation-triangle-fill me-1"></i> Placa en Contingencia:</label>
-                            <input type="text" name="placa_emergencia" id="input_placa_emergencia" class="form-control border-danger form-control-sm mt-1" placeholder="Ej. P-123ABC">
-                            <div class="form-text text-danger" style="font-size: 0.75rem;">Contabilidad asignará este gasto manualmente.</div>
+                            <label class="fw-bold text-secondary mb-1">Vehículo</label>
+                            {{ form.vehicle }}
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label fw-bold text-uppercase small text-muted">3. TIPO</label>
-                            <select name="description" class="form-select form-select-lg">
-                                <option value="Combustible Diesel">Combustible Diesel</option>
-                                <option value="Combustible Gasolina">Combustible Gasolina</option>
-                                <option value="Viáticos / Comida">Viáticos / Comida</option>
-                                <option value="Mantenimiento">Mantenimiento</option>
-                                <option value="Peaje / Parqueo">Peaje / Parqueo</option>
-                            </select>
+                            <label class="fw-bold text-secondary mb-1">Descripción del Viaje</label>
+                            {{ form.description }}
                         </div>
 
-                        <div class="d-grid mt-2">
-                            <button type="submit" class="btn btn-dark btn-lg fw-bold rounded-pill shadow-sm">
-                                <i class="bi bi-send-fill me-2"></i> ENVIAR AHORA
-                            </button>
+                        <hr class="mb-4">
+                        <h6 class="fw-bold text-danger mb-3"><i class="bi bi-camera-fill me-2"></i>Evidencia Fotográfica Obligatoria</h6>
+
+                        <div class="mb-3 p-3 bg-light border border-2 border-secondary rounded-3">
+                            <label class="fw-bold text-dark mb-2">1. Foto de la Factura (NIT)</label>
+                            {{ form.receipt_image }}
                         </div>
+
+                        <div class="mb-4 p-3 bg-light border border-2 border-warning rounded-3">
+                            <label class="fw-bold text-dark mb-2">2. Foto de la Bomba / Tablero</label>
+                            {{ form.pump_image }}
+                            <small class="text-muted d-block mt-1">Galones en pantalla o millaje del vehículo.</small>
+                        </div>
+
+                        <button type="submit" class="btn btn-warning w-100 fw-bold py-3 shadow-sm fs-5" id="submitBtn">
+                            <i class="bi bi-cloud-arrow-up-fill me-2"></i> Enviar Reporte
+                        </button>
                     </form>
                 </div>
             </div>
+
         </div>
     </div>
 </div>
 
 <script>
-    function verificarEmergencia() {
-        var select = document.getElementById('vehicle_select');
-        var divPlaca = document.getElementById('div_placa_emergencia');
-        var inputPlaca = document.getElementById('input_placa_emergencia');
-        
-        if(select.value === 'emergencia') {
-            // Mostrar cuadro rojo y hacer obligatorio escribir la placa
-            divPlaca.style.display = 'block';
-            inputPlaca.required = true; 
-        } else {
-            // Ocultar cuadro, quitar lo obligatorio y borrar si escribió algo
-            divPlaca.style.display = 'none';
-            inputPlaca.required = false;
-            inputPlaca.value = ''; 
-        }
+document.addEventListener('DOMContentLoaded', function() {
+    const statusDiv = document.getElementById('gps-status');
+    const latInput = document.getElementById('lat_input');
+    const lngInput = document.getElementById('lng_input');
+    const form = document.getElementById('expenseForm');
+    const errorBox = document.getElementById('error-box');
+    const errorMessage = document.getElementById('error-message');
+
+    // 1. CAPTURAR GPS AL ABRIR LA PANTALLA
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                latInput.value = position.coords.latitude;
+                lngInput.value = position.coords.longitude;
+                statusDiv.className = "alert alert-success py-2 small text-center fw-bold shadow-sm";
+                statusDiv.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> GPS Conectado y Listo';
+            },
+            function(error) {
+                statusDiv.className = "alert alert-danger py-2 small text-center fw-bold shadow-sm";
+                statusDiv.innerHTML = '<i class="bi bi-geo-alt-fill me-1"></i> ERROR: GPS Apagado o denegado.';
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
     }
+
+    // 2. VALIDAR ANTES DE ENVIAR
+    form.addEventListener('submit', function(event) {
+        let errores = [];
+        
+        // Verificar GPS
+        if (!latInput.value || !lngInput.value) {
+            errores.push("Tu GPS no está activado. Activa la ubicación y recarga la página.");
+        }
+
+        // Verificar Foto 1 (Factura)
+        const fotoFactura = document.getElementById('foto_factura');
+        if (fotoFactura.files.length === 0) {
+            errores.push("Falta la fotografía de la Factura.");
+        }
+
+        // Verificar Foto 2 (Bomba)
+        const fotoBomba = document.getElementById('foto_bomba');
+        if (fotoBomba.files.length === 0) {
+            errores.push("Falta la fotografía de la Bomba de combustible.");
+        }
+
+        // Si hay errores, detenemos todo y mostramos la caja roja
+        if (errores.length > 0) {
+            event.preventDefault(); // Congela el envío al servidor
+            errorMessage.innerHTML = errores.join("<br><br><i class='bi bi-x-circle-fill me-1'></i> ");
+            errorBox.classList.remove('d-none');
+            // Hacer scroll hacia arriba para que el piloto vea el error
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            // Si todo está bien, ocultamos errores y cambiamos el botón a "Enviando..."
+            errorBox.classList.add('d-none');
+            const btn = document.getElementById('submitBtn');
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Subiendo...';
+            btn.classList.add('disabled');
+        }
+    });
+});
 </script>
 {% endblock %}

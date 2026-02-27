@@ -50,10 +50,16 @@ class Expense(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
-    origin = models.CharField(max_length=20, choices=ORIGIN_CHOICES, default='MANUAL') # NUEVO: Para saber de dónde viene
+    origin = models.CharField(max_length=20, choices=ORIGIN_CHOICES, default='MANUAL')
 
-    # --- DATOS DEL DOCUMENTO (IA SCANNER) ---
+    # --- DATOS DEL DOCUMENTO ---
     receipt_image = models.ImageField(upload_to='expenses_receipts/', verbose_name="Foto Factura")
+    
+    # 🔥 NUEVOS CAMPOS ANTIFRAUDE 🔥
+    pump_image = models.ImageField(upload_to='expenses_pumps/', null=True, blank=True, verbose_name="Foto de la Bomba")
+    latitude = models.CharField(max_length=50, null=True, blank=True, verbose_name="Latitud GPS")
+    longitude = models.CharField(max_length=50, null=True, blank=True, verbose_name="Longitud GPS")
+    
     description = models.TextField(verbose_name="Descripción del Gasto")
     
     provider_name = models.CharField(max_length=150, verbose_name="Nombre del Proveedor", null=True, blank=True)
