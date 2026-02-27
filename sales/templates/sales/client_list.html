@@ -1,14 +1,96 @@
 {% extends 'base.html' %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2>👥 Directorio de Clientes</h2>
-    <table class="table">
-        <thead><tr><th>Nombre</th><th>NIT</th><th>Teléfono</th></tr></thead>
-        <tbody>
-            {% for c in clients %}
-            <tr><td>{{ c.name }}</td><td>{{ c.nit }}</td><td>{{ c.phone }}</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="container-fluid mt-4 mb-5">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-dark fw-bold mb-0"><i class="bi bi-people-fill text-primary me-2"></i>Directorio de Clientes</h2>
+            <p class="text-muted">Gestión de cartera, límites de crédito y Libro Negro.</p>
+        </div>
+        <div>
+            <button class="btn btn-primary shadow-sm fw-bold">
+                <i class="bi bi-person-plus-fill me-1"></i> Nuevo Cliente
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 border-top border-primary border-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Cliente / Razón Social</th>
+                            <th>NIT</th>
+                            <th>Contacto</th>
+                            <th>Tipo y Crédito</th>
+                            <th class="text-center">Estado (Libro Negro)</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for client in clients %}
+                        <tr class="{% if client.is_blacklisted %}bg-danger bg-opacity-10{% endif %}">
+                            <td class="ps-4">
+                                <h6 class="mb-0 fw-bold {% if client.is_blacklisted %}text-danger{% else %}text-dark{% endif %}">
+                                    {{ client.name }}
+                                </h6>
+                                <small class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ client.address|default:"Sin dirección"|truncatechars:30 }}</small>
+                            </td>
+                            <td><span class="badge bg-secondary bg-opacity-25 text-dark border">{{ client.nit|default:"C/F" }}</span></td>
+                            <td class="small">
+                                <div><i class="bi bi-telephone text-muted me-1"></i>{{ client.phone|default:"-" }}</div>
+                                <div><i class="bi bi-envelope text-muted me-1"></i>{{ client.email|default:"-" }}</div>
+                            </td>
+                            <td>
+                                <div><span class="badge bg-info text-dark">{{ client.get_client_type_display }}</span></div>
+                                <small class="text-muted fw-bold">Límite: Q. {{ client.credit_limit }}</small>
+                            </td>
+                            <td class="text-center">
+                                {% if client.is_blacklisted %}
+                                    <span class="badge bg-danger shadow-sm py-2 px-3" data-bs-toggle="tooltip" title="{{ client.blacklist_reason }}">
+                                        <i class="bi bi-exclamation-octagon-fill me-1"></i> BLOQUEADO
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success bg-opacity-25 text-success border border-success px-3">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Activo
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group shadow-sm">
+                                    <button class="btn btn-sm btn-outline-primary" title="Perfil y CRM">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" title="Editar">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <i class="bi bi-person-badge fs-1 text-muted opacity-50 mb-3 d-block"></i>
+                                <h5 class="text-muted">No hay clientes registrados</h5>
+                                <p class="text-muted small">Crea tu primer cliente para empezar a cotizar.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    });
+</script>
 {% endblock %}

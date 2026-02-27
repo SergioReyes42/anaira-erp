@@ -1,11 +1,13 @@
 from django.urls import path
 from . import views
 
+app_name = 'sales' # 🔥 EL CANDADO DE SEGURIDAD 🔥
+
 urlpatterns = [
-    # Cotizaciones (Ya las tenías)
-    path('', views.quotation_list, name='quotation_list'),
-    path('nueva/', views.quotation_create, name='quotation_create'),
-    
-    # Clientes (ESTA ES LA QUE FALTABA PARA CORREGIR EL ERROR)
+    # CRM y Clientes
     path('clientes/', views.client_list, name='client_list'),
+    
+    # Cotizaciones y Pedidos
+    path('cotizaciones/', views.quotation_list, name='quotation_list'),
+    path('cotizaciones/nueva/', views.quotation_create, name='quotation_create'),
 ]

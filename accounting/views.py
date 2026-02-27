@@ -12,7 +12,7 @@ from .decorators import group_required  # <--- Importas el candado
 from django.forms import modelformset_factory
 from django.db.models import Prefetch
 from .models import AccountingPeriod
-from sales.models import Sale
+from sales.models import SaleInvoice
 
 
 # --- IMPORTACIÓN DE MODELOS ---
@@ -1016,7 +1016,7 @@ def sales_ledger(request):
     anio = int(request.GET.get('anio', timezone.now().year))
     mes = int(request.GET.get('mes', timezone.now().month))
 
-    ventas = Sale.objects.filter(
+    ventas = SaleInvoice.objects.filter(
         company=request.user.current_company,
         date__year=anio,
         date__month=mes,
