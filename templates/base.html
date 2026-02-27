@@ -92,8 +92,8 @@
                     <i class="bi bi-cart-fill me-2 text-warning"></i> Ventas & CRM
                 </a>
                 <div class="collapse submenu" id="menuVentas">
-                    <a href="#" class="list-group-item list-group-item-action text-white fw-bold">
-                        <i class="bi bi-plus-lg me-1"></i> Nueva Cotización                  
+                    <a href="{% url 'sales:quotation_create' %}" class="list-group-item list-group-item-action border-0 fw-bold text-white">
+                        <i class="bi bi-plus-lg text-success me-1"></i> Nueva Cotización
                     </a>
                     <a href="{% url 'sales:client_list' %}" class="list-group-item list-group-item-action border-0">
                         <i class="bi bi-people-fill text-info me-1"></i> Directorio Clientes
