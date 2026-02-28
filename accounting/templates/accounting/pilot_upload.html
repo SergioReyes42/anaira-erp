@@ -1,70 +1,104 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container-fluid mt-4 mb-5">
+<div class="container-fluid mt-3 mb-5">
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
             
-            <div class="card shadow-lg border-0 border-top border-warning border-4 rounded-4">
-                <div class="card-header bg-white border-0 text-center pt-4">
-                    <h4 class="fw-bold text-dark"><i class="bi bi-ev-front-fill text-warning me-2"></i>Reporte de Combustible</h4>
-                    <p class="text-muted small">El sistema registrará tu ubicación y hora para auditoría.</p>
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="bg-warning text-dark text-center py-4 px-3">
+                    <i class="bi bi-ev-front-fill fs-1 d-block mb-2"></i>
+                    <h3 class="fw-bold mb-0">Reporte de Combustible</h3>
+                    <p class="small opacity-75 mb-0">Captura de evidencia y GPS en tiempo real</p>
                 </div>
                 
-                <div class="card-body px-4 pb-4">
+                <div class="card-body p-4 bg-light">
                     
-                    <div id="gps-status" class="alert alert-secondary py-2 small text-center fw-bold shadow-sm">
+                    <div id="gps-status" class="alert alert-secondary py-2 small text-center fw-bold shadow-sm rounded-pill">
                         <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Calibrando GPS... Por favor, permite el acceso a tu ubicación.
+                        Calibrando satélite...
                     </div>
 
-                    <div id="error-box" class="alert alert-danger d-none shadow-sm fw-bold" role="alert">
+                    <div id="error-box" class="alert alert-danger d-none shadow-sm fw-bold rounded-3" role="alert">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i> <span id="error-message"></span>
                     </div>
 
                     <form method="POST" enctype="multipart/form-data" id="expenseForm">
                         {% csrf_token %}
                         
-                        {{ form.latitude }}
-                        {{ form.longitude }}
+                        <input type="hidden" name="latitude" id="lat_input">
+                        <input type="hidden" name="longitude" id="lng_input">
 
-                        <div class="mb-3">
-                            <label class="fw-bold text-secondary mb-1">Monto Gastado (Q)</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-success text-white fw-bold">Q</span>
-                                {{ form.total_amount }}
+                        <div class="mb-4 text-center">
+                            <span class="text-muted small fw-bold text-uppercase tracking-wide">Vehículo Asignado</span>
+                            
+                            {% if vehicles.count == 1 %}
+                                <div class="bg-white border border-2 border-primary rounded-pill py-2 px-3 mt-1 d-inline-block shadow-sm">
+                                    <i class="bi bi-truck text-primary me-2 fs-5 align-middle"></i>
+                                    <span class="fw-bold fs-5 text-dark align-middle">{{ vehicles.first.name|default:vehicles.first }}</span>
+                                </div>
+                                <input type="hidden" name="vehicle" value="{{ vehicles.first.id }}">
+                            
+                            {% elif vehicles.count > 1 %}
+                                <select name="vehicle" class="form-select form-select-lg mt-1 fw-bold text-center shadow-sm" required>
+                                    <option value="">-- Seleccionar Placa --</option>
+                                    {% for v in vehicles %}
+                                        <option value="{{ v.id }}">{{ v }}</option>
+                                    {% endfor %}
+                                </select>
+                            
+                            {% else %}
+                                <div class="alert alert-danger mt-1 py-2 rounded-pill shadow-sm">
+                                    <i class="bi bi-x-circle-fill me-1"></i> No tienes vehículo asignado
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="bg-white p-3 rounded-4 shadow-sm mb-4 border">
+                            <div class="mb-3">
+                                <label class="fw-bold text-secondary small mb-1">Monto Total de la Factura</label>
+                                <div class="input-group input-group-lg shadow-sm rounded-3 overflow-hidden">
+                                    <span class="input-group-text bg-success text-white border-success fw-bold">Q.</span>
+                                    <input type="number" name="total_amount" class="form-control border-success fw-bold text-dark fs-4" step="0.01" placeholder="0.00" required>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="fw-bold text-secondary small mb-1">Motivo / Ruta</label>
+                                <textarea name="description" class="form-control bg-light border-0 shadow-none" rows="2" placeholder="Ej. Viaje ruta Xela, recarga full..." required></textarea>
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="fw-bold text-secondary mb-1">Vehículo</label>
-                            {{ form.vehicle }}
+                        <h6 class="fw-bold text-dark mb-3 text-center"><i class="bi bi-camera-fill me-2 text-danger"></i>Evidencia Obligatoria</h6>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                <label id="label_factura" class="btn btn-outline-secondary w-100 h-100 py-4 rounded-4 shadow-sm d-flex flex-column align-items-center justify-content-center border-2 border-dashed" style="cursor:pointer; transition: all 0.2s;">
+                                    <i class="bi bi-receipt-cutoff fs-1 mb-2"></i>
+                                    <span id="texto_factura" class="small fw-bold lh-sm">Foto<br>Factura (NIT)</span>
+                                    <input type="file" name="receipt_image" id="foto_factura" class="d-none" accept="image/*" capture="environment" required>
+                                </label>
+                            </div>
+
+                            <div class="col-6">
+                                <label id="label_bomba" class="btn btn-outline-secondary w-100 h-100 py-4 rounded-4 shadow-sm d-flex flex-column align-items-center justify-content-center border-2 border-dashed" style="cursor:pointer; transition: all 0.2s;">
+                                    <i class="bi bi-speedometer2 fs-1 mb-2"></i>
+                                    <span id="texto_bomba" class="small fw-bold lh-sm">Foto<br>Tablero/Bomba</span>
+                                    <input type="file" name="pump_image" id="foto_bomba" class="d-none" accept="image/*" capture="environment" required>
+                                </label>
+                            </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="fw-bold text-secondary mb-1">Descripción del Viaje</label>
-                            {{ form.description }}
-                        </div>
-
-                        <hr class="mb-4">
-                        <h6 class="fw-bold text-danger mb-3"><i class="bi bi-camera-fill me-2"></i>Evidencia Fotográfica Obligatoria</h6>
-
-                        <div class="mb-3 p-3 bg-light border border-2 border-secondary rounded-3">
-                            <label class="fw-bold text-dark mb-2">1. Foto de la Factura (NIT)</label>
-                            <input type="file" name="receipt_image" id="foto_factura" class="form-control form-control-lg" accept="image/*" capture="environment" required>
-                        </div>
-
-                        <div class="mb-4 p-3 bg-light border border-2 border-warning rounded-3">
-                            <label class="fw-bold text-dark mb-2">2. Foto de la Bomba / Tablero</label>
-                            <input type="file" name="pump_image" id="foto_bomba" class="form-control form-control-lg border-warning" accept="image/*" capture="environment" required>
-                            <small class="text-muted d-block mt-1">Galones en pantalla o millaje del vehículo.</small>
-                        </div>
-
-                        <button type="submit" class="btn btn-warning w-100 fw-bold py-3 shadow-sm fs-5" id="submitBtn">
-                            <i class="bi bi-cloud-arrow-up-fill me-2"></i> Enviar Reporte
+                        <button type="submit" class="btn btn-dark w-100 fw-bold py-3 shadow-sm rounded-pill fs-5" id="submitBtn">
+                            <i class="bi bi-cloud-arrow-up-fill me-2 text-warning"></i> Enviar a Auditoría
                         </button>
                     </form>
                 </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{% url 'core:home' %}" class="text-muted text-decoration-none small fw-bold">
+                    <i class="bi bi-house-door-fill me-1"></i> Volver al Inicio
+                </a>
             </div>
 
         </div>
@@ -73,6 +107,24 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // 1. Efecto Visual de las Fotos (Se pone verde al tomar la foto)
+    function setupPhotoUpload(inputId, labelId, textId, successIcon) {
+        const input = document.getElementById(inputId);
+        const label = document.getElementById(labelId);
+        const text = document.getElementById(textId);
+
+        input.addEventListener('change', function(e) {
+            if(this.files && this.files.length > 0) {
+                label.classList.remove('btn-outline-secondary', 'border-dashed');
+                label.classList.add('btn-success', 'text-white', 'border-success');
+                text.innerHTML = `<i class="bi ${successIcon} d-block mb-1"></i> Lista`;
+            }
+        });
+    }
+    setupPhotoUpload('foto_factura', 'label_factura', 'texto_factura', 'bi-check-circle-fill');
+    setupPhotoUpload('foto_bomba', 'label_bomba', 'texto_bomba', 'bi-check-circle-fill');
+
+    // 2. GPS y Validación (El Perro Guardián)
     const statusDiv = document.getElementById('gps-status');
     const latInput = document.getElementById('lat_input');
     const lngInput = document.getElementById('lng_input');
@@ -80,59 +132,57 @@ document.addEventListener('DOMContentLoaded', function() {
     const errorBox = document.getElementById('error-box');
     const errorMessage = document.getElementById('error-message');
 
-    // 1. CAPTURAR GPS AL ABRIR LA PANTALLA
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             function(position) {
                 latInput.value = position.coords.latitude;
                 lngInput.value = position.coords.longitude;
-                statusDiv.className = "alert alert-success py-2 small text-center fw-bold shadow-sm";
-                statusDiv.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> GPS Conectado y Listo';
+                statusDiv.className = "alert alert-success py-2 small text-center fw-bold shadow-sm rounded-pill";
+                statusDiv.innerHTML = '<i class="bi bi-geo-alt-fill me-1"></i> Ubicación GPS conectada';
             },
             function(error) {
-                statusDiv.className = "alert alert-danger py-2 small text-center fw-bold shadow-sm";
-                statusDiv.innerHTML = '<i class="bi bi-geo-alt-fill me-1"></i> ERROR: GPS Apagado o denegado.';
+                statusDiv.className = "alert alert-danger py-2 small text-center fw-bold shadow-sm rounded-pill";
+                statusDiv.innerHTML = '<i class="bi bi-exclamation-octagon-fill me-1"></i> El GPS está apagado';
             },
-            { enableHighAccuracy: true, timeout: 30000 }
+            { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
         );
     }
 
-    // 2. VALIDAR ANTES DE ENVIAR
     form.addEventListener('submit', function(event) {
         let errores = [];
         
-        // Verificar GPS
         if (!latInput.value || !lngInput.value) {
-            errores.push("Tu GPS no está activado. Activa la ubicación y recarga la página.");
+            errores.push("El sistema no detecta tu GPS. Por favor, activa la ubicación de tu teléfono e intenta de nuevo.");
         }
-
-        // Verificar Foto 1 (Factura)
+        
         const fotoFactura = document.getElementById('foto_factura');
         if (fotoFactura.files.length === 0) {
-            errores.push("Falta la fotografía de la Factura.");
+            errores.push("Falta tomar la fotografía de la Factura.");
         }
 
-        // Verificar Foto 2 (Bomba)
         const fotoBomba = document.getElementById('foto_bomba');
         if (fotoBomba.files.length === 0) {
-            errores.push("Falta la fotografía de la Bomba de combustible.");
+            errores.push("Falta tomar la fotografía del tablero o bomba.");
         }
 
-        // Si hay errores, detenemos todo y mostramos la caja roja
         if (errores.length > 0) {
-            event.preventDefault(); // Congela el envío al servidor
-            errorMessage.innerHTML = errores.join("<br><br><i class='bi bi-x-circle-fill me-1'></i> ");
+            event.preventDefault(); 
+            errorMessage.innerHTML = errores.join("<br><br>");
             errorBox.classList.remove('d-none');
-            // Hacer scroll hacia arriba para que el piloto vea el error
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
-            // Si todo está bien, ocultamos errores y cambiamos el botón a "Enviando..."
             errorBox.classList.add('d-none');
             const btn = document.getElementById('submitBtn');
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Subiendo...';
-            btn.classList.add('disabled');
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Subiendo al sistema...';
+            btn.classList.add('disabled', 'btn-secondary');
+            btn.classList.remove('btn-dark');
         }
     });
 });
 </script>
+
+<style>
+    /* Soporte para bordes punteados */
+    .border-dashed { border-style: dashed !important; }
+</style>
 {% endblock %}
