@@ -46,10 +46,10 @@
                             </td>
                             <td><strong>Q. {{ expense.total_amount }}</strong></td>
                             <td>
-                                <a href="{% url 'review_expense' expense.id %}" class="btn btn-warning btn-sm">
+                                <a href="{% url 'accountig:review_expense' expense.id %}" class="btn btn-warning btn-sm">
                                     <i class="bi bi-pencil-square"></i> Revisar y Aprobar
                                 </a>
-                                <a href="{% url 'reject_expense' expense.id %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Estás seguro de rechazar este gasto?');">
+                                <a href="{% url 'accountig:reject_expense' expense.id %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Estás seguro de rechazar este gasto?');">
                                     <i class="bi bi-trash"></i> Rechazar
                                 </a>
                             </td>
