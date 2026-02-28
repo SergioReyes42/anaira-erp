@@ -19,24 +19,38 @@ def home(request):
 # --- 2. GESTIÓN DE EMPRESAS ---
 @login_required
 def select_company(request):
-    """Fase 2 del Login: Obliga al usuario a elegir su entorno de trabajo"""
+    """Fase 2 del Login: Entorno de trabajo con seguridad por usuario"""
     
-    # Si manda el formulario eligiendo la empresa
     if request.method == 'POST':
-        company_id = request.POST.get('company_id')
+        company_id = request.POST.get('company_id') # Asegúrate que tu <select> en HTML tenga name="company_id"
         if company_id:
             company = get_object_or_404(Company, id=company_id)
-            request.user.current_company = company
-            request.user.save()
             
-            # ¡Ahora sí, lo dejamos entrar al Dashboard principal!
-            return redirect('core:home') 
+            # 🔒 CANDADO DE SEGURIDAD (Por si alguien altera el HTML)
+            if request.user.is_superuser or request.user.empresas_asignadas.filter(id=company.id).exists():
+                request.user.current_company = company
+                request.user.save()
+                return redirect('core:home')
+            else:
+                messages.error(request, "⛔ Alerta de Seguridad: No tienes permisos para esta empresa.")
 
-    # Si acaba de loguearse, le mostramos la pantalla para elegir
-    # (Aquí asumimos que el admin ve todas, ajusta si tus usuarios tienen empresas específicas)
-    companies = Company.objects.all() 
-    
-    # IMPORTANTE: Usamos un HTML especial sin el menú lateral para que no pueda navegar aún
+    # ==========================================
+    # 🔥 MAGIA DE FILTRADO DE EMPRESAS 🔥
+    # ==========================================
+    if request.user.is_superuser:
+        # 1. Si eres el dueño o SuperAdmin (Tú), ves TODAS las empresas
+        companies = Company.objects.all()
+    else:
+        # 2. Si es un usuario normal (Luis Fernando), SOLO ve las suyas
+        # OJO: Cambia 'empresas_asignadas' por el nombre del campo en tu modelo de Usuario
+        companies = request.user.empresas_asignadas.all() 
+        
+        # 3. TRUCO UX: Si solo tiene 1 empresa, ¡lo metemos directo sin preguntar!
+        if companies.count() == 1:
+            request.user.current_company = companies.first()
+            request.user.save()
+            return redirect('core:home')
+
     return render(request, 'core/select_company.html', {'companies': companies})
 
 @login_required
