@@ -21,9 +21,9 @@ def home(request):
 def select_company(request):
     """Fase 2 del Login: Entorno de trabajo con seguridad por Perfil de Usuario"""
     
-    # Parche de seguridad: Si el usuario es viejo y no tiene perfil, se lo creamos
-    if not hasattr(request.user, 'profile'):
-        UserProfile.objects.create(user=request.user)
+    # 🔥 EL PARCHE INFALIBLE: get_or_create 🔥
+    # Si no tiene perfil, se lo crea. Si ya lo tiene, simplemente lo lee (cero errores)
+    perfil, created = UserProfile.objects.get_or_create(user=request.user)
 
     if request.method == 'POST':
         company_id = request.POST.get('company_id')
@@ -31,9 +31,9 @@ def select_company(request):
             company = get_object_or_404(Company, id=company_id)
             
             # 🔒 CANDADO DE SEGURIDAD LEYENDO EL PERFIL
-            if request.user.is_superuser or request.user.profile.empresas_asignadas.filter(id=company.id).exists():
-                request.user.profile.current_company = company
-                request.user.profile.save()
+            if request.user.is_superuser or perfil.empresas_asignadas.filter(id=company.id).exists():
+                perfil.current_company = company
+                perfil.save()
                 return redirect('core:home')
             else:
                 messages.error(request, "⛔ Alerta de Seguridad: No tienes permisos para esta empresa.")
@@ -45,12 +45,12 @@ def select_company(request):
         companies = Company.objects.all()
     else:
         # SOLO ve las empresas de su perfil
-        companies = request.user.profile.empresas_asignadas.all() 
+        companies = perfil.empresas_asignadas.all() 
         
         # TRUCO UX: Si solo tiene 1 empresa, entra directo
         if companies.count() == 1:
-            request.user.profile.current_company = companies.first()
-            request.user.profile.save()
+            perfil.current_company = companies.first()
+            perfil.save()
             return redirect('core:home')
 
     return render(request, 'core/select_company.html', {'companies': companies})
