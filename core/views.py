@@ -8,7 +8,7 @@ from .models import Company
 def landing(request):
     """Página de bienvenida pública"""
     if request.user.is_authenticated:
-        return redirect('home')
+        return redirect('core:home')
     return render(request, 'core/landing.html')
 
 @login_required
