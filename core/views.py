@@ -30,7 +30,7 @@ def select_company(request):
             request.user.save()
             
             # ¡Ahora sí, lo dejamos entrar al Dashboard principal!
-            return redirect('home') 
+            return redirect('core:home') 
 
     # Si acaba de loguearse, le mostramos la pantalla para elegir
     # (Aquí asumimos que el admin ve todas, ajusta si tus usuarios tienen empresas específicas)
