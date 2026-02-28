@@ -63,9 +63,12 @@
                             </td>
 
                             <td class="text-end pe-4">
-                                <a href="{% url 'review_expense' expense.id %}" class="btn btn-primary btn-sm fw-bold px-3 shadow-sm">
+                                <a href="{% url 'accounting:review_expense' expense.id %}" class="btn btn-primary btn-sm fw-bold px-3 shadow-sm">
                                     <i class="bi bi-pencil-square me-1"></i> Revisar
                                 </a>
+                                <a href="{% url 'accounting:reject_expense' expense.id %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Estás seguro de rechazar este gasto?');">
+    <i class="bi bi-trash"></i> Rechazar
+</a>
                             </td>
                         </tr>
                         {% empty %}
