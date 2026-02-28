@@ -99,43 +99,50 @@ class Expense(models.Model):
 # 3. BANCOS Y TRANSACCIONES
 # ==========================================
 class BankAccount(models.Model):
+    """Bóveda principal: Las cuentas bancarias de la empresa"""
     CURRENCY_CHOICES = [
-        ('GTQ', 'Quetzales'),
-        ('USD', 'Dólares'),
+        ('GTQ', 'Quetzales (Q)'),
+        ('USD', 'Dólares ($)'),
     ]
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    bank_name = models.CharField(max_length=100, verbose_name="Banco")
-    account_number = models.CharField(max_length=50, verbose_name="No. Cuenta")
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='GTQ', verbose_name="Moneda")
-    balance = models.DecimalField(max_digits=15, decimal_places=2, default=0.00, verbose_name="Saldo Actual")
+
+    company = models.ForeignKey('core.Company', on_delete=models.CASCADE, related_name='bank_accounts')
+    bank_name = models.CharField(max_length=100, verbose_name="Nombre del Banco (Ej. Banrural, BI)")
+    account_name = models.CharField(max_length=100, verbose_name="Nombre de la Cuenta")
+    account_number = models.CharField(max_length=50, verbose_name="Número de Cuenta")
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='GTQ')
+    
+    # Saldo inicial para poder cuadrar desde enero
+    initial_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Saldo Inicial al 1 de Enero")
+    active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.bank_name} - {self.account_number} ({self.currency})"
 
 class BankTransaction(models.Model):
-    TYPE_CHOICES = [
-        ('IN', 'Depósito / Ingreso'),
-        ('OUT', 'Retiro / Cheque / Transferencia'),
+    """Registro de movimientos: El libro mayor del banco"""
+    TRANSACTION_TYPES = [
+        ('DEPOSIT', 'Depósito / Ingreso'),
+        ('WITHDRAWAL', 'Retiro / Cheque / Gasto'),
     ]
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    bank_account = models.ForeignKey(BankAccount, on_delete=models.CASCADE, related_name='transactions')
-    date = models.DateTimeField(auto_now_add=True)
-    transaction_type = models.CharField(max_length=3, choices=TYPE_CHOICES)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
-    description = models.CharField(max_length=255)
-    reference = models.CharField(max_length=50, null=True, blank=True)
 
-    def save(self, *args, **kwargs):
-        if not self.pk: 
-            if self.transaction_type == 'IN':
-                self.bank_account.balance += self.amount
-            else:
-                self.bank_account.balance -= self.amount
-            self.bank_account.save()
-        super().save(*args, **kwargs)
+    account = models.ForeignKey(BankAccount, on_delete=models.CASCADE, related_name='transactions')
+    registered_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    
+    date = models.DateField(verbose_name="Fecha del Movimiento")
+    transaction_type = models.CharField(max_length=15, choices=TRANSACTION_TYPES)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto")
+    
+    reference = models.CharField(max_length=100, verbose_name="No. de Boleta / Cheque / Transferencia")
+    description = models.TextField(verbose_name="Concepto detallado")
+    
+    # Rastro de auditoría
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date', '-created_at']
 
     def __str__(self):
-        return f"{self.get_transaction_type_display()} - Q{self.amount}"
+        return f"{self.get_transaction_type_display()} - Q{self.amount} - {self.date}"
 
 # ==========================================
 # 4. PARTIDAS CONTABLES (LIBRO DIARIO)

@@ -24,25 +24,25 @@ class VehicleForm(forms.ModelForm):
 class BankAccountForm(forms.ModelForm):
     class Meta:
         model = BankAccount
-        fields = ['bank_name', 'account_number', 'currency', 'balance']
+        fields = ['bank_name', 'account_number', 'currency', 'initial_balance']
         widgets = {
+            'initial_balance': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'bank_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del Banco'}),
             'account_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de Cuenta'}),
             'currency': forms.Select(attrs={'class': 'form-select'}),
-            'balance': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Saldo Inicial'}),
         }
 
 class BankTransactionForm(forms.ModelForm):
     class Meta:
         model = BankTransaction
-        fields = ['bank_account', 'amount', 'description', 'reference']
+        fields = ['account', 'amount', 'description', 'reference']
         widgets = {
-            'bank_account': forms.Select(attrs={'class': 'form-select'}),
+            'account': forms.Select(attrs={'class': 'form-select'}),
             'amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Monto Q/$.'}),
             'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Concepto'}),
             'reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'No. Boleta / Cheque'}),
         }
-        
+
 class PilotExpenseForm(forms.ModelForm):
     class Meta:
         model = Expense

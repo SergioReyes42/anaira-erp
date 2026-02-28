@@ -73,15 +73,15 @@ class BankTransactionInline(admin.TabularInline):
 
 @admin.register(BankAccount)
 class BankAccountAdmin(admin.ModelAdmin):
-    list_display = ('bank_name', 'account_number', 'currency', 'balance', 'company')
+    list_display = ('bank_name', 'account_number', 'currency', 'initial_balance', 'company')
     list_filter = ('company', 'currency')
     search_fields = ('bank_name', 'account_number')
     inlines = [BankTransactionInline] # Ver movimientos dentro de la cuenta
 
 @admin.register(BankTransaction)
 class BankTransactionAdmin(admin.ModelAdmin):
-    list_display = ('date', 'transaction_type', 'amount', 'description', 'bank_account')
-    list_filter = ('transaction_type', 'date', 'bank_account')
+    list_display = ('date', 'transaction_type', 'amount', 'description', 'account')
+    list_filter = ('transaction_type', 'date', 'account')
     search_fields = ('description', 'reference')
     date_hierarchy = 'date'
 
