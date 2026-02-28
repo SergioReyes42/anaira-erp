@@ -355,8 +355,8 @@
                 <button class="btn btn-outline-dark btn-sm me-3" id="menu-toggle"><i class="bi bi-list fs-5"></i></button>
 
                 <span class="navbar-brand fw-bold fs-6 text-uppercase text-secondary">
-                    {% if request.user.current_company %}
-                        <i class="bi bi-building-fill me-2"></i>{{ request.user.current_company.name }}
+                    {% if request.user.profile.current_company %}
+                        <i class="bi bi-building-fill me-2"></i>{{ request.user.profile.current_company.name }}
                     {% else %}
                         SISTEMA ERP
                     {% endif %}

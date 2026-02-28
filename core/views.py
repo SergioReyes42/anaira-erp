@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
-from .models import Company
+from .models import Company, UserProfile
 
 # --- 1. LANDING Y DASHBOARD ---
 def landing(request):
@@ -19,17 +19,21 @@ def home(request):
 # --- 2. GESTIÓN DE EMPRESAS ---
 @login_required
 def select_company(request):
-    """Fase 2 del Login: Entorno de trabajo con seguridad por usuario"""
+    """Fase 2 del Login: Entorno de trabajo con seguridad por Perfil de Usuario"""
     
+    # Parche de seguridad: Si el usuario es viejo y no tiene perfil, se lo creamos
+    if not hasattr(request.user, 'profile'):
+        UserProfile.objects.create(user=request.user)
+
     if request.method == 'POST':
-        company_id = request.POST.get('company_id') # Asegúrate que tu <select> en HTML tenga name="company_id"
+        company_id = request.POST.get('company_id')
         if company_id:
             company = get_object_or_404(Company, id=company_id)
             
-            # 🔒 CANDADO DE SEGURIDAD (Por si alguien altera el HTML)
-            if request.user.is_superuser or request.user.empresas_asignadas.filter(id=company.id).exists():
-                request.user.current_company = company
-                request.user.save()
+            # 🔒 CANDADO DE SEGURIDAD LEYENDO EL PERFIL
+            if request.user.is_superuser or request.user.profile.empresas_asignadas.filter(id=company.id).exists():
+                request.user.profile.current_company = company
+                request.user.profile.save()
                 return redirect('core:home')
             else:
                 messages.error(request, "⛔ Alerta de Seguridad: No tienes permisos para esta empresa.")
@@ -38,17 +42,15 @@ def select_company(request):
     # 🔥 MAGIA DE FILTRADO DE EMPRESAS 🔥
     # ==========================================
     if request.user.is_superuser:
-        # 1. Si eres el dueño o SuperAdmin (Tú), ves TODAS las empresas
         companies = Company.objects.all()
     else:
-        # 2. Si es un usuario normal (Luis Fernando), SOLO ve las suyas
-        # OJO: Cambia 'empresas_asignadas' por el nombre del campo en tu modelo de Usuario
-        companies = request.user.empresas_asignadas.all() 
+        # SOLO ve las empresas de su perfil
+        companies = request.user.profile.empresas_asignadas.all() 
         
-        # 3. TRUCO UX: Si solo tiene 1 empresa, ¡lo metemos directo sin preguntar!
+        # TRUCO UX: Si solo tiene 1 empresa, entra directo
         if companies.count() == 1:
-            request.user.current_company = companies.first()
-            request.user.save()
+            request.user.profile.current_company = companies.first()
+            request.user.profile.save()
             return redirect('core:home')
 
     return render(request, 'core/select_company.html', {'companies': companies})

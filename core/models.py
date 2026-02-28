@@ -1,5 +1,8 @@
 from django.db import models
 from django.conf import settings
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 # ==========================================
 # 1. BASE DEL SISTEMA
@@ -11,6 +14,25 @@ class Company(models.Model):
 
     def __str__(self):
         return self.name
+
+class UserProfile(models.Model):
+    # La conexión 1 a 1 con el usuario de Django
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    
+    # 🏢 Aquí guardamos a qué empresas tiene acceso Luis Fernando
+    empresas_asignadas = models.ManyToManyField(Company, blank=True, related_name='usuarios_permitidos')
+    
+    # 🎯 Aquí guardamos en qué empresa está trabajando en este momento
+    current_company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"Perfil de {self.user.username}"
+
+# 🔥 MAGIA: Esto crea el Perfil automáticamente cuando creas un Usuario nuevo
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
 
 class CompanyAwareModel(models.Model):
     """
