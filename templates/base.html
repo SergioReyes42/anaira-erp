@@ -197,37 +197,36 @@
                 {% endif %} 
                 
                 {% if request.user|has_group:"Contadora, Gerente" %}
-                <a href="#menuFinanzas" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
-                    <i class="bi bi-cash-coin me-2 text-warning"></i> Tesorería & Flotilla
-                </a>
-                <li class="nav-item">
-    <a class="nav-link" href="{% url 'accounting:bank_dashboard' %}">
-        <i class="fas fa-university text-primary"></i>
-        <span class="nav-link-text ms-1">Bancos y Cuentas</span>
-    </a>
-</li>
-                <div class="collapse submenu" id="menuFinanzas">
-                     <a href="#" class="list-group-item list-group-item-action text-white">
-                         <i class="bi bi-bank2 me-1"></i> Panel de Bancos
-                    </a>
-                    <a href="#" class="list-group-item list-group-item-action">
-                        <i class="bi bi-arrow-down-circle-fill text-success me-1"></i> Registrar Depósito
-                    </a>
-                    <a href="#" class="list-group-item list-group-item-action">
-                        <i class="bi bi-arrow-up-circle-fill text-danger me-1"></i> Registrar Retiro
-                    </a>
-                    <a href="#" class="list-group-item list-group-item-action">
-                        <i class="bi bi-plus-circle me-1"></i> Crear Nueva Cuenta
-                    </a>
+                <div class="mb-2">
+    <small class="text-uppercase text-muted fw-bold p-2" style="font-size: 0.65rem; letter-spacing: 1px;">
+        Tesorería & Flotilla
+    </small>
+    
+    <div class="list-group list-group-flush">
+        <a href="{% url 'accounting:bank_dashboard' %}" class="list-group-item list-group-item-action border-0 py-2">
+            <i class="fas fa-university me-2 text-primary"></i> Panel de Bancos
+        </a>
+
+        <div class="ps-3 border-start ms-3 mt-1">
+            <a href="#" class="list-group-item list-group-item-action border-0 py-1 small">
+                <i class="fas fa-plus-circle me-2 text-success"></i> Registrar Depósito
+            </a>
+            <a href="#" class="list-group-item list-group-item-action border-0 py-1 small">
+                <i class="fas fa-minus-circle me-2 text-danger"></i> Registrar Retiro
+            </a>
+            <a href="#" class="list-group-item list-group-item-action border-0 py-1 small">
+                <i class="fas fa-plus me-2 text-info"></i> Crear Nueva Cuenta
+            </a>
+        </div>
+
+        <a href="#" class="list-group-item list-group-item-action border-0 py-2 mt-1">
+            <i class="fas fa-file-invoice-dollar me-2 text-secondary"></i> Estados de Cuenta
+        </a>
                     <a href="#" class="list-group-item list-group-item-action text-info">
                         <i class="bi bi-credit-card-2-back me-1"></i> Tarjetas Crédito
                     </a>
                     
-                    <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Reportes & Cuentas</small>
-                    <a href="#" class="list-group-item list-group-item-action">
-                        <i class="bi bi-file-earmark-spreadsheet me-1"></i> Estados de Cuenta
-                    </a>
-
+                    
                     <div class="dropdown-divider border-secondary mt-2"></div>
                     
                     <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Control de Gastos & Flotilla</small>
