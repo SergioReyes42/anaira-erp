@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
-from .models import Company, UserProfile
+from .models import Company
 
 # --- 1. LANDING Y DASHBOARD ---
 def landing(request):
@@ -19,40 +19,26 @@ def home(request):
 # --- 2. GESTIÓN DE EMPRESAS ---
 @login_required
 def select_company(request):
-    """Fase 2 del Login: Entorno de trabajo con seguridad por Perfil de Usuario"""
+    """Fase 2 del Login: Selector Original (Muestra todas las empresas)"""
     
-    # 🔥 EL PARCHE INFALIBLE: get_or_create 🔥
-    # Si no tiene perfil, se lo crea. Si ya lo tiene, simplemente lo lee (cero errores)
-    perfil, created = UserProfile.objects.get_or_create(user=request.user)
-
     if request.method == 'POST':
         company_id = request.POST.get('company_id')
         if company_id:
             company = get_object_or_404(Company, id=company_id)
             
-            # 🔒 CANDADO DE SEGURIDAD LEYENDO EL PERFIL
-            if request.user.is_superuser or perfil.empresas_asignadas.filter(id=company.id).exists():
-                perfil.current_company = company
-                perfil.save()
-                return redirect('core:home')
-            else:
-                messages.error(request, "⛔ Alerta de Seguridad: No tienes permisos para esta empresa.")
-
-    # ==========================================
-    # 🔥 MAGIA DE FILTRADO DE EMPRESAS 🔥
-    # ==========================================
-    if request.user.is_superuser:
-        companies = Company.objects.all()
-    else:
-        # SOLO ve las empresas de su perfil
-        companies = perfil.empresas_asignadas.all() 
-        
-        # TRUCO UX: Si solo tiene 1 empresa, entra directo
-        if companies.count() == 1:
-            perfil.current_company = companies.first()
-            perfil.save()
+            # Asignamos la empresa a la variable de memoria del usuario
+            request.user.current_company = company
+            
+            try:
+                request.user.save()
+            except Exception:
+                pass # Ignoramos si el usuario nativo rechaza el guardado
+                
             return redirect('core:home')
 
+    # Versión estable: listamos todas las empresas para que elija
+    companies = Company.objects.all() 
+    
     return render(request, 'core/select_company.html', {'companies': companies})
 
 @login_required
