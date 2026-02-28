@@ -74,7 +74,7 @@
             </a>
             
             {% if request.user|has_group:"Pilotos, Ruteros" %}
-            <a href="{% url 'pilot_upload' %}" class="list-group-item list-group-item-action text-warning fw-bold" style="font-size: 1.05rem;">
+            <a href="{% url 'accounting:pilot_upload' %}" class="list-group-item list-group-item-action text-warning fw-bold" style="font-size: 1.05rem;">
                 <i class="bi bi-camera-fill me-2"></i> Subir Gasto (Foto)
             </a>
             {% endif %}
