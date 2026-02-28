@@ -265,7 +265,7 @@
                 <a href="#menuConta" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
                     <i class="bi bi-journal-text me-2 text-primary"></i> Contabilidad
                 </a>
-                <a href="{% url 'opening_balance' %}" class="list-group-item list-group-item-action text-info">
+                <a href="{% url 'accounting:opening_balance' %}" class="list-group-item list-group-item-action text-info">
                     <i class="bi bi-box-arrow-in-right me-1"></i> Migrar Monica 8.5 (Apertura)
                 </a>
                 <div class="dropdown-divider border-secondary mt-2"></div>
@@ -274,46 +274,46 @@
                 <div class="dropdown-divider border-secondary mt-2"></div>
                 <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Auditoría de Gastos</small>
                 
-                <a href="{% url 'expense_pre_review_list' %}" class="list-group-item list-group-item-action text-warning fw-bold">
+                <a href="{% url 'accounting:expense_pre_review_list' %}" class="list-group-item list-group-item-action text-warning fw-bold">
                     <i class="bi bi-shield-lock-fill me-1"></i> Auditoría (Supervisores)
                     {% if count_pre_review > 0 %}
                         <span class="badge bg-danger ms-2 rounded-pill shadow-sm">{{ count_pre_review }}</span> 
                     {% endif %}
                 </a>
 
-                <a href="{% url 'expense_pending_list' %}" class="list-group-item list-group-item-action text-info fw-bold">
+                <a href="{% url 'accounting:expense_pending_list' %}" class="list-group-item list-group-item-action text-info fw-bold">
                     <i class="bi bi-inbox-fill me-1"></i> Contabilizar Gastos
                     {% if count_pending > 0 %}
                         <span class="badge bg-danger ms-2 rounded-pill shadow-sm">{{ count_pending }}</span> 
                     {% endif %}
                 </a>
                 <div class="collapse submenu" id="menuConta">
-                    <a href="{% url 'chart_of_accounts' %}" class="list-group-item list-group-item-action">
+                    <a href="{% url 'accounting:chart_of_accounts' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-diagram-3-fill me-1"></i> Plan de Cuentas (NIIF)
                     </a>
-                    <a href="{% url 'general_journal' %}" class="list-group-item list-group-item-action fw-bold">
+                    <a href="{% url 'accounting:general_journal' %}" class="list-group-item list-group-item-action fw-bold">
                         <i class="bi bi-book-half me-1"></i> Libro Diario General
                     </a>
-                    <a href="{% url 'general_ledger' %}" class="list-group-item list-group-item-action fw-bold">
+                    <a href="{% url 'accounting:general_ledger' %}" class="list-group-item list-group-item-action fw-bold">
                         <i class="bi bi-journal-text me-1"></i> Libro Mayor (Movimientos)
                     </a>
-                    <a href="{% url 'trial_balance' %}" class="list-group-item list-group-item-action fw-bold text-info">
+                    <a href="{% url 'accounting:trial_balance' %}" class="list-group-item list-group-item-action fw-bold text-info">
                         <i class="bi bi-scales me-1"></i> Balance de Comprobación
                     </a>
                     <div class="dropdown-divider border-secondary"></div>
-                    <a href="{% url 'income_statement' %}" class="list-group-item list-group-item-action fw-bold text-success">
+                    <a href="{% url 'accounting:income_statement' %}" class="list-group-item list-group-item-action fw-bold text-success">
                         <i class="bi bi-graph-up-arrow me-1"></i> Estado de Resultados
                     </a>
-                    <a href="{% url 'balance_sheet' %}" class="list-group-item list-group-item-action fw-bold text-primary">
+                    <a href="{% url 'accounting:balance_sheet' %}" class="list-group-item list-group-item-action fw-bold text-primary">
                         <i class="bi bi-bank2 me-1"></i> Balance General
                     </a>
                     <a href="{% url 'purchase_ledger' %}" class="list-group-item list-group-item-action fw-bold text-danger">
                         <i class="bi bi-cart-check-fill me-1"></i> Libro de Compras (IVA)
                     </a>
-                    <a href="{% url 'sales_ledger' %}" class="list-group-item list-group-item-action fw-bold text-success">
+                    <a href="{% url 'accounting:sales_ledger' %}" class="list-group-item list-group-item-action fw-bold text-success">
                         <i class="bi bi-receipt me-1"></i> Libro de Ventas (IVA)
                     </a>
-                    <a href="{% url 'fiscal_close' %}" class="list-group-item list-group-item-action fw-bold text-danger">
+                    <a href="{% url 'accounting:fiscal_close' %}" class="list-group-item list-group-item-action fw-bold text-danger">
                         <i class="bi bi-lock-fill me-1"></i> Cierre Fiscal (Bloqueo)
                     </a>
                 </div>
