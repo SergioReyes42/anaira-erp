@@ -1098,7 +1098,9 @@ def bank_dashboard(request):
     # (Usamos el request.user.current_company que configuramos en la aduana)
     if hasattr(request.user, 'current_company') and request.user.current_company:
         accounts = BankAccount.objects.filter(company=request.user.current_company, active=True)
-        recent_transactions = BankTransaction.objects.filter(account__company=request.user.current_company).order_by('-date', '-created_at')[:15]
+        recent_transactions = BankTransaction.objects.filter(
+    account__company=request.user.current_company
+    ).order_by('-date', '-created_at')[:15]
     else:
         accounts = BankAccount.objects.filter(active=True)
         recent_transactions = BankTransaction.objects.all().order_by('-date', '-created_at')[:15]
