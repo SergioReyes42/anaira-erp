@@ -1089,3 +1089,35 @@ def expense_pre_review_list(request):
     # 🛠️ CORRECCIÓN 2: Agregamos 'accounting/' antes del nombre del archivo
     # para solucionar el "TemplateDoesNotExist".
     return render(request, 'expense_pre_review_list.html', {'expenses': expenses})
+
+@login_required
+def bank_dashboard(request):
+    """Tablero Financiero: Cuentas y transacciones en tiempo real"""
+    
+    # 1. Traemos las cuentas de la empresa en la que está trabajando el usuario
+    # (Usamos el request.user.current_company que configuramos en la aduana)
+    if hasattr(request.user, 'current_company') and request.user.current_company:
+        accounts = BankAccount.objects.filter(company=request.user.current_company, active=True)
+        recent_transactions = BankTransaction.objects.filter(account__company=request.user.current_company).order_by('-date', '-created_at')[:15]
+    else:
+        accounts = BankAccount.objects.filter(active=True)
+        recent_transactions = BankTransaction.objects.all().order_by('-date', '-created_at')[:15]
+
+    # 2. 🔥 EL MOTOR CONTABLE: Calculamos el saldo real de cada cuenta
+    total_global = 0
+    for account in accounts:
+        # Sumamos Depósitos
+        deposits = account.transactions.filter(transaction_type='DEPOSIT').aggregate(Sum('amount'))['amount__sum'] or 0
+        # Sumamos Retiros
+        withdrawals = account.transactions.filter(transaction_type='WITHDRAWAL').aggregate(Sum('amount'))['amount__sum'] or 0
+        
+        # Matemáticas de Arquitecto: Saldo Inicial + Entradas - Salidas
+        account.current_balance = account.initial_balance + deposits - withdrawals
+        total_global += account.current_balance
+
+    context = {
+        'accounts': accounts,
+        'recent_transactions': recent_transactions,
+        'total_global': total_global,
+    }
+    return render(request, 'accounting/bank_dashboard.html', context)

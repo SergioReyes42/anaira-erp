@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
 
+app_name = 'accounting'
+
 urlpatterns = [
     # ==========================================
     # 1. FLUJO DE GASTOS (PILOTO / SCANNER)
@@ -35,6 +37,7 @@ urlpatterns = [
     path('bancos/', views.bank_list, name='bank_list'),
     path('bancos/nuevo/', views.bank_create, name='bank_create'),
     path('transaccion/nueva/', views.bank_transaction_create, name='bank_transaction_create'),
+    path('bancos/', views.bank_dashboard, name='bank_dashboard'),
     
     path('flotilla/', views.vehicle_list, name='vehicle_list'),
     path('flotilla/nuevo/', views.vehicle_create, name='vehicle_create'),

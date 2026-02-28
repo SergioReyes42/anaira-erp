@@ -200,6 +200,12 @@
                 <a href="#menuFinanzas" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle">
                     <i class="bi bi-cash-coin me-2 text-warning"></i> Tesorería & Flotilla
                 </a>
+                <li class="nav-item">
+    <a class="nav-link" href="{% url 'accounting:bank_dashboard' %}">
+        <i class="fas fa-university text-primary"></i>
+        <span class="nav-link-text ms-1">Bancos y Cuentas</span>
+    </a>
+</li>
                 <div class="collapse submenu" id="menuFinanzas">
                      <a href="#" class="list-group-item list-group-item-action text-white">
                          <i class="bi bi-bank2 me-1"></i> Panel de Bancos
