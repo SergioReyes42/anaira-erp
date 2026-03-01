@@ -125,6 +125,7 @@ class BankAccount(models.Model):
     
     # Saldo inicial para poder cuadrar desde enero
     initial_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Saldo Inicial al 1 de Enero")
+    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Saldo Actual")
     active = models.BooleanField(default=True)
 
     def __str__(self):
