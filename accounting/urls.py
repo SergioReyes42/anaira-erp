@@ -38,7 +38,7 @@ urlpatterns = [
     path('bancos/nuevo/', views.bank_create, name='bank_create'),
     path('transaccion/nueva/', views.bank_transaction_create, name='bank_transaction_create'),
     path('bancos/', views.bank_dashboard, name='bank_dashboard'),
-    
+    path('bancos/nueva-cuenta/', views.bank_create, name='bank_create'),
     path('flotilla/', views.vehicle_list, name='vehicle_list'),
     path('flotilla/nuevo/', views.vehicle_create, name='vehicle_create'),
 

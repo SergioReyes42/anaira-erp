@@ -3,7 +3,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between mb-3">
         <h2>🏦 Panel Bancario</h2>
-        <a href="{% url 'bank_create' %}" class="btn btn-success">Nueva Cuenta</a>
+        <a href="{% url 'accounting:bank_create' %}" class="btn btn-success">Nueva Cuenta</a>
     </div>
     <div class="row">
         {% for acc in accounts %}
