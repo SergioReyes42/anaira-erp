@@ -54,7 +54,7 @@
                                 <td class="text-center fw-bold align-top pt-3 border-end border-secondary border-opacity-25">{{ entry.date|date:"d/m/Y" }}</td>
                                 <td colspan="3" class="fw-bold text-dark pt-3 pb-1">
                                     <span class="badge bg-dark me-2">Pda #{{ entry.id }}</span> 
-                                    <u>{{ entry.concept|default:entry.description }}</u>
+                                    <u>{{ entry.concept|default:"Sin detalle" }}</u>
                                 </td>
                             </tr>
                             
