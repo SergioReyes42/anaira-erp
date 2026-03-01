@@ -1221,3 +1221,31 @@ def guardar_gasto_piloto(request):
     # Mandamos los vehículos a la vista para que el `<select>` se llene
     vehiculos_disponibles = Vehiculo.objects.all() 
     return render(request, 'accounting/pilot_upload.html', {'vehicles': vehiculos_disponibles})
+
+@login_required
+def subir_gasto_scanner(request):
+    if request.method == 'POST':
+        # Capturas los datos que mande el formulario del Smart Scanner
+        monto = request.POST.get('monto')
+        metodo_pago = request.POST.get('metodo_pago')
+        foto_factura = request.FILES.get('factura') # Suponiendo que tienes un campo de imagen
+        
+        # MAGIA: Se crea el gasto saltándose la auditoría de los supervisores
+        nuevo_gasto = GastoOperativo.objects.create(
+            # Acá pones los datos correspondientes, ej: no hay piloto, lo sube el auxiliar
+            monto=monto,
+            metodo_pago=metodo_pago,
+            foto_factura=foto_factura,
+            
+            # ESTA ES LA CLAVE: Va directo al contador
+            estado='Pendiente_Contabilidad', 
+            
+            # Marcamos que las 3 firmas no aplican o las damos por hechas (opcional)
+            sup1_firmado=True,
+            sup2_firmado=True,
+            asist_firmado=True
+        )
+        
+        return redirect('accountig:smart_hub') # Lo mandas a donde quieras tras guardar
+
+    return render(request, 'accounting/smart_hub')
