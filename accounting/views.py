@@ -14,6 +14,7 @@ from django.db.models import Prefetch
 from .models import AccountingPeriod
 from sales.models import SaleInvoice
 from .forms import DepositForm
+from .models import GastoOperativo, Vehiculo
 
 # --- IMPORTACIÓN DE MODELOS ---
 from .models import (
@@ -1175,3 +1176,48 @@ def register_deposit(request):
         'title': 'Registrar Nuevo Depósito'
     }
     return render(request, 'accounting/register_deposit.html', context)
+
+@login_required
+def guardar_gasto_piloto(request):
+    if request.method == 'POST':
+        # 1. Atrapar los datos de texto y selects que vienen del HTML
+        vehicle_id = request.POST.get('vehicle')
+        tipo_gasto = request.POST.get('tipo_gasto')
+        payment_method = request.POST.get('payment_method')
+        latitude = request.POST.get('latitude')
+        longitude = request.POST.get('longitude')
+        
+        # 2. Atrapar los archivos (Fotos)
+        receipt_image = request.FILES.get('receipt_image')
+        pump_image = request.FILES.get('pump_image') # Si seleccionó repuestos, esto vendrá vacío automáticamente
+
+        # 3. Buscar la instancia del vehículo en la base de datos
+        vehiculo_obj = None
+        if vehicle_id:
+            try:
+                vehiculo_obj = Vehiculo.objects.get(id=vehicle_id)
+            except Vehiculo.DoesNotExist:
+                pass # Manejo de error por si mandan un ID que no existe
+
+        # 4. Crear el registro en la base de datos
+        nuevo_gasto = GastoOperativo.objects.create(
+            user=request.user,                  # El piloto logueado actualmente
+            vehicle=vehiculo_obj,
+            tipo_gasto=tipo_gasto,
+            payment_method=payment_method,
+            latitude=latitude,
+            longitude=longitude,
+            receipt_image=receipt_image,
+            pump_image=pump_image,              # Guarda la foto de la bomba, o null si no hay
+            estado='En_Supervision'             # Entra directo a tu bandeja de firmas
+            # Nota: No enviamos total_amount, así que toma el default de 0.00
+        )
+
+        # 5. Mensaje de éxito y redirección al inicio
+        messages.success(request, '¡Evidencia enviada a auditoría exitosamente!')
+        return redirect('core:home') 
+
+    # Si la petición es GET (el usuario solo entró a ver la página del formulario)
+    # Mandamos los vehículos a la vista para que el `<select>` se llene
+    vehiculos_disponibles = Vehiculo.objects.all() 
+    return render(request, 'accounting/pilot_upload.html', {'vehicles': vehiculos_disponibles})

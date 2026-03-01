@@ -4,6 +4,7 @@ from core.models import Company
 from django.utils import timezone
 
 
+
 # ==========================================
 # 1. FLOTILLA (VEHÍCULOS)
 # ==========================================
@@ -238,3 +239,65 @@ class AccountingPeriod(models.Model):
     def __str__(self):
         estado = "CERRADO" if self.is_closed else "ABIERTO"
         return f"{self.month}/{self.year} - {estado}"
+    
+class Vehiculo(models.Model):
+    name = models.CharField(max_length=100, verbose_name="Nombre/Marca")
+    placa = models.CharField(max_length=20, unique=True)
+
+    def __str__(self):
+        return f"{self.placa} - {self.name}"
+
+# === TU CLASE PRINCIPAL DE GASTOS ===
+class GastoOperativo(models.Model):
+    # Opciones predefinidas
+    TIPO_GASTO_CHOICES = [
+        ('combustible', 'Combustible'),
+        ('repuestos', 'Repuestos'),
+        ('mantenimiento', 'Mantenimiento'),
+    ]
+
+    METODO_PAGO_CHOICES = [
+        ('EFECTIVO', 'Efectivo'),
+        ('TARJETA', 'Tarjeta (Crédito/Débito)'),
+    ]
+
+    ESTADO_CHOICES = [
+        ('En_Supervision', 'En Supervisión'),
+        ('Pendiente_Contabilidad', 'Pendiente Contabilidad'),
+        ('Rechazado', 'Rechazado'),
+    ]
+
+    # Relaciones y Datos Base
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='gastos')
+    vehicle = models.ForeignKey(Vehiculo, on_delete=models.SET_NULL, null=True, blank=True)
+    date = models.DateTimeField(auto_now_add=True) # Se guarda la hora exacta automáticamente
+    
+    # Detalles del Gasto
+    tipo_gasto = models.CharField(max_length=20, choices=TIPO_GASTO_CHOICES, default='combustible')
+    payment_method = models.CharField(max_length=20, choices=METODO_PAGO_CHOICES, default='EFECTIVO')
+    
+    # El monto inicia en 0.00 (Contabilidad lo llenará después leyendo la factura)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    # Evidencias (Fotos)
+    receipt_image = models.ImageField(upload_to='gastos/facturas/')
+    pump_image = models.ImageField(upload_to='gastos/bombas/', null=True, blank=True) # Opcional para repuestos
+
+    # Ubicación GPS
+    latitude = models.CharField(max_length=50, null=True, blank=True)
+    longitude = models.CharField(max_length=50, null=True, blank=True)
+
+    # Control de Estado y Auditoría (Tus 3 firmas mágicas)
+    estado = models.CharField(max_length=50, choices=ESTADO_CHOICES, default='En_Supervision')
+    supervisor_1_ok = models.BooleanField(default=False)
+    supervisor_2_ok = models.BooleanField(default=False)
+    assistant_ok = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Gasto {self.id} - {self.user.username} - {self.get_tipo_gasto_display()}"
+
+    # Función mágica para pasar a contabilidad al tener las 3 firmas
+    def verificar_pase_contabilidad(self):
+        if self.supervisor_1_ok and self.supervisor_2_ok and self.assistant_ok:
+            self.estado = 'Pendiente_Contabilidad'
+            self.save()
