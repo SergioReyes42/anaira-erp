@@ -1,3 +1,4 @@
+import csv  # 🔥 ESTA ES LA LLAVE MÁGICA
 from django.db import transaction
 import datetime
 import decimal
@@ -13,7 +14,7 @@ from django.forms import modelformset_factory
 from django.db.models import Prefetch
 from .models import AccountingPeriod
 from sales.models import SaleInvoice
-
+from .models import ChartOfAccount # Asegúrate de que este es el nombre de tu modelo
 
 # --- IMPORTACIÓN DE MODELOS ---
 from .models import (
@@ -1123,3 +1124,45 @@ def bank_dashboard(request):
         'total_global': total_global,
     }
     return render(request, 'accounting/bank_dashboard.html', context)
+
+def import_chart_of_accounts(request):
+    """Importador Masivo de Cuentas NIIF vía CSV"""
+    if request.method == 'POST' and request.FILES.get('csv_file'):
+        csv_file = request.FILES['csv_file']
+        
+        # 1. Validación de seguridad (solo CSV)
+        if not csv_file.name.endswith('.csv'):
+            messages.error(request, 'Error: El sistema solo acepta archivos .csv para el catálogo contable.')
+            return redirect('accounting:chart_of_accounts')
+        
+        try:
+            # 2. Leer el archivo
+            file_data = csv_file.read().decode('utf-8-sig').splitlines()
+            reader = csv.DictReader(file_data)
+            
+            cuentas_creadas = 0
+            cuentas_actualizadas = 0
+            
+            # 3. Procesar fila por fila
+            for row in reader:
+                # Busca las columnas 'Codigo' y 'Nombre' en el Excel/CSV
+                codigo = row.get('Codigo', '').strip()
+                nombre = row.get('Nombre', '').strip()
+                
+                if codigo and nombre:
+                    # get_or_create evita que se dupliquen si la contadora sube el archivo dos veces
+                    obj, created = ChartOfAccount.objects.update_or_create(
+                        code=codigo,
+                        defaults={'name': nombre}
+                    )
+                    if created:
+                        cuentas_creadas += 1
+                    else:
+                        cuentas_actualizadas += 1
+                        
+            messages.success(request, f'¡Importación Exitosa! {cuentas_creadas} cuentas nuevas creadas y {cuentas_actualizadas} actualizadas.')
+            
+        except Exception as e:
+            messages.error(request, f'Error en la lectura del archivo. Verifica que las columnas se llamen "Codigo" y "Nombre". Detalle: {str(e)}')
+            
+    return redirect('accounting:chart_of_accounts')
