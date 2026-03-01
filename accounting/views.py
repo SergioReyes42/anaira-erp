@@ -225,7 +225,7 @@ def review_expense(request, pk):
             expense.suggested_account = "Combustibles y Lubricantes"
         
         expense.save()
-        return redirect('approve_expense', pk=expense.id)
+        return redirect('accounting:approve_expense', pk=expense.id)
 
     return render(request, 'accounting/review_expense.html', {'expense': expense})
 
