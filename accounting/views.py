@@ -237,7 +237,7 @@ def approve_expense(request, pk):
     
     if expense.status == 'APPROVED':
         messages.warning(request, "Este gasto ya fue contabilizado.")
-        return redirect('expense_pending_list') # Tu redirección original
+        return redirect('accounting:expense_pending_list') # Tu redirección original
 
     try:
         # Usamos atomic para que si falla el descuento del banco, no se cree la partida a medias
