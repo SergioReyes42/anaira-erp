@@ -70,4 +70,6 @@ urlpatterns = [
 
     path('supervision-gastos/', views.expense_pre_review_list, name='expense_pre_review_list'),
 
+    path('plan-de-cuentas/importar/', views.import_chart_of_accounts, name='import_accounts'),
+
 ]

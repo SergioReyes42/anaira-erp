@@ -11,7 +11,9 @@
             <i class="bi bi-plus-circle-fill me-1"></i> Nueva Cuenta NIIF
         </button>
     </div>
-
+    <button type="button" class="btn btn-outline-success shadow-sm" data-bs-toggle="modal" data-bs-target="#importarCuentasModal">
+    <i class="bi bi-file-earmark-spreadsheet me-1"></i> Importar CSV
+    </button>
     <div class="card shadow-sm border-0 mb-4 bg-white">
         <div class="card-body p-3">
             <form method="GET" class="d-flex">
@@ -119,5 +121,36 @@
             </form>
         </div>
     </div>
+    <div class="modal fade" id="importarCuentasModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-cloud-upload me-2"></i> Importar Catálogo NIIF</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form method="POST" action="{% url 'accounting:import_accounts' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    
+                    <div class="alert alert-info small border-0 bg-info bg-opacity-10 text-dark">
+                        <i class="bi bi-info-circle-fill me-2 text-info"></i>
+                        <strong>Instrucciones:</strong> Sube un archivo de Excel guardado como <strong>.CSV (Delimitado por comas)</strong>. <br><br>
+                        El archivo debe tener exactamente estos encabezados en la primera fila:<br>
+                        <span class="badge bg-secondary mt-2">Codigo</span> <span class="badge bg-secondary mt-2">Nombre</span>
+                    </div>
+
+                    <div class="mb-3 mt-4">
+                        <label class="form-label fw-bold small text-muted">Seleccionar Archivo (.csv)</label>
+                        <input class="form-control" type="file" name="csv_file" accept=".csv" required>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-upload me-2"></i> Procesar Archivo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 </div>
 {% endblock %}
