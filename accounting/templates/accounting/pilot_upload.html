@@ -8,7 +8,7 @@
             <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
                 <div class="bg-warning text-dark text-center py-4 px-3">
                     <i class="bi bi-ev-front-fill fs-1 d-block mb-2"></i>
-                    <h3 class="fw-bold mb-0">Reporte de Combustible</h3>
+                    <h3 class="fw-bold mb-0">Reporte de Gastos</h3>
                     <p class="small opacity-75 mb-0">Captura de evidencia y GPS en tiempo real</p>
                 </div>
                 
@@ -56,10 +56,14 @@
 
                         <div class="bg-white p-3 rounded-4 shadow-sm mb-4 border">
                             <div class="mb-3">
-                                <label class="fw-bold text-secondary small mb-1">Monto Total de la Factura</label>
+                                <label class="fw-bold text-secondary small mb-1">Tipo de Gasto</label>
                                 <div class="input-group input-group-lg shadow-sm rounded-3 overflow-hidden">
-                                    <span class="input-group-text bg-success text-white border-success fw-bold">Q.</span>
-                                    <input type="number" name="total_amount" class="form-control border-success fw-bold text-dark fs-4" step="0.01" placeholder="0.00" required>
+                                    <span class="input-group-text bg-light border-0"><i class="bi bi-tags-fill text-danger"></i></span>
+                                    <select name="tipo_gasto" id="tipo_gasto" class="form-select border-0 bg-light shadow-none fw-bold text-dark" required>
+                                        <option value="combustible" selected>⛽ Combustible</option>
+                                        <option value="repuestos">⚙️ Repuestos</option>
+                                        <option value="mantenimiento">🔧 Mantenimiento</option>
+                                    </select>
                                 </div>
                             </div>
                             
@@ -73,11 +77,11 @@
                                     </select>
                                 </div>
                             </div>
-                            </div>
+                        </div>
 
                         <h6 class="fw-bold text-dark mb-3 text-center"><i class="bi bi-camera-fill me-2 text-danger"></i>Evidencia Obligatoria</h6>
 
-                        <div class="row g-3 mb-4">
+                        <div class="row g-3 mb-4 justify-content-center">
                             <div class="col-6">
                                 <label id="label_factura" class="btn btn-outline-secondary w-100 h-100 py-4 rounded-4 shadow-sm d-flex flex-column align-items-center justify-content-center border-2 border-dashed" style="cursor:pointer; transition: all 0.2s;">
                                     <i class="bi bi-receipt-cutoff fs-1 mb-2"></i>
@@ -86,7 +90,7 @@
                                 </label>
                             </div>
 
-                            <div class="col-6">
+                            <div class="col-6" id="contenedor_bomba">
                                 <label id="label_bomba" class="btn btn-outline-secondary w-100 h-100 py-4 rounded-4 shadow-sm d-flex flex-column align-items-center justify-content-center border-2 border-dashed" style="cursor:pointer; transition: all 0.2s;">
                                     <i class="bi bi-speedometer2 fs-1 mb-2"></i>
                                     <span id="texto_bomba" class="small fw-bold lh-sm">Foto<br>Tablero/Bomba</span>
@@ -114,7 +118,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // 1. Efecto Visual de las Fotos (Se pone verde al tomar la foto)
+    // 1. Efecto Visual de las Fotos
     function setupPhotoUpload(inputId, labelId, textId, successIcon) {
         const input = document.getElementById(inputId);
         const label = document.getElementById(labelId);
@@ -131,7 +135,23 @@ document.addEventListener('DOMContentLoaded', function() {
     setupPhotoUpload('foto_factura', 'label_factura', 'texto_factura', 'bi-check-circle-fill');
     setupPhotoUpload('foto_bomba', 'label_bomba', 'texto_bomba', 'bi-check-circle-fill');
 
-    // 2. GPS y Validación (El Perro Guardián)
+    // 2. Lógica para mostrar/ocultar foto de bomba según el tipo de gasto
+    const tipoGastoSelect = document.getElementById('tipo_gasto');
+    const contenedorBomba = document.getElementById('contenedor_bomba');
+    const inputFotoBomba = document.getElementById('foto_bomba');
+
+    tipoGastoSelect.addEventListener('change', function() {
+        if (this.value === 'combustible') {
+            contenedorBomba.style.display = 'block';
+            inputFotoBomba.required = true;
+        } else {
+            contenedorBomba.style.display = 'none';
+            inputFotoBomba.required = false;
+            inputFotoBomba.value = ''; // Limpiar el archivo si ya habían tomado foto
+        }
+    });
+
+    // 3. GPS y Validación (El Perro Guardián)
     const statusDiv = document.getElementById('gps-status');
     const latInput = document.getElementById('lat_input');
     const lngInput = document.getElementById('lng_input');
@@ -167,9 +187,13 @@ document.addEventListener('DOMContentLoaded', function() {
             errores.push("Falta tomar la fotografía de la Factura.");
         }
 
-        const fotoBomba = document.getElementById('foto_bomba');
-        if (fotoBomba.files.length === 0) {
-            errores.push("Falta tomar la fotografía del tablero o bomba.");
+        // Validación dinámica: Solo exige la foto de la bomba si es combustible
+        const tipoGastoActual = document.getElementById('tipo_gasto').value;
+        if (tipoGastoActual === 'combustible') {
+            const fotoBomba = document.getElementById('foto_bomba');
+            if (fotoBomba.files.length === 0) {
+                errores.push("Falta tomar la fotografía del tablero o bomba.");
+            }
         }
 
         if (errores.length > 0) {
