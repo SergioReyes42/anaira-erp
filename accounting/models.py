@@ -117,6 +117,20 @@ class BankAccount(models.Model):
 
     def __str__(self):
         return f"{self.bank_name} - {self.account_number} ({self.currency})"
+    
+    @property
+    def saldo_actual(self):
+        from .models import BankTransaction # Importamos aquí para evitar choques
+        from django.db.models import Sum
+        
+        # Sumamos todos los ingresos (IN)
+        depositos = BankTransaction.objects.filter(account=self, transaction_type='IN').aggregate(total=Sum('amount'))['total'] or 0
+        
+        # Sumamos todos los egresos (OUT)
+        retiros = BankTransaction.objects.filter(account=self, transaction_type='OUT').aggregate(total=Sum('amount'))['total'] or 0
+        
+        # Saldo vivo = Saldo inicial + Ingresos - Egresos
+        return self.initial_balance + depositos - retiros
 
 class BankTransaction(models.Model):
     """Registro de movimientos: El libro mayor del banco"""
