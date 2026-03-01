@@ -48,7 +48,7 @@
                     <span class="badge bg-light text-dark">Origen: {{ expense.get_origin_display }}</span>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{% url 'review_expense' expense.id %}">
+                    <form method="POST" action="{% url 'accounting:review_expense' expense.id %}">
                         {% csrf_token %}
                         
                         <input type="hidden" name="expense_type" id="hidden_expense_type" value="{% if expense.expense_type == 'FUEL' %}FUEL{% else %}GENERAL{% endif %}">
