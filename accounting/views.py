@@ -1080,44 +1080,51 @@ def sales_ledger(request):
     return render(request, 'accounting/sales_ledger.html', context)
 
 @login_required
-def expense_pre_review_list(request):
-    """Bandeja para que los 3 Supervisores aprueben el gasto del piloto"""
-    # Solo mostramos los gastos de la empresa actual que estén en fase PRE_REVIEW
-    expenses = Expense.objects.filter(status='PRE_REVIEW', company=request.user.current_company).order_by('-date')
-    
+def expense_pre_review_list(request): # Le puse el mismo nombre que tu archivo para que no te pierdas
+    # 1. ATRAMAPOS EL CLIC EN LOS BOTONES (MÉTODO POST)
     if request.method == 'POST':
         expense_id = request.POST.get('expense_id')
-        action = request.POST.get('action') # Puede ser 'sup1', 'sup2', 'asist', 'reject'
+        action = request.POST.get('action')
         
-        if expense_id and action:
-            gasto = get_object_or_404(Expense, id=expense_id, company=request.user.current_company)
-            
-            # Aplicamos la firma digital según el botón que presionaron
-            if action == 'sup1':
-                gasto.supervisor_1_ok = True
-                messages.success(request, f"Firma de Supervisor 1 aplicada al gasto de Q{gasto.total_amount}.")
-            elif action == 'sup2':
-                gasto.supervisor_2_ok = True
-                messages.success(request, "Firma de Supervisor 2 aplicada.")
-            elif action == 'asist':
-                gasto.assistant_ok = True
-                messages.success(request, "Firma de Asistente aplicada.")
-            elif action == 'reject':
-                gasto.status = 'REJECTED'
-                messages.error(request, "Gasto rechazado definitivamente.")
-                
-            gasto.save()
-            
-            # 🔥 MAGIA: Verifica si ya están los 3. Si sí, lo manda al Contador automáticamente.
-            gasto.check_and_advance_status() 
-            
-            # 🛠️ CORRECCIÓN 1: Agregamos el 'accounting:' (o el nombre de tu app) 
-            # para evitar que truene con el error "NoReverseMatch" al recargar.
-            return redirect('expense_pre_review_list') 
-            
-    # 🛠️ CORRECCIÓN 2: Agregamos 'accounting/' antes del nombre del archivo
-    # para solucionar el "TemplateDoesNotExist".
-    return render(request, 'expense_pre_review_list.html', {'expenses': expenses})
+        # Buscamos el gasto exacto al que le dieron clic
+        gasto = get_object_or_404(GastoOperativo, id=expense_id)
+        
+        # Verificamos qué botón presionaron y guardamos la firma
+        if action == 'sup1':
+            gasto.supervisor_1_ok = True
+            messages.success(request, 'Firma de Supervisor 1 registrada exitosamente.')
+        
+        elif action == 'sup2':
+            gasto.supervisor_2_ok = True
+            messages.success(request, 'Firma de Supervisor 2 registrada exitosamente.')
+        
+        elif action == 'asist':
+            gasto.assistant_ok = True
+            messages.success(request, 'Firma de Asistente registrada exitosamente.')
+        
+        elif action == 'reject':
+            gasto.estado = 'Rechazado'
+            messages.error(request, f'El gasto de {gasto.total_amount} ha sido marcado como fraude/rechazado.')
+        
+        # Guardamos los cambios en la base de datos
+        gasto.save()
+        
+        # Ejecutamos la magia: Si ya están las 3 firmas, se pasa a Contabilidad
+        if action != 'reject':
+            gasto.verificar_pase_contabilidad()
+        
+        # Recargamos la misma página para que se actualicen los semáforos
+        # IMPORTANTE: Reemplaza esto por el nombre que le diste a esta vista en tu archivo urls.py
+        return redirect('nombre_de_tu_url_auditoria')
+
+    # 2. SI SOLO ENTRAN A VER LA PÁGINA (MÉTODO GET)
+    # Filtramos para que SOLO salgan los que están esperando firmas (estado='En_Supervision')
+    gastos_pendientes = GastoOperativo.objects.filter(estado='En_Supervision').order_by('-date')
+    
+    # IMPORTANTE: Cambia la ruta por la carpeta donde tienes tu HTML
+    return render(request, 'accounting/expense_pre_review_list.html', {
+        'expenses': gastos_pendientes
+    })
 
 @login_required
 def bank_dashboard(request):
