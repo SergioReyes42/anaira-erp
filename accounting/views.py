@@ -233,11 +233,20 @@ def review_expense(request, pk):
 @login_required
 def approve_expense(request, pk):
     """Aprueba, descuenta del banco y genera partida contable NIIF"""
+    # IMPORTANTE: Asegúrate de tener importado transaction y decimal arriba en tu archivo
+    
     expense = get_object_or_404(Expense, pk=pk, company=request.user.current_company)
     
     if expense.status == 'APPROVED':
         messages.warning(request, "Este gasto ya fue contabilizado.")
-        return redirect('accounting:expense_pending_list') # Tu redirección original
+        return redirect('accounting:expense_pending_list') 
+
+    # --- NUEVO CANDADO DE SEGURIDAD ---
+    if float(expense.total_amount) <= 0:
+        messages.error(request, "🛑 No se puede contabilizar un gasto con monto Q. 0.00. Por favor, edita el gasto e ingresa el valor de la factura antes de aprobarlo.")
+        # Opcional: Si tienes una vista para editar, puedes redirigirlo allí. Por ahora lo devolvemos a la lista.
+        return redirect('accounting:expense_pending_list') 
+    # ----------------------------------
 
     try:
         # Usamos atomic para que si falla el descuento del banco, no se cree la partida a medias
@@ -262,7 +271,6 @@ def approve_expense(request, pk):
                 company=request.user.current_company,
                 concept=f"Prov: {expense.provider_name} - {expense.description[:30]}",
                 is_opening_balance=False
-                # Ya no usamos created_by, total, ni expense_ref porque los borramos en la migración
             )
 
             # 3. CREACIÓN DE LAS LÍNEAS DEL DEBE (Nuevo Modelo JournalEntryLine)
@@ -286,9 +294,12 @@ def approve_expense(request, pk):
             # Línea del Haber
             JournalEntryLine.objects.create(entry=entry, account=cuenta_pago, debit=0, credit=round(monto_total, 2))
             
-            # Rebajamos el saldo del módulo de bancos
+            # Rebajamos el saldo del módulo de bancos (usando initial_balance si es el que definiste)
             if cuenta_banco:
-                cuenta_banco.balance -= decimal.Decimal(str(monto_total))
+                if hasattr(cuenta_banco, 'balance'):
+                    cuenta_banco.balance -= decimal.Decimal(str(monto_total))
+                elif hasattr(cuenta_banco, 'initial_balance'):
+                    cuenta_banco.initial_balance -= decimal.Decimal(str(monto_total))
                 cuenta_banco.save()
 
             # 5. FINALIZAR
