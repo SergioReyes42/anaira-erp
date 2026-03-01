@@ -46,6 +46,17 @@ class Expense(models.Model):
         ('MANUAL', 'Ingreso Manual'),
     ]
 
+# 🔥 AGREGA ESTAS OPCIONES Y EL CAMPO:
+    METODOS_PAGO = [
+        ('EFECTIVO', '💵 Efectivo'),
+        ('TARJETA', '💳 Tarjeta de Crédito / Débito'),
+    ]
+    payment_method = models.CharField(
+        max_length=20, 
+        choices=METODOS_PAGO, 
+        default='EFECTIVO', 
+        verbose_name="¿Cómo se pagó?"
+    )
     # --- DATOS GENERALES ---
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)

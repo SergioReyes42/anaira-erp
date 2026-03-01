@@ -46,7 +46,7 @@ class BankTransactionForm(forms.ModelForm):
 class PilotExpenseForm(forms.ModelForm):
     class Meta:
         model = Expense
-        fields = ['total_amount', 'vehicle', 'description', 'receipt_image', 'pump_image', 'latitude', 'longitude']
+        fields = ['total_amount', 'vehicle', 'payment_method', 'receipt_image', 'pump_image', 'latitude', 'longitude']
         widgets = {
             'total_amount': forms.NumberInput(attrs={'class': 'form-control form-control-lg fw-bold text-success', 'step': '0.01'}),
             'vehicle': forms.Select(attrs={'class': 'form-select form-select-lg'}),
@@ -55,6 +55,7 @@ class PilotExpenseForm(forms.ModelForm):
             'pump_image': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*', 'capture': 'environment', 'id': 'foto_bomba'}),
             'latitude': forms.HiddenInput(attrs={'id': 'lat_input'}),
             'longitude': forms.HiddenInput(attrs={'id': 'lng_input'}),
+            'payment_method': forms.Select(attrs={'class': 'form-select form-select-lg bg-light border-0 shadow-sm'}),
         }
 
     # 🔥 RECUPERAMOS EL FILTRO DEL VEHÍCULO 🔥
@@ -114,3 +115,4 @@ class DepositForm(forms.ModelForm):
             'reference': 'No. de Referencia / Boleta',
             'description': 'Concepto del Depósito',
         }
+
