@@ -14,8 +14,8 @@
                     <p class="card-text">{{ acc.account_number }} ({{ acc.currency }})</p>
                     <h3 class="text-warning">Q. {{ acc.initial_balance }}</h3>
                     <div class="mt-3">
-                        <a href="{% url 'bank_transaction_create' %}?type=IN" class="btn btn-sm btn-success">+ Depósito</a>
-                        <a href="{% url 'bank_transaction_create' %}?type=OUT" class="btn btn-sm btn-danger">- Retiro</a>
+                        <a href="{% url 'accounting:bank_transaction_create' %}?type=IN" class="btn btn-sm btn-success">+ Depósito</a>
+                        <a href="{% url 'accounting:bank_transaction_create' %}?type=OUT" class="btn btn-sm btn-danger">- Retiro</a>
                     </div>
                 </div>
             </div>
