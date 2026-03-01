@@ -82,7 +82,7 @@
             {% if request.user.is_superuser or request.user|has_group:"Contadora, Auxiliar Contable, Gerente, Administrador, Ventas, Despacho, RRHH" %}
                         
                 {% if request.user|has_group:"Contadora, Auxiliar Contable, Gerente" %}
-                <a href="{% url 'accounting:smart_hub'%}" class="list-group-item list-group-item-action text-info">
+                <a href="{% url 'accounting:smart_scanner'%}" class="list-group-item list-group-item-action text-info">
                     <i class="bi bi-magic me-2"></i> Smart Scanner IA
                 </a>
                 {% endif %}
