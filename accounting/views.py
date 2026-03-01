@@ -386,21 +386,48 @@ def bank_create(request):
 
 @login_required
 def bank_transaction_create(request):
+    # Capturamos el tipo (IN para depósito, OUT para retiro)
     tx_type = request.GET.get('type', 'IN')
+    
     if request.method == 'POST':
         form = BankTransactionForm(request.POST)
-        form.fields['bank_account'].queryset = BankAccount.objects.filter(company=request.user.current_company)
+        
+        # 1. CORRECCIÓN: El campo se llama 'account', filtramos para que solo vea las cuentas de su sucursal
+        if 'account' in form.fields:
+            form.fields['account'].queryset = BankAccount.objects.filter(company=request.user.current_company)
+            
         if form.is_valid():
             tx = form.save(commit=False)
-            tx.company = request.user.current_company
+            
+            # 2. Asignamos el tipo de transacción (Depósito/Retiro)
             tx.transaction_type = tx_type
+            
+            # 3. Asignamos el usuario que está haciendo la operación (Tu BD pide registered_by)
+            tx.registered_by = request.user
+            
+            # (Nota: Eliminamos tx.company porque la cuenta bancaria ya sabe a qué empresa pertenece)
+            
             tx.save()
-            messages.success(request, "Transacción registrada.")
-            return redirect('bank_list')
+            
+            # Mensaje dinámico según lo que haya hecho
+            operacion = "Depósito" if tx_type == 'IN' else "Retiro"
+            messages.success(request, f"✅ {operacion} registrado exitosamente.")
+            
+            # 4. CORRECCIÓN: Redirigimos con el nombre correcto de la aplicación
+            return redirect('accounting:bank_dashboard') 
     else:
         form = BankTransactionForm()
-        form.fields['bank_account'].queryset = BankAccount.objects.filter(company=request.user.current_company)
-    return render(request, 'accounting/transaction_form.html', {'form': form, 'tx_type': tx_type, 'title': 'Registrar Transacción'})
+        if 'account' in form.fields:
+            form.fields['account'].queryset = BankAccount.objects.filter(company=request.user.current_company)
+            
+    # Título dinámico para la pantalla
+    titulo_pantalla = 'Registrar Depósito' if tx_type == 'IN' else 'Registrar Retiro'
+            
+    return render(request, 'accounting/transaction_form.html', {
+        'form': form, 
+        'tx_type': tx_type, 
+        'title': titulo_pantalla
+    })
 
 @login_required
 def vehicle_list(request):
