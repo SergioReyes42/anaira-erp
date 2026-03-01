@@ -13,7 +13,6 @@ from django.forms import modelformset_factory
 from django.db.models import Prefetch
 from .models import AccountingPeriod
 from sales.models import SaleInvoice
-from .models import ChartOfAccount # Asegúrate de que este es el nombre de tu modelo
 
 # --- IMPORTACIÓN DE MODELOS ---
 from .models import (
