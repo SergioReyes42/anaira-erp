@@ -95,3 +95,22 @@ class ExpenseReviewForm(forms.ModelForm):
                 raise forms.ValidationError("🚨 ¡ALERTA DE AUDITORÍA! Esta factura (NIT y Número) ya fue ingresada o pagada anteriormente en el sistema.")
                 
         return cleaned_data
+
+class DepositForm(forms.ModelForm):
+    class Meta:
+        model = BankTransaction
+        fields = ['account', 'date', 'amount', 'reference', 'description']
+        widgets = {
+            'account': forms.Select(attrs={'class': 'form-select form-select-lg'}),
+            'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control form-control-lg fw-bold text-success', 'step': '0.01', 'placeholder': '0.00'}),
+            'reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej. Boleta de depósito 123456'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Motivo del ingreso o nombre del cliente...'}),
+        }
+        labels = {
+            'account': 'Cuenta Bancaria Destino',
+            'date': 'Fecha de la Transacción',
+            'amount': 'Monto a Depositar (Q.)',
+            'reference': 'No. de Referencia / Boleta',
+            'description': 'Concepto del Depósito',
+        }

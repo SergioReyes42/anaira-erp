@@ -41,7 +41,7 @@ urlpatterns = [
     path('bancos/nueva-cuenta/', views.bank_create, name='bank_create'),
     path('flotilla/', views.vehicle_list, name='vehicle_list'),
     path('flotilla/nuevo/', views.vehicle_create, name='vehicle_create'),
-
+    path('bancos/deposito/', views.register_deposit, name='register_deposit'),
     path('api/analizar-factura/', views.analyze_receipt_api, name='analyze_receipt_api'),
 
     path('reporte-flotilla/', views.fleet_expense_report, name='fleet_report'),

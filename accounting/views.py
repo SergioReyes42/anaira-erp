@@ -13,6 +13,7 @@ from django.forms import modelformset_factory
 from django.db.models import Prefetch
 from .models import AccountingPeriod
 from sales.models import SaleInvoice
+from .forms import DepositForm
 
 # --- IMPORTACIÓN DE MODELOS ---
 from .models import (
@@ -1123,3 +1124,27 @@ def bank_dashboard(request):
         'total_global': total_global,
     }
     return render(request, 'accounting/bank_dashboard.html', context)
+
+def register_deposit(request):
+    """Vista profesional para registrar depósitos bancarios"""
+    if request.method == 'POST':
+        form = DepositForm(request.POST)
+        if form.is_valid():
+            # Pausamos el guardado para inyectar datos automáticos
+            deposito = form.save(commit=False)
+            deposito.transaction_type = 'DEPOSIT' # Asegúrate de que esto coincida con las opciones de tu modelo
+            deposito.registered_by = request.user
+            deposito.save()
+            
+            messages.success(request, f'¡Éxito! Depósito por Q.{deposito.amount} registrado en {deposito.account}.')
+            return redirect('accounting:bank_dashboard')
+        else:
+            messages.error(request, 'Hubo un error en el formulario. Por favor, revisa los campos en rojo.')
+    else:
+        form = DepositForm()
+
+    context = {
+        'form': form,
+        'title': 'Registrar Nuevo Depósito'
+    }
+    return render(request, 'accounting/register_deposit.html', context)
