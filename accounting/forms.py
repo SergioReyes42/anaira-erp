@@ -35,12 +35,12 @@ class BankAccountForm(forms.ModelForm):
 class BankTransactionForm(forms.ModelForm):
     class Meta:
         model = BankTransaction
-        fields = ['account', 'amount', 'description', 'reference']
+        fields = ['account', 'date', 'amount', 'reference'] # Agrega los campos de tu modelo
         widgets = {
-            'account': forms.Select(attrs={'class': 'form-select'}),
-            'amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Monto Q/$.'}),
-            'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Concepto'}),
-            'reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'No. Boleta / Cheque'}),
+            'account': forms.Select(attrs={'class': 'form-select border-start-0'}),
+            'date': forms.DateInput(attrs={'class': 'form-control border-start-0', 'type': 'date'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control border-start-0 fw-bold text-dark text-end', 'step': '0.01', 'placeholder': '0.00'}),
+            'reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Pago Factura #123...'}),
         }
 
 class PilotExpenseForm(forms.ModelForm):
