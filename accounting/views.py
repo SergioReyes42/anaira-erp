@@ -365,7 +365,7 @@ def balance_general(request):
 @login_required
 def bank_list(request):
     accounts = BankAccount.objects.filter(company=request.user.current_company)
-    total_balance = sum(acc.balance for acc in accounts)
+    total_balance = sum(acc.initial_balance for acc in accounts)
     
     recent_transactions = BankTransaction.objects.filter(account__company=request.user.current_company).order_by('-date', '-created_at')[:15]
     return render(request, 'accounting/bank_list.html', {'accounts': accounts, 'total_balance': total_balance, 'recent_transactions': recent_transactions})
