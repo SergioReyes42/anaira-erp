@@ -300,7 +300,7 @@ def approve_expense(request, pk):
         messages.error(request, f"Error: {str(e)}")
 
     # Redirige exactamente a donde tú lo tenías configurado
-    return redirect('expense_pending_list')
+    return redirect('accounting:expense_pending_list')
 
 
 @login_required
@@ -309,7 +309,7 @@ def reject_expense(request, pk):
     expense.status = 'REJECTED'
     expense.save()
     messages.warning(request, "Gasto rechazado.")
-    return redirect('expense_pending_list')
+    return redirect('accounting:expense_pending_list')
 
 # ========================================================
 # 3. ESTADOS FINANCIEROS Y LIBROS
