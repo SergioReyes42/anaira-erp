@@ -1367,3 +1367,35 @@ def panel_tarjetas(request):
         'total_disponible': total_disponible,
     }
     return render(request, 'accounting/panel_tarjetas.html', context)
+
+@login_required
+def nueva_tarjeta(request):
+    if request.method == 'POST':
+        bank_name = request.POST.get('bank_name')
+        card_name = request.POST.get('card_name')
+        last_four_digits = request.POST.get('last_four_digits')
+        credit_limit = request.POST.get('credit_limit')
+        cutoff_day = request.POST.get('cutoff_day')
+        payment_day = request.POST.get('payment_day')
+        current_debt = request.POST.get('current_debt', '0.00')
+
+        try:
+            CreditCard.objects.create(
+                company=request.user.current_company,
+                bank_name=bank_name,
+                card_name=card_name,
+                last_four_digits=last_four_digits,
+                credit_limit=decimal.Decimal(credit_limit),
+                cutoff_day=int(cutoff_day),
+                payment_day=int(payment_day),
+                current_debt=decimal.Decimal(current_debt),
+                active=True
+            )
+            messages.success(request, f'¡Tarjeta {card_name} registrada exitosamente!')
+            return redirect('accounting:panel_tarjetas')
+            
+        except Exception as e:
+            messages.error(request, f'Error al crear la tarjeta: {str(e)}')
+            return redirect('accounting:nueva_tarjeta')
+
+    return render(request, 'accounting/nueva_tarjeta.html')

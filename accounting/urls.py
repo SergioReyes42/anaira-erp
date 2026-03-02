@@ -73,4 +73,6 @@ urlpatterns = [
 
     path('tarjetas-credito/', views.panel_tarjetas, name='panel_tarjetas'),
 
+    path('tarjetas-credito/nueva/', views.nueva_tarjeta, name='nueva_tarjeta'),
+
 ]
