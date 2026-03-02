@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0 border-top border-4 border-dark">
+                <div class="card-header bg-white pt-4 pb-2 text-center border-0">
+                    <h4 class="mb-0 fw-bold text-dark"><i class="bi bi-arrow-left-right text-dark me-2"></i>Registrar Movimiento Bancario</h4>
+                    <p class="text-muted small">Notas de débito, crédito, cheques y ajustes</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted">Fecha del Movimiento</label>
+                                <input type="date" name="date" class="form-control bg-light" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted">Cuenta Bancaria</label>
+                                <select name="bank_account" class="form-select border-dark" required>
+                                    <option value="">Seleccione una cuenta...</option>
+                                    {% for cuenta in cuentas %}
+                                        <option value="{{ cuenta.id }}">{{ cuenta.bank_name }} - {{ cuenta.account_number }} (Q.{{ cuenta.balance }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted">Tipo de Transacción</label>
+                                <select name="transaction_type" class="form-select bg-light" required>
+                                    <optgroup label="Entradas de Dinero (+)">
+                                        <option value="DEPOSITO">Depósito</option>
+                                        <option value="NOTA_CREDITO">Nota de Crédito</option>
+                                    </optgroup>
+                                    <optgroup label="Salidas de Dinero (-)">
+                                        <option value="RETIRO">Retiro</option>
+                                        <option value="CHEQUE">Cheque</option>
+                                        <option value="NOTA_DEBITO">Nota de Débito (Comisiones, chequeras)</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted text-dark">Monto (Q.)</label>
+                                <input type="number" step="0.01" min="0.01" name="amount" class="form-control border-dark" placeholder="0.00" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-muted">No. de Documento / Referencia</label>
+                                <input type="text" name="reference" class="form-control bg-light" placeholder="Ej. ND-40912" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-muted">Concepto / Descripción</label>
+                            <textarea name="description" class="form-control bg-light" rows="2" placeholder="Motivo exacto del movimiento..." required></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'accounting:bank_dashboard' %}" class="btn btn-light px-4">Cancelar</a>
+                            <button type="submit" class="btn btn-dark px-4 shadow-sm"><i class="bi bi-save me-2"></i> Guardar Movimiento</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

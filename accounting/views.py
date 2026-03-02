@@ -399,48 +399,52 @@ def bank_create(request):
 
 @login_required
 def bank_transaction_create(request):
-    # Capturamos el tipo (IN para depósito, OUT para retiro)
-    tx_type = request.GET.get('type', 'IN')
-    
+    """Registra cualquier tipo de movimiento bancario (Notas de débito, crédito, etc)"""
     if request.method == 'POST':
-        form = BankTransactionForm(request.POST)
-        
-        # 1. CORRECCIÓN: El campo se llama 'account', filtramos para que solo vea las cuentas de su sucursal
-        if 'account' in form.fields:
-            form.fields['account'].queryset = BankAccount.objects.filter(company=request.user.current_company)
+        account_id = request.POST.get('bank_account')
+        transaction_type = request.POST.get('transaction_type')
+        amount_str = request.POST.get('amount')
+        reference = request.POST.get('reference')
+        description = request.POST.get('description')
+        date = request.POST.get('date')
+
+        cuenta = get_object_or_404(BankAccount, id=account_id, company=request.user.current_company)
+        monto = decimal.Decimal(amount_str)
+
+        try:
+            with transaction.atomic():
+                # 1. Validar fondos si es una salida de dinero
+                if transaction_type in ['RETIRO', 'NOTA_DEBITO', 'CHEQUE'] and cuenta.balance < monto:
+                    messages.error(request, f"Fondos insuficientes. La cuenta solo tiene Q. {cuenta.balance}")
+                    return redirect('accounting:bank_transaction_create')
+
+                # 2. Actualizar el saldo de la cuenta según el tipo
+                if transaction_type in ['DEPOSITO', 'NOTA_CREDITO']:
+                    cuenta.balance += monto
+                elif transaction_type in ['RETIRO', 'NOTA_DEBITO', 'CHEQUE']:
+                    cuenta.balance -= monto
+                cuenta.save()
+
+                # 3. Guardar el registro en el historial
+                BankTransaction.objects.create(
+                    bank_account=cuenta,
+                    transaction_type=transaction_type,
+                    amount=monto,
+                    reference=reference,
+                    description=description,
+                    date=date
+                )
+                
+            messages.success(request, f'Movimiento ({transaction_type}) registrado exitosamente.')
+            return redirect('accounting:bank_dashboard')
             
-        if form.is_valid():
-            tx = form.save(commit=False)
-            
-            # 2. Asignamos el tipo de transacción (Depósito/Retiro)
-            tx.transaction_type = tx_type
-            
-            # 3. Asignamos el usuario que está haciendo la operación (Tu BD pide registered_by)
-            tx.registered_by = request.user
-            
-            # (Nota: Eliminamos tx.company porque la cuenta bancaria ya sabe a qué empresa pertenece)
-            
-            tx.save()
-            
-            # Mensaje dinámico según lo que haya hecho
-            operacion = "Depósito" if tx_type == 'IN' else "Retiro"
-            messages.success(request, f"✅ {operacion} registrado exitosamente.")
-            
-            # 4. CORRECCIÓN: Redirigimos con el nombre correcto de la aplicación
-            return redirect('accounting:bank_dashboard') 
-    else:
-        form = BankTransactionForm()
-        if 'account' in form.fields:
-            form.fields['account'].queryset = BankAccount.objects.filter(company=request.user.current_company)
-            
-    # Título dinámico para la pantalla
-    titulo_pantalla = 'Registrar Depósito' if tx_type == 'IN' else 'Registrar Retiro'
-            
-    return render(request, 'accounting/transaction_form.html', {
-        'form': form, 
-        'tx_type': tx_type, 
-        'title': titulo_pantalla
-    })
+        except Exception as e:
+            messages.error(request, f'Error al registrar movimiento: {str(e)}')
+            return redirect('accounting:bank_transaction_create')
+
+    # Si es GET, cargamos las cuentas para el formulario
+    cuentas = BankAccount.objects.filter(company=request.user.current_company, active=True)
+    return render(request, 'accounting/bank_transaction_form.html', {'cuentas': cuentas})
 
 @login_required
 def vehicle_list(request):
