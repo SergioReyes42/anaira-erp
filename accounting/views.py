@@ -1280,7 +1280,7 @@ def registrar_retiro(request):
         cuenta = get_object_or_404(BankAccount, id=account_id, company=request.user.current_company)
         monto_retiro = decimal.Decimal(amount)
 
-        # Validación de fondos (Opcional pero recomendada)
+        # Validación de fondos
         if cuenta.balance < monto_retiro:
             messages.error(request, f"Fondos insuficientes. La cuenta {cuenta.bank_name} solo tiene Q. {cuenta.balance}")
             return redirect('accounting:registrar_retiro')
@@ -1294,7 +1294,7 @@ def registrar_retiro(request):
                 # 2. Registrar el movimiento en el historial del banco
                 BankTransaction.objects.create(
                     bank_account=cuenta,
-                    transaction_type='RETIRO', # O 'EGRESO', según como lo tengas en tus choices
+                    transaction_type='RETIRO',
                     amount=monto_retiro,
                     reference=reference,
                     description=description,
@@ -1302,10 +1302,11 @@ def registrar_retiro(request):
                 )
                 
             messages.success(request, f'Retiro de Q. {monto_retiro} registrado exitosamente.')
-            return redirect('accounting:panel_bancos') # Cambia esto por la URL de tu panel
+            return redirect('accounting:panel_bancos') 
             
         except Exception as e:
             messages.error(request, f'Error al procesar el retiro: {str(e)}')
+            return redirect('accounting:registrar_retiro') # <-- Agregué esto por seguridad
 
     # Si es GET, mandamos las cuentas activas al formulario
     cuentas = BankAccount.objects.filter(company=request.user.current_company, active=True)
