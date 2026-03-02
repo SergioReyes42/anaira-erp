@@ -90,8 +90,12 @@
                                 </div>
                             </td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-outline-danger" title="Registrar Consumo"><i class="bi bi-cart-dash"></i></button>
-                                <button class="btn btn-sm btn-outline-success" title="Pagar Tarjeta"><i class="bi bi-cash-coin"></i></button>
+                                <a href="{% url 'accounting:registrar_consumo_tarjeta' %}" class="btn btn-sm btn-outline-danger" title="Registrar Consumo">
+                                    <i class="bi bi-cart-dash"></i>
+                                </a>
+                                <a href="{% url 'accounting:pagar_tarjeta_credito' %}" class="btn btn-sm btn-outline-success" title="Pagar Tarjeta">
+                                    <i class="bi bi-cash-coin"></i>
+                                </a>
                             </td>
                         </tr>
                         {% empty %}

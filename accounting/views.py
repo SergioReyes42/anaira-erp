@@ -1469,3 +1469,86 @@ def transferencia_interna(request):
     # GET: Enviamos las cuentas para que el usuario elija
     cuentas = BankAccount.objects.filter(company=request.user.current_company, active=True)
     return render(request, 'accounting/transferencia_interna.html', {'cuentas': cuentas})
+
+@login_required
+def registrar_consumo_tarjeta(request):
+    """Suma deuda a la tarjeta de crédito por un gasto realizado"""
+    if request.method == 'POST':
+        tarjeta_id = request.POST.get('tarjeta_id')
+        monto_str = request.POST.get('amount')
+        description = request.POST.get('description')
+        
+        tarjeta = get_object_or_404(CreditCard, id=tarjeta_id, company=request.user.current_company)
+        monto = decimal.Decimal(monto_str)
+
+        # Validamos que no se pase del límite de crédito
+        if (tarjeta.current_debt + monto) > tarjeta.credit_limit:
+            messages.error(request, f"Límite excedido. La tarjeta solo tiene Q. {tarjeta.available_credit} disponibles.")
+            return redirect('accounting:registrar_consumo_tarjeta')
+
+        try:
+            tarjeta.current_debt += monto
+            tarjeta.save()
+            
+            messages.success(request, f'Consumo de Q. {monto} registrado en {tarjeta.card_name}.')
+            return redirect('accounting:panel_tarjetas')
+            
+        except Exception as e:
+            messages.error(request, f'Error al registrar consumo: {str(e)}')
+            return redirect('accounting:registrar_consumo_tarjeta')
+
+    tarjetas = CreditCard.objects.filter(company=request.user.current_company, active=True)
+    return render(request, 'accounting/tarjeta_consumo.html', {'tarjetas': tarjetas})
+
+
+@login_required
+def pagar_tarjeta_credito(request):
+    """Rebaja la deuda de la tarjeta sacando fondos de una cuenta bancaria"""
+    if request.method == 'POST':
+        tarjeta_id = request.POST.get('tarjeta_id')
+        cuenta_id = request.POST.get('cuenta_origen')
+        monto_str = request.POST.get('amount')
+        reference = request.POST.get('reference')
+        date = request.POST.get('date')
+
+        tarjeta = get_object_or_404(CreditCard, id=tarjeta_id, company=request.user.current_company)
+        cuenta = get_object_or_404(BankAccount, id=cuenta_id, company=request.user.current_company)
+        monto = decimal.Decimal(monto_str)
+
+        # Validamos que el banco tenga fondos
+        if cuenta.balance < monto:
+            messages.error(request, f"Fondos insuficientes en {cuenta.bank_name}. Saldo: Q. {cuenta.balance}")
+            return redirect('accounting:pagar_tarjeta_credito')
+
+        try:
+            with transaction.atomic():
+                # 1. Sacamos el dinero del banco
+                cuenta.balance -= monto
+                cuenta.save()
+
+                # 2. Registramos la salida en el historial bancario
+                BankTransaction.objects.create(
+                    bank_account=cuenta,
+                    transaction_type='PAGO_TARJETA', # Nuevo tipo lógico
+                    amount=monto,
+                    reference=reference,
+                    description=f"Pago de Tarjeta de Crédito: {tarjeta.card_name} - {tarjeta.last_four_digits}",
+                    date=date
+                )
+
+                # 3. Rebajamos la deuda de la tarjeta
+                tarjeta.current_debt -= monto
+                if tarjeta.current_debt < 0:
+                    tarjeta.current_debt = decimal.Decimal('0.00') # Evitamos saldos negativos raros
+                tarjeta.save()
+
+            messages.success(request, f'Pago de Q. {monto} a la tarjeta {tarjeta.card_name} procesado exitosamente.')
+            return redirect('accounting:panel_tarjetas')
+
+        except Exception as e:
+            messages.error(request, f'Error al procesar el pago: {str(e)}')
+            return redirect('accounting:pagar_tarjeta_credito')
+
+    tarjetas = CreditCard.objects.filter(company=request.user.current_company, active=True)
+    cuentas = BankAccount.objects.filter(company=request.user.current_company, active=True)
+    return render(request, 'accounting/tarjeta_pago.html', {'tarjetas': tarjetas, 'cuentas': cuentas})

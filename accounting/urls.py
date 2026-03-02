@@ -77,4 +77,7 @@ urlpatterns = [
 
     path('bancos/transferencia-interna/', views.transferencia_interna, name='transferencia_interna'),
 
+    path('tarjetas-credito/consumo/', views.registrar_consumo_tarjeta, name='registrar_consumo_tarjeta'),
+    path('tarjetas-credito/pagar/', views.pagar_tarjeta_credito, name='pagar_tarjeta_credito'),
+
 ]
