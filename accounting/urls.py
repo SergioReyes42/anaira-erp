@@ -75,4 +75,6 @@ urlpatterns = [
 
     path('tarjetas-credito/nueva/', views.nueva_tarjeta, name='nueva_tarjeta'),
 
+    path('bancos/transferencia-interna/', views.transferencia_interna, name='transferencia_interna'),
+
 ]

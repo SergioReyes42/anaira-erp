@@ -1403,3 +1403,69 @@ def nueva_tarjeta(request):
             return redirect('accounting:nueva_tarjeta')
 
     return render(request, 'accounting/nueva_tarjeta.html')
+
+@login_required
+def transferencia_interna(request):
+    """Procesa el traslado de fondos entre dos cuentas bancarias de la misma empresa"""
+    if request.method == 'POST':
+        origen_id = request.POST.get('cuenta_origen')
+        destino_id = request.POST.get('cuenta_destino')
+        amount_str = request.POST.get('amount')
+        reference = request.POST.get('reference')
+        description = request.POST.get('description')
+        date = request.POST.get('date')
+
+        # 1. Validación básica: No se puede transferir a la misma cuenta
+        if origen_id == destino_id:
+            messages.error(request, "La cuenta de origen y destino no pueden ser la misma.")
+            return redirect('accounting:transferencia_interna')
+
+        cuenta_origen = get_object_or_404(BankAccount, id=origen_id, company=request.user.current_company)
+        cuenta_destino = get_object_or_404(BankAccount, id=destino_id, company=request.user.current_company)
+        monto = decimal.Decimal(amount_str)
+
+        # 2. Validación de fondos en la cuenta de salida
+        if cuenta_origen.balance < monto:
+            messages.error(request, f"Fondos insuficientes. {cuenta_origen.bank_name} solo tiene Q. {cuenta_origen.balance}")
+            return redirect('accounting:transferencia_interna')
+
+        try:
+            with transaction.atomic():
+                # 3. Rebajar de la cuenta origen
+                cuenta_origen.balance -= monto
+                cuenta_origen.save()
+
+                # 4. Sumar a la cuenta destino
+                cuenta_destino.balance += monto
+                cuenta_destino.save()
+
+                # 5. Registrar la salida en el historial (Origen)
+                BankTransaction.objects.create(
+                    bank_account=cuenta_origen,
+                    transaction_type='TRANSFERENCIA_OUT',
+                    amount=monto,
+                    reference=reference,
+                    description=f"Transferencia a: {cuenta_destino.bank_name} - {description}",
+                    date=date
+                )
+
+                # 6. Registrar la entrada en el historial (Destino)
+                BankTransaction.objects.create(
+                    bank_account=cuenta_destino,
+                    transaction_type='TRANSFERENCIA_IN', # Asegúrate de que tu HTML del dashboard lea esto como verde (ingreso)
+                    amount=monto,
+                    reference=reference,
+                    description=f"Transferencia desde: {cuenta_origen.bank_name} - {description}",
+                    date=date
+                )
+
+            messages.success(request, f'Traslado de Q. {monto} completado exitosamente.')
+            return redirect('accounting:bank_dashboard')
+
+        except Exception as e:
+            messages.error(request, f'Error al procesar la transferencia: {str(e)}')
+            return redirect('accounting:transferencia_interna')
+
+    # GET: Enviamos las cuentas para que el usuario elija
+    cuentas = BankAccount.objects.filter(company=request.user.current_company, active=True)
+    return render(request, 'accounting/transferencia_interna.html', {'cuentas': cuentas})

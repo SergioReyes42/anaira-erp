@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0 border-top border-4 border-info">
+                <div class="card-header bg-white pt-4 pb-2 text-center border-0">
+                    <h4 class="mb-0 fw-bold text-dark"><i class="bi bi-shuffle text-info me-2"></i>Transferencia entre Cuentas</h4>
+                    <p class="text-muted small">Mueve fondos internamente entre las bóvedas de la empresa</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-4 bg-light p-3 rounded">
+                            <div class="col-md-5">
+                                <label class="form-label fw-bold text-danger"><i class="bi bi-box-arrow-up-right me-1"></i> Cuenta Origen (Sale)</label>
+                                <select name="cuenta_origen" class="form-select border-danger" required>
+                                    <option value="">Seleccione cuenta origen...</option>
+                                    {% for cuenta in cuentas %}
+                                        <option value="{{ cuenta.id }}">{{ cuenta.bank_name }} (Disp: Q.{{ cuenta.balance|floatformat:2 }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-arrow-right-circle-fill text-muted fs-2 mt-3 d-none d-md-block"></i>
+                                <i class="bi bi-arrow-down-circle-fill text-muted fs-2 my-2 d-md-none"></i>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label fw-bold text-success"><i class="bi bi-box-arrow-in-down-right me-1"></i> Cuenta Destino (Entra)</label>
+                                <select name="cuenta_destino" class="form-select border-success" required>
+                                    <option value="">Seleccione cuenta destino...</option>
+                                    {% for cuenta in cuentas %}
+                                        <option value="{{ cuenta.id }}">{{ cuenta.bank_name }} - {{ account.account_number|slice:"-4:" }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted">Fecha de Transferencia</label>
+                                <input type="date" name="date" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted text-primary">Monto a Transferir (Q.)</label>
+                                <input type="number" step="0.01" min="0.01" name="amount" class="form-control border-primary bg-primary bg-opacity-10 fw-bold" placeholder="0.00" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-muted">No. de Confirmación / Referencia</label>
+                                <input type="text" name="reference" class="form-control" placeholder="Ej. ACH-990123" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-muted">Concepto Interno</label>
+                            <textarea name="description" class="form-control" rows="2" placeholder="Ej. Traslado de fondos para pago de planillas..." required></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <a href="{% url 'accounting:bank_dashboard' %}" class="btn btn-light px-4">Cancelar</a>
+                            <button type="submit" class="btn btn-info px-4 shadow-sm text-white fw-bold"><i class="bi bi-send-check me-2"></i> Procesar Traslado</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
