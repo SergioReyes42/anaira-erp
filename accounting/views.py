@@ -1302,7 +1302,7 @@ def registrar_retiro(request):
                 )
                 
             messages.success(request, f'Retiro de Q. {monto_retiro} registrado exitosamente.')
-            return redirect('accounting:panel_bancos') 
+            return redirect('accounting:bank_dashboard') 
             
         except Exception as e:
             messages.error(request, f'Error al procesar el retiro: {str(e)}')

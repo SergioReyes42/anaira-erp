@@ -34,8 +34,8 @@ urlpatterns = [
     # ==========================================
     # 4. BANCOS Y FLOTILLA
     # ==========================================
-    path('bancos/', views.bank_list, name='bank_list'),
-    path('bancos/nuevo/', views.bank_create, name='bank_create'),
+    # path('bancos/', views.bank_list, name='bank_list'),
+    # path('bancos/nuevo/', views.bank_create, name='bank_create'),
     path('transaccion/nueva/', views.bank_transaction_create, name='bank_transaction_create'),
     path('bancos/', views.bank_dashboard, name='bank_dashboard'),
     path('bancos/nueva-cuenta/', views.bank_create, name='bank_create'),
