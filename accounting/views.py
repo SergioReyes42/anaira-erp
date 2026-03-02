@@ -1572,3 +1572,43 @@ def cxp_dashboard(request):
         'total_al_dia': total_al_dia,
     }
     return render(request, 'accounting/cxp_dashboard.html', context)
+
+@login_required
+def registrar_factura_cxp(request):
+    """Registra una nueva cuenta por pagar (deuda con proveedor)"""
+    if request.method == 'POST':
+        supplier_name = request.POST.get('supplier_name')
+        invoice_number = request.POST.get('invoice_number')
+        description = request.POST.get('description')
+        issue_date = request.POST.get('issue_date')
+        due_date = request.POST.get('due_date')
+        total_amount_str = request.POST.get('total_amount')
+
+        try:
+            monto_total = decimal.Decimal(total_amount_str)
+
+            # Validar que la fecha de vencimiento no sea menor a la de emisión
+            if due_date < issue_date:
+                messages.error(request, "La fecha de vencimiento no puede ser anterior a la fecha de emisión.")
+                return redirect('accounting:registrar_factura_cxp')
+
+            AccountPayable.objects.create(
+                company=request.user.current_company,
+                supplier_name=supplier_name,
+                invoice_number=invoice_number,
+                description=description,
+                issue_date=issue_date,
+                due_date=due_date,
+                total_amount=monto_total,
+                balance=monto_total,  # Al inicio, se debe el 100% de la factura
+                status='PENDIENTE'
+            )
+            
+            messages.success(request, f'Deuda con {supplier_name} (Fac: {invoice_number}) registrada exitosamente.')
+            return redirect('accounting:cxp_dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Error al registrar la factura: {str(e)}')
+            return redirect('accounting:registrar_factura_cxp')
+
+    return render(request, 'accounting/cxp_nueva_factura.html')

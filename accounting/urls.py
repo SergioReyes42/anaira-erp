@@ -85,4 +85,6 @@ urlpatterns = [
     # ==========================================
     path('cxp/', views.cxp_dashboard, name='cxp_dashboard'),
 
+    path('cxp/nueva/', views.registrar_factura_cxp, name='registrar_factura_cxp'),
+
 ]
