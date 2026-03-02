@@ -302,3 +302,34 @@ class GastoOperativo(models.Model):
         if self.supervisor_1_ok and self.supervisor_2_ok and self.assistant_ok:
             self.estado = 'Pendiente_Contabilidad'
             self.save()
+
+class CreditCard(models.Model):
+    """Bóveda de Pasivo: Control de Tarjetas de Crédito Empresariales"""
+    company = models.ForeignKey('core.Company', on_delete=models.CASCADE, related_name='credit_cards')
+    bank_name = models.CharField(max_length=100, verbose_name="Banco Emisor (Ej. Promerica, BAC)")
+    card_name = models.CharField(max_length=100, verbose_name="Nombre en la Tarjeta (Ej. Visa Flotilla 1)")
+    last_four_digits = models.CharField(max_length=4, verbose_name="Últimos 4 dígitos")
+    
+    # Reglas de la tarjeta
+    credit_limit = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Límite de Crédito")
+    cutoff_day = models.IntegerField(verbose_name="Día de Corte (1-31)")
+    payment_day = models.IntegerField(verbose_name="Día de Pago (1-31)")
+    
+    # Control de la deuda
+    current_debt = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Deuda Actual (Saldo Consumido)")
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.card_name} termina en {self.last_four_digits} - Deuda: Q.{self.current_debt}"
+        
+    @property
+    def available_credit(self):
+        """Calcula cuánto crédito queda disponible para gastar"""
+        return self.credit_limit - self.current_debt
+    
+    @property
+    def debt_percentage(self):
+        """Calcula el porcentaje de deuda para la barra de progreso"""
+        if self.credit_limit > 0:
+            return (self.current_debt / self.credit_limit) * 100
+        return 0

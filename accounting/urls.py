@@ -71,4 +71,6 @@ urlpatterns = [
 
     path('supervision-gastos/', views.expense_pre_review_list, name='expense_pre_review_list'),
 
+    path('tarjetas-credito/', views.panel_tarjetas, name='panel_tarjetas'),
+
 ]

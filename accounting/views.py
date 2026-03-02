@@ -25,7 +25,8 @@ from .models import (
     JournalItem, 
     BankAccount, 
     BankTransaction, 
-    Vehicle
+    Vehicle,
+    CreditCard
 )
 from .forms import BankAccountForm, BankTransactionForm, VehicleForm
 from .utils import analyze_invoice_image
@@ -1347,3 +1348,22 @@ def nueva_cuenta_bancaria(request):
             
     # Si la petición es GET (solo entran a ver la pantalla), mostramos el HTML vacío
     return render(request, 'acounting/nueva_cuenta.html')
+
+@login_required
+def panel_tarjetas(request):
+    """Dashboard principal para el control de Tarjetas de Crédito"""
+    # Traemos todas las tarjetas activas de la empresa actual
+    tarjetas = CreditCard.objects.filter(company=request.user.current_company, active=True)
+    
+    # Calculamos los totales consolidados para los indicadores principales
+    total_limite = sum(t.credit_limit for t in tarjetas)
+    total_deuda = sum(t.current_debt for t in tarjetas)
+    total_disponible = total_limite - total_deuda
+    
+    context = {
+        'tarjetas': tarjetas,
+        'total_limite': total_limite,
+        'total_deuda': total_deuda,
+        'total_disponible': total_disponible,
+    }
+    return render(request, 'accounting/panel_tarjetas.html', context)

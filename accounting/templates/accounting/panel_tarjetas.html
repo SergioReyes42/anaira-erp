@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <div>
+            <h2 class="mb-0 text-primary fw-bold"><i class="bi bi-credit-card-2-front me-2"></i>Tarjetas de Crédito</h2>
+            <small class="text-muted">Control de pasivos y líneas de crédito corporativas</small>
+        </div>
+        <div>
+            <a href="#" class="btn btn-primary shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i> Nueva Tarjeta
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm border-start border-4 border-info">
+                <div class="card-body">
+                    <p class="text-muted fw-bold mb-1 small text-uppercase">Límite Global Autorizado</p>
+                    <h3 class="mb-0 text-dark">Q. {{ total_limite|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm border-start border-4 border-danger">
+                <div class="card-body">
+                    <p class="text-muted fw-bold mb-1 small text-uppercase">Deuda Total Acumulada</p>
+                    <h3 class="mb-0 text-danger">Q. {{ total_deuda|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm border-start border-4 border-success">
+                <div class="card-body">
+                    <p class="text-muted fw-bold mb-1 small text-uppercase">Crédito Disponible Total</p>
+                    <h3 class="mb-0 text-success">Q. {{ total_disponible|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-list-ul me-2"></i>Plásticos Activos</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-secondary">
+                        <tr>
+                            <th class="ps-4">TARJETA / BANCO</th>
+                            <th>LÍMITE (Q.)</th>
+                            <th>DEUDA ACTUAL (Q.)</th>
+                            <th>DISPONIBLE (Q.)</th>
+                            <th>FECHAS CLAVE</th>
+                            <th class="text-center">ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tarjeta in tarjetas %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 p-2 rounded me-3 text-primary">
+                                        <i class="bi bi-credit-card-fill fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold">{{ tarjeta.card_name }}</h6>
+                                        <small class="text-muted">{{ tarjeta.bank_name }} •••• {{ tarjeta.last_four_digits }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="fw-bold">{{ tarjeta.credit_limit|floatformat:2 }}</td>
+                            <td class="text-danger fw-bold">
+                                {{ tarjeta.current_debt|floatformat:2 }}
+                                <div class="progress mt-1" style="height: 4px;">
+                                    <div class="progress-bar bg-danger" role="progressbar" 
+                                         style="width: {{ tarjeta.debt_percentage|default:'0'|floatformat:0 }}%;" 
+                                         aria-valuenow="{{ tarjeta.current_debt }}" aria-valuemin="0" aria-valuemax="{{ tarjeta.credit_limit }}">
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-success fw-bold">{{ tarjeta.available_credit|floatformat:2 }}</td>
+                            <td>
+                                <div class="small">
+                                    <div><span class="text-muted">Corte:</span> Día {{ tarjeta.cutoff_day }}</div>
+                                    <div><span class="text-muted">Pago:</span> Día {{ tarjeta.payment_day }}</div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-danger" title="Registrar Consumo"><i class="bi bi-cart-dash"></i></button>
+                                <button class="btn btn-sm btn-outline-success" title="Pagar Tarjeta"><i class="bi bi-cash-coin"></i></button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-credit-card opacity-50 mb-3 d-block" style="font-size: 3rem;"></i>
+                                No hay tarjetas de crédito registradas en el sistema.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
