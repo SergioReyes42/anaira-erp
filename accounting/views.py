@@ -1126,7 +1126,7 @@ def expense_pre_review_list(request): # Le puse el mismo nombre que tu archivo p
         
         # Recargamos la misma página para que se actualicen los semáforos
         # IMPORTANTE: Reemplaza esto por el nombre que le diste a esta vista en tu archivo urls.py
-        return redirect('accounting_expense_pre_review_list')
+        return redirect('accounting:expense_pre_review_list')
 
     # 2. SI SOLO ENTRAN A VER LA PÁGINA (MÉTODO GET)
     # Filtramos para que SOLO salgan los que están esperando firmas (estado='En_Supervision')
