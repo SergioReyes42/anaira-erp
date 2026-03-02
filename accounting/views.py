@@ -1283,7 +1283,7 @@ def registrar_retiro(request):
         # Validación de fondos (Opcional pero recomendada)
         if cuenta.balance < monto_retiro:
             messages.error(request, f"Fondos insuficientes. La cuenta {cuenta.bank_name} solo tiene Q. {cuenta.balance}")
-            return redirect('nombre_de_tu_app:registrar_retiro')
+            return redirect('accounting:registrar_retiro')
 
         try:
             with transaction.atomic():
