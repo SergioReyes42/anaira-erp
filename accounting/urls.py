@@ -43,7 +43,7 @@ urlpatterns = [
     path('flotilla/nuevo/', views.vehicle_create, name='vehicle_create'),
     path('bancos/deposito/', views.register_deposit, name='register_deposit'),
     path('api/analizar-factura/', views.analyze_receipt_api, name='analyze_receipt_api'),
-
+    path('bancos/retiro/', views.registrar_retiro, name='registrar_retiro'),
     path('reporte-flotilla/', views.fleet_expense_report, name='fleet_report'),
 
     path('migracion-saldos/', views.opening_balance_migration, name='opening_balance'),

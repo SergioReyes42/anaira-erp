@@ -1267,3 +1267,46 @@ def subir_gasto_scanner(request):
         return redirect('accountig:smart_hub') # Lo mandas a donde quieras tras guardar
 
     return render(request, 'accounting/smart_hub')
+
+@login_required
+def registrar_retiro(request):
+    if request.method == 'POST':
+        account_id = request.POST.get('bank_account')
+        amount = request.POST.get('amount')
+        reference = request.POST.get('reference')
+        description = request.POST.get('description')
+        date = request.POST.get('date')
+
+        cuenta = get_object_or_404(BankAccount, id=account_id, company=request.user.current_company)
+        monto_retiro = decimal.Decimal(amount)
+
+        # Validación de fondos (Opcional pero recomendada)
+        if cuenta.balance < monto_retiro:
+            messages.error(request, f"Fondos insuficientes. La cuenta {cuenta.bank_name} solo tiene Q. {cuenta.balance}")
+            return redirect('nombre_de_tu_app:registrar_retiro')
+
+        try:
+            with transaction.atomic():
+                # 1. Restar el saldo de la cuenta
+                cuenta.balance -= monto_retiro
+                cuenta.save()
+
+                # 2. Registrar el movimiento en el historial del banco
+                BankTransaction.objects.create(
+                    bank_account=cuenta,
+                    transaction_type='RETIRO', # O 'EGRESO', según como lo tengas en tus choices
+                    amount=monto_retiro,
+                    reference=reference,
+                    description=description,
+                    date=date
+                )
+                
+            messages.success(request, f'Retiro de Q. {monto_retiro} registrado exitosamente.')
+            return redirect('accounting:panel_bancos') # Cambia esto por la URL de tu panel
+            
+        except Exception as e:
+            messages.error(request, f'Error al procesar el retiro: {str(e)}')
+
+    # Si es GET, mandamos las cuentas activas al formulario
+    cuentas = BankAccount.objects.filter(company=request.user.current_company, active=True)
+    return render(request, 'accounting/registrar_retiro.html', {'cuentas': cuentas})
