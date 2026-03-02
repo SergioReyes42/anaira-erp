@@ -1310,3 +1310,39 @@ def registrar_retiro(request):
     # Si es GET, mandamos las cuentas activas al formulario
     cuentas = BankAccount.objects.filter(company=request.user.current_company, active=True)
     return render(request, 'accounting/registrar_retiro.html', {'cuentas': cuentas})
+
+@login_required
+def nueva_cuenta_bancaria(request):
+    if request.method == 'POST':
+        # 1. Atrapamos los datos del formulario
+        bank_name = request.POST.get('bank_name')
+        account_name = request.POST.get('account_name')
+        account_number = request.POST.get('account_number')
+        currency = request.POST.get('currency')
+        initial_balance = request.POST.get('initial_balance', '0.00')
+
+        try:
+            # 2. Convertimos el texto del saldo a un número decimal real
+            saldo_inicial = decimal.Decimal(initial_balance)
+
+            # 3. Creamos la cuenta en la base de datos
+            BankAccount.objects.create(
+                company=request.user.current_company,
+                bank_name=bank_name,
+                account_name=account_name,
+                account_number=account_number,
+                currency=currency,
+                initial_balance=saldo_inicial,
+                balance=saldo_inicial, # El saldo actual arranca siendo igual al inicial
+                active=True
+            )
+            
+            messages.success(request, f'¡Cuenta {account_number} de {bank_name} creada exitosamente!')
+            # Cambia esto por la URL de tu panel principal de bancos
+            return redirect('accounting:panel_bancos') 
+            
+        except Exception as e:
+            messages.error(request, f'Error al crear la cuenta: {str(e)}')
+            
+    # Si la petición es GET (solo entran a ver la pantalla), mostramos el HTML vacío
+    return render(request, 'acounting/nueva_cuenta.html')

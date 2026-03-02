@@ -45,6 +45,7 @@ urlpatterns = [
     path('api/analizar-factura/', views.analyze_receipt_api, name='analyze_receipt_api'),
     path('bancos/retiro/', views.registrar_retiro, name='registrar_retiro'),
     path('reporte-flotilla/', views.fleet_expense_report, name='fleet_report'),
+    path('bancos/nueva-cuenta/', views.nueva_cuenta_bancaria, name='nueva_cuenta'),
 
     path('migracion-saldos/', views.opening_balance_migration, name='opening_balance'),
 
