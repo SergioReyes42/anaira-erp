@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <div>
+            <h2 class="mb-0 text-dark fw-bold"><i class="bi bi-shop text-warning me-2"></i>Cuentas por Pagar (CxP)</h2>
+            <small class="text-muted">Control de proveedores y vencimientos</small>
+        </div>
+        <div>
+            <a href="#" class="btn btn-warning shadow-sm fw-bold text-dark">
+                <i class="bi bi-plus-lg me-1"></i> Registrar Factura CxP
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm border-start border-4 border-secondary">
+                <div class="card-body">
+                    <p class="text-muted fw-bold mb-1 small text-uppercase">Deuda Total Proveedores</p>
+                    <h3 class="mb-0 text-dark">Q. {{ total_deuda|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm border-start border-4 border-danger">
+                <div class="card-body">
+                    <p class="text-muted fw-bold mb-1 small text-uppercase text-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i> Saldo Vencido</p>
+                    <h3 class="mb-0 text-danger">Q. {{ total_vencido|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm border-start border-4 border-success">
+                <div class="card-body">
+                    <p class="text-muted fw-bold mb-1 small text-uppercase">Saldo al Día (Por Vencer)</p>
+                    <h3 class="mb-0 text-success">Q. {{ total_al_dia|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold text-secondary"><i class="bi bi-receipt me-2"></i>Facturas Pendientes</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-secondary">
+                        <tr>
+                            <th class="ps-4">PROVEEDOR / DOC.</th>
+                            <th>FECHA EMISIÓN</th>
+                            <th>VENCIMIENTO</th>
+                            <th>TOTAL ORIGINAL (Q.)</th>
+                            <th>SALDO PENDIENTE (Q.)</th>
+                            <th>ESTADO</th>
+                            <th class="text-center pe-4">ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cuenta in cuentas %}
+                        <tr>
+                            <td class="ps-4">
+                                <h6 class="mb-0 fw-bold text-dark">{{ cuenta.supplier_name }}</h6>
+                                <small class="text-muted">Factura: {{ cuenta.invoice_number }}</small>
+                            </td>
+                            <td>{{ cuenta.issue_date|date:"d M Y" }}</td>
+                            
+                            <td class="{% if cuenta.is_overdue %}text-danger fw-bold{% endif %}">
+                                {{ cuenta.due_date|date:"d M Y" }}
+                                {% if cuenta.is_overdue %}
+                                    <br><span class="badge bg-danger" style="font-size: 0.70rem;">¡VENCIDA!</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-muted">{{ cuenta.total_amount|floatformat:2 }}</td>
+                            <td class="fw-bold fs-5 text-dark">{{ cuenta.balance|floatformat:2 }}</td>
+                            <td>
+                                {% if cuenta.status == 'PAGADO' %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success">Pagado</span>
+                                {% elif cuenta.status == 'PARCIAL' %}
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">Abono Parcial</span>
+                                {% else %}
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center pe-4">
+                                {% if cuenta.status != 'PAGADO' %}
+                                    <button class="btn btn-sm btn-success shadow-sm" title="Abonar / Pagar"><i class="bi bi-cash-coin me-1"></i> Pagar</button>
+                                {% else %}
+                                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="bi bi-clipboard-check opacity-50 mb-3 d-block" style="font-size: 3rem;"></i>
+                                Excelente. No tienes cuentas por pagar registradas.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -26,7 +26,8 @@ from .models import (
     BankAccount, 
     BankTransaction, 
     Vehicle,
-    CreditCard
+    CreditCard,
+    AccountPayable
 )
 from .forms import BankAccountForm, BankTransactionForm, VehicleForm
 from .utils import analyze_invoice_image
@@ -1552,3 +1553,22 @@ def pagar_tarjeta_credito(request):
     tarjetas = CreditCard.objects.filter(company=request.user.current_company, active=True)
     cuentas = BankAccount.objects.filter(company=request.user.current_company, active=True)
     return render(request, 'accounting/tarjeta_pago.html', {'tarjetas': tarjetas, 'cuentas': cuentas})
+
+@login_required
+def cxp_dashboard(request):
+    """Panel de Control de Cuentas por Pagar (CxP)"""
+    # Traemos todas las deudas de la empresa, ordenadas por fecha de vencimiento (las más urgentes primero)
+    cuentas = AccountPayable.objects.filter(company=request.user.current_company).order_by('due_date')
+    
+    # Cálculos para los indicadores superiores
+    total_deuda = sum(c.balance for c in cuentas if c.status != 'PAGADO')
+    total_vencido = sum(c.balance for c in cuentas if c.is_overdue)
+    total_al_dia = total_deuda - total_vencido
+    
+    context = {
+        'cuentas': cuentas,
+        'total_deuda': total_deuda,
+        'total_vencido': total_vencido,
+        'total_al_dia': total_al_dia,
+    }
+    return render(request, 'accounting/cxp_dashboard.html', context)

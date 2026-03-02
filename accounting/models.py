@@ -333,3 +333,39 @@ class CreditCard(models.Model):
         if self.credit_limit > 0:
             return (self.current_debt / self.credit_limit) * 100
         return 0
+
+class AccountPayable(models.Model):
+    """Módulo CxP: Control de Cuentas por Pagar a Proveedores"""
+    
+    STATUS_CHOICES = [
+        ('PENDIENTE', 'Pendiente de Pago'),
+        ('PARCIAL', 'Pago Parcial'),
+        ('PAGADO', 'Pagado / Liquidado'),
+    ]
+
+    company = models.ForeignKey('core.Company', on_delete=models.CASCADE, related_name='accounts_payable')
+    
+    # Datos del Proveedor y Documento
+    supplier_name = models.CharField(max_length=200, verbose_name="Nombre del Proveedor")
+    invoice_number = models.CharField(max_length=100, verbose_name="No. de Factura / Recibo")
+    description = models.TextField(verbose_name="Concepto de la Deuda")
+    
+    # Fechas Clave para la Programación de Pagos
+    issue_date = models.DateField(verbose_name="Fecha de Emisión")
+    due_date = models.DateField(verbose_name="Fecha de Vencimiento límite")
+    
+    # Control de Dinero
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto Total Original")
+    balance = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Saldo Pendiente Actual")
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDIENTE')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.supplier_name} - Fac: {self.invoice_number} (Debe: Q.{self.balance})"
+        
+    @property
+    def is_overdue(self):
+        """Calcula en tiempo real si esta factura ya está vencida al día de hoy"""
+        from django.utils import timezone
+        return self.balance > 0 and self.due_date < timezone.now().date()

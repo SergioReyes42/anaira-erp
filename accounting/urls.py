@@ -80,4 +80,9 @@ urlpatterns = [
     path('tarjetas-credito/consumo/', views.registrar_consumo_tarjeta, name='registrar_consumo_tarjeta'),
     path('tarjetas-credito/pagar/', views.pagar_tarjeta_credito, name='pagar_tarjeta_credito'),
 
+    # ==========================================
+    # 5. CUENTAS POR PAGAR (CXP)
+    # ==========================================
+    path('cxp/', views.cxp_dashboard, name='cxp_dashboard'),
+
 ]
