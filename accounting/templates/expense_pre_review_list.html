@@ -41,8 +41,8 @@
                         <div class="col-6 text-center">
                             <small class="d-block fw-bold mb-1 text-secondary">Factura</small>
                             {% if exp.receipt_image %}
-                                <a href="#" data-bs-toggle="modal" data-bs-target="#visorImagenes" onclick="mostrarImagen('{{ exp.receipt_image.url }}')">
-                                    <img src="{{ exp.receipt_image.url }}" class="img-thumbnail w-100 shadow-sm" style="height: 100px; object-fit: cover;" alt="Factura">
+                                <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#visorImagenes" onclick="document.getElementById('imagenGigante').src='{{ exp.receipt_image.url }}'">
+                                    <img src="{{ exp.receipt_image.url }}" class="img-thumbnail w-100 shadow-sm border-primary" style="height: 100px; object-fit: cover; cursor: zoom-in;" alt="Factura">
                                 </a>
                             {% else %}
                                 <div class="bg-light p-3 border rounded text-muted small"><i class="bi bi-image-alt fs-4"></i><br>Sin foto</div>
@@ -51,8 +51,8 @@
                         <div class="col-6 text-center">
                             <small class="d-block fw-bold mb-1 text-secondary">Bomba/Tablero</small>
                             {% if exp.pump_image %}
-                                <a href="#" data-bs-toggle="modal" data-bs-target="#visorImagenes" onclick="mostrarImagen('{{ exp.pump_image.url }}')">
-                                    <img src="{{ exp.pump_image.url }}" class="img-thumbnail w-100 border-warning shadow-sm" style="height: 100px; object-fit: cover;" alt="Bomba">
+                                <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#visorImagenes" onclick="document.getElementById('imagenGigante').src='{{ exp.pump_image.url }}'">
+                                    <img src="{{ exp.pump_image.url }}" class="img-thumbnail w-100 shadow-sm border-warning" style="height: 100px; object-fit: cover; cursor: zoom-in;" alt="Bomba">
                                 </a>
                             {% else %}
                                 <div class="bg-light p-3 border rounded text-muted small"><i class="bi bi-ev-front fs-4"></i><br>Sin foto</div>
@@ -90,7 +90,6 @@
                         <input type="hidden" name="expense_id" value="{{ exp.id }}">
                         
                         <div class="d-flex flex-wrap gap-2 justify-content-center">
-                            
                             {% if request.user.username == 'Supervisor 1' %}
                                 {% if not exp.supervisor_1_ok %}
                                     <button type="submit" name="action" value="sup1" class="btn btn-sm btn-primary fw-bold">Firmar Sup 1</button>
@@ -114,7 +113,6 @@
                                     <button type="button" class="btn btn-sm btn-secondary fw-bold" disabled>✓ Ya Firmaste</button>
                                 {% endif %}
                             {% endif %}
-
                         </div>
                         
                         <div class="mt-3 text-center">
@@ -139,22 +137,16 @@
 </div>
 
 <div class="modal fade" id="visorImagenes" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content bg-transparent border-0">
             <div class="modal-header border-0 pb-0 justify-content-end">
-                <button type="button" class="btn-close btn-close-white fs-4" data-bs-dismiss="modal" aria-label="Close" style="background-color: white; border-radius: 50%; padding: 0.5rem; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="background-color: white; padding: 10px; border-radius: 50%;"></button>
             </div>
-            <div class="modal-body text-center pt-0">
-                <img id="imagenEnModal" src="" class="img-fluid rounded shadow-lg" alt="Vista previa de factura" style="max-height: 85vh; object-fit: contain;">
+            <div class="modal-body text-center">
+                <img id="imagenGigante" src="" class="img-fluid rounded shadow-lg" alt="Vista previa" style="max-height: 85vh; border: 5px solid white;">
             </div>
         </div>
     </div>
 </div>
-
-<script>
-    function mostrarImagen(url) {
-        document.getElementById('imagenEnModal').src = url;
-    }
-</script>
 
 {% endblock %}
