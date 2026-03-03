@@ -50,9 +50,11 @@ def pilot_upload(request):
     if vehiculos_del_usuario.exists():
         vehicles = vehiculos_del_usuario
     elif request.user.is_superuser or request.user.groups.filter(name__in=['Contadora', 'Administrador', 'Gerente']).exists():
-        vehicles = Vehicle.objects.filter(company=request.user.current_company)
+        # 🔥 EL FIX ESTÁ AQUÍ: Cambiamos "Vehicle" por "Vehiculo" para que coincida con GastoOperativo
+        vehicles = Vehiculo.objects.filter(company=request.user.current_company)
     else:
-        vehicles = Vehicle.objects.none()
+        # 🔥 Y AQUÍ TAMBIÉN
+        vehicles = Vehiculo.objects.none()
 
     if request.method == 'POST':
         receipt_image = request.FILES.get('receipt_image')
@@ -64,14 +66,13 @@ def pilot_upload(request):
 
         try:
             with transaction.atomic():
-                # 🔥 AHORA SÍ: Solo le mandamos los datos que GastoOperativo realmente tiene
                 GastoOperativo.objects.create(
                     user=request.user,
                     receipt_image=receipt_image,
                     pump_image=pump_image,
                     latitude=latitude,
                     longitude=longitude,
-                    total_amount=0.00,  # El monto en cero como pediste
+                    total_amount=0.00,  
                     vehicle_id=vehicle_id if vehicle_id and vehicle_id.isdigit() else None, 
                     estado='Pendiente', 
                     date=timezone.now()
