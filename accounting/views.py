@@ -1097,8 +1097,8 @@ def sales_ledger(request):
     return render(request, 'accounting/sales_ledger.html', context)
 
 @login_required
-def expense_pre_review_list(request): # Le puse el mismo nombre que tu archivo para que no te pierdas
-    # 1. ATRAMAPOS EL CLIC EN LOS BOTONES (MÉTODO POST)
+def expense_pre_review_list(request): 
+    # 1. ATRAPAMOS EL CLIC EN LOS BOTONES (MÉTODO POST)
     if request.method == 'POST':
         expense_id = request.POST.get('expense_id')
         action = request.POST.get('action')
@@ -1131,14 +1131,14 @@ def expense_pre_review_list(request): # Le puse el mismo nombre que tu archivo p
             gasto.verificar_pase_contabilidad()
         
         # Recargamos la misma página para que se actualicen los semáforos
-        # IMPORTANTE: Reemplaza esto por el nombre que le diste a esta vista en tu archivo urls.py
         return redirect('accounting:expense_pre_review_list')
 
     # 2. SI SOLO ENTRAN A VER LA PÁGINA (MÉTODO GET)
-    # Filtramos para que SOLO salgan los que están esperando firmas (estado='En_Supervision')
-    gastos_pendientes = GastoOperativo.objects.filter(estado='En_Supervision').order_by('-date')
+    # CORRECCIÓN: Traemos TODOS los gastos, excepto los que ya terminaron su ciclo
+    gastos_pendientes = GastoOperativo.objects.exclude(
+        estado__in=['Rechazado', 'Aprobado', 'Contabilizado', 'Pagado']
+    ).order_by('-date')
     
-    # IMPORTANTE: Cambia la ruta por la carpeta donde tienes tu HTML
     return render(request, 'accounting/expense_pre_review_list.html', {
         'expenses': gastos_pendientes
     })
