@@ -14,12 +14,16 @@
         <div class="col-md-6 col-lg-4">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center pt-3 pb-2">
-                    <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i>En Revisión</span>
+                    <span class="badge bg-warning text-dark border border-warning">
+                        <i class="bi bi-search me-1"></i>ESTADO: {{ exp.estado }}
+                    </span>
                     <small class="text-muted">{{ exp.date|date:"d M Y, h:i a" }}</small>
                 </div>
                 
                 <div class="card-body">
-                    <h3 class="fw-bold text-success mb-2">Q. {{ exp.total_amount }}</h3>
+                    <h4 class="fw-bold text-dark mb-3 text-capitalize">
+                        <i class="bi bi-tag-fill text-primary me-2"></i>{{ exp.tipo_gasto }}
+                    </h4>
                     
                     <div class="bg-light p-2 rounded mb-3 border">
                         <p class="text-dark mb-1 fw-bold">
@@ -29,7 +33,7 @@
                             <i class="bi bi-truck-front-fill text-warning me-1"></i> Vehículo: <span class="text-danger">{{ exp.vehicle|default:"Sin Asignar" }}</span>
                         </p>
                         <p class="text-muted small mb-0 fw-bold">
-                            <i class="bi bi-calendar-check-fill text-success me-1"></i> Captura: {{ exp.date|date:"d M Y, h:i A" }}
+                            <i class="bi bi-wallet2 text-success me-1"></i> Pago: {{ exp.payment_method }}
                         </p>
                     </div>
 
@@ -37,8 +41,8 @@
                         <div class="col-6 text-center">
                             <small class="d-block fw-bold mb-1 text-secondary">Factura</small>
                             {% if exp.receipt_image %}
-                                <a href="{{ exp.receipt_image.url }}" target="_blank">
-                                    <img src="{{ exp.receipt_image.url }}" class="img-thumbnail w-100" style="height: 100px; object-fit: cover;" alt="Factura">
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#visorImagenes" onclick="mostrarImagen('{{ exp.receipt_image.url }}')">
+                                    <img src="{{ exp.receipt_image.url }}" class="img-thumbnail w-100 shadow-sm" style="height: 100px; object-fit: cover;" alt="Factura">
                                 </a>
                             {% else %}
                                 <div class="bg-light p-3 border rounded text-muted small"><i class="bi bi-image-alt fs-4"></i><br>Sin foto</div>
@@ -47,8 +51,8 @@
                         <div class="col-6 text-center">
                             <small class="d-block fw-bold mb-1 text-secondary">Bomba/Tablero</small>
                             {% if exp.pump_image %}
-                                <a href="{{ exp.pump_image.url }}" target="_blank">
-                                    <img src="{{ exp.pump_image.url }}" class="img-thumbnail w-100 border-warning" style="height: 100px; object-fit: cover;" alt="Bomba">
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#visorImagenes" onclick="mostrarImagen('{{ exp.pump_image.url }}')">
+                                    <img src="{{ exp.pump_image.url }}" class="img-thumbnail w-100 border-warning shadow-sm" style="height: 100px; object-fit: cover;" alt="Bomba">
                                 </a>
                             {% else %}
                                 <div class="bg-light p-3 border rounded text-muted small"><i class="bi bi-ev-front fs-4"></i><br>Sin foto</div>
@@ -133,4 +137,24 @@
         {% endfor %}
     </div>
 </div>
+
+<div class="modal fade" id="visorImagenes" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-transparent border-0">
+            <div class="modal-header border-0 pb-0 justify-content-end">
+                <button type="button" class="btn-close btn-close-white fs-4" data-bs-dismiss="modal" aria-label="Close" style="background-color: white; border-radius: 50%; padding: 0.5rem; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></button>
+            </div>
+            <div class="modal-body text-center pt-0">
+                <img id="imagenEnModal" src="" class="img-fluid rounded shadow-lg" alt="Vista previa de factura" style="max-height: 85vh; object-fit: contain;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function mostrarImagen(url) {
+        document.getElementById('imagenEnModal').src = url;
+    }
+</script>
+
 {% endblock %}
