@@ -3,6 +3,7 @@ from .models import (
     Vehicle, Expense, BankAccount, BankTransaction, 
     JournalEntry, JournalItem, Account, JournalEntryLine
 )
+from .models import GastoOperativo
 
 # ==========================================
 # 1. CONFIGURACIÓN PARA PARTIDAS CONTABLES
@@ -96,3 +97,9 @@ class VehicleAdmin(admin.ModelAdmin):
     search_fields = ('plate', 'driver_name')
     list_editable = ('active', 'driver_name') # ¡Editar rápido desde la lista!
     filter_horizontal = ('conductores',)
+
+@admin.register(GastoOperativo)
+class GastoOperativoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'tipo_gasto', 'total_amount', 'estado', 'date')
+    list_filter = ('estado', 'tipo_gasto')
+    search_fields = ('user__username',)
