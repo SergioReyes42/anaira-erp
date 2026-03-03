@@ -77,7 +77,15 @@
                                     </select>
                                 </div>
                             </div>
-                        </div>
+
+                            <div class="mt-4 pt-3 border-top">
+                                <label class="fw-bold text-danger small mb-1">Monto Total del Gasto (Q.)</label>
+                                <div class="input-group input-group-lg shadow-sm rounded-3 overflow-hidden border border-danger">
+                                    <span class="input-group-text bg-danger text-white border-0 fw-bold">Q.</span>
+                                    <input type="number" step="0.01" min="0.01" name="total_amount" class="form-control border-0 bg-light shadow-none fw-bold text-dark fs-4" placeholder="0.00" required>
+                                </div>
+                            </div>
+                            </div>
 
                         <h6 class="fw-bold text-dark mb-3 text-center"><i class="bi bi-camera-fill me-2 text-danger"></i>Evidencia Obligatoria</h6>
 
@@ -194,6 +202,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (fotoBomba.files.length === 0) {
                 errores.push("Falta tomar la fotografía del tablero o bomba.");
             }
+        }
+
+        // 🔥 NUEVA VALIDACIÓN: Asegurar que el piloto puso un monto mayor a 0
+        const totalAmount = document.querySelector('input[name="total_amount"]').value;
+        if (!totalAmount || parseFloat(totalAmount) <= 0) {
+            errores.push("Debes ingresar un Monto Total válido (mayor a cero).");
         }
 
         if (errores.length > 0) {
