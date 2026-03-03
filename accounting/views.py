@@ -39,7 +39,7 @@ from .utils import analyze_invoice_image
 @login_required
 @group_required('Pilotos', 'Contadora', 'Gerente', 'Administrador')
 def pilot_upload(request):
-    """VISTA PILOTOS: Carga rápida de ticket personal con auditoría antifraude"""
+    """VISTA PILOTOS/GERENTES: Carga rápida de ticket personal con auditoría antifraude"""
     
     if not request.user.current_company:
         messages.error(request, "⛔ Tu usuario no tiene una empresa asignada. Contacta al Administrador.")
@@ -60,25 +60,16 @@ def pilot_upload(request):
         latitude = request.POST.get('latitude')
         longitude = request.POST.get('longitude')
         
-        # 🔥 AHORA SÍ CAPTURAMOS EL MONTO Y TIPO DE GASTO
-        total_amount = request.POST.get('total_amount')
         tipo_gasto = request.POST.get('tipo_gasto')
-        payment_method = request.POST.get('payment_method')
-        
         description = request.POST.get('description', f"Gasto de ruta: {tipo_gasto}")
         vehicle_id = request.POST.get('vehicle')
         placa_emergencia = request.POST.get('placa_emergencia', '').strip()
-        
-        vehicle_obj = None
 
         if vehicle_id == 'emergencia':
-            description = f"🚨 CONTINGENCIA | Placa: {placa_emergencia} | {description}"
-        elif vehicle_id and vehicle_id.isdigit():
-            vehicle_obj = Vehicle.objects.filter(id=vehicle_id).first()
+            description = f"🚨 CONTINGENCIA | Placa reportada: {placa_emergencia} | {description}"
 
         try:
             with transaction.atomic():
-                # 🔥 CAMBIO CRÍTICO: Guardamos en GastoOperativo (No en Expense)
                 GastoOperativo.objects.create(
                     user=request.user,
                     company=request.user.current_company,
@@ -87,13 +78,12 @@ def pilot_upload(request):
                     latitude=latitude,
                     longitude=longitude,
                     description=description,
-                    total_amount=total_amount, # El monto ya no será cero
-                    vehicle=vehicle_obj, 
+                    total_amount=0.00,  # Lo dejamos en 0.00 como solicitaste
                     
-                    # 🔥 CAMBIO CRÍTICO: Usamos 'estado' en español para que el auditor lo vea
+                    # 🔥 EL FIX MÁGICO: Pasamos el ID directamente para evitar el error de traducción
+                    vehicle_id=vehicle_id if vehicle_id and vehicle_id.isdigit() else None, 
+                    
                     estado='Pendiente', 
-                    
-                    # Campos extra que tenías
                     origin='PILOT', 
                     provider_name="Pendiente",
                     date=timezone.now(), 
@@ -106,7 +96,7 @@ def pilot_upload(request):
             
         except Exception as e:
             messages.error(request, f"Error al guardar el gasto: {str(e)}")
-            return redirect('accounting:pilot_upload') # Asegúrate que el nombre de la ruta sea correcto
+            return redirect('accounting:pilot_upload')
             
     return render(request, 'accounting/pilot_upload.html', {'vehicles': vehicles})
 
