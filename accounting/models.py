@@ -3,8 +3,6 @@ from django.conf import settings
 from core.models import Company 
 from django.utils import timezone
 
-
-
 # ==========================================
 # 1. FLOTILLA (VEHÍCULOS)
 # ==========================================
@@ -35,7 +33,7 @@ class Vehicle(models.Model):
 # ==========================================
 class Expense(models.Model):
     STATUS_CHOICES = [
-        ('PRE_REVIEW', 'Filtro de Supervisores'), # <-- NUEVO ESTADO INICIAL
+        ('PRE_REVIEW', 'Filtro de Supervisores'), 
         ('PENDING', 'Pendiente de Revisión'),
         ('APPROVED', 'Contabilizado'),
         ('REJECTED', 'Rechazado'),
@@ -47,7 +45,6 @@ class Expense(models.Model):
         ('MANUAL', 'Ingreso Manual'),
     ]
 
-# 🔥 AGREGA ESTAS OPCIONES Y EL CAMPO:
     METODOS_PAGO = [
         ('EFECTIVO', '💵 Efectivo'),
         ('TARJETA', '💳 Tarjeta de Crédito / Débito'),
@@ -68,7 +65,7 @@ class Expense(models.Model):
     # --- DATOS DEL DOCUMENTO ---
     receipt_image = models.ImageField(upload_to='expenses_receipts/', verbose_name="Foto Factura")
     
-    # 🔥 NUEVOS CAMPOS ANTIFRAUDE 🔥
+    # --- CAMPOS ANTIFRAUDE ---
     pump_image = models.ImageField(upload_to='expenses_pumps/', null=True, blank=True, verbose_name="Foto de la Bomba")
     latitude = models.CharField(max_length=50, null=True, blank=True, verbose_name="Latitud GPS")
     longitude = models.CharField(max_length=50, null=True, blank=True, verbose_name="Longitud GPS")
@@ -92,12 +89,11 @@ class Expense(models.Model):
     tax_iva = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="IVA Crédito")
     tax_idp = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Impuesto IDP")
 
-    # 🔥 FLUJO DE APROBACIÓN (TRIPLE CANDADO) 🔥
+    # --- FLUJO DE APROBACIÓN ---
     supervisor_1_ok = models.BooleanField(default=False, verbose_name="VoBo. Supervisor 1")
     supervisor_2_ok = models.BooleanField(default=False, verbose_name="VoBo. Supervisor 2")
     assistant_ok = models.BooleanField(default=False, verbose_name="VoBo. Asistente")
 
-    # Función inteligente: Revisa si ya están las 3 firmas para mandarlo al Contador
     def check_and_advance_status(self):
         if self.supervisor_1_ok and self.supervisor_2_ok and self.assistant_ok:
             if self.status == 'PRE_REVIEW':
@@ -123,7 +119,6 @@ class BankAccount(models.Model):
     account_number = models.CharField(max_length=50, verbose_name="Número de Cuenta")
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='GTQ')
     
-    # Saldo inicial para poder cuadrar desde enero
     initial_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Saldo Inicial al 1 de Enero")
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Saldo Actual")
     active = models.BooleanField(default=True)
@@ -133,16 +128,11 @@ class BankAccount(models.Model):
     
     @property
     def saldo_actual(self):
-        from .models import BankTransaction # Importamos aquí para evitar choques
+        from .models import BankTransaction 
         from django.db.models import Sum
         
-        # Sumamos todos los ingresos (IN)
         depositos = BankTransaction.objects.filter(account=self, transaction_type='IN').aggregate(total=Sum('amount'))['total'] or 0
-        
-        # Sumamos todos los egresos (OUT)
         retiros = BankTransaction.objects.filter(account=self, transaction_type='OUT').aggregate(total=Sum('amount'))['total'] or 0
-        
-        # Saldo vivo = Saldo inicial + Ingresos - Egresos
         return self.initial_balance + depositos - retiros
 
 class BankTransaction(models.Model):
@@ -162,7 +152,6 @@ class BankTransaction(models.Model):
     reference = models.CharField(max_length=100, verbose_name="No. de Boleta / Cheque / Transferencia")
     description = models.TextField(verbose_name="Concepto detallado")
     
-    # Rastro de auditoría
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -174,7 +163,6 @@ class BankTransaction(models.Model):
 # ==========================================
 # 4. PARTIDAS CONTABLES (LIBRO DIARIO)
 # ==========================================
-
 class Account(models.Model):
     """El Catálogo de Cuentas (NIIF)"""
     code = models.CharField(max_length=20, unique=True, verbose_name="Código NIIF")
@@ -187,7 +175,6 @@ class Account(models.Model):
         ('EXPENSE', 'Gastos'),
     ]
     account_type = models.CharField(max_length=15, choices=ACCOUNT_TYPES)
-    # Para saber si es cuenta sumatoria o de movimiento
     is_transactional = models.BooleanField(default=True, verbose_name="Acepta Movimientos") 
 
     def __str__(self):
@@ -197,11 +184,9 @@ class JournalEntry(models.Model):
     """La Partida Contable o Asiento de Diario"""
     date = models.DateField(default='2026-01-01', verbose_name="Fecha de Partida")    
     concept = models.CharField(max_length=255, verbose_name="Concepto General")
-    company = models.CharField(max_length=100, blank=True, null=True) # Tu Sede
+    company = models.CharField(max_length=100, blank=True, null=True) 
     
-    # Campo clave para identificar la migración de Monica 8.5
     is_opening_balance = models.BooleanField(default=False, verbose_name="Es Asiento de Apertura")
-    
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -240,17 +225,11 @@ class AccountingPeriod(models.Model):
     def __str__(self):
         estado = "CERRADO" if self.is_closed else "ABIERTO"
         return f"{self.month}/{self.year} - {estado}"
-    
-class Vehiculo(models.Model):
-    name = models.CharField(max_length=100, verbose_name="Nombre/Marca")
-    placa = models.CharField(max_length=20, unique=True)
 
-    def __str__(self):
-        return f"{self.placa} - {self.name}"
-
-# === TU CLASE PRINCIPAL DE GASTOS ===
+# ==========================================
+# 5. NUEVO MÓDULO DE AUDITORÍA DE GASTOS
+# ==========================================
 class GastoOperativo(models.Model):
-    # Opciones predefinidas
     TIPO_GASTO_CHOICES = [
         ('combustible', 'Combustible'),
         ('repuestos', 'Repuestos'),
@@ -268,27 +247,23 @@ class GastoOperativo(models.Model):
         ('Rechazado', 'Rechazado'),
     ]
 
-    # Relaciones y Datos Base
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='gastos')
-    vehicle = models.ForeignKey(Vehiculo, on_delete=models.SET_NULL, null=True, blank=True)
-    date = models.DateTimeField(auto_now_add=True) # Se guarda la hora exacta automáticamente
     
-    # Detalles del Gasto
+    # 🔥 AQUÍ ESTÁ EL ARREGLO PRINCIPAL: Conectado a 'Vehicle'
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    date = models.DateTimeField(auto_now_add=True)
     tipo_gasto = models.CharField(max_length=20, choices=TIPO_GASTO_CHOICES, default='combustible')
     payment_method = models.CharField(max_length=20, choices=METODO_PAGO_CHOICES, default='EFECTIVO')
     
-    # El monto inicia en 0.00 (Contabilidad lo llenará después leyendo la factura)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
-    # Evidencias (Fotos)
     receipt_image = models.ImageField(upload_to='gastos/facturas/')
-    pump_image = models.ImageField(upload_to='gastos/bombas/', null=True, blank=True) # Opcional para repuestos
+    pump_image = models.ImageField(upload_to='gastos/bombas/', null=True, blank=True)
 
-    # Ubicación GPS
     latitude = models.CharField(max_length=50, null=True, blank=True)
     longitude = models.CharField(max_length=50, null=True, blank=True)
 
-    # Control de Estado y Auditoría (Tus 3 firmas mágicas)
     estado = models.CharField(max_length=50, choices=ESTADO_CHOICES, default='En_Supervision')
     supervisor_1_ok = models.BooleanField(default=False)
     supervisor_2_ok = models.BooleanField(default=False)
@@ -297,12 +272,14 @@ class GastoOperativo(models.Model):
     def __str__(self):
         return f"Gasto {self.id} - {self.user.username} - {self.get_tipo_gasto_display()}"
 
-    # Función mágica para pasar a contabilidad al tener las 3 firmas
     def verificar_pase_contabilidad(self):
         if self.supervisor_1_ok and self.supervisor_2_ok and self.assistant_ok:
             self.estado = 'Pendiente_Contabilidad'
             self.save()
 
+# ==========================================
+# 6. TARJETAS DE CRÉDITO Y CXP
+# ==========================================
 class CreditCard(models.Model):
     """Bóveda de Pasivo: Control de Tarjetas de Crédito Empresariales"""
     company = models.ForeignKey('core.Company', on_delete=models.CASCADE, related_name='credit_cards')
@@ -310,12 +287,10 @@ class CreditCard(models.Model):
     card_name = models.CharField(max_length=100, verbose_name="Nombre en la Tarjeta (Ej. Visa Flotilla 1)")
     last_four_digits = models.CharField(max_length=4, verbose_name="Últimos 4 dígitos")
     
-    # Reglas de la tarjeta
     credit_limit = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Límite de Crédito")
     cutoff_day = models.IntegerField(verbose_name="Día de Corte (1-31)")
     payment_day = models.IntegerField(verbose_name="Día de Pago (1-31)")
     
-    # Control de la deuda
     current_debt = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Deuda Actual (Saldo Consumido)")
     active = models.BooleanField(default=True)
 
@@ -324,12 +299,10 @@ class CreditCard(models.Model):
         
     @property
     def available_credit(self):
-        """Calcula cuánto crédito queda disponible para gastar"""
         return self.credit_limit - self.current_debt
     
     @property
     def debt_percentage(self):
-        """Calcula el porcentaje de deuda para la barra de progreso"""
         if self.credit_limit > 0:
             return (self.current_debt / self.credit_limit) * 100
         return 0
@@ -345,16 +318,13 @@ class AccountPayable(models.Model):
 
     company = models.ForeignKey('core.Company', on_delete=models.CASCADE, related_name='accounts_payable')
     
-    # Datos del Proveedor y Documento
     supplier_name = models.CharField(max_length=200, verbose_name="Nombre del Proveedor")
     invoice_number = models.CharField(max_length=100, verbose_name="No. de Factura / Recibo")
     description = models.TextField(verbose_name="Concepto de la Deuda")
     
-    # Fechas Clave para la Programación de Pagos
     issue_date = models.DateField(verbose_name="Fecha de Emisión")
     due_date = models.DateField(verbose_name="Fecha de Vencimiento límite")
     
-    # Control de Dinero
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto Total Original")
     balance = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Saldo Pendiente Actual")
     
@@ -366,6 +336,5 @@ class AccountPayable(models.Model):
         
     @property
     def is_overdue(self):
-        """Calcula en tiempo real si esta factura ya está vencida al día de hoy"""
         from django.utils import timezone
         return self.balance > 0 and self.due_date < timezone.now().date()

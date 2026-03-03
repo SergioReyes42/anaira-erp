@@ -14,7 +14,7 @@ from django.db.models import Prefetch
 from .models import AccountingPeriod
 from sales.models import SaleInvoice
 from .forms import DepositForm
-from .models import GastoOperativo, Vehiculo
+from .models import GastoOperativo, Vehicle
 
 # --- IMPORTACIÓN DE MODELOS ---
 from .models import (
@@ -51,10 +51,10 @@ def pilot_upload(request):
         vehicles = vehiculos_del_usuario
     elif request.user.is_superuser or request.user.groups.filter(name__in=['Contadora', 'Administrador', 'Gerente']).exists():
         # 🔥 EL FIX ESTÁ AQUÍ: Cambiamos "Vehicle" por "Vehiculo" para que coincida con GastoOperativo
-        vehicles = Vehiculo.objects.filter(company=request.user.current_company)
+        vehicles = Vehicle.objects.filter(company=request.user.current_company)
     else:
         # 🔥 Y AQUÍ TAMBIÉN
-        vehicles = Vehiculo.objects.none()
+        vehicles = Vehicle.objects.none()
 
     if request.method == 'POST':
         receipt_image = request.FILES.get('receipt_image')
@@ -1182,8 +1182,8 @@ def guardar_gasto_piloto(request):
         vehiculo_obj = None
         if vehicle_id:
             try:
-                vehiculo_obj = Vehiculo.objects.get(id=vehicle_id)
-            except Vehiculo.DoesNotExist:
+                vehiculo_obj = Vehicle.objects.get(id=vehicle_id)
+            except Vehicle.DoesNotExist:
                 pass # Manejo de error por si mandan un ID que no existe
 
         # 4. Crear el registro en la base de datos
@@ -1206,7 +1206,7 @@ def guardar_gasto_piloto(request):
 
     # Si la petición es GET (el usuario solo entró a ver la página del formulario)
     # Mandamos los vehículos a la vista para que el `<select>` se llene
-    vehiculos_disponibles = Vehiculo.objects.all() 
+    vehiculos_disponibles = Vehicle.objects.all() 
     return render(request, 'accounting/pilot_upload.html', {'vehicles': vehiculos_disponibles})
 
 @login_required
