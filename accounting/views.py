@@ -60,37 +60,23 @@ def pilot_upload(request):
         latitude = request.POST.get('latitude')
         longitude = request.POST.get('longitude')
         
-        tipo_gasto = request.POST.get('tipo_gasto')
-        description = request.POST.get('description', f"Gasto de ruta: {tipo_gasto}")
         vehicle_id = request.POST.get('vehicle')
-        placa_emergencia = request.POST.get('placa_emergencia', '').strip()
-
-        if vehicle_id == 'emergencia':
-            description = f"🚨 CONTINGENCIA | Placa reportada: {placa_emergencia} | {description}"
 
         try:
             with transaction.atomic():
+                # 🔥 AHORA SÍ: Solo le mandamos los datos que GastoOperativo realmente tiene
                 GastoOperativo.objects.create(
                     user=request.user,
-                    company=request.user.current_company,
                     receipt_image=receipt_image,
                     pump_image=pump_image,
                     latitude=latitude,
                     longitude=longitude,
-                    description=description,
-                    total_amount=0.00,  # Lo dejamos en 0.00 como solicitaste
-                    
-                    # 🔥 EL FIX MÁGICO: Pasamos el ID directamente para evitar el error de traducción
+                    total_amount=0.00,  # El monto en cero como pediste
                     vehicle_id=vehicle_id if vehicle_id and vehicle_id.isdigit() else None, 
-                    
                     estado='Pendiente', 
-                    origin='PILOT', 
-                    provider_name="Pendiente",
-                    date=timezone.now(), 
-                    tax_base=0, 
-                    tax_iva=0, 
-                    tax_idp=0
+                    date=timezone.now()
                 )
+                
             messages.success(request, "🚀 Gasto enviado. El equipo de Supervisión lo revisará.")
             return redirect('core:home')
             
