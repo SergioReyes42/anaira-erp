@@ -1135,9 +1135,7 @@ def expense_pre_review_list(request):
 
     # 2. SI SOLO ENTRAN A VER LA PÁGINA (MÉTODO GET)
     # CORRECCIÓN: Traemos TODOS los gastos, excepto los que ya terminaron su ciclo
-    gastos_pendientes = GastoOperativo.objects.exclude(
-        estado__in=['Rechazado', 'Aprobado', 'Contabilizado', 'Pagado']
-    ).order_by('-date')
+    gastos_pendientes = GastoOperativo.objects.all().order_by('-date')
     
     return render(request, 'accounting/expense_pre_review_list.html', {
         'expenses': gastos_pendientes
