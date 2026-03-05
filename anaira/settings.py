@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    'cloudinary', # <- Y AGREGA ESTA TAMBIÉN
 
     # --- HERRAMIENTAS EXTRAS ---
     'django.contrib.humanize',  # <--- AGREGUE ESTA LÍNEA
@@ -177,3 +178,31 @@ CSRF_TRUSTED_ORIGINS = [
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 # Forzando reinicio del servidor - Intento 2
+
+# Configuraciones de Media (Imágenes y Archivos)
+MEDIA_URL = '/media/'
+
+# Cargar la URL de Cloudinary desde las variables de entorno
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL=cloudinary://<your_api_key>:<your_api_secret>@dhs85tobx')
+
+if CLOUDINARY_URL:
+    # Si estamos en Railway (Producción), usamos Cloudinary
+    STORAGES = {
+        "default": {
+            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+else:
+    # Si estás probando en tu computadora local, sigue guardando en carpetas
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
