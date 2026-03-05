@@ -1,8 +1,12 @@
+from django.contrib.auth import get_user_model
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from .models import Company
+from django.db import transaction
+
+User = get_user_model()
 
 # --- 1. LANDING Y DASHBOARD ---
 def landing(request):
@@ -91,9 +95,22 @@ def user_create(request):
 
 # --- 4. EXTRAS ---
 @login_required
-def control_panel(request):
-    """Panel de Control"""
-    return render(request, 'core/control_panel.html')
+def system_panel(request):
+    """VISTA ADMIN: Centro de Mando para gestión de usuarios y sistema"""
+    
+    # 🛡️ BLINDAJE: Solo el superusuario o el grupo 'Administrador' entra aquí
+    es_admin = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
+    
+    if not es_admin:
+        messages.error(request, "⛔ Acceso denegado. Esta área es exclusiva para Administradores del Sistema.")
+        return redirect('core:home')
+
+    # Traemos todos los usuarios ordenados por los más recientes
+    usuarios = User.objects.all().prefetch_related('groups').order_by('-date_joined')
+    
+    return render(request, 'core/system_panel.html', {
+        'usuarios': usuarios,
+    })
 
 def db_fix_view(request):
     """Vista de reparación de emergencia"""

@@ -30,8 +30,11 @@ from .models import (
     CreditCard,
     AccountPayable
 )
+from django.contrib.auth import get_user_model
 from .forms import BankAccountForm, BankTransactionForm, VehicleForm
 from .utils import analyze_invoice_image
+
+User = get_user_model()
 
 # ========================================================
 # 1. HERRAMIENTAS DE INGRESO UNIFICADAS
@@ -1599,3 +1602,21 @@ def registrar_factura_cxp(request):
             return redirect('accounting:registrar_factura_cxp')
 
     return render(request, 'accounting/cxp_nueva_factura.html')
+
+@login_required
+def system_panel(request):
+    """VISTA ADMIN: Centro de Mando para gestión de usuarios y sistema"""
+    
+    # 🛡️ BLINDAJE: Solo el superusuario o el grupo 'Administrador' entra aquí
+    es_admin = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
+    
+    if not es_admin:
+        messages.error(request, "⛔ Acceso denegado. Esta área es exclusiva para Administradores del Sistema.")
+        return redirect('core:home')
+
+    # Traemos todos los usuarios ordenados por los más recientes
+    usuarios = User.objects.all().prefetch_related('groups').order_by('-date_joined')
+    
+    return render(request, 'core/system_panel.html', {
+        'usuarios': usuarios,
+    })

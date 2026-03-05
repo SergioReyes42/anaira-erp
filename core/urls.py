@@ -21,7 +21,8 @@ urlpatterns = [
     # --- 4. UTILIDADES DEL SISTEMA ---
     path('perfil/', views.profile_view, name='profile'),
     path('seleccionar-empresa/', views.select_company, name='select_company'),
-    path('panel-sistema/', views.control_panel, name='control_panel'),
+# NUEVA RUTA: Panel de Sistema
+    path('panel-de-sistema/', views.system_panel, name='system_panel'),
 
     # --- 5. GESTIÓN DE EMPRESAS ---
     path('empresas/', views.company_list, name='company_list'),

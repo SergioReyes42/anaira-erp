@@ -329,8 +329,8 @@
             
             <div class="mt-4 border-top border-secondary pt-2">
                 {% if request.user.is_superuser or request.user|has_group:"Gerente, Administrador" %}
-                 <a class="list-group-item list-group-item-action" href="#">
-                    <i class="bi bi-gear-fill me-2"></i> Panel de Sistema
+                 <a class="list-group-item list-group-item-action" href="{% url 'core:system_panel' %}">
+                        <i class="bi bi-gear-fill me-2"></i> Panel de Sistema
                 </a>
                 {% endif %}
                  <form action="{% url 'logout' %}" method="post" class="d-inline">
