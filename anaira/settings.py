@@ -185,6 +185,7 @@ MEDIA_URL = '/media/'
 # Cargar la URL de Cloudinary desde las variables de entorno
 CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL=cloudinary://<your_api_key>:<your_api_secret>@dhs85tobx')
 
+
 if CLOUDINARY_URL:
     # Si estamos en Railway (Producción), usamos Cloudinary
     STORAGES = {
