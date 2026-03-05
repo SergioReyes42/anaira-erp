@@ -15,6 +15,7 @@ from .models import AccountingPeriod
 from sales.models import SaleInvoice
 from .forms import DepositForm
 from .models import GastoOperativo, Vehicle
+from django.db import transaction
 
 # --- IMPORTACIÓN DE MODELOS ---
 from .models import (
@@ -87,62 +88,85 @@ def pilot_upload(request):
             
     return render(request, 'accounting/pilot_upload.html', {'vehicles': vehicles})
 
-# 3. La Aprobación de IA es solo para Contabilidad
 @login_required
-@group_required('Contadora') 
+@group_required('Contadora', 'Administrador') 
 def smart_scanner(request):
     """VISTA CONTADOR: Escaneo masivo con IA, va a Pendientes"""
     if request.method == 'POST':
         image = request.FILES.get('documento')
         smart_input = request.POST.get('smart_input', '') 
         
-        # 1. IA Analiza
-        ai_data = analyze_invoice_image(image, smart_input)
-        
-        # 2. Cálculos Financieros Preliminares
-        total = ai_data['total']
-        idp = 0.00
-        base = 0.00
-        iva = 0.00
+        # 🛡️ BLINDAJE 1: Verificamos que el usuario tenga empresa
+        if not request.user.current_company:
+            messages.error(request, "⛔ Tu usuario no tiene una empresa asignada. Contacta al Administrador.")
+            return redirect('core:home')
 
-        if ai_data['is_fuel']:
-            precio_galon = 28.00 if ai_data['fuel_type'] == 'diesel' else 32.00
-            tasa_idp = 4.70
-            if ai_data['fuel_type'] == 'regular': tasa_idp = 4.60
-            elif ai_data['fuel_type'] == 'diesel': tasa_idp = 1.30
+        try:
+            with transaction.atomic():
+                # 1. El Cerebro IA Analiza la imagen
+                ai_data = analyze_invoice_image(image, smart_input)
+                
+                # 2. Cálculos Financieros Preliminares (NIIF Guatemala)
+                # 🛡️ BLINDAJE 2: Usamos .get() por si la IA devuelve vacío y convertimos a float
+                total = float(ai_data.get('total', 0.00))
+                idp = 0.00
+                base = 0.00
+                iva = 0.00
 
-            galones = total / precio_galon
-            idp = galones * tasa_idp
-            base = (total - idp) / 1.12
-        else:
-            base = total / 1.12
-            
-        iva = base * 0.12
+                # Solo calculamos combustible si la IA dijo que es gasolina y el total es mayor a 0
+                if ai_data.get('is_fuel') and total > 0:
+                    fuel_type = str(ai_data.get('fuel_type')).lower()
+                    
+                    if fuel_type == 'diesel':
+                        precio_galon = 28.00
+                        tasa_idp = 1.30
+                    elif fuel_type == 'regular':
+                        precio_galon = 31.00
+                        tasa_idp = 4.60
+                    else: # Super por defecto
+                        precio_galon = 32.00
+                        tasa_idp = 4.70
 
-        # 3. Guardar como pendiente con origen SCANNER
-        Expense.objects.create(
-            user=request.user,
-            company=request.user.current_company,
-            receipt_image=image,
-            
-            provider_name=ai_data['provider_name'],
-            provider_nit=ai_data['provider_nit'],
-            invoice_series=ai_data['invoice_series'],
-            invoice_number=ai_data['invoice_number'],
-            description=ai_data['description'],
-            suggested_account=ai_data['account_type'],
-            
-            total_amount=total,
-            tax_base=base,
-            tax_iva=iva,
-            tax_idp=idp,
-            
-            status='PENDING',
-            origin='SCANNER' # Marcamos que viene del scanner
-        )
-        
-        messages.success(request, f"✅ Gasto escaneado enviado a pendientes. IA Detectó: {ai_data['account_type']}")
-        return redirect('accounting:expense_pending_list')
+                    galones = total / precio_galon
+                    
+                    # 🛡️ BLINDAJE 3: Redondeamos todo a 2 decimales contables
+                    idp = round(galones * tasa_idp, 2)
+                    base = round((total - idp) / 1.12, 2)
+                else:
+                    base = round(total / 1.12, 2)
+                    
+                iva = round(base * 0.12, 2)
+
+                # 3. Guardar como pendiente en la tabla de la Contadora (Expense)
+                Expense.objects.create(
+                    user=request.user,
+                    company=request.user.current_company,
+                    receipt_image=image,
+                    
+                    # Extraemos con .get() por seguridad
+                    provider_name=ai_data.get('provider_name', 'Proveedor sin nombre'),
+                    provider_nit=ai_data.get('provider_nit', 'C/F'),
+                    invoice_series=ai_data.get('invoice_series', ''),
+                    invoice_number=ai_data.get('invoice_number', ''),
+                    description=ai_data.get('description', 'Gasto escaneado por IA'),
+                    suggested_account=ai_data.get('account_type', 'Gastos Generales'),
+                    
+                    total_amount=total,
+                    tax_base=base,
+                    tax_iva=iva,
+                    tax_idp=idp,
+                    
+                    status='PENDING',
+                    origin='SCANNER' # Marcamos que viene del scanner
+                )
+                
+            messages.success(request, f"✅ ¡Factura leída con éxito! La IA detectó: {ai_data.get('account_type')}")
+            # Asegúrate de que el redirect apunte a la página correcta donde quieres que caiga
+            return redirect('accounting:smart_scanner') # O redirect('accounting:expense_pending_list') si la tienes
+
+        except Exception as e:
+            messages.error(request, f"❌ Ups, hubo un problema al procesar el documento: {str(e)}")
+            return redirect('accounting:smart_scanner')
 
     return render(request, 'accounting/smart_hub.html')
 

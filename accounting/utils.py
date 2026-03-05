@@ -2,29 +2,30 @@ import google.generativeai as genai
 import json
 from PIL import Image
 
-# Configura tu API KEY (Usando la que tenías en tu view)
+# Configura tu API KEY 
 GENAI_API_KEY = "AIzaSyCZkHsDpbhRWiQvUJcuEdRLlI8s-192VU0" 
 genai.configure(api_key=GENAI_API_KEY)
 
 def analyze_invoice_image(image_file, smart_input=""):
     """
-    Analiza la imagen de la factura usando Gemini 1.5 Flash 
-    con reglas estrictas de NIIF y extracción de datos reales.
+    Cerebro IA Francotirador: Analiza facturas con reglas SAT Guatemala.
     """
     try:
         img = Image.open(image_file)
         
-        # PROMPT MAESTRO (Le decimos que no invente y que lea aunque esté rotada)
+        # PROMPT MAESTRO (Entrenado para Facturación Electrónica en Línea - FEL)
         prompt = f"""
-        Actúa como un Auditor Contable experto en Guatemala.
-        Lee cuidadosamente la imagen adjunta. IMPORTANTE: La imagen puede estar rotada 90 grados, debes leer el texto de lado.
+        Eres un Auditor Fiscal Experto de la SAT en Guatemala.
+        Tu misión es extraer los datos exactos de esta factura electrónica (FEL) o recibo.
         
-        REGLA DE EXTRACCIÓN: No inventes datos. Si no ves un dato, pon null.
-        - Total: Busca el "Total:" o monto final a pagar.
-        - NIT: Busca el NIT del emisor en la parte superior.
-        - Proveedor: Busca el nombre de la empresa emisora. Ejemplo: "GRUPO ENERGETICO NARANJO".
-
-        CATÁLOGO DE CUENTAS (account_type) - Elige solo UNA de esta lista exacta:
+        REGLAS DE ORO (Si rompes una, el sistema falla):
+        1. CERO INVENTOS: Si un dato no es visible, legible o no existe, devuelve exactamente null. La imagen puede estar rotada, ajusta tu lectura.
+        2. TOTAL: Busca "TOTAL", "Q.", "GTQ". Devuelve SOLO el número final (ej. 150.50).
+        3. NIT: Extrae el NIT del emisor. Mantenlo con su guion si lo tiene (ej. 123456-7).
+        4. DTE/SERIE: Las FEL guatemaltecas tienen Serie (ej. 8A1B2C3D o A) y Número de autorización. Extrae ambos.
+        5. COMBUSTIBLE: Si ves "Galones", "Diesel", "Super", "Regular", o es una gasolinera (Shell, Puma, Texaco, Uno), is_fuel debe ser true obligatoriamente.
+        
+        CATÁLOGO DE CUENTAS (Debes elegir estrictamente UNA):
         - "Combustibles y Lubricantes"
         - "Mantenimiento y Reparación de Vehículos"
         - "Papelería y Útiles de Oficina"
@@ -36,37 +37,45 @@ def analyze_invoice_image(image_file, smart_input=""):
 
         Contexto adicional del contador: {smart_input}
 
-        Devuelve UNICAMENTE el siguiente formato JSON estricto (sin formato markdown):
+        Devuelve el resultado estrictamente en este esquema JSON:
         {{
-            "provider_name": "Nombre de la empresa",
-            "provider_nit": "NIT sin guiones",
-            "invoice_series": "Serie",
-            "invoice_number": "Número o DTE",
+            "provider_name": "Nombre completo de la empresa",
+            "provider_nit": "NIT del emisor",
+            "invoice_series": "Serie de la factura",
+            "invoice_number": "Número de factura o DTE",
             "total": 0.00,
-            "is_fuel": true/false,
-            "fuel_type": "regular, diesel o superior",
-            "description": "Resumen corto de qué se compró",
+            "is_fuel": true o false,
+            "fuel_type": "regular, diesel, super o null",
+            "description": "Qué se compró (máximo 5 palabras)",
             "account_type": "CUENTA_EXACTA_DEL_CATALOGO"
         }}
         """
         
         model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content([prompt, img])
         
-        text_response = response.text.replace('```json', '').replace('```', '').strip()
-        data = json.loads(text_response)
+        # 🔥 LA MAGIA ESTÁ AQUÍ: Configuración de Francotirador
+        response = model.generate_content(
+            [prompt, img],
+            generation_config=genai.types.GenerationConfig(
+                response_mime_type="application/json", # Obliga a devolver un JSON real de forma nativa
+                temperature=0.0, # Temperatura 0 = Cero alucinaciones, precisión absoluta
+            )
+        )
         
-        # Validaciones de seguridad para evitar errores en Django
-        if not data.get('total'): data['total'] = 0.00
-        if not data.get('provider_name'): data['provider_name'] = "Proveedor no detectado"
-        if not data.get('account_type'): data['account_type'] = "Gastos Generales"
-        if data.get('is_fuel') is None: data['is_fuel'] = False
+        # Ya no necesitamos hacer replace('```json'), la API garantiza el formato
+        data = json.loads(response.text)
+        
+        # Filtros de seguridad blindados para evitar pantallas amarillas de error en Django
+        data['total'] = float(data.get('total') or 0.00)
+        data['provider_name'] = data.get('provider_name') or "Proveedor no detectado"
+        data['account_type'] = data.get('account_type') or "Gastos Generales"
+        data['is_fuel'] = bool(data.get('is_fuel'))
         
         return data
 
     except Exception as e:
-        print(f"Error IA en utils.py: {e}")
-        # Si la IA falla por completo, devolvemos un molde vacío para que el contador lo llene manual
+        print(f"🔥 Error Crítico en IA: {e}")
+        # Si la foto está totalmente en negro o ilegible, no rompemos el ERP
         return {
             "provider_name": "Error de Lectura IA",
             "provider_nit": "",
