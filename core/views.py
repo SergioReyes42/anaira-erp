@@ -98,18 +98,55 @@ def user_create(request):
 def system_panel(request):
     """VISTA ADMIN: Centro de Mando para gestión de usuarios y sistema"""
     
-    # 🛡️ BLINDAJE: Solo el superusuario o el grupo 'Administrador' entra aquí
     es_admin = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
     
     if not es_admin:
         messages.error(request, "⛔ Acceso denegado. Esta área es exclusiva para Administradores del Sistema.")
         return redirect('core:home')
 
-    # Traemos todos los usuarios ordenados por los más recientes
+    # 🔥 NUEVO: Atrapamos el formulario de creación de usuario
+    if request.method == 'POST' and 'create_user' in request.POST:
+        username = request.POST.get('username')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        password = request.POST.get('password')
+        rol_nombre = request.POST.get('rol')
+
+        try:
+            with transaction.atomic():
+                # 1. Magia de Django: Crea el usuario y ENCRIPTA la contraseña
+                nuevo_usuario = User.objects.create_user(
+                    username=username,
+                    first_name=first_name,
+                    last_name=last_name,
+                    password=password
+                )
+                
+                # 2. Le asignamos la misma empresa que tiene el Administrador que lo está creando
+                if hasattr(nuevo_usuario, 'current_company'):
+                    nuevo_usuario.current_company = request.user.current_company
+                    nuevo_usuario.save()
+
+                # 3. Le asignamos su Puesto/Rol (Piloto, Contadora, etc.)
+                if rol_nombre:
+                    # Buscamos el grupo, si no existe, lo crea automáticamente
+                    grupo, created = Group.objects.get_or_create(name=rol_nombre)
+                    nuevo_usuario.groups.add(grupo)
+
+                messages.success(request, f"✅ ¡Usuario '{username}' creado exitosamente como {rol_nombre}!")
+                return redirect('core:system_panel')
+
+        except Exception as e:
+            messages.error(request, f"❌ Error al crear usuario. Revisa que el nombre de usuario no exista ya. Detalle: {str(e)}")
+            return redirect('core:system_panel')
+
+    # Traemos todos los usuarios y todos los grupos disponibles para el formulario
     usuarios = User.objects.all().prefetch_related('groups').order_by('-date_joined')
+    grupos_disponibles = Group.objects.all()
     
     return render(request, 'core/system_panel.html', {
         'usuarios': usuarios,
+        'grupos_disponibles': grupos_disponibles,
     })
 
 def db_fix_view(request):
