@@ -99,6 +99,18 @@
                             <input type="file" name="documento" id="fileInput" accept="image/*" capture="environment" required onchange="showPreview(this)">
                         </div>
 
+                        <div class="mb-4 text-start">
+                            <label class="form-label fw-bold small text-uppercase text-muted">
+                                <i class="bi bi-truck text-warning me-1"></i>Asignar a Vehículo (Opcional)
+                            </label>
+                            <select name="vehicle" class="form-select bg-light border-0 shadow-sm">
+                                <option value="">-- Gasto de Oficina / Sin vehículo --</option>
+                                {% for v in vehiculos %}
+                                    <option value="{{ v.id }}">{{ v.plate }} - {{ v.brand }} {{ v.line }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
                         <div class="mb-4">
                             <label class="form-label fw-bold small text-uppercase text-muted">
                                 <i class="bi bi-magic me-1"></i>Ayuda a la IA (Opcional)

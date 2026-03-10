@@ -15,7 +15,7 @@ from .models import AccountingPeriod
 from sales.models import SaleInvoice
 from .forms import DepositForm
 from .models import GastoOperativo, Vehicle
-from django.db import transaction
+from utils.decorators import group_required
 
 # --- IMPORTACIÓN DE MODELOS ---
 from .models import (
@@ -30,11 +30,8 @@ from .models import (
     CreditCard,
     AccountPayable
 )
-from django.contrib.auth import get_user_model
 from .forms import BankAccountForm, BankTransactionForm, VehicleForm
 from .utils import analyze_invoice_image
-
-User = get_user_model()
 
 # ========================================================
 # 1. HERRAMIENTAS DE INGRESO UNIFICADAS
@@ -95,10 +92,18 @@ def pilot_upload(request):
 @group_required('Contadora', 'Administrador') 
 def smart_scanner(request):
     """VISTA CONTADOR: Escaneo masivo con IA, va a Pendientes"""
+    
+    # 🚗 NUEVO: Traemos los vehículos de la empresa actual
+    vehiculos = Vehicle.objects.filter(company=request.user.current_company, active=True) if request.user.current_company else []
+
     if request.method == 'POST':
         image = request.FILES.get('documento')
         smart_input = request.POST.get('smart_input', '') 
         
+        # 🚗 NUEVO: Capturamos el ID del vehículo seleccionado
+        vehicle_id = request.POST.get('vehicle')
+        vehicle_obj = Vehicle.objects.filter(id=vehicle_id).first() if vehicle_id else None
+
         # 🛡️ BLINDAJE 1: Verificamos que el usuario tenga empresa
         if not request.user.current_company:
             messages.error(request, "⛔ Tu usuario no tiene una empresa asignada. Contacta al Administrador.")
@@ -145,6 +150,7 @@ def smart_scanner(request):
                     user=request.user,
                     company=request.user.current_company,
                     receipt_image=image,
+                    vehicle=vehicle_obj, # 🚗 NUEVO: Guardamos la relación con el vehículo
                     
                     # Extraemos con .get() por seguridad
                     provider_name=ai_data.get('provider_name', 'Proveedor sin nombre'),
@@ -171,7 +177,8 @@ def smart_scanner(request):
             messages.error(request, f"❌ Ups, hubo un problema al procesar el documento: {str(e)}")
             return redirect('accounting:smart_scanner')
 
-    return render(request, 'accounting/smart_hub.html')
+    # 🚗 NUEVO: Pasamos el contexto al template
+    return render(request, 'accounting/smart_hub.html', {'vehiculos': vehiculos})
 
 
 @login_required
@@ -1602,21 +1609,3 @@ def registrar_factura_cxp(request):
             return redirect('accounting:registrar_factura_cxp')
 
     return render(request, 'accounting/cxp_nueva_factura.html')
-
-@login_required
-def system_panel(request):
-    """VISTA ADMIN: Centro de Mando para gestión de usuarios y sistema"""
-    
-    # 🛡️ BLINDAJE: Solo el superusuario o el grupo 'Administrador' entra aquí
-    es_admin = request.user.is_superuser or request.user.groups.filter(name='Administrador').exists()
-    
-    if not es_admin:
-        messages.error(request, "⛔ Acceso denegado. Esta área es exclusiva para Administradores del Sistema.")
-        return redirect('core:home')
-
-    # Traemos todos los usuarios ordenados por los más recientes
-    usuarios = User.objects.all().prefetch_related('groups').order_by('-date_joined')
-    
-    return render(request, 'core/system_panel.html', {
-        'usuarios': usuarios,
-    })
