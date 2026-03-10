@@ -103,4 +103,74 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalNuevoUsuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus-fill me-2"></i>Registrar Nuevo Usuario</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="create_user" value="1">
+                
+                <div class="modal-body bg-light">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Nombre de Usuario (Login)</label>
+                        <div class="input-group shadow-sm">
+                            <span class="input-group-text bg-white"><i class="bi bi-person"></i></span>
+                            <input type="text" name="username" class="form-control" placeholder="Ej: perez_j" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Nombres</label>
+                            <input type="text" name="first_name" class="form-control shadow-sm" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Apellidos</label>
+                            <input type="text" name="last_name" class="form-control shadow-sm" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Contraseña Temporal</label>
+                        <div class="input-group shadow-sm">
+                            <span class="input-group-text bg-white"><i class="bi bi-key"></i></span>
+                            <input type="password" name="password" class="form-control" placeholder="Mínimo 8 caracteres" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Rol en la Empresa</label>
+                        <select name="rol" class="form-select shadow-sm" required>
+                            <option value="">-- Selecciona el puesto --</option>
+                            <option value="Pilotos">Piloto (Carga Gastos)</option>
+                            <option value="Contadora">Contadora (Revisa NIIF)</option>
+                            <option value="Administrador">Administrador (Control Total)</option>
+                            <option value="Gerente">Gerente (Reportes)</option>
+                            {% for grupo in grupos_disponibles %}
+                                {% if grupo.name not in "Pilotos,Contadora,Administrador,Gerente" %}
+                                    <option value="{{ grupo.name }}">{{ grupo.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                </div>
+                
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold px-4 shadow-sm"><i class="bi bi-check-circle me-2"></i>Crear Cuenta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
