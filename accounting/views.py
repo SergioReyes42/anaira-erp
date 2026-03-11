@@ -15,7 +15,6 @@ from .models import AccountingPeriod
 from sales.models import SaleInvoice
 from .forms import DepositForm
 from .models import GastoOperativo, Vehicle
-from utils.decorators import group_required
 
 # --- IMPORTACIÓN DE MODELOS ---
 from .models import (
@@ -88,8 +87,7 @@ def pilot_upload(request):
             
     return render(request, 'accounting/pilot_upload.html', {'vehicles': vehicles})
 
-@login_required
-@group_required('Contadora', 'Administrador') 
+@login_required 
 def smart_scanner(request):
     """VISTA CONTADOR: Escaneo masivo con IA, va a Pendientes"""
     
