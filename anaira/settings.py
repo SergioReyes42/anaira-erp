@@ -92,7 +92,7 @@ THOUSAND_SEPARATOR_INPUT = [',']
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+#STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -189,13 +189,13 @@ CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL=cloudinary://<your_api_key>:<you
 if CLOUDINARY_URL:
     # Si estamos en Railway (Producción), usamos Cloudinary
     STORAGES = {
-        "default": {
-            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
-        },
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-        },
-    }
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 else:
     # Si estás probando en tu computadora local, sigue guardando en carpetas
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
