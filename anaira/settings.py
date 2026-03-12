@@ -21,7 +21,6 @@ ALLOWED_HOSTS = ['*']
 
 # 3. APPS
 INSTALLED_APPS = [
-
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -63,14 +62,20 @@ MIDDLEWARE = [
 ]
 
 # 5. BASE DE DATOS PRINCIPAL (PostgreSQL o SQLite)
-DATABASES = {
-    'default': dj_database_url.config(
-        # Si no encuentra la variable en Railway, usa sqlite3 de emergencia en tu PC
-        default=os.environ.get('DATABASE_URL', f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+# 🛡️ BLINDAJE EXTREMO APLICADO AQUÍ
+db_url = os.environ.get('DATABASE_URL', '').strip()
+
+if db_url:
+    DATABASES = {
+        'default': dj_database_url.parse(db_url, conn_max_age=600, conn_health_checks=True)
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Configuración explícita para evitar errores en la default
 DATABASES['default']['ATOMIC_REQUESTS'] = True
@@ -93,10 +98,8 @@ THOUSAND_SEPARATOR_INPUT = [',']
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-#STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_ROOT = BASE_DIR / 'media'
 
 ROOT_URLCONF = 'anaira.urls'
@@ -124,8 +127,11 @@ TEMPLATES = [
     },
 ]
 
-# 8. SEGURIDAD SSL
-CSRF_TRUSTED_ORIGINS = ['https://*.up.railway.app']
+# 8. SEGURIDAD SSL Y DOMINIOS
+CSRF_TRUSTED_ORIGINS = [
+    'https://anaira-erp-production.up.railway.app', 
+    'https://*.railway.app' 
+]
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = False # False temporalmente para facilitar login
 CSRF_COOKIE_SECURE = False
@@ -168,38 +174,27 @@ def patched_make_view_atomic(self, view):
 django.core.handlers.base.BaseHandler.make_view_atomic = patched_make_view_atomic
 # ==============================================================================
 
-# SEGURIDAD DE DOMINIOS (Importante para que el Login no parpadee)
-CSRF_TRUSTED_ORIGINS = [
-    'https://anaira-erp-production.up.railway.app', 
-    'https://*.railway.app' 
-]
-
 # Configuración de Inteligencia Artificial (Google Gemini)
-# Pegue aquí la llave que copió en el Paso 1
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# Forzando reinicio del servidor - Intento 2
-
-# Configuraciones de Media (Imágenes y Archivos)
-MEDIA_URL = '/media/'
-
-# Cargar la URL de Cloudinary desde las variables de entorno
-CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL=cloudinary://<your_api_key>:<your_api_secret>@dhs85tobx')
-
+# ==============================================================================
+# ☁️ CONFIGURACIÓN DE ARCHIVOS Y NUBE (Cloudinary y WhiteNoise)
+# ==============================================================================
+# IMPORTANTE: Busca correctamente la variable de entorno
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
 
 if CLOUDINARY_URL:
     # Si estamos en Railway (Producción), usamos Cloudinary
     STORAGES = {
-    "default": {
-        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
+        "default": {
+            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
 else:
     # Si estás probando en tu computadora local, sigue guardando en carpetas
-    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
     STORAGES = {
         "default": {
             "BACKEND": "django.core.files.storage.FileSystemStorage",
