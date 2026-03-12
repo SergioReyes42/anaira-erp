@@ -1,0 +1,23 @@
+{
+  "name": "Anaira ERP",
+  "short_name": "Anaira",
+  "description": "Sistema de Planificación de Recursos Empresariales (ERP) Anaira",
+  "start_url": "https://https://anaira-erp.up.railway.app/login", 
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1565C0",
+  "icons": [
+    {
+      "src": "https://https://anaira-erp.up.railway.app/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://https://anaira-erp.up.railway.app/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "orientation": "portrait"
+}
