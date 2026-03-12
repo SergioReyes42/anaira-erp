@@ -5,6 +5,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from .models import Company
 from django.db import transaction
+from django.contrib.auth.models import Group
 
 User = get_user_model()
 
