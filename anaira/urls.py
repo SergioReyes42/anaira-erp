@@ -106,3 +106,18 @@ urlpatterns = [
 # --- HABILITAR CARGA DE LOGOS EN MODO DEBUG ---
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+from django.http import JsonResponse
+
+def asset_links(request):
+    data = [{
+        "relation": ["delegate_permission/common.handle_all_urls"],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "app.railway.anaira_erp", # El nombre que elijas en Bubblewrap
+            "sha256_cert_fingerprints": ["AQUÍ_IRÁ_TU_HUELLA_DIGITAL"]
+        }
+    }]
+    return JsonResponse(data, safe=False)
+# En urlpatterns:
+# path('.well-known/assetlinks.json', asset_links),
