@@ -5,24 +5,23 @@ from django.conf import settings
 from django.core.management import call_command
 from dotenv import load_dotenv
 
-# --- CORRECCIÓN IMPORTANTE ---
-# Usamos google.generativeai en lugar de google.genai para estandarizar
+# --- PASO 1: CARGAR VARIABLES PRIMERO ---
+load_dotenv()
+
+# --- PASO 2: IMPORTAR Y CONFIGURAR ---
 try:
     import google.generativeai as genai
 except ImportError:
     genai = None
 
-# Configuración segura
+# Configuración segura: Ahora sí encontrará la llave porque ya cargamos el .env
 if genai:
-    try:
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if api_key:
-            genai.configure(api_key=api_key)
-    except Exception as e:
-        print(f"Error configurando IA: {e}")
-
-# Cargar variables de entorno (API Keys)
-load_dotenv()
+    api_key = os.getenv("GEMINI_API_KEY")
+    if api_key:
+        genai.configure(api_key=api_key)
+        print("✅ IA de Gemini configurada correctamente.")
+    else:
+        print("⚠️ Advertencia: GEMINI_API_KEY no encontrada en el .env")
 
 # =======================================================
 # 1. LISTADO DE CUENTAS POR DEFECTO (CATÁLOGO BASE)
