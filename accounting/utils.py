@@ -1,19 +1,50 @@
-import google.generativeai as genai
+import os
 import json
+from dotenv import load_dotenv
 from PIL import Image
 
-# Configura tu API KEY 
-GENAI_API_KEY = "AIzaSyCZkHsDpbhRWiQvUJcuEdRLlI8s-192VU0" 
-genai.configure(api_key=GENAI_API_KEY)
+try:
+    import google.generativeai as genai
+except ImportError:
+    genai = None
+
+load_dotenv()
+
+
+def _safe_fallback(error_message="Hubo un error al leer la imagen"):
+    return {
+        "provider_name": "Error de Lectura IA",
+        "provider_nit": "",
+        "invoice_series": "",
+        "invoice_number": "",
+        "total": 0.00,
+        "is_fuel": False,
+        "fuel_type": "",
+        "description": error_message,
+        "account_type": "Gastos Generales"
+    }
+
+
+def _configure_gemini():
+    if genai is None:
+        raise RuntimeError("La librería google.generativeai no está instalada o no pudo importarse.")
+
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("Falta GEMINI_API_KEY en variables de entorno.")
+
+    genai.configure(api_key=api_key)
+    return genai.GenerativeModel("gemini-1.5-flash")
+
 
 def analyze_invoice_image(image_file, smart_input=""):
     """
     Cerebro IA Francotirador: Analiza facturas con reglas SAT Guatemala.
     """
     try:
+        model = _configure_gemini()
         img = Image.open(image_file)
-        
-        # PROMPT MAESTRO (Entrenado para Facturación Electrónica en Línea - FEL)
+
         prompt = f"""
         Eres un Auditor Fiscal Experto de la SAT en Guatemala.
         Tu misión es extraer los datos exactos de esta factura electrónica (FEL) o recibo.
@@ -50,40 +81,24 @@ def analyze_invoice_image(image_file, smart_input=""):
             "account_type": "CUENTA_EXACTA_DEL_CATALOGO"
         }}
         """
-        
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        # 🔥 LA MAGIA ESTÁ AQUÍ: Configuración de Francotirador
+
         response = model.generate_content(
             [prompt, img],
             generation_config=genai.types.GenerationConfig(
-                response_mime_type="application/json", # Obliga a devolver un JSON real de forma nativa
-                temperature=0.0, # Temperatura 0 = Cero alucinaciones, precisión absoluta
+                response_mime_type="application/json",
+                temperature=0.0,
             )
         )
-        
-        # Ya no necesitamos hacer replace('```json'), la API garantiza el formato
+
         data = json.loads(response.text)
-        
-        # Filtros de seguridad blindados para evitar pantallas amarillas de error en Django
-        data['total'] = float(data.get('total') or 0.00)
-        data['provider_name'] = data.get('provider_name') or "Proveedor no detectado"
-        data['account_type'] = data.get('account_type') or "Gastos Generales"
-        data['is_fuel'] = bool(data.get('is_fuel'))
-        
+
+        data["total"] = float(data.get("total") or 0.00)
+        data["provider_name"] = data.get("provider_name") or "Proveedor no detectado"
+        data["account_type"] = data.get("account_type") or "Gastos Generales"
+        data["is_fuel"] = bool(data.get("is_fuel"))
+
         return data
 
     except Exception as e:
-        print(f"🔥 Error Crítico en IA: {e}")
-        # Si la foto está totalmente en negro o ilegible, no rompemos el ERP
-        return {
-            "provider_name": "Error de Lectura IA",
-            "provider_nit": "",
-            "invoice_series": "",
-            "invoice_number": "",
-            "total": 0.00,
-            "is_fuel": False,
-            "fuel_type": "",
-            "description": "Hubo un error al leer la imagen",
-            "account_type": "Gastos Generales"
-        }
+        print(f"🔥 Error Crítico en IA (Smart Scanner): {e}")
+        return _safe_fallback(str(e))

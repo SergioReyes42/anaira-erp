@@ -502,65 +502,18 @@ def chart_of_accounts(request):
         'search_query': search_query
     })
 
-# --- API GEMINI ---
-import google.generativeai as genai
 from django.http import JsonResponse
-from PIL import Image
-import json
-
-GENAI_API_KEY = "AIzaSyCZkHsDpbhRWiQvUJcuEdRLlI8s-192VU0" 
-genai.configure(api_key=GENAI_API_KEY)
 
 def analyze_receipt_api(request):
     if request.method == 'POST' and request.FILES.get('image'):
         try:
             image_file = request.FILES['image']
-            img = Image.open(image_file)
-
-            # PROMPT MEJORADO: IA con Rol de Contador NIIF
-            prompt = """
-            Actúa como un Contador Público y Auditor experto en NIIF (Normas Internacionales de Información Financiera) y en contabilidad de Guatemala.
-            Analiza esta factura/recibo y extrae la información solicitada.
-
-            REGLA DE CLASIFICACIÓN (NIIF):
-            Para el campo "account_type", DEBES analizar el concepto de la compra y asignarlo a UNA Y SOLO UNA de estas cuentas exactas de nuestro catálogo:
-            - "Combustibles y Lubricantes" (Gasolina, diésel, aditivos)
-            - "Mantenimiento y Reparación de Vehículos" (Repuestos, llantas, talleres, servicios)
-            - "Papelería y Útiles de Oficina" (Hojas, tinta, cuadernos)
-            - "Atenciones al Personal y Clientes" (Comidas, restaurantes, refacciones)
-            - "Servicios Públicos y Telefonía" (Luz, agua, internet, recargas)
-            - "Mobiliario y Equipo de Computo" (PCs, teclados, herramientas mayores)
-            - "Inventario de Mercadería" (Si es compra de mercancía para la venta)
-            - "Gastos Generales" (ÚNETE a esta solo si no encaja en ninguna de las anteriores)
-
-            Devuelve UNICAMENTE el siguiente formato JSON estricto:
-            {
-                "supplier": "Nombre del proveedor comercial",
-                "nit": "NIT sin guiones ni letras extra, solo números y K",
-                "date": "YYYY-MM-DD",
-                "serie": "Serie de la factura (si aplica)",
-                "number": "Número de factura o DTE",
-                "total": 0.00,
-                "is_fuel": true/false,
-                "idp": 0.00,
-                "account_type": "CUENTA_EXACTA_DEL_LISTADO_DE_ARRIBA"
-            }
-            Si algún dato no es visible, pon null. No inventes datos. No incluyas markdown como ```json.
-            """
-            
-            # Usamos Gemini 1.5 Flash (ideal para OCR rápido y barato)
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            response = model.generate_content([prompt, img])
-            
-            # Limpiamos posibles caracteres basura antes de parsear el JSON
-            text_response = response.text.replace('```json', '').replace('```', '').strip()
-            data = json.loads(text_response)
-            
+            smart_input = request.POST.get('smart_input', '')
+            data = analyze_invoice_image(image_file, smart_input)
             return JsonResponse({'success': True, **data})
-            
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
-            
+
     return JsonResponse({'success': False, 'error': 'No se proporcionó ninguna imagen'})
 
 @login_required
