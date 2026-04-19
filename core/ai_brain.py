@@ -1,15 +1,11 @@
 # core/ai_brain.py
-import google.generativeai as genai
-from django.conf import settings
 import json
 from datetime import date
 import logging
 import re  # <--- AGREGADO: Importante para la función de texto
+from core.gemini_config import configure_gemini
 
-# Configurar la IA con su llave
-genai.configure(api_key=settings.GEMINI_API_KEY)
-
-# Configuración del modelo (GEMINI 2.0)
+# Configuración del modelo (GEMINI)
 generation_config = {
     "temperature": 0.1,
     "top_p": 1,
@@ -17,28 +13,23 @@ generation_config = {
     "max_output_tokens": 8192,
 }
 
-model = genai.GenerativeModel(
-    model_name="gemini-2.5-flash", 
-    generation_config=generation_config,
-)
-
-# --- FUNCIÓN 1: PARA IMÁGENES (Gemini) ---
-# (Imports siguen igual...)
-import google.generativeai as genai
-from django.conf import settings
-import json
-from datetime import date
-import logging
-import re
-
-genai.configure(api_key=settings.GEMINI_API_KEY)
-generation_config = {"temperature": 0.1, "top_p": 1, "top_k": 32, "max_output_tokens": 8192}
-model = genai.GenerativeModel(model_name="gemini-2.5-flash", generation_config=generation_config)
+try:
+    genai = configure_gemini()
+    model = genai.GenerativeModel(
+        model_name="gemini-1.5-flash",
+        generation_config=generation_config,
+    )
+except Exception:
+    genai = None
+    model = None
 
 def analizar_documento_ia(imagen, contexto=None):
     resultado = {'exito': False, 'tipo_detectado': 'DESCONOCIDO', 'datos': {}}
 
     try:
+        if model is None:
+            raise RuntimeError("Gemini no disponible. Verifica GEMINI_API_KEY válida en entorno.")
+
         img_bytes = imagen.read()
         
         prompt_base = "Eres un asistente experto en ERP. Analiza la imagen y extrae datos en JSON estricto."
