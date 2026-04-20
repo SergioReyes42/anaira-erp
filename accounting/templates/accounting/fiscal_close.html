@@ -16,7 +16,7 @@
                     <div class="alert alert-warning border-warning border-2 fw-bold">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i> ¡ATENCIÓN! Al cerrar un mes, el sistema bloqueará la creación, edición o eliminación de cualquier gasto, factura o partida contable con fecha dentro de ese mes.
                     </div>
-                    <form method="POST" action="{% url 'fiscal_close' %}" class="row g-3 align-items-end" onsubmit="return confirm('¿Estás seguro de cerrar este mes? Esta acción asegurará los saldos.');">
+                    <form method="POST" action="{% url 'accounting:fiscal_close' %}" class="row g-3 align-items-end" onsubmit="return confirm('¿Estás seguro de cerrar este mes? Esta acción asegurará los saldos.');">
                         {% csrf_token %}
                         <div class="col-md-4">
                             <label class="form-label fw-bold">Año a Cerrar</label>

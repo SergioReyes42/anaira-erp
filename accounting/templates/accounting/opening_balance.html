@@ -16,7 +16,7 @@
         </div>
         
         <div class="card-body p-4">
-            <form method="POST" action="{% url 'opening_balance' %}" id="openingBalanceForm">
+            <form method="POST" action="{% url 'accounting:opening_balance' %}" id="openingBalanceForm">
                 {% csrf_token %}
                 
                 <div class="row mb-4">

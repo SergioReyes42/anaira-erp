@@ -20,7 +20,7 @@
                 <input type="text" name="q" value="{{ search_query }}" class="form-control form-control-lg border-secondary me-2" placeholder="Buscar por código (Ej. 1.1.2) o nombre (Ej. Bancos)...">
                 <button type="submit" class="btn btn-dark px-4"><i class="bi bi-search"></i> Buscar</button>
                 {% if search_query %}
-                    <a href="{% url 'chart_of_accounts' %}" class="btn btn-outline-danger ms-2">Limpiar</a>
+                    <a href="{% url 'accounting:chart_of_accounts' %}" class="btn btn-outline-danger ms-2">Limpiar</a>
                 {% endif %}
             </form>
         </div>
