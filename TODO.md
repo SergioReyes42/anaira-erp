@@ -1,4 +1,4 @@
-# TODO - Fix NoReverseMatch en flotilla
+hax# TODO - Fix NoReverseMatch en flotilla
 
 - [x] Revisar rutas en `accounting/urls.py` y confirmar `app_name = 'accounting'`.
 - [x] Localizar usos de `vehicle_list` y redirecciones sin namespace.
