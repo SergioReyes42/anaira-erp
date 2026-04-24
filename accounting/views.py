@@ -451,6 +451,10 @@ def vehicle_list(request):
 
 @login_required
 def vehicle_create(request):
+    if not request.user.current_company:
+        messages.error(request, "⛔ Tu usuario no tiene una empresa asignada. Contacta al Administrador.")
+        return redirect('core:home')
+
     if request.method == 'POST':
         form = VehicleForm(request.POST)
         if form.is_valid():
@@ -459,6 +463,7 @@ def vehicle_create(request):
             v.save()
             messages.success(request, "Vehículo creado.")
             return redirect('accounting:vehicle_list')
+        messages.error(request, "Revisa el formulario. Hay campos inválidos.")
     else:
         form = VehicleForm()
     return render(request, 'accounting/vehicle_form.html', {'form': form})
