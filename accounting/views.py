@@ -109,38 +109,42 @@ def smart_scanner(request):
 
         try:
             with transaction.atomic():
-                # 1. El Cerebro IA Analiza la imagen
+                # 1. El Cerebro IA Analiza la imagen (con tolerancia a fallo de API key)
                 ai_data = analyze_invoice_image(image, smart_input)
-                
+
+                # Si Gemini falla (ej. Invalid api_key), utils devuelve fallback.
+                # Aquí seguimos guardando en pendientes para no bloquear operación.
+                ai_error = str(ai_data.get('description', '')).lower()
+                ai_failed = (
+                    ai_data.get('provider_name') == 'Error de Lectura IA' or
+                    'invalid api_key' in ai_error or
+                    'api_key' in ai_error
+                )
+
                 # 2. Cálculos Financieros Preliminares (NIIF Guatemala)
-                # 🛡️ BLINDAJE 2: Usamos .get() por si la IA devuelve vacío y convertimos a float
-                total = float(ai_data.get('total', 0.00))
+                total = float(ai_data.get('total', 0.00) or 0.00)
                 idp = 0.00
                 base = 0.00
                 iva = 0.00
 
-                # Solo calculamos combustible si la IA dijo que es gasolina y el total es mayor a 0
-                if ai_data.get('is_fuel') and total > 0:
+                if total > 0 and ai_data.get('is_fuel'):
                     fuel_type = str(ai_data.get('fuel_type')).lower()
-                    
                     if fuel_type == 'diesel':
                         precio_galon = 28.00
                         tasa_idp = 1.30
                     elif fuel_type == 'regular':
                         precio_galon = 31.00
                         tasa_idp = 4.60
-                    else: # Super por defecto
+                    else:
                         precio_galon = 32.00
                         tasa_idp = 4.70
 
                     galones = total / precio_galon
-                    
-                    # 🛡️ BLINDAJE 3: Redondeamos todo a 2 decimales contables
                     idp = round(galones * tasa_idp, 2)
                     base = round((total - idp) / 1.12, 2)
-                else:
+                elif total > 0:
                     base = round(total / 1.12, 2)
-                    
+
                 iva = round(base * 0.12, 2)
 
                 # 3. Guardar como pendiente en la tabla de la Contadora (Expense)
@@ -148,28 +152,30 @@ def smart_scanner(request):
                     user=request.user,
                     company=request.user.current_company,
                     receipt_image=image,
-                    vehicle=vehicle_obj, # 🚗 NUEVO: Guardamos la relación con el vehículo
-                    
-                    # Extraemos con .get() por seguridad
-                    provider_name=ai_data.get('provider_name', 'Proveedor sin nombre'),
+                    vehicle=vehicle_obj,
+                    provider_name=ai_data.get('provider_name', 'Proveedor no detectado'),
                     provider_nit=ai_data.get('provider_nit', 'C/F'),
                     invoice_series=ai_data.get('invoice_series', ''),
                     invoice_number=ai_data.get('invoice_number', ''),
-                    description=ai_data.get('description', 'Gasto escaneado por IA'),
+                    description=ai_data.get('description', 'Gasto escaneado'),
                     suggested_account=ai_data.get('account_type', 'Gastos Generales'),
-                    
                     total_amount=total,
                     tax_base=base,
                     tax_iva=iva,
                     tax_idp=idp,
-                    
                     status='PENDING',
-                    origin='SCANNER' # Marcamos que viene del scanner
+                    origin='SCANNER'
                 )
-                
-            messages.success(request, f"✅ ¡Factura leída con éxito! La IA detectó: {ai_data.get('account_type')}")
-            # Asegúrate de que el redirect apunte a la página correcta donde quieres que caiga
-            return redirect('accounting:smart_scanner') # O redirect('accounting:expense_pending_list') si la tienes
+
+            if ai_failed:
+                messages.warning(
+                    request,
+                    "⚠️ Gasto enviado a Pendientes, pero la IA no respondió correctamente (revisa GEMINI_API_KEY en Railway)."
+                )
+            else:
+                messages.success(request, f"✅ ¡Factura leída con éxito! La IA detectó: {ai_data.get('account_type')}")
+
+            return redirect('accounting:expense_pending_list')
 
         except Exception as e:
             messages.error(request, f"❌ Ups, hubo un problema al procesar el documento: {str(e)}")
