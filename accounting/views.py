@@ -5,6 +5,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction # <--- Importación vital
+from django.core.files.base import ContentFile
+from PIL import Image, ImageOps
+import io
 from django.utils import timezone
 from django.db.models import Sum, Q
 from django.core.paginator import Paginator # Agrega esto arriba si no lo tienes
@@ -107,11 +110,30 @@ def smart_scanner(request):
             return redirect('accounting:smart_scanner')
 
         try:
+            # Normaliza imagen para evitar fallos de formato/orientación en producción
+            img = Image.open(image)
+            img = ImageOps.exif_transpose(img)
+            if img.mode not in ("RGB", "L"):
+                img = img.convert("RGB")
+            elif img.mode == "L":
+                img = img.convert("RGB")
+
+            # Compresión segura (máx lado 2200px) para evitar errores de peso
+            max_side = 2200
+            img.thumbnail((max_side, max_side), Image.LANCZOS)
+
+            output = io.BytesIO()
+            img.save(output, format="JPEG", quality=82, optimize=True)
+            output.seek(0)
+
+            safe_name = f"scanner_{timezone.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+            image_file = ContentFile(output.read(), name=safe_name)
+
             with transaction.atomic():
                 Expense.objects.create(
                     user=request.user,
                     company=request.user.current_company,
-                    receipt_image=image,
+                    receipt_image=image_file,
                     vehicle=vehicle_obj,
                     provider_name="Pendiente de revisión",
                     provider_nit="C/F",
@@ -130,8 +152,9 @@ def smart_scanner(request):
             messages.success(request, "✅ Factura enviada a Pendientes (modo scanner sin IA).")
             return redirect('accounting:expense_pending_list')
 
-        except Exception:
-            messages.error(request, "❌ No se pudo guardar la factura. Intenta con otra imagen (JPG/PNG) o menor tamaño.")
+        except Exception as e:
+            print(f"[smart_scanner] error al guardar: {e}")
+            messages.error(request, "❌ No se pudo guardar la factura. La imagen se procesó pero falló el almacenamiento; intenta nuevamente.")
             return redirect('accounting:smart_scanner')
 
     return render(request, 'accounting/smart_hub.html', {'vehiculos': vehiculos})
