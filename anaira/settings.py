@@ -172,11 +172,17 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 # ☁️ CONFIGURACIÓN DE ARCHIVOS Y NUBE (Cloudinary y WhiteNoise)
 # ==============================================================================
 # IMPORTANTE: Busca correctamente la variable de entorno
-CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '').strip()
 
 if CLOUDINARY_URL:
     # Si estamos en Railway (Producción), usamos Cloudinary
-    INSTALLED_APPS = ["cloudinary_storage"] + INSTALLED_APPS
+    if "cloudinary_storage" not in INSTALLED_APPS:
+        INSTALLED_APPS = ["cloudinary_storage"] + INSTALLED_APPS
+
+    CLOUDINARY_STORAGE = {
+        "SECURE": True,
+    }
+
     STORAGES = {
         "default": {
             "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
