@@ -176,6 +176,7 @@ CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL')
 
 if CLOUDINARY_URL:
     # Si estamos en Railway (Producción), usamos Cloudinary
+    INSTALLED_APPS = ["cloudinary_storage"] + INSTALLED_APPS
     STORAGES = {
         "default": {
             "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
