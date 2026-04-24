@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction # <--- Importación vital
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from PIL import Image, ImageOps
 import io
 from django.utils import timezone
@@ -153,7 +154,7 @@ def smart_scanner(request):
             return redirect('accounting:expense_pending_list')
 
         except Exception as e:
-            print(f"[smart_scanner] error al guardar con imagen: {e}")
+            print(f"[smart_scanner] storage={default_storage.__class__.__name__} error al guardar con imagen: {repr(e)}")
             # Fallback operativo: no bloquear el proceso por fallo de storage en producción
             try:
                 with transaction.atomic():
