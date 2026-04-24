@@ -153,9 +153,33 @@ def smart_scanner(request):
             return redirect('accounting:expense_pending_list')
 
         except Exception as e:
-            print(f"[smart_scanner] error al guardar: {e}")
-            messages.error(request, "❌ No se pudo guardar la factura. La imagen se procesó pero falló el almacenamiento; intenta nuevamente.")
-            return redirect('accounting:smart_scanner')
+            print(f"[smart_scanner] error al guardar con imagen: {e}")
+            # Fallback operativo: no bloquear el proceso por fallo de storage en producción
+            try:
+                with transaction.atomic():
+                    Expense.objects.create(
+                        user=request.user,
+                        company=request.user.current_company,
+                        vehicle=vehicle_obj,
+                        provider_name="Pendiente de revisión",
+                        provider_nit="C/F",
+                        invoice_series="",
+                        invoice_number="",
+                        description=((smart_input or "Factura subida por scanner (sin IA)") + " [SIN_IMAGEN: revisar storage]")[:255],
+                        suggested_account="Gastos Generales",
+                        total_amount=0.00,
+                        tax_base=0.00,
+                        tax_iva=0.00,
+                        tax_idp=0.00,
+                        status='PENDING',
+                        origin='SCANNER'
+                    )
+                messages.warning(request, "⚠️ Factura guardada en Pendientes sin imagen. Configura CLOUDINARY_URL en Railway para guardar adjuntos.")
+                return redirect('accounting:expense_pending_list')
+            except Exception as e2:
+                print(f"[smart_scanner] error en fallback sin imagen: {e2}")
+                messages.error(request, "❌ No se pudo guardar la factura. Intenta nuevamente.")
+                return redirect('accounting:smart_scanner')
 
     return render(request, 'accounting/smart_hub.html', {'vehiculos': vehiculos})
 
