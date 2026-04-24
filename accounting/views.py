@@ -80,8 +80,8 @@ def pilot_upload(request):
             messages.success(request, "🚀 Gasto enviado. El equipo de Supervisión lo revisará.")
             return redirect('core:home')
             
-        except Exception as e:
-            messages.error(request, f"Error al guardar el gasto: {str(e)}")
+        except Exception:
+            messages.error(request, "Error al guardar el gasto. Verifica que las fotos sean válidas e intenta de nuevo.")
             return redirect('accounting:pilot_upload')
             
     return render(request, 'accounting/pilot_upload.html', {'vehicles': vehicles})
