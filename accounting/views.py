@@ -130,8 +130,8 @@ def smart_scanner(request):
             messages.success(request, "✅ Factura enviada a Pendientes (modo scanner sin IA).")
             return redirect('accounting:expense_pending_list')
 
-        except Exception as e:
-            messages.error(request, f"❌ Error al guardar en pendientes: {str(e)}")
+        except Exception:
+            messages.error(request, "❌ No se pudo guardar la factura. Intenta con otra imagen (JPG/PNG) o menor tamaño.")
             return redirect('accounting:smart_scanner')
 
     return render(request, 'accounting/smart_hub.html', {'vehiculos': vehiculos})
