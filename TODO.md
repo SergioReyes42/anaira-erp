@@ -1,7 +1,7 @@
-# TODO - Fix Gemini Smart Scanner IA
+# TODO - Fix NoReverseMatch en flotilla
 
-- [x] Refactor `accounting/utils.py` to remove hardcoded API key and load `GEMINI_API_KEY` safely from environment.
-- [x] Add robust Gemini initialization and explicit error messages in `accounting/utils.py`.
-- [x] Update `accounting/views.py` to remove hardcoded Gemini configuration block and reuse scanner utility flow.
-- [x] Validate imports for Gemini-related usage in `accounting/views.py`.
-- [x] Provide diagnostic summary and required environment/dependency actions.
+- [x] Revisar rutas en `accounting/urls.py` y confirmar `app_name = 'accounting'`.
+- [x] Localizar usos de `vehicle_list` y redirecciones sin namespace.
+- [x] Corregir redirecciones en `accounting/views.py` para usar namespaced URLs.
+- [x] Verificar consistencia de rutas relacionadas (`bank_*`, `chart_of_accounts`, `fiscal_close`, `opening_balance`, `home`).
+- [x] Marcar tareas completadas.

@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse
+from accounting import views as accounting_views
 from django.contrib.auth import get_user_model
 from django.apps import apps
 
@@ -94,6 +95,10 @@ urlpatterns = [
     path('', include('core.urls')),
 
     path('contabilidad/', include('accounting.urls')),
+
+    # Fallback global sin namespace para compatibilidad con código legado
+    # que aún use reverse/redirect('vehicle_list')
+    path('vehicle-list/', accounting_views.vehicle_list, name='vehicle_list'),
 
     # --- ¡ESTA ES LA LÍNEA QUE TE FALTA O ESTÁ COMENTADA! ---
     path('ventas/', include('sales.urls')), 

@@ -390,7 +390,7 @@ def bank_create(request):
             bank.company = request.user.current_company
             bank.save()
             messages.success(request, "Cuenta creada.")
-            return redirect('bank_list')
+            return redirect('accounting:bank_dashboard')
     else:
         form = BankAccountForm()
     return render(request, 'accounting/bank_form.html', {'form': form})
@@ -458,7 +458,7 @@ def vehicle_create(request):
             v.company = request.user.current_company
             v.save()
             messages.success(request, "Vehículo creado.")
-            return redirect('vehicle_list')
+            return redirect('accounting:vehicle_list')
     else:
         form = VehicleForm()
     return render(request, 'accounting/vehicle_form.html', {'form': form})
@@ -486,7 +486,7 @@ def chart_of_accounts(request):
                 is_transactional=is_transactional
             )
             messages.success(request, f"✅ Cuenta NIIF {code} - {name} agregada con éxito.")
-            return redirect('chart_of_accounts')
+            return redirect('accounting:chart_of_accounts')
 
     # Para mostrar el catálogo, buscamos si el usuario usó la barra de búsqueda
     search_query = request.GET.get('q', '')
@@ -614,13 +614,13 @@ def opening_balance_migration(request):
                     raise Exception(f"Descuadre contable: El Debe (Q{total_debe}) no cuadra con el Haber (Q{total_haber}). Revisa los datos de Monica 8.5.")
 
             messages.success(request, "✅ ¡Migración de Saldos Iniciales guardada con éxito! El 2026 ha iniciado correctamente.")
-            return redirect('home')
+            return redirect('core:home')
 
         except Exception as e:
             # Si descuadra, borramos la partida fallida y le avisamos
             partida.delete()
             messages.error(request, str(e))
-            return redirect('opening_balance')
+            return redirect('accounting:opening_balance')
 
     return render(request, 'accounting/opening_balance.html', {'cuentas': cuentas})
 
@@ -1008,7 +1008,7 @@ def fiscal_close(request):
         else:
             messages.warning(request, f"El período {mes}/{anio} ya estaba cerrado.")
             
-        return redirect('fiscal_close')
+        return redirect('accounting:fiscal_close')
         
     return render(request, 'accounting/fiscal_close.html', {
         'periodos': periodos, 
