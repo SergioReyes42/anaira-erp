@@ -30,7 +30,6 @@ from .models import (
     AccountPayable
 )
 from .forms import BankAccountForm, BankTransactionForm, VehicleForm
-from .utils import analyze_invoice_image
 
 # ========================================================
 # 1. HERRAMIENTAS DE INGRESO UNIFICADAS
@@ -140,7 +139,7 @@ def smart_scanner(request):
 
 @login_required
 def upload_expense_photo(request):
-    return redirect('smart_scanner')
+    return redirect('accounting:smart_scanner')
 
 # ========================================================
 # 2. FLUJO DE APROBACIÓN (CENTRO DE COMPRAS/GASTOS)
@@ -469,16 +468,10 @@ def chart_of_accounts(request):
 from django.http import JsonResponse
 
 def analyze_receipt_api(request):
-    if request.method == 'POST' and request.FILES.get('image'):
-        try:
-            image_file = request.FILES['image']
-            smart_input = request.POST.get('smart_input', '')
-            data = analyze_invoice_image(image_file, smart_input)
-            return JsonResponse({'success': True, **data})
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-
-    return JsonResponse({'success': False, 'error': 'No se proporcionó ninguna imagen'})
+    return JsonResponse({
+        'success': False,
+        'error': 'IA temporalmente desactivada. Sube la factura desde Smart Scanner para enviarla a Pendientes.'
+    })
 
 @login_required
 def mobile_expense(request):
