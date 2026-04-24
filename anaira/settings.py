@@ -1,18 +1,9 @@
 import os
-import shutil
 import dj_database_url # type: ignore
 from pathlib import Path
 
-# 1. DIRECTORIO BASE Y LIMPIEZA AUTOMÁTICA
-# (Esto intenta borrar las bases de datos viejas para que no molesten)
+# 1. DIRECTORIO BASE
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-try:
-    zombie_path = BASE_DIR / 'tenants'
-    if zombie_path.exists():
-        shutil.rmtree(zombie_path)
-except:
-    pass
 
 # 2. SEGURIDAD
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-key-reemplazar')

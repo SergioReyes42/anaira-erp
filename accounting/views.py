@@ -89,99 +89,52 @@ def pilot_upload(request):
 
 @login_required 
 def smart_scanner(request):
-    """VISTA CONTADOR: Escaneo masivo con IA, va a Pendientes"""
+    """VISTA CONTADOR: Scanner temporal sin IA, guarda directo en Pendientes."""
     
-    # 🚗 NUEVO: Traemos los vehículos de la empresa actual
     vehiculos = Vehicle.objects.filter(company=request.user.current_company, active=True) if request.user.current_company else []
 
     if request.method == 'POST':
         image = request.FILES.get('documento')
-        smart_input = request.POST.get('smart_input', '') 
-        
-        # 🚗 NUEVO: Capturamos el ID del vehículo seleccionado
+        smart_input = request.POST.get('smart_input', '')
         vehicle_id = request.POST.get('vehicle')
         vehicle_obj = Vehicle.objects.filter(id=vehicle_id).first() if vehicle_id else None
 
-        # 🛡️ BLINDAJE 1: Verificamos que el usuario tenga empresa
         if not request.user.current_company:
             messages.error(request, "⛔ Tu usuario no tiene una empresa asignada. Contacta al Administrador.")
             return redirect('core:home')
 
+        if not image:
+            messages.error(request, "Debes adjuntar una imagen de factura.")
+            return redirect('accounting:smart_scanner')
+
         try:
             with transaction.atomic():
-                # 1. El Cerebro IA Analiza la imagen (con tolerancia a fallo de API key)
-                ai_data = analyze_invoice_image(image, smart_input)
-
-                # Si Gemini falla (ej. Invalid api_key), utils devuelve fallback.
-                # Aquí seguimos guardando en pendientes para no bloquear operación.
-                ai_error = str(ai_data.get('description', '')).lower()
-                ai_failed = (
-                    ai_data.get('provider_name') == 'Error de Lectura IA' or
-                    'invalid api_key' in ai_error or
-                    'api_key' in ai_error
-                )
-
-                # 2. Cálculos Financieros Preliminares (NIIF Guatemala)
-                total = float(ai_data.get('total', 0.00) or 0.00)
-                idp = 0.00
-                base = 0.00
-                iva = 0.00
-
-                if total > 0 and ai_data.get('is_fuel'):
-                    fuel_type = str(ai_data.get('fuel_type')).lower()
-                    if fuel_type == 'diesel':
-                        precio_galon = 28.00
-                        tasa_idp = 1.30
-                    elif fuel_type == 'regular':
-                        precio_galon = 31.00
-                        tasa_idp = 4.60
-                    else:
-                        precio_galon = 32.00
-                        tasa_idp = 4.70
-
-                    galones = total / precio_galon
-                    idp = round(galones * tasa_idp, 2)
-                    base = round((total - idp) / 1.12, 2)
-                elif total > 0:
-                    base = round(total / 1.12, 2)
-
-                iva = round(base * 0.12, 2)
-
-                # 3. Guardar como pendiente en la tabla de la Contadora (Expense)
                 Expense.objects.create(
                     user=request.user,
                     company=request.user.current_company,
                     receipt_image=image,
                     vehicle=vehicle_obj,
-                    provider_name=ai_data.get('provider_name', 'Proveedor no detectado'),
-                    provider_nit=ai_data.get('provider_nit', 'C/F'),
-                    invoice_series=ai_data.get('invoice_series', ''),
-                    invoice_number=ai_data.get('invoice_number', ''),
-                    description=ai_data.get('description', 'Gasto escaneado'),
-                    suggested_account=ai_data.get('account_type', 'Gastos Generales'),
-                    total_amount=total,
-                    tax_base=base,
-                    tax_iva=iva,
-                    tax_idp=idp,
+                    provider_name="Pendiente de revisión",
+                    provider_nit="C/F",
+                    invoice_series="",
+                    invoice_number="",
+                    description=(smart_input or "Factura subida por scanner (sin IA)")[:255],
+                    suggested_account="Gastos Generales",
+                    total_amount=0.00,
+                    tax_base=0.00,
+                    tax_iva=0.00,
+                    tax_idp=0.00,
                     status='PENDING',
                     origin='SCANNER'
                 )
 
-            if ai_failed:
-                messages.warning(
-                    request,
-                    "⚠️ Gasto enviado a Pendientes, pero la IA no respondió correctamente (revisa GEMINI_API_KEY en Railway)."
-                )
-            else:
-                messages.success(request, f"✅ ¡Factura leída con éxito! La IA detectó: {ai_data.get('account_type')}")
-
+            messages.success(request, "✅ Factura enviada a Pendientes (modo scanner sin IA).")
             return redirect('accounting:expense_pending_list')
 
         except Exception as e:
-            messages.error(request, f"❌ Ups, hubo un problema al procesar el documento: {str(e)}")
+            messages.error(request, f"❌ Error al guardar en pendientes: {str(e)}")
             return redirect('accounting:smart_scanner')
 
-    # 🚗 NUEVO: Pasamos el contexto al template
     return render(request, 'accounting/smart_hub.html', {'vehiculos': vehiculos})
 
 
