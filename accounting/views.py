@@ -93,7 +93,7 @@ def smart_scanner(request):
     vehiculos = Vehicle.objects.filter(company=request.user.current_company, active=True) if request.user.current_company else []
 
     if request.method == 'POST':
-        image = request.FILES.get('documento')
+        image = request.FILES.get('documento') or request.FILES.get('receipt_image') or request.FILES.get('factura')
         smart_input = request.POST.get('smart_input', '')
         vehicle_id = request.POST.get('vehicle')
         vehicle_obj = Vehicle.objects.filter(id=vehicle_id).first() if vehicle_id else None
