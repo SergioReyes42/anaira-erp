@@ -1,5 +1,7 @@
+import io
 import json
-from PIL import Image
+from django.core.files.base import ContentFile
+from PIL import Image, ImageOps
 from core.gemini_config import configure_gemini, genai
 
 
@@ -20,6 +22,56 @@ def _safe_fallback(error_message="Hubo un error al leer la imagen"):
 def _configure_gemini():
     genai = configure_gemini()
     return genai.GenerativeModel("gemini-1.5-flash")
+
+
+def normalize_scanner_image(uploaded_file, max_side=2200, quality=82):
+    """
+    Normaliza imagen para scanner:
+    - corrige orientación EXIF
+    - convierte a RGB
+    - comprime JPEG
+    """
+    img = Image.open(uploaded_file)
+    img = ImageOps.exif_transpose(img)
+
+    if img.mode not in ("RGB", "L"):
+        img = img.convert("RGB")
+    elif img.mode == "L":
+        img = img.convert("RGB")
+
+    img.thumbnail((max_side, max_side), Image.LANCZOS)
+
+    output = io.BytesIO()
+    img.save(output, format="JPEG", quality=quality, optimize=True)
+    output.seek(0)
+    return ContentFile(output.read())
+
+
+def build_scanner_expense_payload(user, company, vehicle_obj, smart_input="", include_storage_flag=False):
+    """
+    Construye payload base para Expense del scanner sin IA.
+    """
+    description_base = (smart_input or "Factura subida por scanner (sin IA)")
+    if include_storage_flag:
+        description_base = f"{description_base} [SIN_IMAGEN: revisar storage]"
+
+    return {
+        "user": user,
+        "company": company,
+        "vehicle": vehicle_obj,
+        "provider_name": "Pendiente de revisión",
+        "provider_nit": "C/F",
+        "invoice_series": "",
+        "invoice_number": "",
+        "description": description_base[:255],
+        "suggested_account": "Gastos Generales",
+        "total_amount": 0.00,
+        "tax_base": 0.00,
+        "tax_iva": 0.00,
+        "tax_idp": 0.00,
+        "status": "PENDING",
+        "origin": "SCANNER",
+    }
 
 
 def analyze_invoice_image(image_file, smart_input=""):

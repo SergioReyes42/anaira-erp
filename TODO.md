@@ -1,10 +1,9 @@
-# TODO - Fix NoReverseMatch + flujo Smart Scanner
+# TODO - Refactor Smart Scanner y subida de gasto
 
-- [x] Revisar rutas en `accounting/urls.py` y confirmar `app_name = 'accounting'`.
-- [x] Localizar usos de `vehicle_list` y redirecciones sin namespace.
-- [x] Corregir redirecciones en `accounting/views.py` para usar namespaced URLs.
-- [x] Verificar consistencia de rutas relacionadas (`bank_*`, `chart_of_accounts`, `fiscal_close`, `opening_balance`, `home`).
-- [x] Agregar guard en `vehicle_create` cuando `current_company` es nulo.
-- [ ] Hacer resiliente `smart_scanner` cuando falle Gemini/API key (guardar pendiente mínimo).
-- [ ] Probar POST de scanner con falla IA y validar creación en `Expense` con `status='PENDING'`.
-- [ ] Documentar pasos de Railway para corregir `GEMINI_API_KEY`.
+- [x] Revisar `accounting/views.py` y detectar duplicación/fragilidad en scanner.
+- [x] Agregar helpers reutilizables en `accounting/utils.py` para normalizar imagen y construir payload.
+- [x] Simplificar `smart_scanner` en `accounting/views.py` usando helpers, manteniendo fallback actual.
+- [x] Unificar validaciones/mensajes básicos en flujos de subida de gasto.
+- [x] Corregir typo de ruta legacy `accountig:smart_hub` -> `accounting:smart_hub`.
+- [x] Ejecutar verificación mínima (`python manage.py check`).
+- [x] Marcar TODO finalizado.

@@ -7,8 +7,6 @@ from django.contrib import messages
 from django.db import transaction # <--- Importación vital
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from PIL import Image, ImageOps
-import io
 from django.utils import timezone
 from django.db.models import Sum, Q
 from django.core.paginator import Paginator # Agrega esto arriba si no lo tienes
@@ -34,6 +32,7 @@ from .models import (
     AccountPayable
 )
 from .forms import BankAccountForm, BankTransactionForm, VehicleForm
+from .utils import normalize_scanner_image, build_scanner_expense_payload
 
 # ========================================================
 # 1. HERRAMIENTAS DE INGRESO UNIFICADAS
@@ -111,44 +110,21 @@ def smart_scanner(request):
             return redirect('accounting:smart_scanner')
 
         try:
-            # Normaliza imagen para evitar fallos de formato/orientación en producción
-            img = Image.open(image)
-            img = ImageOps.exif_transpose(img)
-            if img.mode not in ("RGB", "L"):
-                img = img.convert("RGB")
-            elif img.mode == "L":
-                img = img.convert("RGB")
-
-            # Compresión segura (máx lado 2200px) para evitar errores de peso
-            max_side = 2200
-            img.thumbnail((max_side, max_side), Image.LANCZOS)
-
-            output = io.BytesIO()
-            img.save(output, format="JPEG", quality=82, optimize=True)
-            output.seek(0)
-
+            normalized_image = normalize_scanner_image(image)
             safe_name = f"scanner_{timezone.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-            image_file = ContentFile(output.read(), name=safe_name)
+            image_file = ContentFile(normalized_image.read(), name=safe_name)
+
+            payload = build_scanner_expense_payload(
+                user=request.user,
+                company=request.user.current_company,
+                vehicle_obj=vehicle_obj,
+                smart_input=smart_input,
+                include_storage_flag=False,
+            )
+            payload["receipt_image"] = image_file
 
             with transaction.atomic():
-                Expense.objects.create(
-                    user=request.user,
-                    company=request.user.current_company,
-                    receipt_image=image_file,
-                    vehicle=vehicle_obj,
-                    provider_name="Pendiente de revisión",
-                    provider_nit="C/F",
-                    invoice_series="",
-                    invoice_number="",
-                    description=(smart_input or "Factura subida por scanner (sin IA)")[:255],
-                    suggested_account="Gastos Generales",
-                    total_amount=0.00,
-                    tax_base=0.00,
-                    tax_iva=0.00,
-                    tax_idp=0.00,
-                    status='PENDING',
-                    origin='SCANNER'
-                )
+                Expense.objects.create(**payload)
 
             messages.success(request, "✅ Factura enviada a Pendientes (modo scanner sin IA).")
             return redirect('accounting:expense_pending_list')
@@ -157,24 +133,15 @@ def smart_scanner(request):
             print(f"[smart_scanner] storage={default_storage.__class__.__name__} error al guardar con imagen: {repr(e)}")
             # Fallback operativo: no bloquear el proceso por fallo de storage en producción
             try:
+                fallback_payload = build_scanner_expense_payload(
+                    user=request.user,
+                    company=request.user.current_company,
+                    vehicle_obj=vehicle_obj,
+                    smart_input=smart_input,
+                    include_storage_flag=True,
+                )
                 with transaction.atomic():
-                    Expense.objects.create(
-                        user=request.user,
-                        company=request.user.current_company,
-                        vehicle=vehicle_obj,
-                        provider_name="Pendiente de revisión",
-                        provider_nit="C/F",
-                        invoice_series="",
-                        invoice_number="",
-                        description=((smart_input or "Factura subida por scanner (sin IA)") + " [SIN_IMAGEN: revisar storage]")[:255],
-                        suggested_account="Gastos Generales",
-                        total_amount=0.00,
-                        tax_base=0.00,
-                        tax_iva=0.00,
-                        tax_idp=0.00,
-                        status='PENDING',
-                        origin='SCANNER'
-                    )
+                    Expense.objects.create(**fallback_payload)
                 messages.warning(request, "⚠️ Factura guardada en Pendientes sin imagen. Configura CLOUDINARY_URL en Railway para guardar adjuntos.")
                 return redirect('accounting:expense_pending_list')
             except Exception as e2:
@@ -1225,7 +1192,7 @@ def subir_gasto_scanner(request):
             asist_firmado=True
         )
         
-        return redirect('accountig:smart_hub') # Lo mandas a donde quieras tras guardar
+        return redirect('accounting:smart_hub') # Lo mandas a donde quieras tras guardar
 
     return render(request, 'accounting/smart_hub')
 
