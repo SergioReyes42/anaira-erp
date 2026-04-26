@@ -961,8 +961,8 @@ def trial_balance(request):
 def purchase_ledger(request):
     """Libro de Compras y Servicios (Formato SAT Guatemala)"""
     
-    anio = int(request.GET.get('anio', timezone.now().year))
-    mes = int(request.GET.get('mes', timezone.now().month))
+    anio = _safe_int(request.GET.get('anio', timezone.now().year), timezone.now().year)
+    mes = _safe_int(request.GET.get('mes', timezone.now().month), timezone.now().month)
 
     # Filtramos solo los gastos del mes que ya fueron contabilizados (APPROVED)
     gastos = Expense.objects.filter(
@@ -1033,8 +1033,8 @@ def fiscal_close(request):
 def sales_ledger(request):
     """Libro de Ventas y Servicios Prestados (Formato SAT Guatemala)"""
     
-    anio = int(request.GET.get('anio', timezone.now().year))
-    mes = int(request.GET.get('mes', timezone.now().month))
+    anio = _safe_int(request.GET.get('anio', timezone.now().year), timezone.now().year)
+    mes = _safe_int(request.GET.get('mes', timezone.now().month), timezone.now().month)
 
     ventas = SaleInvoice.objects.filter(
         company=request.user.current_company,
