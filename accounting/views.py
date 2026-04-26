@@ -45,6 +45,17 @@ def _current_company_key(request):
         return None
     return str(getattr(company, 'id', company))
 
+
+def _safe_int(value, default):
+    """
+    Convierte a int de forma segura para evitar errores por valores mal codificados
+    (ej: '\\x0026') provenientes de querystring.
+    """
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return default
+
 # ========================================================
 # 1. HERRAMIENTAS DE INGRESO UNIFICADAS
 # ========================================================
@@ -642,8 +653,8 @@ def general_journal(request):
     mes_actual = timezone.now().month
     anio_actual = timezone.now().year
     
-    mes = int(request.GET.get('mes', mes_actual))
-    anio = int(request.GET.get('anio', anio_actual))
+    mes = _safe_int(request.GET.get('mes', mes_actual), mes_actual)
+    anio = _safe_int(request.GET.get('anio', anio_actual), anio_actual)
     company_key = _current_company_key(request)
 
     partidas = JournalEntry.objects.filter(
@@ -680,8 +691,8 @@ def general_ledger(request):
     anio_actual = timezone.now().year
     
     account_id = request.GET.get('account_id')
-    mes = int(request.GET.get('mes', mes_actual))
-    anio = int(request.GET.get('anio', anio_actual))
+    mes = _safe_int(request.GET.get('mes', mes_actual), mes_actual)
+    anio = _safe_int(request.GET.get('anio', anio_actual), anio_actual)
     company_key = _current_company_key(request)
     
     lineas = []
@@ -730,8 +741,8 @@ def general_ledger(request):
 def balance_sheet(request):
     """Estado de Situación Financiera (Balance General)"""
     
-    anio = int(request.GET.get('anio', timezone.now().year))
-    mes = int(request.GET.get('mes', timezone.now().month))
+    anio = _safe_int(request.GET.get('anio', timezone.now().year), timezone.now().year)
+    mes = _safe_int(request.GET.get('mes', timezone.now().month), timezone.now().month)
     company_key = _current_company_key(request)
 
     if mes == 12:
@@ -803,8 +814,8 @@ def balance_sheet(request):
 def income_statement(request):
     """Estado de Resultados (Pérdidas y Ganancias)"""
     
-    anio = int(request.GET.get('anio', timezone.now().year))
-    mes = int(request.GET.get('mes', timezone.now().month))
+    anio = _safe_int(request.GET.get('anio', timezone.now().year), timezone.now().year)
+    mes = _safe_int(request.GET.get('mes', timezone.now().month), timezone.now().month)
     company_key = _current_company_key(request)
 
     fecha_inicio = datetime.date(anio, mes, 1)
@@ -867,19 +878,18 @@ def income_statement(request):
 def trial_balance(request):
     """Balance de Comprobación de Sumas y Saldos"""
     
-    anio = int(request.GET.get('anio', timezone.now().year))
-    mes = int(request.GET.get('mes', timezone.now().month))
+    anio = _safe_int(request.GET.get('anio', timezone.now().year), timezone.now().year)
+    mes = _safe_int(request.GET.get('mes', timezone.now().month), timezone.now().month)
+    company_key = _current_company_key(request)
 
-    # Corte hasta el último día del mes seleccionado
     if mes == 12:
         fecha_fin = datetime.date(anio + 1, 1, 1)
     else:
         fecha_fin = datetime.date(anio, mes + 1, 1)
 
-    # Traemos la suma de DEBE y HABER de todas las cuentas con movimientos
     lineas = JournalEntryLine.objects.filter(
         entry__date__lt=fecha_fin,
-        entry__company=request.user.current_company
+        entry__company__in=[company_key, str(request.user.current_company)]
     ).values(
         'account__id', 'account__code', 'account__name', 'account__account_type'
     ).annotate(
