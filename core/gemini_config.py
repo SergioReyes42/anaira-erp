@@ -6,10 +6,8 @@ try:
 except Exception:
     genai_new = None
 
-try:
-    import google.generativeai as genai_legacy  # SDK legacy (fallback)
-except Exception:
-    genai_legacy = None
+# Legacy SDK desactivado intencionalmente para evitar rutas v1beta incompatibles.
+genai_legacy = None
 
 load_dotenv()
 
@@ -42,27 +40,41 @@ def get_gemini_model_name() -> str:
     return (os.getenv("GEMINI_MODEL", "gemini-1.5-flash") or "gemini-1.5-flash").strip()
 
 
+def get_gemini_model_candidates():
+    primary = get_gemini_model_name()
+    fallbacks = [
+        primary,
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-8b",
+        "gemini-1.5-pro",
+    ]
+    unique = []
+    for m in fallbacks:
+        if m and m not in unique:
+            unique.append(m)
+    return unique
+
+
 def configure_gemini():
     """
-    Devuelve un dict con cliente configurado:
+    Devuelve cliente del SDK nuevo únicamente:
     - {"provider": "new", "client": <google.genai.Client>, "model": "..."}
-    - {"provider": "legacy", "client": <google.generativeai module>, "model": "..."}
     """
     api_key = get_validated_gemini_api_key()
     model_name = get_gemini_model_name()
 
-    if genai_new is not None:
-        try:
-            client = genai_new.Client(api_key=api_key)
-            return {"provider": "new", "client": client, "model": model_name}
-        except Exception:
-            # Sigue al fallback legacy
-            pass
+    if genai_new is None:
+        raise RuntimeError(
+            "SDK google.genai no disponible. Instala/actualiza dependencia `google-genai`."
+        )
 
-    if genai_legacy is not None:
-        genai_legacy.configure(api_key=api_key)
-        return {"provider": "legacy", "client": genai_legacy, "model": model_name}
-
-    raise RuntimeError(
-        "No hay SDK de Gemini disponible. Instala `google-genai` o `google-generativeai`."
-    )
+    try:
+        client = genai_new.Client(api_key=api_key)
+        return {
+            "provider": "new",
+            "client": client,
+            "model": model_name,
+            "model_candidates": get_gemini_model_candidates(),
+        }
+    except Exception as e:
+        raise RuntimeError(f"No se pudo inicializar google.genai: {e}")

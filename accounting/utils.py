@@ -118,26 +118,40 @@ def analyze_invoice_image(image_file, smart_input=""):
         }}
         """
 
-        if cfg["provider"] == "new":
-            # SDK nuevo google.genai
-            response = cfg["client"].models.generate_content(
-                model=cfg["model"],
-                contents=[prompt, img],
-            )
-            raw_text = (getattr(response, "text", None) or "").strip()
-        else:
-            # SDK legacy google.generativeai
-            model = cfg["client"].GenerativeModel(cfg["model"])
-            response = model.generate_content(
-                [prompt, img],
-                generation_config=cfg["client"].types.GenerationConfig(
-                    response_mime_type="application/json",
-                    temperature=0.0,
-                )
-            )
-            raw_text = (getattr(response, "text", None) or "").strip()
+        model_candidates = cfg.get("model_candidates") or [cfg["model"]]
+        last_err = None
+        raw_text = ""
+
+        for model_name in model_candidates:
+            try:
+                if cfg["provider"] == "new":
+                    # SDK nuevo google.genai
+                    response = cfg["client"].models.generate_content(
+                        model=model_name,
+                        contents=[prompt, img],
+                    )
+                    raw_text = (getattr(response, "text", None) or "").strip()
+                else:
+                    # SDK legacy google.generativeai
+                    model = cfg["client"].GenerativeModel(model_name)
+                    response = model.generate_content(
+                        [prompt, img],
+                        generation_config=cfg["client"].types.GenerationConfig(
+                            response_mime_type="application/json",
+                            temperature=0.0,
+                        )
+                    )
+                    raw_text = (getattr(response, "text", None) or "").strip()
+
+                if raw_text:
+                    break
+            except Exception as model_err:
+                last_err = model_err
+                continue
 
         if not raw_text:
+            if last_err is not None:
+                raise RuntimeError(f"Gemini sin respuesta utilizable. Último error: {last_err}")
             raise RuntimeError("Gemini no devolvió texto utilizable.")
 
         data = json.loads(raw_text)
