@@ -147,7 +147,7 @@ def smart_scanner(request):
             if ai_ok:
                 messages.success(request, "✅ Factura enviada a Pendientes (scanner con IA).")
             else:
-                messages.success(request, "✅ Factura enviada a Pendientes (modo scanner sin IA).")
+                messages.warning(request, "⚠️ IA no disponible temporalmente, factura guardada para revisión.")
             return redirect('accounting:expense_pending_list')
 
         except Exception as e:

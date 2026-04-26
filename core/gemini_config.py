@@ -44,9 +44,8 @@ def get_gemini_model_candidates():
     primary = get_gemini_model_name()
     fallbacks = [
         primary,
+        "gemini-2.0-flash",
         "gemini-1.5-flash",
-        "gemini-1.5-flash-8b",
-        "gemini-1.5-pro",
     ]
     unique = []
     for m in fallbacks:
@@ -69,7 +68,10 @@ def configure_gemini():
         )
 
     try:
-        client = genai_new.Client(api_key=api_key)
+        client = genai_new.Client(
+            api_key=api_key,
+            http_options={"api_version": "v1"},
+        )
         return {
             "provider": "new",
             "client": client,
