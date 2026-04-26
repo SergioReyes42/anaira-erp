@@ -129,3 +129,21 @@ def reception_add(request, pk):
         form = WarehouseReceptionForm(instance=reception)
         
     return render(request, 'imports/reception_form.html', {'form': form, 'duca': duca})
+
+
+@login_required
+def tracking_dashboard(request):
+    ducas = Duca.objects.filter(company=request.user.current_company).order_by('-date_acceptance')
+    return render(request, 'imports/tracking_dashboard.html', {'ducas': ducas})
+
+
+@login_required
+def reception_dashboard(request):
+    ducas = Duca.objects.filter(company=request.user.current_company).order_by('-date_acceptance')
+    return render(request, 'imports/reception_dashboard.html', {'ducas': ducas})
+
+
+@login_required
+def costing_report(request):
+    ducas = Duca.objects.filter(company=request.user.current_company).order_by('-date_acceptance')
+    return render(request, 'imports/costing_report.html', {'ducas': ducas})

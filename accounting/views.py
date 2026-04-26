@@ -1592,6 +1592,42 @@ def pagar_tarjeta_credito(request):
     return render(request, 'accounting/tarjeta_pago.html', {'tarjetas': tarjetas, 'cuentas': cuentas})
 
 @login_required
+@group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
+def purchase_history(request):
+    return render(request, 'accounting/purchase_history.html')
+
+
+@login_required
+@group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
+def purchase_create(request):
+    return render(request, 'accounting/purchase_create.html')
+
+
+@login_required
+@group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
+def suppliers_list(request):
+    return render(request, 'accounting/suppliers_list.html')
+
+
+@login_required
+@group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
+def ai_expense_register(request):
+    return render(request, 'accounting/ai_expense_register.html')
+
+
+@login_required
+@group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
+def operating_expenses(request):
+    return render(request, 'accounting/operating_expenses.html')
+
+
+@login_required
+@group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
+def purchase_orders(request):
+    return render(request, 'accounting/purchase_orders.html')
+
+
+@login_required
 def cxp_dashboard(request):
     """Panel de Control de Cuentas por Pagar (CxP)"""
     # Traemos todas las deudas de la empresa, ordenadas por fecha de vencimiento (las más urgentes primero)

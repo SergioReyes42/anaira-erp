@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+    <div>
+      <h2 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Tracking de Contenedores</h2>
+      <small class="text-muted">Seguimiento de pólizas DUCA y estado logístico</small>
+    </div>
+  </div>
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      {% if ducas %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>DUCA</th>
+              <th>Fecha aceptación</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in ducas %}
+            <tr>
+              <td>{{ d.duca_number }}</td>
+              <td>{{ d.date_acceptance|date:"d/m/Y" }}</td>
+              <td>
+                <a href="{% url 'imports:duca_detail' d.pk %}" class="btn btn-outline-primary btn-sm">Ver detalle</a>
+                <a href="{% url 'imports:tracking_add' d.pk %}" class="btn btn-outline-secondary btn-sm">Actualizar tracking</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center text-muted py-5">Sin DUCAs registradas para tracking.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

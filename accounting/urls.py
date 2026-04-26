@@ -84,10 +84,19 @@ urlpatterns = [
     path('tarjetas-credito/pagar/', views.pagar_tarjeta_credito, name='pagar_tarjeta_credito'),
 
     # ==========================================
-    # 5. CUENTAS POR PAGAR (CXP)
+    # 5. COMPRAS
+    # ==========================================
+    path('compras/historial/', views.purchase_history, name='purchase_history'),
+    path('compras/nueva/', views.purchase_create, name='purchase_create'),
+    path('compras/proveedores/', views.suppliers_list, name='suppliers_list'),
+    path('compras/registrar-gasto-ia/', views.ai_expense_register, name='ai_expense_register'),
+    path('compras/gastos-operativos/', views.operating_expenses, name='operating_expenses'),
+    path('compras/ordenes/', views.purchase_orders, name='purchase_orders'),
+
+    # ==========================================
+    # 6. CUENTAS POR PAGAR (CXP)
     # ==========================================
     path('cxp/', views.cxp_dashboard, name='cxp_dashboard'),
-
     path('cxp/nueva/', views.registrar_factura_cxp, name='registrar_factura_cxp'),
 
 ]

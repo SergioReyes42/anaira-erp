@@ -107,20 +107,20 @@
                     <a href="{% url 'sales:client_list' %}" class="list-group-item list-group-item-action border-0">
                         <i class="bi bi-people-fill text-info me-1"></i> Directorio Clientes
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'sales:quotation_history' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-list-check me-1"></i> Historial
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'sales:sales_orders_list' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-bag me-1"></i> Pedidos de Venta
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'sales:electronic_invoicing_dashboard' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-receipt-cutoff me-1"></i> Facturación Electrónica
                     </a>
                     <div class="dropdown-divider border-secondary"></div> 
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'sales:crm_tracking_dashboard' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-graph-up-arrow me-1"></i> Seguimiento / CRM
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action text-danger">
+                    <a href="{% url 'sales:blacklist_dashboard' %}" class="list-group-item list-group-item-action text-danger">
                         <i class="bi bi-exclamation-triangle me-1"></i> Libro Negro (Mora)
                     </a>
                 </div>

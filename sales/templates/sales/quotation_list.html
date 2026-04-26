@@ -3,7 +3,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between">
         <h2>📜 Cotizaciones</h2>
-        <a href="{% url 'quotation_create' %}" class="btn btn-primary">Nueva Cotización</a>
+        <a href="{% url 'sales:quotation_create' %}" class="btn btn-primary">Nueva Cotización</a>
     </div>
     <ul class="list-group mt-3">
         {% for q in quotations %}

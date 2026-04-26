@@ -16,4 +16,8 @@ urlpatterns = [
     # Nueva ruta para Recepción a Bodega:
     path('<int:pk>/recepcion/', views.reception_add, name='reception_add'),
 
+    # Dashboards del menú Importaciones
+    path('tracking/', views.tracking_dashboard, name='tracking_dashboard'),
+    path('recepcion-bodega/', views.reception_dashboard, name='reception_dashboard'),
+    path('reporteria-costos/', views.costing_report, name='costing_report'),
 ]
