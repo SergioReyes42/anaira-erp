@@ -502,7 +502,6 @@ def chart_of_accounts(request):
 
     })
 
-
 from django.http import JsonResponse
 
 def analyze_receipt_api(request):
