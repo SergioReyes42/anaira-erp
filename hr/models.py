@@ -20,3 +20,37 @@ class Payroll(CompanyAwareModel):
     
     def __str__(self):
         return f"Nómina {self.date}"
+
+
+class EmployeeLoanAdvance(CompanyAwareModel):
+    TYPE_CHOICES = (
+        ("ANTICIPO", "Anticipo"),
+        ("PRESTAMO", "Préstamo"),
+    )
+
+    STATUS_CHOICES = (
+        ("ACTIVO", "Activo"),
+        ("CANCELADO", "Cancelado"),
+    )
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="loan_advances")
+    request_date = models.DateField(default=timezone.now, verbose_name="Fecha de Solicitud")
+    loan_type = models.CharField(max_length=20, choices=TYPE_CHOICES, verbose_name="Tipo")
+    amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto")
+    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Saldo")
+    installments = models.PositiveIntegerField(default=1, verbose_name="Cuotas")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="ACTIVO", verbose_name="Estado")
+    notes = models.TextField(blank=True, null=True, verbose_name="Observaciones")
+
+    class Meta:
+        verbose_name = "Anticipo/Préstamo a Empleado"
+        verbose_name_plural = "Anticipos y Préstamos a Empleados"
+        ordering = ["-request_date", "-id"]
+
+    def save(self, *args, **kwargs):
+        if self.balance in (None, 0):
+            self.balance = self.amount
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.loan_type} - {self.employee} - {self.amount}"

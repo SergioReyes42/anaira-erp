@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+    <div>
+      <h2 class="mb-0"><i class="bi bi-wallet2 me-2"></i>Préstamos y Anticipos</h2>
+      <small class="text-muted">Control de anticipos y préstamos a empleados</small>
+    </div>
+    <a href="{% url 'prestamo_create' %}" class="btn btn-primary">
+      <i class="bi bi-plus-circle me-1"></i> Nuevo registro
+    </a>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      {% if prestamos %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Empleado</th>
+              <th>Tipo</th>
+              <th>Monto</th>
+              <th>Saldo</th>
+              <th>Cuotas</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in prestamos %}
+            <tr>
+              <td>{{ p.request_date|date:"d/m/Y" }}</td>
+              <td>{{ p.employee }}</td>
+              <td>{{ p.get_loan_type_display }}</td>
+              <td>Q {{ p.amount|floatformat:2 }}</td>
+              <td>Q {{ p.balance|floatformat:2 }}</td>
+              <td>{{ p.installments }}</td>
+              <td>
+                {% if p.status == 'ACTIVO' %}
+                  <span class="badge bg-warning text-dark">Activo</span>
+                {% else %}
+                  <span class="badge bg-success">Cancelado</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center text-muted py-5">No hay préstamos/anticipos registrados.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

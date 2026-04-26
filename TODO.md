@@ -1,10 +1,10 @@
-# TODO - Fase 1 Reportería unificada (Excel/PDF)
+# TODO - RRHH: páginas faltantes + anticipos/préstamos
 
-- [x] Revisar rutas y vistas actuales de reportes en `accounting` y `core`.
-- [x] Implementar sección central de reportería (dashboard) en `core`.
-- [x] Agregar endpoint/flujo de exportación Excel para Libro Diario.
-- [ ] Agregar endpoint/flujo de exportación Excel para Balance de Comprobación.
-- [ ] Agregar versión PDF imprimible para ambos reportes.
-- [x] Actualizar botones y enlaces en templates de reportes contables.
-- [ ] Ejecutar `python manage.py check`.
-- [ ] Dejar lista base para escalar a otros módulos.
+- [x] Revisar estado actual de `hr/views.py`, `hr/urls.py`, `hr/models.py` y menú.
+- [x] Crear modelo `EmployeeLoanAdvance` en `hr/models.py`.
+- [ ] Generar y aplicar migración de `hr`.
+- [ ] Crear vistas RRHH faltantes (`vacaciones_permisos`, `prestamo_list`, `prestamo_create`, `nomina_create` funcional).
+- [ ] Conectar rutas RRHH en `hr/urls.py`.
+- [ ] Crear templates RRHH (`nomina_create.html`, `vacaciones_permisos.html`, `prestamo_list.html`, `prestamo_form.html`).
+- [ ] Actualizar enlaces de menú RRHH en `templates/base.html`.
+- [ ] Ejecutar pruebas (`makemigrations`, `migrate`, `check` + endpoints básicos).
