@@ -6,6 +6,7 @@ from django.contrib import messages
 from .models import Company
 from django.db import transaction
 from django.contrib.auth.models import Group
+from django.urls import reverse
 
 User = get_user_model()
 
@@ -169,6 +170,47 @@ def switch_company(request, company_id):
     # Lo devolvemos a la página donde estaba (o al inicio si no hay historial)
     next_url = request.META.get('HTTP_REFERER', '/')
     return redirect(next_url)
+
+@login_required
+def reporting_hub(request):
+    """Hub central de reportes exportables por módulo"""
+    reports_by_module = [
+        {
+            "module": "Contabilidad",
+            "icon": "bi-journal-text",
+            "reports": [
+                {
+                    "name": "Libro Diario General",
+                    "view_url": reverse("accounting:general_journal"),
+                    "excel_url": reverse("accounting:export_general_journal_excel"),
+                    "pdf_url": reverse("accounting:export_general_journal_pdf"),
+                    "description": "Movimientos contables con exportación en Excel y PDF.",
+                }
+            ],
+        },
+        {
+            "module": "Ventas",
+            "icon": "bi-cart-check",
+            "reports": [],
+        },
+        {
+            "module": "Inventario",
+            "icon": "bi-box-seam",
+            "reports": [],
+        },
+        {
+            "module": "RRHH",
+            "icon": "bi-people",
+            "reports": [],
+        },
+        {
+            "module": "Importaciones",
+            "icon": "bi-ship",
+            "reports": [],
+        },
+    ]
+    return render(request, "core/reporting_hub.html", {"reports_by_module": reports_by_module})
+
 
 @login_required
 def login_router(request):

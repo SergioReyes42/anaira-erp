@@ -69,6 +69,9 @@ urlpatterns = [
 
     path('cierre-fiscal/', views.fiscal_close, name='fiscal_close'),
 
+    path('reportes/libro-diario/excel/', views.export_general_journal_excel, name='export_general_journal_excel'),
+    path('reportes/libro-diario/pdf/', views.export_general_journal_pdf, name='export_general_journal_pdf'),
+
     path('supervision-gastos/', views.expense_pre_review_list, name='expense_pre_review_list'),
 
     path('tarjetas-credito/', views.panel_tarjetas, name='panel_tarjetas'),

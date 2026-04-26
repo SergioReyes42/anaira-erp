@@ -35,5 +35,5 @@ urlpatterns = [
     path('fix-db-emergency/', views.db_fix_view, name='db_fix'),
 
     path('cambiar-sucursal/<int:company_id>/', views.switch_company, name='switch_company'),
-    
+    path('reportes/', views.reporting_hub, name='reporting_hub'),
 ]

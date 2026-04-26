@@ -10,6 +10,7 @@ from django.core.files.storage import default_storage
 from django.utils import timezone
 from django.db.models import Sum, Q, F, Value, DecimalField
 from django.core.paginator import Paginator # Agrega esto arriba si no lo tienes
+from core.reporting import export_to_excel, export_to_pdf
 from .decorators import group_required  # <--- Importas el candado
 from django.forms import modelformset_factory
 from django.db.models import Prefetch
@@ -585,6 +586,81 @@ def fleet_expense_report(request):
         'selected_category': category,
     }
     return render(request, 'accounting/fleet_report.html', context)
+
+@login_required
+@group_required('Contadora', 'Gerente', 'Administrador')
+def export_general_journal_excel(request):
+    """Exporta Libro Diario General a Excel"""
+    mes_actual = timezone.now().month
+    anio_actual = timezone.now().year
+
+    mes = _safe_int(request.GET.get('mes', mes_actual), mes_actual)
+    anio = _safe_int(request.GET.get('anio', anio_actual), anio_actual)
+    company_key = _current_company_key(request)
+
+    partidas = JournalEntry.objects.filter(
+        company__in=[company_key, str(request.user.current_company)],
+        date__year=anio,
+        date__month=mes
+    ).prefetch_related(
+        Prefetch('lines', queryset=JournalEntryLine.objects.select_related('account'))
+    ).order_by('date', 'id')
+
+    headers = ["Fecha", "Partida", "Concepto", "Cuenta", "Código", "Debe", "Haber"]
+    rows = []
+    for partida in partidas:
+        for line in partida.lines.all():
+            rows.append([
+                partida.date.strftime("%d/%m/%Y"),
+                partida.id,
+                partida.concept or "",
+                line.account.name if line.account else "",
+                line.account.code if line.account else "",
+                float(line.debit or 0),
+                float(line.credit or 0),
+            ])
+
+    filename = f"libro_diario_{anio}_{mes:02d}"
+    return export_to_excel(filename, headers, rows)
+
+
+@login_required
+@group_required('Contadora', 'Gerente', 'Administrador')
+def export_general_journal_pdf(request):
+    """Exporta Libro Diario General a PDF"""
+    mes_actual = timezone.now().month
+    anio_actual = timezone.now().year
+
+    mes = _safe_int(request.GET.get('mes', mes_actual), mes_actual)
+    anio = _safe_int(request.GET.get('anio', anio_actual), anio_actual)
+    company_key = _current_company_key(request)
+
+    partidas = JournalEntry.objects.filter(
+        company__in=[company_key, str(request.user.current_company)],
+        date__year=anio,
+        date__month=mes
+    ).prefetch_related(
+        Prefetch('lines', queryset=JournalEntryLine.objects.select_related('account'))
+    ).order_by('date', 'id')
+
+    headers = ["Fecha", "Partida", "Concepto", "Cuenta", "Código", "Debe", "Haber"]
+    rows = []
+    for partida in partidas:
+        for line in partida.lines.all():
+            rows.append([
+                partida.date.strftime("%d/%m/%Y"),
+                str(partida.id),
+                (partida.concept or "")[:60],
+                (line.account.name if line.account else "")[:40],
+                line.account.code if line.account else "",
+                f"{float(line.debit or 0):.2f}",
+                f"{float(line.credit or 0):.2f}",
+            ])
+
+    title = f"Libro Diario General - {mes:02d}/{anio}"
+    filename = f"libro_diario_{anio}_{mes:02d}"
+    return export_to_pdf(filename, title, headers, rows)
+
 
 @login_required
 @group_required('Contadora', 'Gerente', 'Administrador')
