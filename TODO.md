@@ -1,10 +1,10 @@
-# TODO - Profesionalizar reportes contables (Mayor, Balance, Resultados)
+# TODO - Fase 1 Reportería unificada (Excel/PDF)
 
-- [x] Revisar origen de datos contables (`JournalEntryLine`) y desalineaciones.
-- [ ] Leer y ajustar vistas en `accounting/views.py` para Libro Mayor, Balance General y Estado de Resultados.
-- [ ] Leer y ajustar templates:
-  - `accounting/templates/accounting/general_ledger.html`
-  - `accounting/templates/accounting/balance_sheet.html`
-  - `accounting/templates/accounting/income_statement.html`
-- [ ] Estandarizar filtros por empresa/periodo y cálculos NIIF.
-- [ ] Validar integridad con `python manage.py check`.
+- [ ] Revisar rutas y vistas actuales de reportes en `accounting` y `core`.
+- [ ] Implementar sección central de reportería (dashboard) en `core`.
+- [ ] Agregar endpoint/flujo de exportación Excel para Libro Diario.
+- [ ] Agregar endpoint/flujo de exportación Excel para Balance de Comprobación.
+- [ ] Agregar versión PDF imprimible para ambos reportes.
+- [ ] Actualizar botones y enlaces en templates de reportes contables.
+- [ ] Ejecutar `python manage.py check`.
+- [ ] Dejar lista base para escalar a otros módulos.
