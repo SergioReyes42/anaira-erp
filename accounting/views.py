@@ -8,7 +8,7 @@ from django.db import transaction # <--- Importación vital
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.utils import timezone
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, F, Value, DecimalField
 from django.core.paginator import Paginator # Agrega esto arriba si no lo tienes
 from .decorators import group_required  # <--- Importas el candado
 from django.forms import modelformset_factory
@@ -33,6 +33,17 @@ from .models import (
 )
 from .forms import BankAccountForm, BankTransactionForm, VehicleForm
 from .utils import normalize_scanner_image, build_scanner_expense_payload, analyze_invoice_image
+
+
+def _current_company_key(request):
+    """
+    Estandariza el identificador de empresa para JournalEntry.company (CharField)
+    sin romper compatibilidad con registros antiguos.
+    """
+    company = getattr(request.user, 'current_company', None)
+    if not company:
+        return None
+    return str(getattr(company, 'id', company))
 
 # ========================================================
 # 1. HERRAMIENTAS DE INGRESO UNIFICADAS
@@ -261,7 +272,7 @@ def approve_expense(request, pk):
             # 2. CREACIÓN DEL ENCABEZADO DE PARTIDA (Nuevo Modelo JournalEntry)
             entry = JournalEntry.objects.create(
                 date=expense.date.date(),
-                company=request.user.current_company,
+                company=_current_company_key(request),
                 concept=f"Prov: {expense.provider_name} - {expense.description[:30]}",
                 is_opening_balance=False
             )
@@ -322,7 +333,10 @@ def reject_expense(request, pk):
 @login_required
 @group_required('Contadora', 'Auxiliar Contable', 'Gerente') # Un piloto jamás pasará de aquí
 def libro_diario(request):
-    entries = JournalEntry.objects.filter(company=request.user.current_company).prefetch_related(
+    company_key = _current_company_key(request)
+    entries = JournalEntry.objects.filter(
+        company__in=[company_key, str(request.user.current_company)]
+    ).prefetch_related(
         Prefetch('lines', queryset=JournalEntryLine.objects.select_related('account'))
     ).order_by('-date', '-id')
     
@@ -625,17 +639,15 @@ def opening_balance_migration(request):
 def general_journal(request):
     """Libro Diario General Profesional (NIIF)"""
     
-    # Por defecto, cargamos el mes y año actuales
     mes_actual = timezone.now().month
     anio_actual = timezone.now().year
     
     mes = int(request.GET.get('mes', mes_actual))
     anio = int(request.GET.get('anio', anio_actual))
+    company_key = _current_company_key(request)
 
-    # TÉCNICA AVANZADA: prefetch_related trae todas las líneas y cuentas en 2 consultas a la BD, 
-    # en lugar de hacer 1 consulta por cada línea. ¡Velocidad pura!
     partidas = JournalEntry.objects.filter(
-        company=request.user.current_company,
+        company__in=[company_key, str(request.user.current_company)],
         date__year=anio,
         date__month=mes
     ).prefetch_related(
@@ -662,7 +674,6 @@ def general_journal(request):
 def general_ledger(request):
     """Libro Mayor General (Movimientos por Cuenta Específica)"""
     
-    # Solo mostramos cuentas que reciben movimientos
     cuentas = Account.objects.filter(is_transactional=True).order_by('code')
     
     mes_actual = timezone.now().month
@@ -671,35 +682,33 @@ def general_ledger(request):
     account_id = request.GET.get('account_id')
     mes = int(request.GET.get('mes', mes_actual))
     anio = int(request.GET.get('anio', anio_actual))
+    company_key = _current_company_key(request)
     
     lineas = []
     cuenta_seleccionada = None
-    saldo_acumulado = 0
-    total_debe = 0
-    total_haber = 0
+    saldo_acumulado = decimal.Decimal('0.00')
+    total_debe = decimal.Decimal('0.00')
+    total_haber = decimal.Decimal('0.00')
 
     if account_id:
         cuenta_seleccionada = Account.objects.get(id=account_id)
         
-        # Traemos todas las líneas de esa cuenta en ese mes
         lineas = JournalEntryLine.objects.filter(
             account=cuenta_seleccionada,
+            entry__company__in=[company_key, str(request.user.current_company)],
             entry__date__year=anio,
             entry__date__month=mes
         ).select_related('entry').order_by('entry__date', 'entry__id')
         
-        # Calculamos el saldo dinámico fila por fila
         for linea in lineas:
             total_debe += linea.debit
             total_haber += linea.credit
             
-            # Naturaleza de las cuentas (NIIF)
             if cuenta_seleccionada.account_type in ['ASSET', 'EXPENSE']:
-                saldo_acumulado += (linea.debit - linea.credit) # Naturaleza Deudora
+                saldo_acumulado += (linea.debit - linea.credit)
             else:
-                saldo_acumulado += (linea.credit - linea.debit) # Naturaleza Acreedora
+                saldo_acumulado += (linea.credit - linea.debit)
                 
-            # Le inyectamos el saldo actual a la línea para mostrarlo en el HTML
             linea.saldo_actual = saldo_acumulado 
 
     context = {
@@ -723,17 +732,16 @@ def balance_sheet(request):
     
     anio = int(request.GET.get('anio', timezone.now().year))
     mes = int(request.GET.get('mes', timezone.now().month))
+    company_key = _current_company_key(request)
 
-    # Calculamos el corte hasta el ÚLTIMO día del mes seleccionado
     if mes == 12:
         siguiente_mes = datetime.date(anio + 1, 1, 1)
     else:
         siguiente_mes = datetime.date(anio, mes + 1, 1)
     
-    # Traemos la suma total de Debe y Haber de todas las cuentas hasta esa fecha
     lineas = JournalEntryLine.objects.filter(
         entry__date__lt=siguiente_mes,
-        entry__company=request.user.current_company
+        entry__company__in=[company_key, str(request.user.current_company)]
     ).values('account__id', 'account__code', 'account__name', 'account__account_type').annotate(
         total_debe=Sum('debit'),
         total_haber=Sum('credit')
@@ -797,19 +805,18 @@ def income_statement(request):
     
     anio = int(request.GET.get('anio', timezone.now().year))
     mes = int(request.GET.get('mes', timezone.now().month))
+    company_key = _current_company_key(request)
 
-    # Calculamos el rango exacto del mes seleccionado
     fecha_inicio = datetime.date(anio, mes, 1)
     if mes == 12:
         fecha_fin = datetime.date(anio + 1, 1, 1)
     else:
         fecha_fin = datetime.date(anio, mes + 1, 1)
 
-    # Solo traemos cuentas de INGRESOS (REVENUE) y GASTOS (EXPENSE) de este mes
     lineas = JournalEntryLine.objects.filter(
         entry__date__gte=fecha_inicio,
         entry__date__lt=fecha_fin,
-        entry__company=request.user.current_company,
+        entry__company__in=[company_key, str(request.user.current_company)],
         account__account_type__in=['REVENUE', 'EXPENSE']
     ).values('account__id', 'account__code', 'account__name', 'account__account_type').annotate(
         total_debe=Sum('debit'),
