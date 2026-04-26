@@ -511,7 +511,9 @@ def chart_of_accounts(request):
     return render(request, 'accounting/chart_of_accounts.html', {
         'cuentas': cuentas, 
         'search_query': search_query
+
     })
+
 
 from django.http import JsonResponse
 
