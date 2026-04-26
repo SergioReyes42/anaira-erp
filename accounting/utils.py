@@ -1,5 +1,6 @@
 import io
 import json
+import base64
 from django.core.files.base import ContentFile
 from PIL import Image, ImageOps
 from core.gemini_config import configure_gemini
@@ -73,13 +74,68 @@ def build_scanner_expense_payload(user, company, vehicle_obj, smart_input="", in
     }
 
 
+def _extract_text_from_genai_response(response):
+    # 1) Camino directo
+    text = (getattr(response, "text", None) or "").strip()
+    if text:
+        return text
+
+    # 2) Camino por candidatos/partes (SDK nuevo)
+    try:
+        candidates = getattr(response, "candidates", None) or []
+        chunks = []
+        for cand in candidates:
+            content = getattr(cand, "content", None)
+            if not content:
+                continue
+            parts = getattr(content, "parts", None) or []
+            for p in parts:
+                t = getattr(p, "text", None)
+                if t:
+                    chunks.append(t)
+        text = "\n".join(chunks).strip()
+        if text:
+            return text
+    except Exception:
+        pass
+
+    return ""
+
+
+def _extract_json_block(raw_text: str) -> str:
+    raw_text = (raw_text or "").strip()
+    if not raw_text:
+        return ""
+
+    # Si viene limpio, úsalo.
+    if raw_text.startswith("{") and raw_text.endswith("}"):
+        return raw_text
+
+    # Si viene dentro de markdown ```json ... ```
+    if "```" in raw_text:
+        parts = raw_text.split("```")
+        for part in parts:
+            part = part.strip()
+            if part.startswith("json"):
+                part = part[4:].strip()
+            if part.startswith("{") and part.endswith("}"):
+                return part
+
+    # fallback por llaves
+    s = raw_text.find("{")
+    e = raw_text.rfind("}")
+    if s != -1 and e != -1 and e > s:
+        return raw_text[s:e + 1]
+
+    return raw_text
+
+
 def analyze_invoice_image(image_file, smart_input=""):
     """
     Cerebro IA Francotirador: Analiza facturas con reglas SAT Guatemala.
     """
     try:
         cfg = _configure_gemini()
-        img = Image.open(image_file)
 
         prompt = f"""
         Eres un Auditor Fiscal Experto de la SAT en Guatemala.
@@ -124,24 +180,29 @@ def analyze_invoice_image(image_file, smart_input=""):
 
         for model_name in model_candidates:
             try:
-                if cfg["provider"] == "new":
-                    # SDK nuevo google.genai
-                    response = cfg["client"].models.generate_content(
-                        model=model_name,
-                        contents=[prompt, img],
-                    )
-                    raw_text = (getattr(response, "text", None) or "").strip()
-                else:
-                    # SDK legacy google.generativeai
-                    model = cfg["client"].GenerativeModel(model_name)
-                    response = model.generate_content(
-                        [prompt, img],
-                        generation_config=cfg["client"].types.GenerationConfig(
-                            response_mime_type="application/json",
-                            temperature=0.0,
-                        )
-                    )
-                    raw_text = (getattr(response, "text", None) or "").strip()
+                # SDK nuevo google.genai (único)
+                image_file.seek(0)
+                image_bytes = image_file.read()
+                encoded = base64.b64encode(image_bytes).decode("utf-8")
+
+                response = cfg["client"].models.generate_content(
+                    model=model_name,
+                    contents=[
+                        {"role": "user", "parts": [{"text": prompt}]},
+                        {
+                            "role": "user",
+                            "parts": [
+                                {
+                                    "inline_data": {
+                                        "mime_type": "image/jpeg",
+                                        "data": encoded
+                                    }
+                                }
+                            ],
+                        },
+                    ],
+                )
+                raw_text = _extract_text_from_genai_response(response)
 
                 if raw_text:
                     break
@@ -154,7 +215,8 @@ def analyze_invoice_image(image_file, smart_input=""):
                 raise RuntimeError(f"Gemini sin respuesta utilizable. Último error: {last_err}")
             raise RuntimeError("Gemini no devolvió texto utilizable.")
 
-        data = json.loads(raw_text)
+        json_text = _extract_json_block(raw_text)
+        data = json.loads(json_text)
 
         data["total"] = float(data.get("total") or 0.00)
         data["provider_name"] = data.get("provider_name") or "Proveedor no detectado"
