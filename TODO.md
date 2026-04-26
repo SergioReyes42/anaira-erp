@@ -1,9 +1,7 @@
-# TODO - Activar IA en Smart Scanner (configuración nueva)
+# TODO - Fix Libro Diario Debe/Haber
 
-- [x] Revisar `core/gemini_config.py`, `accounting/utils.py` y `accounting/views.py`.
-- [x] Implementar configuración dual de Gemini en `core/gemini_config.py` (SDK nuevo + fallback).
-- [x] Adaptar `analyze_invoice_image` en `accounting/utils.py` para cliente dual.
-- [x] Reactivar IA en `smart_scanner` (`accounting/views.py`) con fallback operativo sin pérdida.
-- [x] Ajustar mensajes de éxito/advertencia según modo IA o sin IA.
-- [x] Ejecutar `python manage.py check`.
-- [x] Marcar TODO completado.
+- [x] Revisar flujo de aprobación y origen de datos contables (`JournalEntryLine`).
+- [x] Identificar desalineación en template (`entry.items` vs `entry.lines`).
+- [x] Corregir `accounting/templates/accounting/libro_diario.html` para usar `entry.lines.all`.
+- [x] Ajustar render de “Sumas Iguales” sin `entry.total`.
+- [x] Validar integridad con `python manage.py check`.

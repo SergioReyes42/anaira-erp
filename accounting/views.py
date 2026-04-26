@@ -322,7 +322,9 @@ def reject_expense(request, pk):
 @login_required
 @group_required('Contadora', 'Auxiliar Contable', 'Gerente') # Un piloto jamás pasará de aquí
 def libro_diario(request):
-    entries = JournalEntry.objects.filter(company=request.user.current_company).order_by('-date', '-id')
+    entries = JournalEntry.objects.filter(company=request.user.current_company).prefetch_related(
+        Prefetch('lines', queryset=JournalEntryLine.objects.select_related('account'))
+    ).order_by('-date', '-id')
     
     # 1. Filtro por fechas
     fecha_inicio = request.GET.get('fecha_inicio')

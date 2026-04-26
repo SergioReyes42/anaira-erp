@@ -58,21 +58,21 @@
                                 </td>
                             </tr>
                             
-                            {% for item in entry.items.all %}
+                            {% for line in entry.lines.all %}
                             <tr>
                                 <td class="border-end border-secondary border-opacity-25"></td>
                                 
-                                <td class="{% if item.credit > 0 %}ps-5 text-muted{% else %}fw-bold text-dark{% endif %} py-1">
-                                    {% if item.credit > 0 %}<i class="bi bi-arrow-return-right me-1"></i>{% endif %}
-                                    {{ item.account.code }} - {{ item.account.name|upper }}
+                                <td class="{% if line.credit > 0 %}ps-5 text-muted{% else %}fw-bold text-dark{% endif %} py-1">
+                                    {% if line.credit > 0 %}<i class="bi bi-arrow-return-right me-1"></i>{% endif %}
+                                    {{ line.account.code }} - {{ line.account.name|upper }}
                                 </td>
                                 
                                 <td class="text-end fw-bold text-success py-1 border-start border-secondary border-opacity-25" style="background-color: #fcfdfc;">
-                                    {% if item.debit > 0 %}{{ item.debit|floatformat:2 }}{% endif %}
+                                    {% if line.debit > 0 %}{{ line.debit|floatformat:2 }}{% endif %}
                                 </td>
                                 
                                 <td class="text-end fw-bold text-danger py-1 border-start border-secondary border-opacity-25" style="background-color: #fdfcfc;">
-                                    {% if item.credit > 0 %}{{ item.credit|floatformat:2 }}{% endif %}
+                                    {% if line.credit > 0 %}{{ line.credit|floatformat:2 }}{% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -81,10 +81,20 @@
                                 <td class="border-end border-secondary border-opacity-25"></td>
                                 <td class="text-end fw-bold fst-italic py-2 pe-3">Sumas Iguales:</td>
                                 <td class="text-end fw-bold text-success py-2 border-start border-secondary border-opacity-25" style="border-top: 2px solid #000 !important;">
-                                    {{ entry.total|floatformat:2 }}
+                                    {% with total_debe=0 %}
+                                        {% for line in entry.lines.all %}
+                                            {% with total_debe=total_debe|add:line.debit %}{% endwith %}
+                                        {% endfor %}
+                                        {{ total_debe|floatformat:2 }}
+                                    {% endwith %}
                                 </td>
                                 <td class="text-end fw-bold text-danger py-2 border-start border-secondary border-opacity-25" style="border-top: 2px solid #000 !important;">
-                                    {{ entry.total|floatformat:2 }}
+                                    {% with total_haber=0 %}
+                                        {% for line in entry.lines.all %}
+                                            {% with total_haber=total_haber|add:line.credit %}{% endwith %}
+                                        {% endfor %}
+                                        {{ total_haber|floatformat:2 }}
+                                    {% endwith %}
                                 </td>
                             </tr>
 
