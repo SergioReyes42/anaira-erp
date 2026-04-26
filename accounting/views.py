@@ -32,7 +32,7 @@ from .models import (
     AccountPayable
 )
 from .forms import BankAccountForm, BankTransactionForm, VehicleForm
-from .utils import normalize_scanner_image, build_scanner_expense_payload
+from .utils import normalize_scanner_image, build_scanner_expense_payload, analyze_invoice_image
 
 # ========================================================
 # 1. HERRAMIENTAS DE INGRESO UNIFICADAS
@@ -91,7 +91,7 @@ def pilot_upload(request):
 
 @login_required 
 def smart_scanner(request):
-    """VISTA CONTADOR: Scanner temporal sin IA, guarda directo en Pendientes."""
+    """VISTA CONTADOR: Scanner con IA + fallback operativo si la IA o storage fallan."""
     
     vehiculos = Vehicle.objects.filter(company=request.user.current_company, active=True) if request.user.current_company else []
 
@@ -121,12 +121,33 @@ def smart_scanner(request):
                 smart_input=smart_input,
                 include_storage_flag=False,
             )
+
+            # Intento IA (no bloqueante)
+            ai_ok = False
+            try:
+                normalized_image.seek(0)
+                ai_data = analyze_invoice_image(normalized_image, smart_input=smart_input)
+
+                payload["provider_name"] = (ai_data.get("provider_name") or payload["provider_name"])[:255]
+                payload["provider_nit"] = (ai_data.get("provider_nit") or payload["provider_nit"])[:50]
+                payload["invoice_series"] = (ai_data.get("invoice_series") or payload["invoice_series"])[:50]
+                payload["invoice_number"] = (ai_data.get("invoice_number") or payload["invoice_number"])[:50]
+                payload["description"] = (ai_data.get("description") or payload["description"])[:255]
+                payload["suggested_account"] = (ai_data.get("account_type") or payload["suggested_account"])[:100]
+                payload["total_amount"] = decimal.Decimal(str(ai_data.get("total") or 0.00))
+                ai_ok = True
+            except Exception as ai_err:
+                print(f"[smart_scanner][IA] fallo no bloqueante: {repr(ai_err)}")
+
             payload["receipt_image"] = image_file
 
             with transaction.atomic():
                 Expense.objects.create(**payload)
 
-            messages.success(request, "✅ Factura enviada a Pendientes (modo scanner sin IA).")
+            if ai_ok:
+                messages.success(request, "✅ Factura enviada a Pendientes (scanner con IA).")
+            else:
+                messages.success(request, "✅ Factura enviada a Pendientes (modo scanner sin IA).")
             return redirect('accounting:expense_pending_list')
 
         except Exception as e:

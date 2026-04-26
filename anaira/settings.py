@@ -171,10 +171,21 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 # ==============================================================================
 # ☁️ CONFIGURACIÓN DE ARCHIVOS Y NUBE (Cloudinary y WhiteNoise)
 # ==============================================================================
-# IMPORTANTE: Busca correctamente la variable de entorno
+# IMPORTANTE: soporte robusto (variables separadas o URL completa)
+CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '').strip()
+CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY', '').strip()
+CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET', '').strip()
 CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '').strip()
 
-if CLOUDINARY_URL:
+HAS_CLOUDINARY_SPLIT_CREDS = all([
+    CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET
+])
+
+HAS_CLOUDINARY_URL = bool(CLOUDINARY_URL)
+
+if HAS_CLOUDINARY_SPLIT_CREDS or HAS_CLOUDINARY_URL:
     # Si estamos en Railway (Producción), usamos Cloudinary
     if "cloudinary_storage" not in INSTALLED_APPS:
         INSTALLED_APPS = ["cloudinary_storage"] + INSTALLED_APPS
@@ -182,6 +193,14 @@ if CLOUDINARY_URL:
     CLOUDINARY_STORAGE = {
         "SECURE": True,
     }
+
+    # Prioridad: variables separadas (más robustas en Railway)
+    if HAS_CLOUDINARY_SPLIT_CREDS:
+        CLOUDINARY_STORAGE.update({
+            "CLOUD_NAME": CLOUDINARY_CLOUD_NAME,
+            "API_KEY": CLOUDINARY_API_KEY,
+            "API_SECRET": CLOUDINARY_API_SECRET,
+        })
 
     STORAGES = {
         "default": {

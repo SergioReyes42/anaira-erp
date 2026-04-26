@@ -2,9 +2,14 @@ import os
 from dotenv import load_dotenv
 
 try:
-    import google.generativeai as genai
-except ImportError:
-    genai = None
+    from google import genai as genai_new  # SDK nuevo recomendado
+except Exception:
+    genai_new = None
+
+try:
+    import google.generativeai as genai_legacy  # SDK legacy (fallback)
+except Exception:
+    genai_legacy = None
 
 load_dotenv()
 
@@ -33,12 +38,31 @@ def get_validated_gemini_api_key() -> str:
     return api_key
 
 
-def configure_gemini():
-    if genai is None:
-        raise RuntimeError(
-            "La librería google.generativeai no está instalada o no pudo importarse."
-        )
+def get_gemini_model_name() -> str:
+    return (os.getenv("GEMINI_MODEL", "gemini-1.5-flash") or "gemini-1.5-flash").strip()
 
+
+def configure_gemini():
+    """
+    Devuelve un dict con cliente configurado:
+    - {"provider": "new", "client": <google.genai.Client>, "model": "..."}
+    - {"provider": "legacy", "client": <google.generativeai module>, "model": "..."}
+    """
     api_key = get_validated_gemini_api_key()
-    genai.configure(api_key=api_key)
-    return genai
+    model_name = get_gemini_model_name()
+
+    if genai_new is not None:
+        try:
+            client = genai_new.Client(api_key=api_key)
+            return {"provider": "new", "client": client, "model": model_name}
+        except Exception:
+            # Sigue al fallback legacy
+            pass
+
+    if genai_legacy is not None:
+        genai_legacy.configure(api_key=api_key)
+        return {"provider": "legacy", "client": genai_legacy, "model": model_name}
+
+    raise RuntimeError(
+        "No hay SDK de Gemini disponible. Instala `google-genai` o `google-generativeai`."
+    )

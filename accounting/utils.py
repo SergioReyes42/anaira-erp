@@ -2,7 +2,7 @@ import io
 import json
 from django.core.files.base import ContentFile
 from PIL import Image, ImageOps
-from core.gemini_config import configure_gemini, genai
+from core.gemini_config import configure_gemini
 
 
 def _safe_fallback(error_message="Hubo un error al leer la imagen"):
@@ -20,8 +20,7 @@ def _safe_fallback(error_message="Hubo un error al leer la imagen"):
 
 
 def _configure_gemini():
-    genai = configure_gemini()
-    return genai.GenerativeModel("gemini-1.5-flash")
+    return configure_gemini()
 
 
 def normalize_scanner_image(uploaded_file, max_side=2200, quality=82):
@@ -79,7 +78,7 @@ def analyze_invoice_image(image_file, smart_input=""):
     Cerebro IA Francotirador: Analiza facturas con reglas SAT Guatemala.
     """
     try:
-        model = _configure_gemini()
+        cfg = _configure_gemini()
         img = Image.open(image_file)
 
         prompt = f"""
@@ -119,15 +118,29 @@ def analyze_invoice_image(image_file, smart_input=""):
         }}
         """
 
-        response = model.generate_content(
-            [prompt, img],
-            generation_config=genai.types.GenerationConfig(
-                response_mime_type="application/json",
-                temperature=0.0,
+        if cfg["provider"] == "new":
+            # SDK nuevo google.genai
+            response = cfg["client"].models.generate_content(
+                model=cfg["model"],
+                contents=[prompt, img],
             )
-        )
+            raw_text = (getattr(response, "text", None) or "").strip()
+        else:
+            # SDK legacy google.generativeai
+            model = cfg["client"].GenerativeModel(cfg["model"])
+            response = model.generate_content(
+                [prompt, img],
+                generation_config=cfg["client"].types.GenerationConfig(
+                    response_mime_type="application/json",
+                    temperature=0.0,
+                )
+            )
+            raw_text = (getattr(response, "text", None) or "").strip()
 
-        data = json.loads(response.text)
+        if not raw_text:
+            raise RuntimeError("Gemini no devolvió texto utilizable.")
+
+        data = json.loads(raw_text)
 
         data["total"] = float(data.get("total") or 0.00)
         data["provider_name"] = data.get("provider_name") or "Proveedor no detectado"

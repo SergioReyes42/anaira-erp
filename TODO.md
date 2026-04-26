@@ -1,9 +1,9 @@
-# TODO - Refactor Smart Scanner y subida de gasto
+# TODO - Activar IA en Smart Scanner (configuración nueva)
 
-- [x] Revisar `accounting/views.py` y detectar duplicación/fragilidad en scanner.
-- [x] Agregar helpers reutilizables en `accounting/utils.py` para normalizar imagen y construir payload.
-- [x] Simplificar `smart_scanner` en `accounting/views.py` usando helpers, manteniendo fallback actual.
-- [x] Unificar validaciones/mensajes básicos en flujos de subida de gasto.
-- [x] Corregir typo de ruta legacy `accountig:smart_hub` -> `accounting:smart_hub`.
-- [x] Ejecutar verificación mínima (`python manage.py check`).
-- [x] Marcar TODO finalizado.
+- [x] Revisar `core/gemini_config.py`, `accounting/utils.py` y `accounting/views.py`.
+- [x] Implementar configuración dual de Gemini en `core/gemini_config.py` (SDK nuevo + fallback).
+- [x] Adaptar `analyze_invoice_image` en `accounting/utils.py` para cliente dual.
+- [x] Reactivar IA en `smart_scanner` (`accounting/views.py`) con fallback operativo sin pérdida.
+- [x] Ajustar mensajes de éxito/advertencia según modo IA o sin IA.
+- [x] Ejecutar `python manage.py check`.
+- [x] Marcar TODO completado.
