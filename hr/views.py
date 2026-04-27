@@ -7,7 +7,7 @@ from django.utils import timezone
 from .models import Employee, EmployeeLoanAdvance, PayrollRun, EmployeePayrollLine
 from django import forms
 from accounting.models import JournalEntry, JournalEntryLine, Account, BankAccount
-from core.reporting import export_to_pdf
+from core.reporting import export_to_pdf, export_to_excel
 
 # --- FORMULARIOS ---
 class EmployeeForm(forms.ModelForm):
@@ -82,10 +82,36 @@ def vacaciones_permisos(request):
 
 @login_required
 def prestamo_list(request):
+    company = request.user.current_company
+    employee_id = request.GET.get('employee')
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+
     prestamos = EmployeeLoanAdvance.objects.filter(
-        company=request.user.current_company
+        company=company
     ).select_related('employee').order_by('-request_date', '-id')
-    return render(request, 'hr/prestamo_list.html', {'prestamos': prestamos})
+
+    if employee_id:
+        prestamos = prestamos.filter(employee_id=employee_id)
+    if fecha_inicio:
+        prestamos = prestamos.filter(request_date__gte=fecha_inicio)
+    if fecha_fin:
+        prestamos = prestamos.filter(request_date__lte=fecha_fin)
+
+    total_prestado = sum((p.amount for p in prestamos), Decimal('0.00'))
+    total_recuperado = sum(((p.amount - p.balance) for p in prestamos), Decimal('0.00'))
+
+    employees = Employee.objects.filter(company=company).order_by('first_name', 'last_name')
+
+    return render(request, 'hr/prestamo_list.html', {
+        'prestamos': prestamos,
+        'employees': employees,
+        'employee_id': employee_id or '',
+        'fecha_inicio': fecha_inicio or '',
+        'fecha_fin': fecha_fin or '',
+        'total_prestado': total_prestado,
+        'total_recuperado': total_recuperado,
+    })
 
 
 @login_required
@@ -251,3 +277,64 @@ def payroll_receipt_pdf(request, line_id):
     title = f"Recibo de Planilla - {line.employee} - {line.payroll_run.period_label}"
     filename = f"recibo_planilla_{line.employee.id}_{line.payroll_run.id}"
     return export_to_pdf(filename=filename, title=title, headers=headers, rows=rows)
+
+
+@login_required
+def prestamos_report_excel(request):
+    company = request.user.current_company
+    employee_id = request.GET.get('employee')
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+
+    prestamos = EmployeeLoanAdvance.objects.filter(company=company).select_related('employee').order_by('-request_date', '-id')
+    if employee_id:
+        prestamos = prestamos.filter(employee_id=employee_id)
+    if fecha_inicio:
+        prestamos = prestamos.filter(request_date__gte=fecha_inicio)
+    if fecha_fin:
+        prestamos = prestamos.filter(request_date__lte=fecha_fin)
+
+    headers = ["Fecha", "Empleado", "Tipo", "Monto", "Saldo", "Cuotas", "Estado"]
+    rows = [
+        [
+            p.request_date.strftime('%Y-%m-%d'),
+            str(p.employee),
+            p.get_loan_type_display(),
+            float(p.amount),
+            float(p.balance),
+            p.installments,
+            p.get_status_display(),
+        ]
+        for p in prestamos
+    ]
+    return export_to_excel("reporte_prestamos", headers, rows)
+
+
+@login_required
+def prestamos_report_pdf(request):
+    company = request.user.current_company
+    employee_id = request.GET.get('employee')
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+
+    prestamos = EmployeeLoanAdvance.objects.filter(company=company).select_related('employee').order_by('-request_date', '-id')
+    if employee_id:
+        prestamos = prestamos.filter(employee_id=employee_id)
+    if fecha_inicio:
+        prestamos = prestamos.filter(request_date__gte=fecha_inicio)
+    if fecha_fin:
+        prestamos = prestamos.filter(request_date__lte=fecha_fin)
+
+    headers = ["Fecha", "Empleado", "Tipo", "Monto", "Saldo", "Estado"]
+    rows = [
+        [
+            p.request_date.strftime('%Y-%m-%d'),
+            str(p.employee),
+            p.get_loan_type_display(),
+            f"{p.amount:.2f}",
+            f"{p.balance:.2f}",
+            p.get_status_display(),
+        ]
+        for p in prestamos
+    ]
+    return export_to_pdf("reporte_prestamos", "Reporte de Préstamos y Anticipos", headers, rows)

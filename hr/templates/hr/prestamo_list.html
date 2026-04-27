@@ -3,12 +3,66 @@
 <div class="container-fluid py-3">
   <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
     <div>
-      <h2 class="mb-0"><i class="bi bi-wallet2 me-2"></i>Préstamos y Anticipos</h2>
-      <small class="text-muted">Control de anticipos y préstamos a empleados</small>
+      <h2 class="mb-0"><i class="bi bi-wallet2 me-2"></i>Anticipos y Préstamos</h2>
+      <small class="text-muted">Control, filtros y reportería por empleado/fecha</small>
     </div>
-    <a href="{% url 'prestamo_create' %}" class="btn btn-primary">
-      <i class="bi bi-plus-circle me-1"></i> Nuevo registro
-    </a>
+    <div class="d-flex gap-2">
+      <a href="{% url 'prestamo_create' %}" class="btn btn-warning">
+        <i class="bi bi-plus-circle me-1"></i> Nuevo Préstamo
+      </a>
+      <a href="{% url 'prestamos_report_excel' %}?employee={{ employee_id }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}" class="btn btn-success">
+        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+      </a>
+      <a href="{% url 'prestamos_report_pdf' %}?employee={{ employee_id }}&fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}" class="btn btn-danger">
+        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm bg-info text-white">
+        <div class="card-body">
+          <small>Total Prestado</small>
+          <h3 class="mb-0">Q {{ total_prestado|floatformat:2 }}</h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm bg-success text-white">
+        <div class="card-body">
+          <small>Total Recuperado</small>
+          <h3 class="mb-0">Q {{ total_recuperado|floatformat:2 }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+      <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label">Empleado</label>
+          <select name="employee" class="form-select">
+            <option value="">Todos</option>
+            {% for emp in employees %}
+              <option value="{{ emp.id }}" {% if employee_id == emp.id|stringformat:"s" %}selected{% endif %}>{{ emp }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Fecha inicio</label>
+          <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Fecha fin</label>
+          <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
+        </div>
+        <div class="col-md-2 d-grid">
+          <button class="btn btn-primary"><i class="bi bi-search me-1"></i>Filtrar</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div class="card border-0 shadow-sm">
@@ -18,24 +72,22 @@
         <table class="table table-sm align-middle">
           <thead>
             <tr>
-              <th>Fecha</th>
               <th>Empleado</th>
-              <th>Tipo</th>
-              <th>Monto</th>
-              <th>Saldo</th>
-              <th>Cuotas</th>
+              <th>Fecha</th>
+              <th>Monto Original</th>
+              <th>Saldo Actual</th>
+              <th>Cuota Mensual</th>
               <th>Estado</th>
             </tr>
           </thead>
           <tbody>
             {% for p in prestamos %}
             <tr>
-              <td>{{ p.request_date|date:"d/m/Y" }}</td>
               <td>{{ p.employee }}</td>
-              <td>{{ p.get_loan_type_display }}</td>
+              <td>{{ p.request_date|date:"d/m/Y" }}</td>
               <td>Q {{ p.amount|floatformat:2 }}</td>
               <td>Q {{ p.balance|floatformat:2 }}</td>
-              <td>{{ p.installments }}</td>
+              <td>Q {% if p.installments %}{{ p.amount|floatformat:2 }}{% else %}0.00{% endif %}</td>
               <td>
                 {% if p.status == 'ACTIVO' %}
                   <span class="badge bg-warning text-dark">Activo</span>
@@ -49,7 +101,7 @@
         </table>
       </div>
       {% else %}
-      <div class="text-center text-muted py-5">No hay préstamos/anticipos registrados.</div>
+      <div class="text-center text-muted py-5">No hay préstamos activos.</div>
       {% endif %}
     </div>
   </div>

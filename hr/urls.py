@@ -14,6 +14,8 @@ urlpatterns = [
     path('vacaciones-permisos/', views.vacaciones_permisos, name='vacaciones_permisos'),
     path('empleados/prestamos/', views.prestamo_list, name='prestamo_list'),
     path('empleados/prestamos/nuevo/', views.prestamo_create, name='prestamo_create'),
+    path('empleados/prestamos/reporte/excel/', views.prestamos_report_excel, name='prestamos_report_excel'),
+    path('empleados/prestamos/reporte/pdf/', views.prestamos_report_pdf, name='prestamos_report_pdf'),
 
     # --- ALIAS TEMPORALES ---
     path('empleados/isr/', views.employee_list, name='gestion_isr'),
