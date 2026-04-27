@@ -56,7 +56,15 @@ MIDDLEWARE = [
 # 🛡️ BLINDAJE EXTREMO APLICADO AQUÍ
 db_url = os.environ.get('DATABASE_URL', '').strip()
 
-if db_url:
+# Evita valores corruptos como "://", "postgres://", etc. sin host real.
+invalid_db_url = (
+    not db_url
+    or '://' not in db_url
+    or db_url.endswith('://')
+    or db_url == '://'
+)
+
+if not invalid_db_url:
     DATABASES = {
         'default': dj_database_url.parse(db_url, conn_max_age=600, conn_health_checks=True)
     }
