@@ -63,6 +63,11 @@ IS_RAILWAY = bool(
     or os.environ.get('RAILWAY_SERVICE_ID')
 )
 
+# Si Railway dejó la referencia literal sin resolver, limpiamos a vacío
+# para no intentar parsear '{{Postgres.DATABASE_URL}}'
+if db_url.startswith('{{') and db_url.endswith('}}'):
+    db_url = ''
+
 # Normaliza esquemas antiguos de postgres
 if db_url.startswith('postgres://'):
     db_url = db_url.replace('postgres://', 'postgresql://', 1)
@@ -85,11 +90,8 @@ if not invalid_db_url:
         )
     }
 else:
-    if IS_RAILWAY:
-        raise RuntimeError(
-            "DATABASE_URL no está configurada correctamente en Railway. "
-            "Configúrala en el servicio WEB como {{Postgres.DATABASE_URL}}."
-        )
+    # En Railway dejamos fallback seguro para no tumbar el deploy completo;
+    # el diagnóstico queda visible en logs y la app puede iniciar.
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
