@@ -1,16 +1,20 @@
-# TODO - RRHH: páginas faltantes + anticipos/préstamos
+# TODO - Fase 1 Reportería unificada (Excel/PDF)
 
-- [x] Revisar estado actual de `hr/views.py`, `hr/urls.py`, `hr/models.py` y menú.
-- [x] Crear modelo `EmployeeLoanAdvance` en `hr/models.py`.
-- [ ] Generar y aplicar migración de `hr`.
-- [ ] Crear vistas RRHH faltantes (`vacaciones_permisos`, `prestamo_list`, `prestamo_create`, `nomina_create` funcional).
-- [ ] Conectar rutas RRHH en `hr/urls.py`.
-- [ ] Crear templates RRHH (`nomina_create.html`, `vacaciones_permisos.html`, `prestamo_list.html`, `prestamo_form.html`).
-- [ ] Actualizar enlaces de menú RRHH en `templates/base.html`.
-- [ ] Ejecutar pruebas (`makemigrations`, `migrate`, `check` + endpoints básicos).
-- [ ] Bloque A: blindaje multiempresa (`middleware`, `switch_company`, settings producción).
-- [ ] Bloque A: corregir modal/botón "Nuevo Empleado" en RRHH.
-- [ ] RRHH: habilitar flujo completo de préstamos/anticipos + botón funcional.
-- [ ] RRHH: registrar descuentos por empleado y aplicarlos en nómina.
-- [ ] RRHH: generar recibo de planilla por empleado (PDF).
-- [ ] Integración contable NIIF/NIC: asientos automáticos en libro diario para préstamo y planilla.
+- [x] Revisar rutas y vistas actuales de reportes en `accounting` y `core`.
+- [ ] Implementar sección central de reportería (dashboard) en `core`.
+- [ ] Agregar endpoint/flujo de exportación Excel para Libro Diario.
+- [ ] Agregar endpoint/flujo de exportación Excel para Balance de Comprobación.
+- [ ] Agregar versión PDF imprimible para ambos reportes.
+- [ ] Actualizar botones y enlaces en templates de reportes contables.
+- [ ] Ejecutar `python manage.py check`.
+- [ ] Dejar lista base para escalar a otros módulos.
+
+## TODO - Rediseño Reporte de Flotilla (Profesional)
+
+- [x] Analizar vista/template actual de reporte de flotilla.
+- [ ] Mejorar backend de filtros y clasificación para reporte flotilla.
+- [ ] Crear endpoint PDF profesional de reporte de flotilla.
+- [ ] Registrar ruta `reporte-flotilla/pdf/`.
+- [ ] Rediseñar template con acciones: Generar, Imprimir, Descargar PDF.
+- [ ] Aplicar estilos `@media print` para impresión profesional.
+- [ ] Validar escenarios con/sin datos y filtros.

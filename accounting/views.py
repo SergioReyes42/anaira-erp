@@ -8,7 +8,7 @@ from django.db import transaction # <--- Importación vital
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.utils import timezone
-from django.db.models import Sum, Q, F, Value, DecimalField
+from django.db.models import Sum, Q, F, Value, DecimalField, Case, When, CharField
 from django.core.paginator import Paginator # Agrega esto arriba si no lo tienes
 from core.reporting import export_to_excel, export_to_pdf
 from .decorators import group_required  # <--- Importas el candado
@@ -546,46 +546,120 @@ def mobile_expense(request):
 @login_required
 @group_required('Contadora', 'Gerente', 'Administrador')
 def fleet_expense_report(request):
-    """Reporte de Gastos de Flotilla: Combustible vs Mantenimiento"""
-    
-    # 1. Traemos todos los vehículos de la empresa
-    vehicles = Vehicle.objects.filter(company=request.user.current_company)
-    
-    # 2. Filtramos los gastos base: Solo los que pertenecen a un vehículo y a esta empresa
-    # (Opcional: puedes agregar status='APPROVED' si solo quieres ver los ya revisados por contabilidad)
+    """Reporte profesional de gastos de flotilla con filtros y clasificación robusta."""
+    vehicles = Vehicle.objects.filter(company=request.user.current_company).order_by('placa')
     qs = Expense.objects.filter(company=request.user.current_company, vehicle__isnull=False)
-    
-    # 3. Leer los filtros que el usuario eligió en la pantalla
-    vehicle_id = request.GET.get('vehicle_id')
-    category = request.GET.get('category', 'both') # Por defecto muestra ambos
-    
-    # Aplicar filtro de vehículo si eligió uno específico
+
+    vehicle_id = request.GET.get('vehicle_id', '').strip()
+    category = request.GET.get('category', 'both').strip() or 'both'
+
     if vehicle_id:
         qs = qs.filter(vehicle_id=vehicle_id)
-        
-    # Aplicar filtro de categoría (Buscamos la palabra clave en la descripción que manda el piloto)
-    if category == 'fuel':
-        qs = qs.filter(description__icontains='Combustible')
-    elif category == 'maint':
-        qs = qs.filter(description__icontains='Mantenimiento')
-    elif category == 'both':
-        qs = qs.filter(Q(description__icontains='Combustible') | Q(description__icontains='Mantenimiento'))
 
-    # 4. CALCULADORA MAESTRA (Suma los totales de la flotilla o del vehículo)
-    total_fuel = qs.filter(description__icontains='Combustible').aggregate(t=Sum('total_amount'))['t'] or 0
-    total_maint = qs.filter(description__icontains='Mantenimiento').aggregate(t=Sum('total_amount'))['t'] or 0
+    fuel_q = Q(description__icontains='combustible') | Q(description__icontains='diesel') | Q(description__icontains='gasolina')
+    maint_q = Q(description__icontains='mantenimiento') | Q(description__icontains='repuesto') | Q(description__icontains='taller') | Q(description__icontains='llanta')
+
+    if category == 'fuel':
+        qs = qs.filter(fuel_q)
+    elif category == 'maint':
+        qs = qs.filter(maint_q)
+    else:
+        qs = qs.filter(fuel_q | maint_q)
+
+    qs = qs.annotate(
+        expense_type=Case(
+            When(fuel_q, then=Value('Combustible')),
+            When(maint_q, then=Value('Mantenimiento')),
+            default=Value('Otro'),
+            output_field=CharField()
+        )
+    ).order_by('-date')
+
+    total_fuel = qs.filter(expense_type='Combustible').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
+    total_maint = qs.filter(expense_type='Mantenimiento').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
     gran_total = total_fuel + total_maint
 
+    selected_vehicle_obj = None
+    if vehicle_id:
+        selected_vehicle_obj = vehicles.filter(id=vehicle_id).first()
+
     context = {
-        'expenses': qs.order_by('-date'), # Ordenados del más reciente al más viejo
+        'expenses': qs,
         'vehicles': vehicles,
         'total_fuel': total_fuel,
         'total_maint': total_maint,
         'gran_total': gran_total,
         'selected_vehicle': vehicle_id,
+        'selected_vehicle_obj': selected_vehicle_obj,
         'selected_category': category,
     }
     return render(request, 'accounting/fleet_report.html', context)
+
+
+@login_required
+@group_required('Contadora', 'Gerente', 'Administrador')
+def fleet_expense_report_pdf(request):
+    """Descarga PDF profesional del reporte de flotilla respetando filtros."""
+    vehicles = Vehicle.objects.filter(company=request.user.current_company).order_by('placa')
+    qs = Expense.objects.filter(company=request.user.current_company, vehicle__isnull=False)
+
+    vehicle_id = request.GET.get('vehicle_id', '').strip()
+    category = request.GET.get('category', 'both').strip() or 'both'
+
+    if vehicle_id:
+        qs = qs.filter(vehicle_id=vehicle_id)
+
+    fuel_q = Q(description__icontains='combustible') | Q(description__icontains='diesel') | Q(description__icontains='gasolina')
+    maint_q = Q(description__icontains='mantenimiento') | Q(description__icontains='repuesto') | Q(description__icontains='taller') | Q(description__icontains='llanta')
+
+    if category == 'fuel':
+        qs = qs.filter(fuel_q)
+    elif category == 'maint':
+        qs = qs.filter(maint_q)
+    else:
+        qs = qs.filter(fuel_q | maint_q)
+
+    qs = qs.annotate(
+        expense_type=Case(
+            When(fuel_q, then=Value('Combustible')),
+            When(maint_q, then=Value('Mantenimiento')),
+            default=Value('Otro'),
+            output_field=CharField()
+        )
+    ).order_by('-date')
+
+    total_fuel = qs.filter(expense_type='Combustible').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
+    total_maint = qs.filter(expense_type='Mantenimiento').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
+    gran_total = total_fuel + total_maint
+
+    selected_vehicle_obj = vehicles.filter(id=vehicle_id).first() if vehicle_id else None
+    vehicle_label = f"{selected_vehicle_obj.placa} - {selected_vehicle_obj.marca}" if selected_vehicle_obj else "Toda la Flotilla"
+    category_label = {
+        'both': 'Combustible + Mantenimiento',
+        'fuel': 'Solo Combustible',
+        'maint': 'Solo Mantenimiento'
+    }.get(category, 'Combustible + Mantenimiento')
+
+    headers = ["Fecha", "Vehículo", "Piloto", "Tipo", "Estado", "Monto (Q)"]
+    rows = [
+        ["Filtro Vehículo", vehicle_label, "", "Filtro Rubro", category_label, ""],
+        ["Total Combustible", f"{float(total_fuel):.2f}", "", "Total Mantenimiento", f"{float(total_maint):.2f}", f"Total General: {float(gran_total):.2f}"],
+        ["", "", "", "", "", ""],
+    ]
+
+    for expense in qs:
+        rows.append([
+            expense.date.strftime("%d/%m/%Y %H:%M") if expense.date else "",
+            f"{expense.vehicle.placa} - {expense.vehicle.marca}" if expense.vehicle else "",
+            expense.user.get_full_name() if expense.user and expense.user.get_full_name() else (expense.user.username if expense.user else ""),
+            expense.expense_type,
+            "Pendiente" if expense.status == "PENDING" else "Aprobado",
+            f"{float(expense.total_amount or 0):.2f}",
+        ])
+
+    title = f"Reporte Profesional de Flotilla - {vehicle_label}"
+    filename = f"reporte_flotilla_{timezone.now().strftime('%Y%m%d_%H%M%S')}"
+    return export_to_pdf(filename, title, headers, rows)
 
 @login_required
 @group_required('Contadora', 'Gerente', 'Administrador')
