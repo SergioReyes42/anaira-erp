@@ -1,0 +1,27 @@
+<div class="row g-3">
+    <div class="col-md-6">
+        <label class="form-label">Nombre</label>
+        {{ form.first_name }}
+        {% if form.first_name.errors %}<div class="text-danger small">{{ form.first_name.errors|join:", " }}</div>{% endif %}
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Apellido</label>
+        {{ form.last_name }}
+        {% if form.last_name.errors %}<div class="text-danger small">{{ form.last_name.errors|join:", " }}</div>{% endif %}
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Puesto</label>
+        {{ form.position }}
+        {% if form.position.errors %}<div class="text-danger small">{{ form.position.errors|join:", " }}</div>{% endif %}
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Salario Base</label>
+        {{ form.base_salary }}
+        {% if form.base_salary.errors %}<div class="text-danger small">{{ form.base_salary.errors|join:", " }}</div>{% endif %}
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Fecha Contratación</label>
+        {{ form.hiring_date }}
+        {% if form.hiring_date.errors %}<div class="text-danger small">{{ form.hiring_date.errors|join:", " }}</div>{% endif %}
+    </div>
+</div>

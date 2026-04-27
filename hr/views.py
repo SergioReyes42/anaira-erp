@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.template.loader import render_to_string
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Employee, Payroll, EmployeeLoanAdvance
@@ -46,6 +47,8 @@ def employee_list(request):
 
 @login_required
 def employee_create(request):
+    is_modal = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.GET.get('modal') == '1'
+
     if request.method == 'POST':
         form = EmployeeForm(request.POST)
         if form.is_valid():
@@ -53,9 +56,18 @@ def employee_create(request):
             emp.company = request.user.current_company
             emp.save()
             messages.success(request, "Empleado creado correctamente.")
+
+            if is_modal:
+                return render(request, 'hr/partials/employee_form_response.html', {'success': True})
+
             return redirect('employee_list')
     else:
         form = EmployeeForm()
+
+    if is_modal:
+        html = render_to_string('hr/partials/employee_form_fields.html', {'form': form}, request=request)
+        return render(request, 'hr/partials/employee_form_response.html', {'success': False, 'form_html': html})
+
     return render(request, 'hr/employee_form.html', {'form': form})
 
 @login_required

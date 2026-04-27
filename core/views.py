@@ -157,17 +157,27 @@ def db_fix_view(request):
 
 @login_required
 def switch_company(request, company_id):
-    """Cambia la sucursal activa del usuario y recarga la página"""
-    # Buscamos la empresa que seleccionó
+    """Cambia la sucursal activa del usuario y recarga la página con validación de permisos."""
     company = get_object_or_404(Company, id=company_id)
-    
-    # Se la asignamos al usuario actual
-    request.user.current_company = company
-    request.user.save()
-    
+
+    user = request.user
+    allowed = (
+        user.is_superuser
+        or user.groups.filter(name__in=['Gerente', 'Administrador']).exists()
+        or user.allowed_companies.filter(id=company.id).exists()
+    )
+
+    if not allowed:
+        messages.error(request, "⛔ No tienes permisos para cambiar a esa empresa.")
+        next_url = request.META.get('HTTP_REFERER', '/')
+        return redirect(next_url)
+
+    user.current_company = company
+    user.save(update_fields=['current_company'])
+    request.session['company_id'] = company.id
+
     messages.success(request, f"🏢 Cambio exitoso: Ahora estás operando en {company.name}")
-    
-    # Lo devolvemos a la página donde estaba (o al inicio si no hay historial)
+
     next_url = request.META.get('HTTP_REFERER', '/')
     return redirect(next_url)
 

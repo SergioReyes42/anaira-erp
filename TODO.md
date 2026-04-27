@@ -8,3 +8,5 @@
 - [ ] Crear templates RRHH (`nomina_create.html`, `vacaciones_permisos.html`, `prestamo_list.html`, `prestamo_form.html`).
 - [ ] Actualizar enlaces de menú RRHH en `templates/base.html`.
 - [ ] Ejecutar pruebas (`makemigrations`, `migrate`, `check` + endpoints básicos).
+- [ ] Bloque A: blindaje multiempresa (`middleware`, `switch_company`, settings producción).
+- [ ] Bloque A: corregir modal/botón "Nuevo Empleado" en RRHH.
