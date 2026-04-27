@@ -22,6 +22,22 @@ class Payroll(CompanyAwareModel):
         return f"Nómina {self.date}"
 
 
+class PayrollRun(CompanyAwareModel):
+    period_label = models.CharField(max_length=40, verbose_name="Período (ej. Abril 2026)")
+    payment_date = models.DateField(default=timezone.now, verbose_name="Fecha de Pago")
+    description = models.CharField(max_length=255, blank=True, default="")
+    total_gross = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    total_deductions = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    total_net = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    is_posted = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-payment_date", "-id"]
+
+    def __str__(self):
+        return f"Planilla {self.period_label} ({self.payment_date})"
+
+
 class EmployeeLoanAdvance(CompanyAwareModel):
     TYPE_CHOICES = (
         ("ANTICIPO", "Anticipo"),
@@ -54,3 +70,19 @@ class EmployeeLoanAdvance(CompanyAwareModel):
 
     def __str__(self):
         return f"{self.loan_type} - {self.employee} - {self.amount}"
+
+
+class EmployeePayrollLine(models.Model):
+    payroll_run = models.ForeignKey(PayrollRun, on_delete=models.CASCADE, related_name="lines")
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="payroll_lines")
+    gross_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    loan_deduction = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    other_deductions = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    net_pay = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    notes = models.CharField(max_length=255, blank=True, default="")
+
+    class Meta:
+        ordering = ["employee__first_name", "employee__last_name"]
+
+    def __str__(self):
+        return f"{self.employee} - Neto Q{self.net_pay}"

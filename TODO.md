@@ -10,3 +10,7 @@
 - [ ] Ejecutar pruebas (`makemigrations`, `migrate`, `check` + endpoints básicos).
 - [ ] Bloque A: blindaje multiempresa (`middleware`, `switch_company`, settings producción).
 - [ ] Bloque A: corregir modal/botón "Nuevo Empleado" en RRHH.
+- [ ] RRHH: habilitar flujo completo de préstamos/anticipos + botón funcional.
+- [ ] RRHH: registrar descuentos por empleado y aplicarlos en nómina.
+- [ ] RRHH: generar recibo de planilla por empleado (PDF).
+- [ ] Integración contable NIIF/NIC: asientos automáticos en libro diario para préstamo y planilla.

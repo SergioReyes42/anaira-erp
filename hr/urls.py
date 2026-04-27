@@ -8,6 +8,7 @@ urlpatterns = [
 
     # --- NÓMINA ---
     path('nomina/generar/', views.nomina_create, name='nomina_create'),
+    path('nomina/recibo/<int:line_id>/pdf/', views.payroll_receipt_pdf, name='payroll_receipt_pdf'),
 
     # --- RRHH ---
     path('vacaciones-permisos/', views.vacaciones_permisos, name='vacaciones_permisos'),
