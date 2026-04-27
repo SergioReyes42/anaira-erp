@@ -547,7 +547,7 @@ def mobile_expense(request):
 @group_required('Contadora', 'Gerente', 'Administrador')
 def fleet_expense_report(request):
     """Reporte profesional de gastos de flotilla con filtros y clasificación robusta."""
-    vehicles = Vehicle.objects.filter(company=request.user.current_company).order_by('placa')
+    vehicles = Vehicle.objects.filter(company=request.user.current_company).order_by('plate')
     qs = Expense.objects.filter(company=request.user.current_company, vehicle__isnull=False)
 
     vehicle_id = request.GET.get('vehicle_id', '').strip()
@@ -600,7 +600,7 @@ def fleet_expense_report(request):
 @group_required('Contadora', 'Gerente', 'Administrador')
 def fleet_expense_report_pdf(request):
     """Descarga PDF profesional del reporte de flotilla respetando filtros."""
-    vehicles = Vehicle.objects.filter(company=request.user.current_company).order_by('placa')
+    vehicles = Vehicle.objects.filter(company=request.user.current_company).order_by('plate')
     qs = Expense.objects.filter(company=request.user.current_company, vehicle__isnull=False)
 
     vehicle_id = request.GET.get('vehicle_id', '').strip()
@@ -633,7 +633,7 @@ def fleet_expense_report_pdf(request):
     gran_total = total_fuel + total_maint
 
     selected_vehicle_obj = vehicles.filter(id=vehicle_id).first() if vehicle_id else None
-    vehicle_label = f"{selected_vehicle_obj.placa} - {selected_vehicle_obj.marca}" if selected_vehicle_obj else "Toda la Flotilla"
+    vehicle_label = f"{selected_vehicle_obj.plate} - {selected_vehicle_obj.brand}" if selected_vehicle_obj else "Toda la Flotilla"
     category_label = {
         'both': 'Combustible + Mantenimiento',
         'fuel': 'Solo Combustible',
@@ -650,7 +650,7 @@ def fleet_expense_report_pdf(request):
     for expense in qs:
         rows.append([
             expense.date.strftime("%d/%m/%Y %H:%M") if expense.date else "",
-            f"{expense.vehicle.placa} - {expense.vehicle.marca}" if expense.vehicle else "",
+            f"{expense.vehicle.plate} - {expense.vehicle.brand}" if expense.vehicle else "",
             expense.user.get_full_name() if expense.user and expense.user.get_full_name() else (expense.user.username if expense.user else ""),
             expense.expense_type,
             "Pendiente" if expense.status == "PENDING" else "Aprobado",

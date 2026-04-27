@@ -27,7 +27,7 @@
                         <option value="">🏢 TODA LA FLOTILLA (Reporte General)</option>
                         {% for v in vehicles %}
                             <option value="{{ v.id }}" {% if selected_vehicle == v.id|stringformat:"s" %}selected{% endif %}>
-                                {{ v.placa }} - {{ v.marca }}
+                                {{ v.plate }} - {{ v.brand }}
                             </option>
                         {% endfor %}
                     </select>
@@ -109,7 +109,7 @@
                     {% for expense in expenses %}
                     <tr>
                         <td class="text-muted small">{{ expense.date|date:"d/m/Y H:i" }}</td>
-                        <td class="fw-bold">{{ expense.vehicle.placa }} <br><small class="text-muted fw-normal">{{ expense.vehicle.marca }}</small></td>
+                        <td class="fw-bold">{{ expense.vehicle.plate }} <br><small class="text-muted fw-normal">{{ expense.vehicle.brand }}</small></td>
                         <td>{{ expense.user.get_full_name|default:expense.user.username }}</td>
                         <td>
                             {% if expense.expense_type == 'Combustible' %}
