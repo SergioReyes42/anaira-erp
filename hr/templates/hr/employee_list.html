@@ -71,7 +71,21 @@
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
         .then(r => r.text())
-        .then(html => { formBody.innerHTML = html; })
+        .then(html => {
+            const cleaned = html.replace(/^\s+|\s+$/g, '');
+            if (
+                cleaned.startsWith('<div class="row g-3">') ||
+                cleaned.includes('name="first_name"') ||
+                cleaned.includes('Nombre')
+            ) {
+                formBody.innerHTML = cleaned;
+            } else {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(cleaned, 'text/html');
+                const useful = doc.querySelector('.row.g-3') || doc.body;
+                formBody.innerHTML = useful ? useful.innerHTML || useful.outerHTML : '<div class="alert alert-danger mb-0">No se pudo cargar el formulario.</div>';
+            }
+        })
         .catch(() => { formBody.innerHTML = '<div class="alert alert-danger mb-0">No se pudo cargar el formulario.</div>'; });
     });
 
