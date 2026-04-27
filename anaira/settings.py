@@ -56,6 +56,17 @@ MIDDLEWARE = [
 # 🛡️ BLINDAJE EXTREMO APLICADO AQUÍ
 db_url = os.environ.get('DATABASE_URL', '').strip()
 
+# Detecta entorno Railway para evitar fallback silencioso a SQLite en producción
+IS_RAILWAY = bool(
+    os.environ.get('RAILWAY_ENVIRONMENT')
+    or os.environ.get('RAILWAY_PROJECT_ID')
+    or os.environ.get('RAILWAY_SERVICE_ID')
+)
+
+# Normaliza esquemas antiguos de postgres
+if db_url.startswith('postgres://'):
+    db_url = db_url.replace('postgres://', 'postgresql://', 1)
+
 # Evita valores corruptos como "://", "postgres://", etc. sin host real.
 invalid_db_url = (
     not db_url
@@ -66,9 +77,19 @@ invalid_db_url = (
 
 if not invalid_db_url:
     DATABASES = {
-        'default': dj_database_url.parse(db_url, conn_max_age=600, conn_health_checks=True)
+        'default': dj_database_url.parse(
+            db_url,
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=IS_RAILWAY,
+        )
     }
 else:
+    if IS_RAILWAY:
+        raise RuntimeError(
+            "DATABASE_URL no está configurada correctamente en Railway. "
+            "Configúrala en el servicio WEB como {{Postgres.DATABASE_URL}}."
+        )
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
