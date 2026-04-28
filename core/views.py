@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
-from .models import Company, AIQueryLog
+from .models import Company, AIQueryLog, AIActionDraft
 from django.db import transaction
 from django.contrib.auth.models import Group
 from django.urls import reverse
@@ -11,6 +11,9 @@ from django.shortcuts import redirect
 from django.http import JsonResponse
 import json
 from .ai_brain import responder_chat_contable, ejecutar_tool_contable
+from django.utils import timezone
+import decimal
+from accounting.models import JournalEntry, JournalEntryLine, Account
 
 User = get_user_model()
 
@@ -239,21 +242,16 @@ def login_router(request):
     if user.is_superuser or user.groups.filter(name__in=['Gerente', 'Administrador']).exists():
         # Asignamos la Sede Central por defecto si no tiene una activa
         if not user.current_company:
-            # Aquí asumo que obtienes la sede central, ajusta a tu modelo real
-            # user.current_company = Company.objects.first() 
-            # user.save()
             pass
-        return redirect('home') # Va al Dashboard (Mi Tablero)
+        return redirect('home')
         
     # 2. Si es un usuario normal (Ventas, Bodega, etc.)
     else:
-        # Aseguramos que solo tenga activa la empresa a la que fue contratado
-        # asumiendo que tu usuario tiene un campo "assigned_company" o similar
         if hasattr(user, 'assigned_company') and user.assigned_company:
             user.current_company = user.assigned_company
             user.save()
             
-        return redirect('home') # Va directo al Dashboard de su sucursal
+        return redirect('home')
 
 @login_required
 def ai_contable_chat_page(request):
@@ -368,6 +366,208 @@ def ai_accounting_logs(request):
         })
 
     return JsonResponse({"ok": True, "logs": data})
+
+
+def _ai_roles_allowed(user):
+    allowed_roles = ['Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador']
+    return user.is_superuser or user.groups.filter(name__in=allowed_roles).exists()
+
+
+@login_required
+def ai_draft_create(request):
+    if request.method != 'POST':
+        return JsonResponse({"ok": False, "error": "Método no permitido."}, status=405)
+
+    if not _ai_roles_allowed(request.user):
+        return JsonResponse({"ok": False, "error": "No autorizado."}, status=403)
+
+    company = getattr(request.user, 'current_company', None)
+    if not company:
+        return JsonResponse({"ok": False, "error": "No tienes empresa activa."}, status=400)
+
+    payload_raw = (request.POST.get('payload') or '').strip()
+    if not payload_raw:
+        return JsonResponse({"ok": False, "error": "Payload requerido."}, status=400)
+
+    try:
+        payload = json.loads(payload_raw)
+    except Exception:
+        return JsonResponse({"ok": False, "error": "Payload JSON inválido."}, status=400)
+
+    draft = AIActionDraft.objects.create(
+        company=company,
+        created_by=request.user,
+        action_type='JOURNAL_ENTRY_DRAFT',
+        draft_payload=payload,
+        status='PENDING'
+    )
+
+    AIQueryLog.objects.create(
+        user=request.user,
+        company=company,
+        question='Crear draft IA',
+        tool_name='draft_create',
+        request_payload=payload,
+        response_payload={"draft_id": draft.id, "status": draft.status},
+        status='OK'
+    )
+    return JsonResponse({"ok": True, "draft_id": draft.id, "status": draft.status})
+
+
+@login_required
+def ai_drafts_list(request):
+    if request.method != 'GET':
+        return JsonResponse({"ok": False, "error": "Método no permitido."}, status=405)
+
+    if not _ai_roles_allowed(request.user):
+        return JsonResponse({"ok": False, "error": "No autorizado."}, status=403)
+
+    company = getattr(request.user, 'current_company', None)
+    qs = AIActionDraft.objects.all().order_by('-created_at')
+    if company:
+        qs = qs.filter(company=company)
+
+    data = []
+    for d in qs[:100]:
+        data.append({
+            "id": d.id,
+            "status": d.status,
+            "action_type": d.action_type,
+            "created_by": d.created_by.username,
+            "created_at": d.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "approved_by": d.approved_by.username if d.approved_by else None,
+            "applied_by": d.applied_by.username if d.applied_by else None,
+            "rejection_reason": d.rejection_reason,
+            "payload": d.draft_payload,
+        })
+
+    return JsonResponse({"ok": True, "drafts": data})
+
+
+@login_required
+def ai_draft_approve(request, draft_id):
+    if request.method != 'POST':
+        return JsonResponse({"ok": False, "error": "Método no permitido."}, status=405)
+
+    if not _ai_roles_allowed(request.user):
+        return JsonResponse({"ok": False, "error": "No autorizado."}, status=403)
+
+    draft = get_object_or_404(AIActionDraft, id=draft_id)
+
+    if draft.status != 'PENDING':
+        return JsonResponse({"ok": False, "error": "Solo se aprueban drafts pendientes."}, status=400)
+
+    draft.status = 'APPROVED'
+    draft.approved_by = request.user
+    draft.approved_at = timezone.now()
+    draft.save(update_fields=['status', 'approved_by', 'approved_at'])
+
+    return JsonResponse({"ok": True, "draft_id": draft.id, "status": draft.status})
+
+
+@login_required
+def ai_draft_reject(request, draft_id):
+    if request.method != 'POST':
+        return JsonResponse({"ok": False, "error": "Método no permitido."}, status=405)
+
+    if not _ai_roles_allowed(request.user):
+        return JsonResponse({"ok": False, "error": "No autorizado."}, status=403)
+
+    draft = get_object_or_404(AIActionDraft, id=draft_id)
+
+    if draft.status not in ['PENDING', 'APPROVED']:
+        return JsonResponse({"ok": False, "error": "No se puede rechazar en su estado actual."}, status=400)
+
+    reason = (request.POST.get('reason') or '').strip()
+    draft.status = 'REJECTED'
+    draft.rejection_reason = reason
+    draft.save(update_fields=['status', 'rejection_reason'])
+
+    return JsonResponse({"ok": True, "draft_id": draft.id, "status": draft.status})
+
+
+@login_required
+def ai_draft_apply(request, draft_id):
+    if request.method != 'POST':
+        return JsonResponse({"ok": False, "error": "Método no permitido."}, status=405)
+
+    if not _ai_roles_allowed(request.user):
+        return JsonResponse({"ok": False, "error": "No autorizado."}, status=403)
+
+    draft = get_object_or_404(AIActionDraft, id=draft_id)
+
+    if draft.status != 'APPROVED':
+        return JsonResponse({"ok": False, "error": "Solo se pueden aplicar drafts aprobados."}, status=400)
+
+    if draft.created_by_id == request.user.id:
+        return JsonResponse({"ok": False, "error": "Segregación: quien crea no puede aplicar."}, status=403)
+
+    payload = draft.draft_payload or {}
+    concept = (payload.get('concepto') or '').strip()
+    lineas = payload.get('lineas') or []
+    fecha = payload.get('fecha')
+
+    if not concept or not isinstance(lineas, list) or not lineas:
+        return JsonResponse({"ok": False, "error": "Draft inválido: falta concepto o líneas."}, status=400)
+
+    total_debe = decimal.Decimal('0.00')
+    total_haber = decimal.Decimal('0.00')
+    lineas_ok = []
+
+    for ln in lineas:
+        account_id = ln.get('account_id')
+        try:
+            account = Account.objects.get(id=account_id, is_transactional=True)
+            debit = decimal.Decimal(str(ln.get('debit', 0)))
+            credit = decimal.Decimal(str(ln.get('credit', 0)))
+        except Exception:
+            return JsonResponse({"ok": False, "error": "Línea inválida en draft."}, status=400)
+
+        if debit < 0 or credit < 0 or (debit > 0 and credit > 0) or (debit == 0 and credit == 0):
+            return JsonResponse({"ok": False, "error": "Línea contable inválida (Debe/Haber)."}, status=400)
+
+        total_debe += debit
+        total_haber += credit
+        lineas_ok.append((account, debit, credit))
+
+    if total_debe != total_haber:
+        return JsonResponse({"ok": False, "error": "Partida descuadrada: Debe debe ser igual a Haber."}, status=400)
+
+    company = getattr(request.user, 'current_company', None)
+    company_key = str(getattr(company, 'id', company)) if company else None
+
+    with transaction.atomic():
+        entry = JournalEntry.objects.create(
+            date=fecha or timezone.now().date(),
+            concept=concept,
+            company=company_key,
+            is_opening_balance=False
+        )
+
+        for account, debit, credit in lineas_ok:
+            JournalEntryLine.objects.create(
+                entry=entry,
+                account=account,
+                debit=debit,
+                credit=credit
+            )
+
+        draft.status = 'APPLIED'
+        draft.applied_by = request.user
+        draft.applied_at = timezone.now()
+        draft.save(update_fields=['status', 'applied_by', 'applied_at'])
+
+    AIQueryLog.objects.create(
+        user=request.user,
+        company=company,
+        question='Aplicar draft IA',
+        tool_name='draft_apply',
+        request_payload={"draft_id": draft.id},
+        response_payload={"entry_id": entry.id, "status": "APPLIED"},
+        status='OK'
+    )
+
+    return JsonResponse({"ok": True, "draft_id": draft.id, "status": draft.status, "entry_id": entry.id})
 
 
 def set_working_period(request):

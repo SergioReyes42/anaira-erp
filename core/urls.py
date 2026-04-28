@@ -41,4 +41,9 @@ urlpatterns = [
     path('ia-contable/chat/', views.ai_contable_chat_page, name='ai_contable_chat_page'),
     path('api/ia-contable/chat/', views.ai_accounting_chat, name='ai_accounting_chat'),
     path('api/ia-contable/logs/', views.ai_accounting_logs, name='ai_accounting_logs'),
+    path('api/ia-contable/draft/create/', views.ai_draft_create, name='ai_draft_create'),
+    path('api/ia-contable/drafts/', views.ai_drafts_list, name='ai_drafts_list'),
+    path('api/ia-contable/draft/<int:draft_id>/approve/', views.ai_draft_approve, name='ai_draft_approve'),
+    path('api/ia-contable/draft/<int:draft_id>/reject/', views.ai_draft_reject, name='ai_draft_reject'),
+    path('api/ia-contable/draft/<int:draft_id>/apply/', views.ai_draft_apply, name='ai_draft_apply'),
 ]

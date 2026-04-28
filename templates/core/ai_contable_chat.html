@@ -4,8 +4,8 @@
 <div class="container-fluid py-3">
     <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
         <div>
-            <h3 class="text-primary mb-0"><i class="bi bi-robot me-2"></i>IA Contable - Fase 2</h3>
-            <small class="text-muted">Consultas + acciones sugeridas + borrador de partida manual (auditado)</small>
+            <h3 class="text-primary mb-0"><i class="bi bi-robot me-2"></i>IA Contable - Fase 3</h3>
+            <small class="text-muted">Consultas + ciclo de drafts: crear, listar, aprobar, rechazar y aplicar</small>
         </div>
     </div>
 
@@ -51,14 +51,31 @@
                 </div>
             </div>
 
-            <div class="card shadow-sm border-0">
+            <div class="card shadow-sm border-0 mb-3">
                 <div class="card-body">
                     <h6 class="mb-2">Borrador de Partida Manual</h6>
-                    <small class="text-muted d-block mb-2">Envía JSON de líneas para validar Debe/Haber.</small>
-                    <textarea id="draft-json" class="form-control mb-2" rows="7">{"tool":"borrador_partida_manual","concepto":"Registro manual IA","lineas":[{"account_id":1,"debit":100,"credit":0},{"account_id":2,"debit":0,"credit":100}]}</textarea>
-                    <button id="run-draft" class="btn btn-warning btn-sm w-100">
-                        <i class="bi bi-journal-check me-1"></i>Validar borrador
-                    </button>
+                    <small class="text-muted d-block mb-2">JSON de partida para crear draft en aprobación.</small>
+                    <textarea id="draft-json" class="form-control mb-2" rows="7">{"concepto":"Registro manual IA","lineas":[{"account_id":1,"debit":100,"credit":0},{"account_id":1,"debit":0,"credit":100}]}</textarea>
+                    <div class="d-grid gap-2">
+                        <button id="run-draft" class="btn btn-warning btn-sm w-100">
+                            <i class="bi bi-journal-check me-1"></i>Validar borrador en chat
+                        </button>
+                        <button id="create-draft" class="btn btn-primary btn-sm w-100">
+                            <i class="bi bi-save2 me-1"></i>Crear Draft (Fase 3)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Drafts Pendientes</h6>
+                        <button id="refresh-drafts" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </button>
+                    </div>
+                    <div id="drafts-container" class="small text-muted">Sin cargar.</div>
                 </div>
             </div>
         </div>
@@ -75,6 +92,9 @@
     const quickActions = document.querySelectorAll('.quick-action');
     const draftJson = document.getElementById('draft-json');
     const runDraft = document.getElementById('run-draft');
+    const createDraftBtn = document.getElementById('create-draft');
+    const refreshDraftsBtn = document.getElementById('refresh-drafts');
+    const draftsContainer = document.getElementById('drafts-container');
 
     function addMessage(author, text, badgeClass) {
         const wrapper = document.createElement('div');
@@ -147,6 +167,109 @@
         });
     });
 
+    async function loadDrafts() {
+        try {
+            const response = await fetch("{% url 'core:ai_drafts_list' %}", {
+                method: 'GET',
+                headers: { 'X-CSRFToken': csrfToken }
+            });
+            const data = await response.json();
+
+            if (!data.ok) {
+                draftsContainer.innerHTML = `<span class="text-danger">${data.error || 'Error cargando drafts'}</span>`;
+                return;
+            }
+
+            if (!data.drafts || data.drafts.length === 0) {
+                draftsContainer.innerHTML = '<span class="text-muted">No hay drafts.</span>';
+                return;
+            }
+
+            draftsContainer.innerHTML = '';
+            data.drafts.forEach(d => {
+                const div = document.createElement('div');
+                div.className = 'border rounded p-2 mb-2 bg-light';
+                div.innerHTML = `
+                    <div class="fw-bold">#${d.id} - ${d.status}</div>
+                    <div>Creado por: ${d.created_by}</div>
+                    <div>Concepto: ${(d.payload && d.payload.concepto) ? d.payload.concepto : 'N/A'}</div>
+                    <div class="mt-2 d-flex gap-1 flex-wrap">
+                        <button class="btn btn-success btn-sm draft-approve" data-id="${d.id}">Aprobar</button>
+                        <button class="btn btn-danger btn-sm draft-reject" data-id="${d.id}">Rechazar</button>
+                        <button class="btn btn-primary btn-sm draft-apply" data-id="${d.id}">Aplicar</button>
+                    </div>
+                `;
+                draftsContainer.appendChild(div);
+            });
+
+            draftsContainer.querySelectorAll('.draft-approve').forEach(btn => {
+                btn.addEventListener('click', () => doDraftAction(btn.dataset.id, 'approve'));
+            });
+            draftsContainer.querySelectorAll('.draft-reject').forEach(btn => {
+                btn.addEventListener('click', () => doDraftAction(btn.dataset.id, 'reject'));
+            });
+            draftsContainer.querySelectorAll('.draft-apply').forEach(btn => {
+                btn.addEventListener('click', () => doDraftAction(btn.dataset.id, 'apply'));
+            });
+        } catch (e) {
+            draftsContainer.innerHTML = '<span class="text-danger">Error de conexión.</span>';
+        }
+    }
+
+    async function doDraftAction(draftId, action) {
+        const body = new URLSearchParams();
+        if (action === 'reject') {
+            body.append('reason', 'Rechazado desde UI');
+        }
+
+        const response = await fetch(`/api/ia-contable/draft/${draftId}/${action}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+            },
+            body: body.toString(),
+        });
+
+        const data = await response.json();
+        structuredResult.textContent = JSON.stringify(data, null, 2);
+        addMessage('DRAFT', `${action.toUpperCase()} #${draftId}: ${data.ok ? 'OK' : (data.error || 'Error')}`, data.ok ? 'bg-success' : 'bg-danger');
+        await loadDrafts();
+    }
+
+    createDraftBtn.addEventListener('click', async function () {
+        let payload;
+        try {
+            payload = JSON.parse(draftJson.value || '{}');
+        } catch (e) {
+            addMessage('SISTEMA', 'JSON inválido para draft.', 'bg-danger');
+            return;
+        }
+
+        const body = new URLSearchParams();
+        body.append('payload', JSON.stringify(payload));
+
+        try {
+            const response = await fetch("{% url 'core:ai_draft_create' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                },
+                body: body.toString(),
+            });
+
+            const data = await response.json();
+            structuredResult.textContent = JSON.stringify(data, null, 2);
+            addMessage('DRAFT', data.ok ? `Draft creado #${data.draft_id}` : (data.error || 'Error al crear draft'), data.ok ? 'bg-success' : 'bg-danger');
+            await loadDrafts();
+        } catch (err) {
+            addMessage('SISTEMA', 'Error creando draft.', 'bg-danger');
+        }
+    });
+
+    refreshDraftsBtn.addEventListener('click', loadDrafts);
+
     runDraft.addEventListener('click', async function () {
         let payload;
         try {
@@ -163,6 +286,7 @@
             addMessage('SISTEMA', 'Error validando borrador.', 'bg-danger');
         }
     });
+    loadDrafts();
 })();
 </script>
 {% endblock %}
