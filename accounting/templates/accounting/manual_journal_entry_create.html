@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <div>
+            <h2 class="mb-0 text-primary fw-bold">
+                <i class="bi bi-journal-plus me-2"></i>Nueva Partida Manual
+            </h2>
+            <small class="text-muted">Registro manual de asientos contables (Debe / Haber)</small>
+        </div>
+        <div>
+            <a href="{% url 'accounting:general_journal' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left-circle me-1"></i> Volver al Libro Diario
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <form method="post" id="journal-form">
+                {% csrf_token %}
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Fecha</label>
+                        <input type="date" name="date" class="form-control" required>
+                    </div>
+                    <div class="col-md-9">
+                        <label class="form-label fw-bold">Concepto General</label>
+                        <input type="text" name="concept" class="form-control" maxlength="255" placeholder="Ej. Registro de gasto administrativo mensual" required>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle" id="lines-table">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 50%;">Cuenta</th>
+                                <th style="width: 20%;">Debe (Q)</th>
+                                <th style="width: 20%;">Haber (Q)</th>
+                                <th style="width: 10%;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <select name="account_id[]" class="form-select" required>
+                                        <option value="">-- Selecciona una cuenta --</option>
+                                        {% for cuenta in cuentas %}
+                                            <option value="{{ cuenta.id }}">{{ cuenta.code }} - {{ cuenta.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" min="0" name="debit[]" class="form-control debit-field" placeholder="0.00">
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" min="0" name="credit[]" class="form-control credit-field" placeholder="0.00">
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-line">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light">
+                                <th class="text-end">Totales:</th>
+                                <th><span id="total-debe">0.00</span></th>
+                                <th><span id="total-haber">0.00</span></th>
+                                <th></th>
+                            </tr>
+                            <tr>
+                                <th colspan="4" class="text-end">
+                                    <span id="balance-indicator" class="badge bg-secondary">Pendiente</span>
+                                </th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-between mt-3">
+                    <button type="button" class="btn btn-outline-primary" id="add-line-btn">
+                        <i class="bi bi-plus-circle me-1"></i> Agregar línea
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check2-circle me-1"></i> Guardar Partida
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const tableBody = document.querySelector('#lines-table tbody');
+    const addLineBtn = document.getElementById('add-line-btn');
+    const totalDebeEl = document.getElementById('total-debe');
+    const totalHaberEl = document.getElementById('total-haber');
+    const balanceIndicator = document.getElementById('balance-indicator');
+
+    function parseVal(v) {
+        const n = parseFloat(v);
+        return isNaN(n) ? 0 : n;
+    }
+
+    function recalcTotals() {
+        const debitInputs = document.querySelectorAll('.debit-field');
+        const creditInputs = document.querySelectorAll('.credit-field');
+
+        let totalDebe = 0;
+        let totalHaber = 0;
+
+        debitInputs.forEach(input => totalDebe += parseVal(input.value));
+        creditInputs.forEach(input => totalHaber += parseVal(input.value));
+
+        totalDebeEl.textContent = totalDebe.toFixed(2);
+        totalHaberEl.textContent = totalHaber.toFixed(2);
+
+        if (totalDebe > 0 && totalDebe.toFixed(2) === totalHaber.toFixed(2)) {
+            balanceIndicator.textContent = 'Partida Cuadrada';
+            balanceIndicator.className = 'badge bg-success';
+        } else {
+            balanceIndicator.textContent = 'No Cuadrada';
+            balanceIndicator.className = 'badge bg-danger';
+        }
+    }
+
+    function addListeners(row) {
+        const debit = row.querySelector('.debit-field');
+        const credit = row.querySelector('.credit-field');
+        const removeBtn = row.querySelector('.remove-line');
+
+        debit.addEventListener('input', recalcTotals);
+        credit.addEventListener('input', recalcTotals);
+
+        removeBtn.addEventListener('click', function() {
+            if (tableBody.querySelectorAll('tr').length > 1) {
+                row.remove();
+                recalcTotals();
+            }
+        });
+    }
+
+    addLineBtn.addEventListener('click', function() {
+        const firstRow = tableBody.querySelector('tr');
+        const newRow = firstRow.cloneNode(true);
+
+        newRow.querySelector('select[name="account_id[]"]').value = '';
+        newRow.querySelector('input[name="debit[]"]').value = '';
+        newRow.querySelector('input[name="credit[]"]').value = '';
+
+        tableBody.appendChild(newRow);
+        addListeners(newRow);
+        recalcTotals();
+    });
+
+    tableBody.querySelectorAll('tr').forEach(addListeners);
+    recalcTotals();
+})();
+</script>
+{% endblock %}

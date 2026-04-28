@@ -72,6 +72,7 @@ urlpatterns = [
 
     path('reportes/libro-diario/excel/', views.export_general_journal_excel, name='export_general_journal_excel'),
     path('reportes/libro-diario/pdf/', views.export_general_journal_pdf, name='export_general_journal_pdf'),
+    path('manual-partida/', views.manual_journal_entry_create, name='manual_journal_entry_create'),
 
     path('supervision-gastos/', views.expense_pre_review_list, name='expense_pre_review_list'),
 

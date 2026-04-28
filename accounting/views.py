@@ -1667,6 +1667,101 @@ def pagar_tarjeta_credito(request):
 
 @login_required
 @group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
+def manual_journal_entry_create(request):
+    """Creación manual de partidas contables (Libro Diario)."""
+    cuentas = Account.objects.filter(is_transactional=True).order_by('code')
+
+    if request.method == 'POST':
+        fecha = request.POST.get('date')
+        concepto = (request.POST.get('concept') or '').strip()
+        account_ids = request.POST.getlist('account_id[]')
+        debits = request.POST.getlist('debit[]')
+        credits = request.POST.getlist('credit[]')
+
+        if not fecha or not concepto:
+            messages.error(request, "La fecha y el concepto son obligatorios.")
+            return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
+
+        lineas = []
+        total_debe = decimal.Decimal('0.00')
+        total_haber = decimal.Decimal('0.00')
+
+        for i in range(len(account_ids)):
+            account_id = (account_ids[i] or '').strip()
+            debit_raw = (debits[i] or '0').strip()
+            credit_raw = (credits[i] or '0').strip()
+
+            if not account_id:
+                continue
+
+            try:
+                cuenta = Account.objects.get(id=account_id, is_transactional=True)
+            except Account.DoesNotExist:
+                messages.error(request, "Se seleccionó una cuenta inválida.")
+                return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
+
+            try:
+                debe = decimal.Decimal(debit_raw or '0')
+                haber = decimal.Decimal(credit_raw or '0')
+            except decimal.InvalidOperation:
+                messages.error(request, "Hay valores numéricos inválidos en Debe/Haber.")
+                return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
+
+            if debe < 0 or haber < 0:
+                messages.error(request, "Debe/Haber no permiten valores negativos.")
+                return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
+
+            if debe == 0 and haber == 0:
+                continue
+
+            if debe > 0 and haber > 0:
+                messages.error(request, "Cada línea debe tener valor solo en Debe o solo en Haber.")
+                return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
+
+            lineas.append({
+                'cuenta': cuenta,
+                'debe': debe,
+                'haber': haber,
+            })
+            total_debe += debe
+            total_haber += haber
+
+        if not lineas:
+            messages.error(request, "Debes ingresar al menos una línea contable válida.")
+            return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
+
+        if total_debe != total_haber:
+            messages.error(request, f"La partida no cuadra. Debe: Q {total_debe} / Haber: Q {total_haber}")
+            return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
+
+        try:
+            with transaction.atomic():
+                partida = JournalEntry.objects.create(
+                    date=fecha,
+                    concept=concepto,
+                    company=_current_company_key(request),
+                    is_opening_balance=False
+                )
+
+                for linea in lineas:
+                    JournalEntryLine.objects.create(
+                        entry=partida,
+                        account=linea['cuenta'],
+                        debit=linea['debe'],
+                        credit=linea['haber']
+                    )
+
+            messages.success(request, f"✅ Partida manual creada exitosamente (Pda #{partida.id}).")
+            return redirect('accounting:general_journal')
+
+        except Exception as e:
+            messages.error(request, f"Error al guardar la partida manual: {str(e)}")
+
+    return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
+
+
+@login_required
+@group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
 def purchase_history(request):
     return render(request, 'accounting/purchase_history.html')
 

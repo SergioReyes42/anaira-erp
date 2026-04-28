@@ -18,3 +18,11 @@
 - [ ] Rediseñar template con acciones: Generar, Imprimir, Descargar PDF.
 - [ ] Aplicar estilos `@media print` para impresión profesional.
 - [ ] Validar escenarios con/sin datos y filtros.
+
+## TODO - Partida Manual (Libro Diario)
+
+- [x] Crear vista `manual_journal_entry_create` en `accounting/views.py`.
+- [x] Registrar ruta `accounting/manual-partida/` en `accounting/urls.py`.
+- [x] Crear template `accounting/templates/accounting/manual_journal_entry_create.html`.
+- [x] Agregar botón de acceso desde `accounting/templates/accounting/libro_diario.html`.
+- [ ] Validar creación correcta con Debe = Haber.
