@@ -36,4 +36,6 @@ urlpatterns = [
 
     path('cambiar-sucursal/<int:company_id>/', views.switch_company, name='switch_company'),
     path('reportes/', views.reporting_hub, name='reporting_hub'),
+
+    path('cambiar-periodo/', views.set_working_period, name='set_working_period'),
 ]

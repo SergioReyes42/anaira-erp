@@ -7,6 +7,7 @@ from .models import Company
 from django.db import transaction
 from django.contrib.auth.models import Group
 from django.urls import reverse
+from django.shortcuts import redirect
 
 User = get_user_model()
 
@@ -250,3 +251,18 @@ def login_router(request):
             user.save()
             
         return redirect('home') # Va directo al Dashboard de su sucursal
+
+def set_working_period(request):
+    """Guarda el mes y año en el que el usuario quiere trabajar"""
+    if request.method == 'POST':
+        mes = request.POST.get('working_month')
+        anio = request.POST.get('working_year')
+        
+        # Lo guardamos en la memoria de la sesión
+        if mes and anio:
+            request.session['working_month'] = int(mes)
+            request.session['working_year'] = int(anio)
+            messages.success(request, f"🗓️ Período de trabajo cambiado a {mes}/{anio}.")
+            
+    # Lo regresamos a la pantalla donde estaba
+    return redirect(request.META.get('HTTP_REFERER', '/'))
