@@ -233,14 +233,14 @@
                 </li>
                     <div class="dropdown-divider border-secondary mt-2"></div>
                     <small class="text-uppercase text-muted ms-3 mt-2 d-block" style="font-size:0.7rem;">Gestión de Cobros y Pagos</small>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'accounting:cxc_dashboard' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-wallet2 me-1"></i> Cuentas por Cobrar
                     </a>
                     
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'accounting:payment_schedule' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-calendar-event me-1"></i> Programación de Pagos
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'accounting:credit_debit_notes' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-receipt me-1"></i> Notas Crédito/Débito
                     </a>
                 </div>
