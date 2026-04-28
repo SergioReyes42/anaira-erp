@@ -63,9 +63,20 @@
 
 ## TODO - Fase 2 Chat IA Contable (A+B)
 
-- [ ] Crear modelo `AIQueryLog` en `core/models.py` para auditoría.
-- [ ] Agregar tools IA en `core/ai_brain.py` (gastos, libro diario, proveedores, borrador partida).
-- [ ] Extender endpoint `ai_accounting_chat` con permisos por rol y ejecución de tools.
-- [ ] Registrar rutas API adicionales de Fase 2 en `core/urls.py`.
-- [ ] Mejorar UI `templates/core/ai_contable_chat.html` con acciones sugeridas y estructura de resultados.
-- [ ] Ejecutar pruebas exhaustivas: `makemigrations`, `migrate`, `check`, curl + validación UI.
+- [x] Crear modelo `AIQueryLog` en `core/models.py` para auditoría.
+- [x] Agregar tools IA en `core/ai_brain.py` (gastos, libro diario, proveedores, borrador partida).
+- [x] Extender endpoint `ai_accounting_chat` con permisos por rol y ejecución de tools.
+- [x] Registrar rutas API adicionales de Fase 2 en `core/urls.py`.
+- [x] Mejorar UI `templates/core/ai_contable_chat.html` con acciones sugeridas y estructura de resultados.
+- [x] Ejecutar pruebas exhaustivas: `makemigrations`, `migrate`, `check`, curl + validación UI.
+
+## TODO - Fase 3 IA Contable (aprobación y aplicación controlada)
+
+- [ ] Crear modelo `AIActionDraft` en `core/models.py`.
+- [ ] Crear endpoints draft: create/list/approve/reject/apply en `core/views.py`.
+- [ ] Registrar rutas Fase 3 en `core/urls.py`.
+- [ ] Aplicar validaciones de segregación de funciones (quien crea no aplica) y roles.
+- [ ] Aplicar lógica atómica para convertir borrador en `JournalEntry` + `JournalEntryLine`.
+- [ ] Integrar auditoría en `AIQueryLog` para todo el ciclo del draft.
+- [ ] Mejorar UI `templates/core/ai_contable_chat.html` con panel de pendientes y acciones.
+- [ ] Ejecutar pruebas exhaustivas: migrate/check + curl de todos los casos + validación UI.

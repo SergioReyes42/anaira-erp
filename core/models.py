@@ -75,3 +75,52 @@ class AIQueryLog(models.Model):
 
     def __str__(self):
         return f"AILog #{self.id} - {self.user} - {self.status}"
+
+
+class AIActionDraft(models.Model):
+    STATUS_CHOICES = [
+        ('PENDING', 'Pendiente'),
+        ('APPROVED', 'Aprobado'),
+        ('REJECTED', 'Rechazado'),
+        ('APPLIED', 'Aplicado'),
+    ]
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='ai_action_drafts'
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='ai_drafts_created'
+    )
+    action_type = models.CharField(max_length=100, default='JOURNAL_ENTRY_DRAFT')
+    draft_payload = models.JSONField(default=dict, blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ai_drafts_approved'
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+    applied_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ai_drafts_applied'
+    )
+    applied_at = models.DateTimeField(null=True, blank=True)
+
+    rejection_reason = models.CharField(max_length=255, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Draft #{self.id} - {self.action_type} - {self.status}"
