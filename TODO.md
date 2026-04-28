@@ -43,11 +43,20 @@
 
 ## TODO - Compras + Proveedores + Scanner IA (sin afectar reporte por placa)
 
-- [ ] Crear modelo `Supplier` en `accounting/models.py` + migración.
-- [ ] Implementar CRUD básico de proveedores en `accounting/views.py`.
+- [x] Crear modelo `Supplier` en `accounting/models.py` + migración.
+- [x] Implementar CRUD básico de proveedores en `accounting/views.py`.
 - [ ] Finalizar formulario funcional de `purchase_create` en `accounting/templates/accounting/purchase_create.html`.
 - [ ] Convertir `suppliers_list.html` en listado + alta/edición básica de proveedores.
 - [ ] Crear scanner de compras con IA (`purchase_scanner`) separado del scanner de flotilla.
-- [ ] Asegurar lógica contable: combustible sin placa => partida/cuenta separada sin afectar reportes por placa.
+- [x] Asegurar lógica contable: combustible sin placa => partida/cuenta separada sin afectar reportes por placa.
 - [ ] Conectar rutas y botones de navegación rápida entre compras/proveedores/scanner IA.
-- [ ] Ejecutar `makemigrations`, `migrate` y `python manage.py check`.
+- [x] Ejecutar `makemigrations`, `migrate` y `python manage.py check`.
+
+## TODO - Fase 1 Chat IA Contable (ERP)
+
+- [ ] Crear función `responder_chat_contable` en `core/ai_brain.py`.
+- [ ] Crear endpoint `ai_accounting_chat` en `core/views.py`.
+- [ ] Registrar ruta `api/ia-contable/chat/` en `core/urls.py`.
+- [ ] Crear página `templates/core/ai_contable_chat.html`.
+- [ ] Agregar acceso en `templates/base.html`.
+- [ ] Ejecutar pruebas: `check` + curl + validación básica UI.

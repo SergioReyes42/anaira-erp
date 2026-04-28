@@ -77,6 +77,59 @@ def analizar_documento_ia(imagen, contexto=None):
     return resultado
 
 # --- FUNCIÓN 2: PARA TEXTO (Regex) ---
+def responder_chat_contable(pregunta, contexto_empresa=None):
+    """
+    Fase 1: Chat IA contable para consultas del ERP.
+    - Solo respuesta textual (sin acciones transaccionales).
+    - Usa Gemini si está disponible, con fallback seguro.
+    """
+    pregunta = (pregunta or "").strip()
+    if not pregunta:
+        return {"ok": False, "respuesta": "La pregunta está vacía."}
+
+    empresa_txt = f"Empresa actual: {contexto_empresa}" if contexto_empresa else "Empresa actual no especificada"
+
+    if model is None:
+        return {
+            "ok": True,
+            "respuesta": (
+                "IA no disponible temporalmente. "
+                "Puedo ayudarte con guías contables básicas: clasificaciones NIIF, estructura Debe/Haber "
+                "y criterios para separar combustible sin placa."
+            ),
+        }
+
+    prompt = f"""
+Eres ANAIRA IA CONTABLE, asistente experto en contabilidad para ERP.
+Responde en español, de forma clara y profesional.
+
+Reglas:
+- Prioriza respuesta útil y práctica para operación contable.
+- Si preguntan por reportes de flotilla: recordar que gastos SIN placa no deben afectar reporte por vehículo.
+- Si no hay datos suficientes, solicita concretar rango/criterio.
+- No inventes cifras del sistema; indica que se requiere consulta de datos reales si aplica.
+
+Contexto:
+{empresa_txt}
+
+Pregunta del usuario:
+{pregunta}
+""".strip()
+
+    try:
+        response = model.generate_content(prompt)
+        texto = (response.text or "").strip()
+        if not texto:
+            texto = "No pude generar respuesta en este momento. Intenta reformular la pregunta."
+        return {"ok": True, "respuesta": texto}
+    except Exception as e:
+        logging.exception("Fallo en responder_chat_contable")
+        return {
+            "ok": True,
+            "respuesta": f"Ocurrió un problema temporal al consultar IA: {str(e)}",
+        }
+
+
 def analizar_texto_bancario(texto):
     """
     Analiza texto natural para extraer datos bancarios usando Lógica Regex.

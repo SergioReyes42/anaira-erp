@@ -38,4 +38,6 @@ urlpatterns = [
     path('reportes/', views.reporting_hub, name='reporting_hub'),
 
     path('cambiar-periodo/', views.set_working_period, name='set_working_period'),
+    path('ia-contable/chat/', views.ai_contable_chat_page, name='ai_contable_chat_page'),
+    path('api/ia-contable/chat/', views.ai_accounting_chat, name='ai_accounting_chat'),
 ]

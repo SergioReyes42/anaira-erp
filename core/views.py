@@ -8,6 +8,8 @@ from django.db import transaction
 from django.contrib.auth.models import Group
 from django.urls import reverse
 from django.shortcuts import redirect
+from django.http import JsonResponse
+from .ai_brain import responder_chat_contable
 
 User = get_user_model()
 
@@ -251,6 +253,29 @@ def login_router(request):
             user.save()
             
         return redirect('home') # Va directo al Dashboard de su sucursal
+
+@login_required
+def ai_contable_chat_page(request):
+    """Página UI del chat IA contable (Fase 1)."""
+    return render(request, "core/ai_contable_chat.html")
+
+
+@login_required
+def ai_accounting_chat(request):
+    """Endpoint JSON para chat IA contable (solo lectura)."""
+    if request.method != 'POST':
+        return JsonResponse({"ok": False, "error": "Método no permitido."}, status=405)
+
+    pregunta = (request.POST.get('pregunta') or '').strip()
+    if not pregunta:
+        return JsonResponse({"ok": False, "error": "La pregunta está vacía."}, status=400)
+
+    company = getattr(request.user, 'current_company', None)
+    contexto_empresa = getattr(company, 'name', None) if company else None
+
+    data = responder_chat_contable(pregunta, contexto_empresa=contexto_empresa)
+    return JsonResponse(data)
+
 
 def set_working_period(request):
     """Guarda el mes y año en el que el usuario quiere trabajar"""
