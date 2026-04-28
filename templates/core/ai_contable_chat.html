@@ -4,31 +4,63 @@
 <div class="container-fluid py-3">
     <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
         <div>
-            <h3 class="text-primary mb-0"><i class="bi bi-robot me-2"></i>IA Contable - Fase 1</h3>
-            <small class="text-muted">Asistente para consultas contables del ERP (solo lectura)</small>
+            <h3 class="text-primary mb-0"><i class="bi bi-robot me-2"></i>IA Contable - Fase 2</h3>
+            <small class="text-muted">Consultas + acciones sugeridas + borrador de partida manual (auditado)</small>
         </div>
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body">
-            <div id="chat-box" class="border rounded p-3 mb-3 bg-light" style="height: 380px; overflow-y: auto;">
-                <div class="mb-2">
-                    <span class="badge bg-primary">ANAIRA IA</span>
-                    <div class="mt-1">Hola. Puedo ayudarte con consultas contables y uso del ERP.</div>
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <div id="chat-box" class="border rounded p-3 mb-3 bg-light" style="height: 380px; overflow-y: auto;">
+                        <div class="mb-2">
+                            <span class="badge bg-primary">ANAIRA IA</span>
+                            <div class="mt-1">Hola. Puedo ayudarte con consultas contables y generar borradores de partida manual.</div>
+                        </div>
+                    </div>
+
+                    <form id="chat-form" class="row g-2">
+                        {% csrf_token %}
+                        <div class="col-md-9">
+                            <input id="pregunta" type="text" class="form-control" placeholder="Ej. Muéstrame gastos del mes / Resumen del libro diario / Proveedores" required>
+                        </div>
+                        <div class="col-md-3 d-grid">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-send me-1"></i>Enviar
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr>
+                    <h6 class="mb-2">Resultado estructurado</h6>
+                    <pre id="structured-result" class="bg-dark text-light p-2 rounded" style="min-height:120px;">{}</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+                    <h6 class="mb-2">Acciones sugeridas</h6>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-sm quick-action" data-tool="buscar_gastos" data-q="Mostrar gastos recientes">Gastos recientes</button>
+                        <button class="btn btn-outline-primary btn-sm quick-action" data-tool="resumen_libro_diario" data-q="Resumen libro diario">Resumen Libro Diario</button>
+                        <button class="btn btn-outline-primary btn-sm quick-action" data-tool="buscar_proveedores" data-q="Listar proveedores">Listar proveedores</button>
+                    </div>
                 </div>
             </div>
 
-            <form id="chat-form" class="row g-2">
-                {% csrf_token %}
-                <div class="col-md-10">
-                    <input id="pregunta" type="text" class="form-control" placeholder="Ej. ¿Cómo registrar combustible sin placa sin afectar reporte por vehículo?" required>
-                </div>
-                <div class="col-md-2 d-grid">
-                    <button type="submit" class="btn btn-success">
-                        <i class="bi bi-send me-1"></i>Enviar
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="mb-2">Borrador de Partida Manual</h6>
+                    <small class="text-muted d-block mb-2">Envía JSON de líneas para validar Debe/Haber.</small>
+                    <textarea id="draft-json" class="form-control mb-2" rows="7">{"tool":"borrador_partida_manual","concepto":"Registro manual IA","lineas":[{"account_id":1,"debit":100,"credit":0},{"account_id":2,"debit":0,"credit":100}]}</textarea>
+                    <button id="run-draft" class="btn btn-warning btn-sm w-100">
+                        <i class="bi bi-journal-check me-1"></i>Validar borrador
                     </button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
@@ -39,6 +71,10 @@
     const input = document.getElementById('pregunta');
     const chatBox = document.getElementById('chat-box');
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const structuredResult = document.getElementById('structured-result');
+    const quickActions = document.querySelectorAll('.quick-action');
+    const draftJson = document.getElementById('draft-json');
+    const runDraft = document.getElementById('run-draft');
 
     function addMessage(author, text, badgeClass) {
         const wrapper = document.createElement('div');
@@ -58,35 +94,73 @@
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
+    async function sendQuestion(pregunta, payloadObj) {
+        addMessage('TÚ', pregunta, 'bg-dark');
+
+        const body = new URLSearchParams();
+        body.append('pregunta', pregunta);
+        if (payloadObj) {
+            body.append('payload', JSON.stringify(payloadObj));
+        }
+
+        const response = await fetch("{% url 'core:ai_accounting_chat' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+            },
+            body: body.toString(),
+        });
+
+        const data = await response.json();
+        structuredResult.textContent = JSON.stringify(data, null, 2);
+
+        if (data.ok) {
+            addMessage('ANAIRA IA', data.resumen || data.respuesta || 'Sin respuesta.', 'bg-primary');
+        } else {
+            addMessage('SISTEMA', data.error || 'Error en la consulta.', 'bg-danger');
+        }
+    }
+
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
         const pregunta = (input.value || '').trim();
         if (!pregunta) return;
-
-        addMessage('TÚ', pregunta, 'bg-dark');
         input.value = '';
 
         try {
-            const body = new URLSearchParams();
-            body.append('pregunta', pregunta);
-
-            const response = await fetch("{% url 'core:ai_accounting_chat' %}", {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-                },
-                body: body.toString(),
-            });
-
-            const data = await response.json();
-            if (data.ok) {
-                addMessage('ANAIRA IA', data.respuesta || 'Sin respuesta.', 'bg-primary');
-            } else {
-                addMessage('SISTEMA', data.error || 'Error en la consulta.', 'bg-danger');
-            }
+            await sendQuestion(pregunta, null);
         } catch (err) {
             addMessage('SISTEMA', 'Error de conexión con el servicio de IA.', 'bg-danger');
+        }
+    });
+
+    quickActions.forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const tool = this.dataset.tool;
+            const q = this.dataset.q || 'Consulta rápida';
+            try {
+                await sendQuestion(q, { tool: tool });
+            } catch (err) {
+                addMessage('SISTEMA', 'Error ejecutando acción sugerida.', 'bg-danger');
+            }
+        });
+    });
+
+    runDraft.addEventListener('click', async function () {
+        let payload;
+        try {
+            payload = JSON.parse(draftJson.value || '{}');
+        } catch (e) {
+            addMessage('SISTEMA', 'JSON inválido para borrador.', 'bg-danger');
+            return;
+        }
+
+        const pregunta = 'Generar borrador de partida manual';
+        try {
+            await sendQuestion(pregunta, payload);
+        } catch (err) {
+            addMessage('SISTEMA', 'Error validando borrador.', 'bg-danger');
         }
     });
 })();

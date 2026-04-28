@@ -1,8 +1,12 @@
 # core/ai_brain.py
 import json
 from datetime import date
+import datetime
 import logging
 import re  # <--- AGREGADO: Importante para la función de texto
+import decimal
+from django.db.models import Sum
+from accounting.models import Expense, JournalEntryLine, Supplier, Account
 from core.gemini_config import configure_gemini
 
 # Configuración del modelo (GEMINI)
@@ -128,6 +132,181 @@ Pregunta del usuario:
             "ok": True,
             "respuesta": f"Ocurrió un problema temporal al consultar IA: {str(e)}",
         }
+
+
+def _parse_date_or_none(value):
+    try:
+        return datetime.datetime.strptime(value, "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+
+def _detectar_tool_contable(pregunta):
+    q = (pregunta or "").lower()
+
+    if any(k in q for k in ["gasto", "gastos", "combustible", "mantenimiento", "repuesto"]):
+        return "buscar_gastos"
+    if any(k in q for k in ["libro diario", "diario", "debe", "haber", "partida"]):
+        return "resumen_libro_diario"
+    if any(k in q for k in ["proveedor", "proveedores", "supplier"]):
+        return "buscar_proveedores"
+    if any(k in q for k in ["borrador", "asiento manual", "partida manual", "crear partida"]):
+        return "borrador_partida_manual"
+    return "chat_general"
+
+
+def tool_buscar_gastos(company, payload):
+    qs = Expense.objects.filter(company=company).order_by('-date')
+    fecha_inicio = _parse_date_or_none(payload.get('fecha_inicio', ''))
+    fecha_fin = _parse_date_or_none(payload.get('fecha_fin', ''))
+
+    if fecha_inicio:
+        qs = qs.filter(date__date__gte=fecha_inicio)
+    if fecha_fin:
+        qs = qs.filter(date__date__lte=fecha_fin)
+
+    top = min(int(payload.get('top', 10) or 10), 50)
+    items = []
+    for g in qs[:top]:
+        items.append({
+            "id": g.id,
+            "fecha": g.date.strftime("%Y-%m-%d"),
+            "tipo": getattr(g, 'tipo_gasto', ''),
+            "proveedor": getattr(g, 'provider_name', ''),
+            "descripcion": getattr(g, 'description', ''),
+            "monto": float(getattr(g, 'total_amount', 0) or 0),
+            "estado": getattr(g, 'status', ''),
+        })
+
+    total = qs.aggregate(total=Sum('total_amount'))['total'] or decimal.Decimal('0')
+    return {
+        "ok": True,
+        "tool": "buscar_gastos",
+        "resumen": f"Se encontraron {qs.count()} gastos. Total: Q {total}",
+        "data": items,
+    }
+
+
+def tool_resumen_libro_diario(company, payload):
+    fecha_inicio = _parse_date_or_none(payload.get('fecha_inicio', ''))
+    fecha_fin = _parse_date_or_none(payload.get('fecha_fin', ''))
+    lineas = JournalEntryLine.objects.filter(entry__company=str(company.id))
+
+    if fecha_inicio:
+        lineas = lineas.filter(entry__date__gte=fecha_inicio)
+    if fecha_fin:
+        lineas = lineas.filter(entry__date__lte=fecha_fin)
+
+    total_debe = lineas.aggregate(total=Sum('debit'))['total'] or decimal.Decimal('0')
+    total_haber = lineas.aggregate(total=Sum('credit'))['total'] or decimal.Decimal('0')
+
+    return {
+        "ok": True,
+        "tool": "resumen_libro_diario",
+        "resumen": f"Totales del período -> Debe: Q {total_debe} / Haber: Q {total_haber}",
+        "data": {
+            "total_debe": float(total_debe),
+            "total_haber": float(total_haber),
+            "cuadra": bool(total_debe == total_haber),
+        }
+    }
+
+
+def tool_buscar_proveedores(company, payload):
+    termino = (payload.get('termino') or '').strip()
+    qs = Supplier.objects.filter(company=company)
+    if termino:
+        qs = qs.filter(name__icontains=termino)
+
+    items = [{"id": s.id, "name": s.name, "nit": s.nit, "phone": s.phone} for s in qs[:50]]
+    return {
+        "ok": True,
+        "tool": "buscar_proveedores",
+        "resumen": f"Proveedores encontrados: {qs.count()}",
+        "data": items
+    }
+
+
+def tool_borrador_partida_manual(company, payload):
+    lineas = payload.get('lineas') or []
+    concepto = (payload.get('concepto') or '').strip()
+
+    if not concepto:
+        return {"ok": False, "tool": "borrador_partida_manual", "error": "Falta concepto."}
+    if not isinstance(lineas, list) or not lineas:
+        return {"ok": False, "tool": "borrador_partida_manual", "error": "Debes enviar líneas contables."}
+
+    total_debe = decimal.Decimal('0')
+    total_haber = decimal.Decimal('0')
+    normalizadas = []
+
+    for i, ln in enumerate(lineas, start=1):
+        account_id = ln.get('account_id')
+        debit = decimal.Decimal(str(ln.get('debit', 0) or 0))
+        credit = decimal.Decimal(str(ln.get('credit', 0) or 0))
+
+        if debit < 0 or credit < 0:
+            return {"ok": False, "tool": "borrador_partida_manual", "error": f"Línea {i} contiene negativos."}
+        if debit > 0 and credit > 0:
+            return {"ok": False, "tool": "borrador_partida_manual", "error": f"Línea {i} tiene Debe y Haber al mismo tiempo."}
+        if debit == 0 and credit == 0:
+            continue
+
+        cuenta = Account.objects.filter(id=account_id, is_transactional=True).first()
+        if not cuenta:
+            return {"ok": False, "tool": "borrador_partida_manual", "error": f"Cuenta inválida en línea {i}."}
+
+        total_debe += debit
+        total_haber += credit
+        normalizadas.append({
+            "account_id": cuenta.id,
+            "account_code": cuenta.code,
+            "account_name": cuenta.name,
+            "debit": float(debit),
+            "credit": float(credit),
+        })
+
+    if not normalizadas:
+        return {"ok": False, "tool": "borrador_partida_manual", "error": "No hay líneas válidas."}
+    if total_debe != total_haber:
+        return {
+            "ok": False,
+            "tool": "borrador_partida_manual",
+            "error": f"La partida no cuadra. Debe: {total_debe} / Haber: {total_haber}"
+        }
+
+    return {
+        "ok": True,
+        "tool": "borrador_partida_manual",
+        "resumen": "Borrador generado correctamente. Partida cuadrada.",
+        "data": {
+            "concepto": concepto,
+            "total_debe": float(total_debe),
+            "total_haber": float(total_haber),
+            "lineas": normalizadas
+        }
+    }
+
+
+def ejecutar_tool_contable(pregunta, company, payload=None):
+    payload = payload or {}
+    tool = payload.get('tool') or _detectar_tool_contable(pregunta)
+
+    if tool == "buscar_gastos":
+        return tool_buscar_gastos(company, payload)
+    if tool == "resumen_libro_diario":
+        return tool_resumen_libro_diario(company, payload)
+    if tool == "buscar_proveedores":
+        return tool_buscar_proveedores(company, payload)
+    if tool == "borrador_partida_manual":
+        return tool_borrador_partida_manual(company, payload)
+
+    return {
+        "ok": True,
+        "tool": "chat_general",
+        "resumen": responder_chat_contable(pregunta, contexto_empresa=getattr(company, 'name', None)).get("respuesta", ""),
+        "data": {}
+    }
 
 
 def analizar_texto_bancario(texto):

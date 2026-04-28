@@ -3,13 +3,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
-from .models import Company
+from .models import Company, AIQueryLog
 from django.db import transaction
 from django.contrib.auth.models import Group
 from django.urls import reverse
 from django.shortcuts import redirect
 from django.http import JsonResponse
-from .ai_brain import responder_chat_contable
+import json
+from .ai_brain import responder_chat_contable, ejecutar_tool_contable
 
 User = get_user_model()
 
@@ -262,19 +263,111 @@ def ai_contable_chat_page(request):
 
 @login_required
 def ai_accounting_chat(request):
-    """Endpoint JSON para chat IA contable (solo lectura)."""
+    """Endpoint JSON para chat IA contable (Fase 2: tools + auditoría)."""
     if request.method != 'POST':
         return JsonResponse({"ok": False, "error": "Método no permitido."}, status=405)
 
     pregunta = (request.POST.get('pregunta') or '').strip()
+    payload_raw = (request.POST.get('payload') or '').strip()
+
     if not pregunta:
         return JsonResponse({"ok": False, "error": "La pregunta está vacía."}, status=400)
 
     company = getattr(request.user, 'current_company', None)
-    contexto_empresa = getattr(company, 'name', None) if company else None
+    if not company:
+        return JsonResponse({"ok": False, "error": "No tienes empresa activa."}, status=400)
 
-    data = responder_chat_contable(pregunta, contexto_empresa=contexto_empresa)
-    return JsonResponse(data)
+    allowed_roles = ['Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador']
+    allowed = request.user.is_superuser or request.user.groups.filter(name__in=allowed_roles).exists()
+    if not allowed:
+        AIQueryLog.objects.create(
+            user=request.user,
+            company=company,
+            question=pregunta,
+            tool_name='blocked',
+            request_payload={},
+            response_payload={"error": "Sin permisos"},
+            status='BLOCKED'
+        )
+        return JsonResponse({"ok": False, "error": "No tienes permisos para usar IA contable avanzada."}, status=403)
+
+    payload = {}
+    if payload_raw:
+        try:
+            payload = json.loads(payload_raw)
+            if not isinstance(payload, dict):
+                payload = {}
+        except Exception:
+            payload = {}
+
+    try:
+        tool_result = ejecutar_tool_contable(pregunta, company, payload=payload)
+        tool_name = tool_result.get('tool', 'chat_general')
+
+        if tool_name == 'chat_general':
+            contexto_empresa = getattr(company, 'name', None)
+            chat = responder_chat_contable(pregunta, contexto_empresa=contexto_empresa)
+            respuesta = {
+                "ok": True,
+                "tool": "chat_general",
+                "resumen": chat.get("respuesta", ""),
+                "data": {}
+            }
+        else:
+            respuesta = tool_result
+
+        AIQueryLog.objects.create(
+            user=request.user,
+            company=company,
+            question=pregunta,
+            tool_name=respuesta.get('tool', ''),
+            request_payload=payload,
+            response_payload=respuesta,
+            status='OK' if respuesta.get('ok') else 'ERROR'
+        )
+        return JsonResponse(respuesta)
+
+    except Exception as e:
+        error_payload = {"ok": False, "error": f"Error interno IA: {str(e)}"}
+        AIQueryLog.objects.create(
+            user=request.user,
+            company=company,
+            question=pregunta,
+            tool_name='internal_error',
+            request_payload=payload,
+            response_payload=error_payload,
+            status='ERROR'
+        )
+        return JsonResponse(error_payload, status=500)
+
+
+@login_required
+def ai_accounting_logs(request):
+    """Endpoint para ver últimos logs de IA contable."""
+    if request.method != 'GET':
+        return JsonResponse({"ok": False, "error": "Método no permitido."}, status=405)
+
+    allowed_roles = ['Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador']
+    allowed = request.user.is_superuser or request.user.groups.filter(name__in=allowed_roles).exists()
+    if not allowed:
+        return JsonResponse({"ok": False, "error": "No autorizado."}, status=403)
+
+    company = getattr(request.user, 'current_company', None)
+    logs = AIQueryLog.objects.all().order_by('-created_at')
+    if company:
+        logs = logs.filter(company=company)
+
+    data = []
+    for l in logs[:50]:
+        data.append({
+            "id": l.id,
+            "question": l.question,
+            "tool_name": l.tool_name,
+            "status": l.status,
+            "created_at": l.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+        })
+
+    return JsonResponse({"ok": True, "logs": data})
 
 
 def set_working_period(request):

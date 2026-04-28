@@ -54,9 +54,18 @@
 
 ## TODO - Fase 1 Chat IA Contable (ERP)
 
-- [ ] Crear función `responder_chat_contable` en `core/ai_brain.py`.
-- [ ] Crear endpoint `ai_accounting_chat` en `core/views.py`.
-- [ ] Registrar ruta `api/ia-contable/chat/` en `core/urls.py`.
-- [ ] Crear página `templates/core/ai_contable_chat.html`.
-- [ ] Agregar acceso en `templates/base.html`.
-- [ ] Ejecutar pruebas: `check` + curl + validación básica UI.
+- [x] Crear función `responder_chat_contable` en `core/ai_brain.py`.
+- [x] Crear endpoint `ai_accounting_chat` en `core/views.py`.
+- [x] Registrar ruta `api/ia-contable/chat/` en `core/urls.py`.
+- [x] Crear página `templates/core/ai_contable_chat.html`.
+- [x] Agregar acceso en `templates/base.html`.
+- [x] Ejecutar pruebas: `check` + curl + validación básica UI.
+
+## TODO - Fase 2 Chat IA Contable (A+B)
+
+- [ ] Crear modelo `AIQueryLog` en `core/models.py` para auditoría.
+- [ ] Agregar tools IA en `core/ai_brain.py` (gastos, libro diario, proveedores, borrador partida).
+- [ ] Extender endpoint `ai_accounting_chat` con permisos por rol y ejecución de tools.
+- [ ] Registrar rutas API adicionales de Fase 2 en `core/urls.py`.
+- [ ] Mejorar UI `templates/core/ai_contable_chat.html` con acciones sugeridas y estructura de resultados.
+- [ ] Ejecutar pruebas exhaustivas: `makemigrations`, `migrate`, `check`, curl + validación UI.

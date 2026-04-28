@@ -41,3 +41,37 @@ class UserRoleCompany(models.Model):
 
     class Meta:
         unique_together = ('user', 'company')
+
+
+class AIQueryLog(models.Model):
+    STATUS_CHOICES = [
+        ('OK', 'OK'),
+        ('ERROR', 'ERROR'),
+        ('BLOCKED', 'BLOCKED'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='ai_query_logs'
+    )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ai_query_logs'
+    )
+
+    question = models.TextField(verbose_name="Pregunta del usuario")
+    tool_name = models.CharField(max_length=100, blank=True, default='')
+    request_payload = models.JSONField(default=dict, blank=True)
+    response_payload = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='OK')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"AILog #{self.id} - {self.user} - {self.status}"
