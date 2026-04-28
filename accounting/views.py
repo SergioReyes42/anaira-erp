@@ -533,11 +533,61 @@ def chart_of_accounts(request):
 
 from django.http import JsonResponse
 
+@login_required
+@group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
 def analyze_receipt_api(request):
-    return JsonResponse({
-        'success': False,
-        'error': 'IA temporalmente desactivada. Sube la factura desde Smart Scanner para enviarla a Pendientes.'
-    })
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Método no permitido.'}, status=405)
+
+    if not request.user.current_company:
+        return JsonResponse({'success': False, 'error': 'Usuario sin empresa asignada.'}, status=400)
+
+    image = request.FILES.get('receipt_image') or request.FILES.get('documento') or request.FILES.get('factura')
+    smart_input = (request.POST.get('smart_input') or '').strip()
+
+    if not image:
+        return JsonResponse({'success': False, 'error': 'Debes adjuntar una imagen o PDF de factura/recibo.'}, status=400)
+
+    try:
+        normalized = normalize_scanner_image(image)
+        normalized.seek(0)
+
+        ai_data = analyze_invoice_image(normalized, smart_input=smart_input) or {}
+
+        provider_name = (ai_data.get("provider_name") or "").strip()
+        provider_nit = (ai_data.get("provider_nit") or "").strip()
+        invoice_series = (ai_data.get("invoice_series") or "").strip()
+        invoice_number = (ai_data.get("invoice_number") or "").strip()
+        description = (ai_data.get("description") or "").strip()
+        account_type = (ai_data.get("account_type") or "").strip()
+        total_raw = ai_data.get("total", "0")
+
+        try:
+            total_amount = str(decimal.Decimal(str(total_raw or "0")).quantize(decimal.Decimal('0.01')))
+        except Exception:
+            total_amount = "0.00"
+
+        invoice_full = "-".join([v for v in [invoice_series, invoice_number] if v]).strip("-")
+        if not invoice_full:
+            invoice_full = invoice_number
+
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'provider_name': provider_name,
+                'provider_nit': provider_nit,
+                'invoice_number': invoice_full,
+                'description': description,
+                'total_amount': total_amount,
+                'suggested_account': account_type,
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'No se pudo analizar el documento con IA: {str(e)}'
+        }, status=500)
 
 @login_required
 def mobile_expense(request):
