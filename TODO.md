@@ -26,3 +26,10 @@
 - [x] Crear template `accounting/templates/accounting/manual_journal_entry_create.html`.
 - [x] Agregar botón de acceso desde `accounting/templates/accounting/libro_diario.html`.
 - [ ] Validar creación correcta con Debe = Haber.
+
+## TODO - Nuevas páginas Tesorería/Bancos (faltantes menú)
+
+- [x] Crear vistas: `cxc_dashboard_view`, `payment_schedule_view`, `credit_debit_notes_view` en `accounting/views.py`.
+- [x] Registrar rutas: `cxc/`, `programacion-pagos/`, `notas-credito-debito/` en `accounting/urls.py`.
+- [x] Crear templates: `cxc_dashboard.html`, `payment_schedule.html`, `credit_debit_notes.html`.
+- [ ] Validar navegación desde menú lateral.

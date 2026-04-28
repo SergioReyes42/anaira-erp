@@ -101,4 +101,11 @@ urlpatterns = [
     path('cxp/', views.cxp_dashboard, name='cxp_dashboard'),
     path('cxp/nueva/', views.registrar_factura_cxp, name='registrar_factura_cxp'),
 
+    # ==========================================
+    # 7. TESORERÍA / BANCOS (NUEVAS PÁGINAS MENÚ)
+    # ==========================================
+    path('cxc/', views.cxc_dashboard_view, name='cxc_dashboard'),
+    path('programacion-pagos/', views.payment_schedule_view, name='payment_schedule'),
+    path('notas-credito-debito/', views.credit_debit_notes_view, name='credit_debit_notes'),
+
 ]

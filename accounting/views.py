@@ -1762,6 +1762,24 @@ def manual_journal_entry_create(request):
 
 @login_required
 @group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
+def cxc_dashboard_view(request):
+    return render(request, 'accounting/cxc_dashboard.html')
+
+
+@login_required
+@group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
+def payment_schedule_view(request):
+    return render(request, 'accounting/payment_schedule.html')
+
+
+@login_required
+@group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
+def credit_debit_notes_view(request):
+    return render(request, 'accounting/credit_debit_notes.html')
+
+
+@login_required
+@group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
 def purchase_history(request):
     return render(request, 'accounting/purchase_history.html')
 
