@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+        <div>
+            <h3 class="text-primary mb-0"><i class="bi bi-person-check me-2"></i>Actividad de Usuarios</h3>
+            <small class="text-muted">Monitoreo de logins e identificación de usuarios online</small>
+        </div>
+        <span class="badge bg-success fs-6">Online: {{ online_count }}</span>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-success text-white fw-bold">
+                    <i class="bi bi-wifi me-1"></i> Usuarios Online (últimos 5 min)
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Empresa</th>
+                                    <th>Última actividad</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in online_logs %}
+                                <tr>
+                                    <td>{{ item.user.username }}</td>
+                                    <td>{{ item.company.name|default:"-" }}</td>
+                                    <td>{{ item.last_seen|date:"d/m/Y h:i:s A" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-center text-muted py-3">No hay usuarios online.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white fw-bold">
+                    <i class="bi bi-clock-history me-1"></i> Historial de Logins (últimos 100)
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Empresa</th>
+                                    <th>IP</th>
+                                    <th>Login</th>
+                                    <th>Logout</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in recent_logins %}
+                                <tr>
+                                    <td>{{ item.user.username }}</td>
+                                    <td>{{ item.company.name|default:"-" }}</td>
+                                    <td>{{ item.ip_address|default:"-" }}</td>
+                                    <td>{{ item.login_at|date:"d/m/Y h:i:s A" }}</td>
+                                    <td>{{ item.logout_at|date:"d/m/Y h:i:s A"|default:"-" }}</td>
+                                    <td>
+                                        {% if item.is_online %}
+                                            <span class="badge bg-success">Online</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Offline</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="6" class="text-center text-muted py-3">Sin registros de login.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

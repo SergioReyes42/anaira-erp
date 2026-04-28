@@ -347,6 +347,9 @@
                  <a class="list-group-item list-group-item-action" href="{% url 'core:system_panel' %}">
                         <i class="bi bi-gear-fill me-2"></i> Panel de Sistema
                 </a>
+                 <a class="list-group-item list-group-item-action" href="{% url 'core:user_activity_dashboard' %}">
+                        <i class="bi bi-person-lines-fill me-2"></i> Actividad de Usuarios
+                </a>
                 {% endif %}
                  <form action="{% url 'logout' %}" method="post" class="d-inline">
                     {% csrf_token %}

@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
-from .models import Company, AIQueryLog, AIActionDraft
+from .models import Company, AIQueryLog, AIActionDraft, UserSessionLog
 from django.db import transaction
 from django.contrib.auth.models import Group
 from django.urls import reverse
@@ -568,6 +568,31 @@ def ai_draft_apply(request, draft_id):
     )
 
     return JsonResponse({"ok": True, "draft_id": draft.id, "status": draft.status, "entry_id": entry.id})
+
+
+@login_required
+def user_activity_dashboard(request):
+    allowed = request.user.is_superuser or request.user.groups.filter(name__in=['Gerente', 'Administrador']).exists()
+    if not allowed:
+        messages.error(request, "⛔ No autorizado para ver actividad de usuarios.")
+        return redirect('core:home')
+
+    now = timezone.now()
+    threshold = now - timezone.timedelta(minutes=5)
+
+    online_logs = UserSessionLog.objects.filter(
+        logout_at__isnull=True,
+        last_seen__gte=threshold
+    ).select_related('user', 'company').order_by('-last_seen')
+
+    recent_logins = UserSessionLog.objects.select_related('user', 'company').order_by('-login_at')[:100]
+
+    context = {
+        'online_logs': online_logs,
+        'recent_logins': recent_logins,
+        'online_count': online_logs.count(),
+    }
+    return render(request, 'core/user_activity_dashboard.html', context)
 
 
 def set_working_period(request):

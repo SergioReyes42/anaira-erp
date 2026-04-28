@@ -1,5 +1,6 @@
 import threading
 from django.utils.deprecation import MiddlewareMixin
+from django.utils import timezone
 
 _thread_locals = threading.local()
 
@@ -19,7 +20,7 @@ class ActiveCompanyMiddleware(MiddlewareMixin):
         if not user or not user.is_authenticated:
             return
 
-        from core.models import Company
+        from core.models import Company, UserSessionLog
 
         user_company = getattr(user, 'current_company', None)
         session_company_id = request.session.get('company_id')
@@ -37,7 +38,6 @@ class ActiveCompanyMiddleware(MiddlewareMixin):
                 if is_allowed:
                     active_company = session_company
                 else:
-                    # Limpieza si intenta acceder a empresa no permitida
                     request.session.pop('company_id', None)
             except Company.DoesNotExist:
                 request.session.pop('company_id', None)
@@ -63,3 +63,11 @@ class ActiveCompanyMiddleware(MiddlewareMixin):
 
         _thread_locals.company = active_company
         request.company = active_company
+
+        session_key = request.session.session_key or ''
+        if session_key:
+            UserSessionLog.objects.filter(
+                user=user,
+                session_key=session_key,
+                logout_at__isnull=True
+            ).update(last_seen=timezone.now(), company=active_company)

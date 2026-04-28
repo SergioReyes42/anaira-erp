@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 # ==========================================
 # 1. BASE DEL SISTEMA
@@ -75,6 +76,40 @@ class AIQueryLog(models.Model):
 
     def __str__(self):
         return f"AILog #{self.id} - {self.user} - {self.status}"
+
+
+class UserSessionLog(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='session_logs'
+    )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='session_logs'
+    )
+    session_key = models.CharField(max_length=100, blank=True, default='')
+    ip_address = models.CharField(max_length=64, blank=True, default='')
+    user_agent = models.TextField(blank=True, default='')
+
+    login_at = models.DateTimeField(default=timezone.now)
+    logout_at = models.DateTimeField(null=True, blank=True)
+    last_seen = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-login_at']
+
+    def __str__(self):
+        return f"{self.user} | login {self.login_at}"
+
+    @property
+    def is_online(self):
+        if self.logout_at:
+            return False
+        return (timezone.now() - self.last_seen).total_seconds() <= 300
 
 
 class AIActionDraft(models.Model):

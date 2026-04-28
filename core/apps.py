@@ -7,6 +7,4 @@ class CoreConfig(AppConfig):
     label = "core" 
 
     def ready(self):
-        # ⛔ AQUÍ ESTABA EL ERROR: Comentamos la importación de señales
-        # porque ya no las necesitamos en el Core.
-        pass
+        import core.signals
