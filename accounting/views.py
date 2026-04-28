@@ -1799,7 +1799,85 @@ def suppliers_list(request):
 @login_required
 @group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
 def ai_expense_register(request):
-    return render(request, 'accounting/ai_expense_register.html')
+    vehicles = Vehicle.objects.filter(company=request.user.current_company, active=True) if request.user.current_company else []
+
+    if request.method == 'POST':
+        if not request.user.current_company:
+            messages.error(request, "⛔ Tu usuario no tiene una empresa asignada.")
+            return redirect('core:home')
+
+        expense_category = (request.POST.get('expense_category') or 'otros').strip()
+        provider_name = (request.POST.get('provider_name') or '').strip()
+        provider_nit = (request.POST.get('provider_nit') or '').strip()
+        description = (request.POST.get('description') or '').strip()
+        total_amount_raw = (request.POST.get('total_amount') or '0').strip()
+        payment_method = (request.POST.get('payment_method') or 'EFECTIVO').strip()
+        vehicle_id = (request.POST.get('vehicle') or '').strip()
+        receipt_file = request.FILES.get('receipt_image')
+        invoice_number = (request.POST.get('invoice_number') or '').strip()
+
+        if not provider_name or not description:
+            messages.error(request, "Proveedor/beneficiario y descripción son obligatorios.")
+            return render(request, 'accounting/ai_expense_register.html', {'vehicles': vehicles})
+
+        try:
+            total_amount = decimal.Decimal(total_amount_raw)
+        except decimal.InvalidOperation:
+            messages.error(request, "Monto inválido.")
+            return render(request, 'accounting/ai_expense_register.html', {'vehicles': vehicles})
+
+        if total_amount <= 0:
+            messages.error(request, "El monto debe ser mayor a cero.")
+            return render(request, 'accounting/ai_expense_register.html', {'vehicles': vehicles})
+
+        vehicle_obj = None
+        if vehicle_id:
+            vehicle_obj = Vehicle.objects.filter(
+                id=vehicle_id,
+                company=request.user.current_company
+            ).first()
+
+        account_map = {
+            'sueldos': 'Sueldos y Salarios',
+            'servicios': 'Servicios Básicos',
+            'alquiler': 'Alquileres',
+            'viaticos': 'Viáticos',
+            'combustible_varios': 'Combustible Varios (Sin Placa)',
+            'otros': 'Gastos Generales',
+        }
+        suggested_account = account_map.get(expense_category, 'Gastos Generales')
+
+        try:
+            with transaction.atomic():
+                expense = Expense.objects.create(
+                    user=request.user,
+                    company=request.user.current_company,
+                    status='PENDING',
+                    origin='MANUAL',
+                    payment_method=payment_method,
+                    receipt_image=receipt_file,
+                    description=description,
+                    provider_name=provider_name,
+                    provider_nit=provider_nit or None,
+                    vehicle=vehicle_obj,
+                    suggested_account=suggested_account,
+                    total_amount=total_amount,
+                    tax_base=total_amount,
+                    tax_iva=decimal.Decimal('0.00'),
+                    tax_idp=decimal.Decimal('0.00'),
+                    invoice_number=invoice_number or f"MAN-{timezone.now().strftime('%Y%m%d%H%M%S')}",
+                )
+
+            if vehicle_obj:
+                messages.success(request, f"✅ Gasto registrado y vinculado a placa {vehicle_obj.plate}. Se enviará a contabilización.")
+            else:
+                messages.success(request, "✅ Gasto registrado como gasto general (sin placa). No afectará reportes por vehículo.")
+            return redirect('accounting:expense_pending_list')
+
+        except Exception as e:
+            messages.error(request, f"Error al registrar gasto: {str(e)}")
+
+    return render(request, 'accounting/ai_expense_register.html', {'vehicles': vehicles})
 
 
 @login_required

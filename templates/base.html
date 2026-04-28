@@ -131,22 +131,22 @@
                     <i class="bi bi-bag-check-fill me-2 text-success"></i> Compras
                 </a>
                 <div class="collapse submenu" id="menuCompras">
-                    <a href="#" class="list-group-item list-group-item-action fw-bold text-white">
+                    <a href="{% url 'accounting:purchase_history' %}" class="list-group-item list-group-item-action fw-bold text-white">
                         <i class="bi bi-clock-history me-1"></i> Historial de Compras
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'accounting:purchase_create' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-cart-plus me-1"></i> Nueva Compra
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'accounting:suppliers_list' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-truck me-1"></i> Proveedores
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'accounting:ai_expense_register' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-robot me-1"></i> Registrar Gasto (IA) <span class="badge bg-primary badge-sidebar">New</span>
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'accounting:operating_expenses' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-cash me-1"></i> Gastos Operativos
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'accounting:purchase_orders' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-file-text me-1"></i> Órdenes de Compra
                     </a>
                 </div>
@@ -161,14 +161,14 @@
                     <a href="{% url 'imports:po_list' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-file-text me-1"></i> Órdenes de Compra
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
-                        <i class="bi bi-geo-alt me-1"></i> Tracking de Contenedores
+                    <a href="{% url 'imports:tracking_dashboard' %}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-geo-alt-fill me-1"></i> Tracking de Contenedores
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'imports:reception_dashboard' %}" class="list-group-item list-group-item-action">
                         <i class="bi bi-box-arrow-in-down me-1"></i> Recepción a Bodega
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
-                        <i class="bi bi-graph-up me-1"></i> Reportería y Costeos
+                    <a href="{% url 'imports:costing_report' %}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-graph-up-arrow me-1"></i> Reportería y Costeos
                     </a>
                 </div>
                 {% endif %}
