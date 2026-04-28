@@ -1,4 +1,5 @@
 # core/context_processors.py
+import datetime
 
 def global_info(request):
     """
@@ -16,6 +17,29 @@ def global_info(request):
             branch = getattr(request.user.profile, 'branch', None)
             if branch:
                 nombre_sucursal = branch.name
+        
+    """Manda el mes de trabajo y el reloj a todas las pantallas de Anaira ERP"""
+    
+    # 1. Obtenemos la fecha real de hoy
+    hoy = datetime.date.today()
+    
+    # 2. Buscamos en la sesión si el usuario eligió un mes de trabajo. 
+    # Si no ha elegido nada, usamos el mes y año actual por defecto.
+    working_month = request.session.get('working_month', hoy.month)
+    working_year = request.session.get('working_year', hoy.year)
+    
+    # 3. Nombres de los meses para que se vea bonito en pantalla
+    nombres_meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
+                     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+    
+    working_month_name = nombres_meses[int(working_month) - 1]
+
+    return {
+        'working_month': working_month,
+        'working_year': working_year,
+        'working_month_name': working_month_name,
+        'current_real_date': hoy,
+    }
 
     return {
         'GLOBAL_SUCURSAL': nombre_sucursal,
