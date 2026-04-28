@@ -33,3 +33,10 @@
 - [x] Registrar rutas: `cxc/`, `programacion-pagos/`, `notas-credito-debito/` en `accounting/urls.py`.
 - [x] Crear templates: `cxc_dashboard.html`, `payment_schedule.html`, `credit_debit_notes.html`.
 - [ ] Validar navegación desde menú lateral.
+
+## TODO - Mes de Trabajo Seleccionable (Advertencia flexible)
+
+- [ ] Agregar selector global de mes/año en navbar (`templates/base.html`).
+- [ ] Validar en `manual_journal_entry_create` mes/año de fecha vs mes/año activo de sesión.
+- [ ] Mostrar advertencia (sin bloquear guardado) cuando no coincida el período.
+- [ ] Mostrar ayuda visual en formulario de partida manual.
