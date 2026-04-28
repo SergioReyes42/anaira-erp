@@ -30,7 +30,8 @@ from .models import (
     BankTransaction, 
     Vehicle,
     CreditCard,
-    AccountPayable
+    AccountPayable,
+    Supplier
 )
 from .forms import BankAccountForm, BankTransactionForm, VehicleForm
 from .utils import normalize_scanner_image, build_scanner_expense_payload, analyze_invoice_image
@@ -1787,13 +1788,184 @@ def purchase_history(request):
 @login_required
 @group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
 def purchase_create(request):
-    return render(request, 'accounting/purchase_create.html')
+    if not request.user.current_company:
+        messages.error(request, "⛔ Tu usuario no tiene una empresa asignada.")
+        return redirect('core:home')
+
+    suppliers = Supplier.objects.filter(company=request.user.current_company, active=True).order_by('name')
+    vehicles = Vehicle.objects.filter(company=request.user.current_company, active=True).order_by('plate')
+
+    if request.method == 'POST':
+        supplier_id = (request.POST.get('supplier_id') or '').strip()
+        provider_name_manual = (request.POST.get('provider_name_manual') or '').strip()
+        provider_nit_manual = (request.POST.get('provider_nit_manual') or '').strip()
+        expense_category = (request.POST.get('expense_category') or 'otros').strip()
+        invoice_number = (request.POST.get('invoice_number') or '').strip()
+        description = (request.POST.get('description') or '').strip()
+        total_amount_raw = (request.POST.get('total_amount') or '0').strip()
+        payment_method = (request.POST.get('payment_method') or 'EFECTIVO').strip()
+        vehicle_id = (request.POST.get('vehicle') or '').strip()
+        receipt_file = request.FILES.get('receipt_image')
+
+        supplier_obj = None
+        provider_name = provider_name_manual
+        provider_nit = provider_nit_manual
+
+        if supplier_id:
+            supplier_obj = Supplier.objects.filter(
+                id=supplier_id,
+                company=request.user.current_company,
+                active=True
+            ).first()
+            if not supplier_obj:
+                messages.error(request, "Proveedor inválido.")
+                return render(request, 'accounting/purchase_create.html', {'suppliers': suppliers, 'vehicles': vehicles})
+            provider_name = supplier_obj.name
+            provider_nit = supplier_obj.nit or provider_nit
+
+        if not provider_name or not description:
+            messages.error(request, "Proveedor y descripción son obligatorios.")
+            return render(request, 'accounting/purchase_create.html', {'suppliers': suppliers, 'vehicles': vehicles})
+
+        try:
+            total_amount = decimal.Decimal(total_amount_raw)
+        except decimal.InvalidOperation:
+            messages.error(request, "Monto inválido.")
+            return render(request, 'accounting/purchase_create.html', {'suppliers': suppliers, 'vehicles': vehicles})
+
+        if total_amount <= 0:
+            messages.error(request, "El monto debe ser mayor a cero.")
+            return render(request, 'accounting/purchase_create.html', {'suppliers': suppliers, 'vehicles': vehicles})
+
+        vehicle_obj = None
+        if vehicle_id:
+            vehicle_obj = Vehicle.objects.filter(id=vehicle_id, company=request.user.current_company).first()
+
+        account_map = {
+            'sueldos': 'Sueldos y Salarios',
+            'servicios': 'Servicios Básicos',
+            'alquiler': 'Alquileres',
+            'viaticos': 'Viáticos',
+            'combustible_varios': 'Combustible Varios (Sin Placa)',
+            'combustible_flotilla': 'Combustible y Lubricantes',
+            'otros': 'Gastos Generales',
+        }
+        suggested_account = account_map.get(expense_category, 'Gastos Generales')
+
+        # Regla solicitada: combustible sin placa = cuenta separada, no afecta reporte por placa
+        if expense_category == 'combustible_varios':
+            vehicle_obj = None
+            suggested_account = 'Combustible Varios (Sin Placa)'
+
+        if expense_category == 'combustible_flotilla' and not vehicle_obj:
+            messages.error(request, "Para combustible de flotilla debes seleccionar una placa.")
+            return render(request, 'accounting/purchase_create.html', {'suppliers': suppliers, 'vehicles': vehicles})
+
+        if not receipt_file:
+            messages.error(request, "Debes adjuntar factura/recibo.")
+            return render(request, 'accounting/purchase_create.html', {'suppliers': suppliers, 'vehicles': vehicles})
+
+        try:
+            with transaction.atomic():
+                Expense.objects.create(
+                    user=request.user,
+                    company=request.user.current_company,
+                    status='PENDING',
+                    origin='MANUAL',
+                    payment_method=payment_method,
+                    receipt_image=receipt_file,
+                    description=description,
+                    provider_name=provider_name,
+                    provider_nit=provider_nit or None,
+                    vehicle=vehicle_obj,
+                    suggested_account=suggested_account,
+                    total_amount=total_amount,
+                    tax_base=total_amount,
+                    tax_iva=decimal.Decimal('0.00'),
+                    tax_idp=decimal.Decimal('0.00'),
+                    invoice_number=invoice_number or f"CMP-{timezone.now().strftime('%Y%m%d%H%M%S')}",
+                )
+
+            if vehicle_obj:
+                messages.success(request, f"✅ Compra registrada para placa {vehicle_obj.plate}.")
+            else:
+                messages.success(request, "✅ Compra registrada como gasto general sin placa (no afecta reporte por vehículo).")
+            return redirect('accounting:expense_pending_list')
+        except Exception as e:
+            messages.error(request, f"Error al registrar compra: {str(e)}")
+
+    return render(request, 'accounting/purchase_create.html', {'suppliers': suppliers, 'vehicles': vehicles})
 
 
 @login_required
 @group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
 def suppliers_list(request):
-    return render(request, 'accounting/suppliers_list.html')
+    if not request.user.current_company:
+        messages.error(request, "⛔ Tu usuario no tiene una empresa asignada.")
+        return redirect('core:home')
+
+    editing_id = (request.GET.get('edit') or '').strip()
+    supplier_edit = None
+    if editing_id.isdigit():
+        supplier_edit = Supplier.objects.filter(
+            id=int(editing_id),
+            company=request.user.current_company
+        ).first()
+
+    if request.method == 'POST':
+        action = (request.POST.get('action') or 'create').strip()
+        supplier_id = (request.POST.get('supplier_id') or '').strip()
+        name = (request.POST.get('name') or '').strip()
+        nit = (request.POST.get('nit') or '').strip()
+        phone = (request.POST.get('phone') or '').strip()
+        email = (request.POST.get('email') or '').strip()
+        address = (request.POST.get('address') or '').strip()
+        active = (request.POST.get('active') == 'on')
+
+        if not name:
+            messages.error(request, "El nombre del proveedor es obligatorio.")
+            return redirect('accounting:suppliers_list')
+
+        if action == 'update' and supplier_id.isdigit():
+            sup = Supplier.objects.filter(id=int(supplier_id), company=request.user.current_company).first()
+            if not sup:
+                messages.error(request, "Proveedor no encontrado.")
+                return redirect('accounting:suppliers_list')
+
+            sup.name = name
+            sup.nit = nit or None
+            sup.phone = phone or None
+            sup.email = email or None
+            sup.address = address or None
+            sup.active = active
+            try:
+                sup.save()
+                messages.success(request, "✅ Proveedor actualizado.")
+            except Exception as e:
+                messages.error(request, f"Error al actualizar proveedor: {str(e)}")
+            return redirect('accounting:suppliers_list')
+
+        try:
+            Supplier.objects.create(
+                company=request.user.current_company,
+                name=name,
+                nit=nit or None,
+                phone=phone or None,
+                email=email or None,
+                address=address or None,
+                active=True
+            )
+            messages.success(request, "✅ Proveedor registrado.")
+        except Exception as e:
+            messages.error(request, f"Error al registrar proveedor: {str(e)}")
+
+        return redirect('accounting:suppliers_list')
+
+    suppliers = Supplier.objects.filter(company=request.user.current_company).order_by('name')
+    return render(request, 'accounting/suppliers_list.html', {
+        'suppliers': suppliers,
+        'supplier_edit': supplier_edit,
+    })
 
 
 @login_required

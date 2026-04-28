@@ -40,3 +40,14 @@
 - [ ] Validar en `manual_journal_entry_create` mes/año de fecha vs mes/año activo de sesión.
 - [ ] Mostrar advertencia (sin bloquear guardado) cuando no coincida el período.
 - [ ] Mostrar ayuda visual en formulario de partida manual.
+
+## TODO - Compras + Proveedores + Scanner IA (sin afectar reporte por placa)
+
+- [ ] Crear modelo `Supplier` en `accounting/models.py` + migración.
+- [ ] Implementar CRUD básico de proveedores en `accounting/views.py`.
+- [ ] Finalizar formulario funcional de `purchase_create` en `accounting/templates/accounting/purchase_create.html`.
+- [ ] Convertir `suppliers_list.html` en listado + alta/edición básica de proveedores.
+- [ ] Crear scanner de compras con IA (`purchase_scanner`) separado del scanner de flotilla.
+- [ ] Asegurar lógica contable: combustible sin placa => partida/cuenta separada sin afectar reportes por placa.
+- [ ] Conectar rutas y botones de navegación rápida entre compras/proveedores/scanner IA.
+- [ ] Ejecutar `makemigrations`, `migrate` y `python manage.py check`.

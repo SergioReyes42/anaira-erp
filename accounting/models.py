@@ -307,6 +307,25 @@ class CreditCard(models.Model):
             return (self.current_debt / self.credit_limit) * 100
         return 0
 
+class Supplier(models.Model):
+    """Maestro de proveedores para módulo de compras."""
+    company = models.ForeignKey('core.Company', on_delete=models.CASCADE, related_name='suppliers')
+    name = models.CharField(max_length=200, verbose_name="Nombre / Razón Social")
+    nit = models.CharField(max_length=30, null=True, blank=True, verbose_name="NIT")
+    phone = models.CharField(max_length=30, null=True, blank=True, verbose_name="Teléfono")
+    email = models.EmailField(null=True, blank=True, verbose_name="Correo")
+    address = models.CharField(max_length=255, null=True, blank=True, verbose_name="Dirección")
+    active = models.BooleanField(default=True, verbose_name="Activo")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('company', 'name')
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} ({self.nit or 'Sin NIT'})"
+
+
 class AccountPayable(models.Model):
     """Módulo CxP: Control de Cuentas por Pagar a Proveedores"""
     
