@@ -448,7 +448,7 @@ def bank_transaction_create(request):
 
                 # 3. Guardar el registro en el historial
                 BankTransaction.objects.create(
-                    bank_account=cuenta,
+                    account=cuenta,
                     transaction_type=transaction_type,
                     amount=monto,
                     reference=reference,
@@ -1461,8 +1461,8 @@ def registrar_retiro(request):
 
                 # 2. Registrar el movimiento en el historial del banco
                 BankTransaction.objects.create(
-                    bank_account=cuenta,
-                    transaction_type='RETIRO',
+                    account=cuenta,
+                    transaction_type='WITHDRAWAL',
                     amount=monto_retiro,
                     reference=reference,
                     description=description,
@@ -1604,8 +1604,8 @@ def transferencia_interna(request):
 
                 # 5. Registrar la salida en el historial (Origen)
                 BankTransaction.objects.create(
-                    bank_account=cuenta_origen,
-                    transaction_type='TRANSFERENCIA_OUT',
+                    account=cuenta_origen,
+                    transaction_type='WITHDRAWAL',
                     amount=monto,
                     reference=reference,
                     description=f"Transferencia a: {cuenta_destino.bank_name} - {description}",
@@ -1614,8 +1614,8 @@ def transferencia_interna(request):
 
                 # 6. Registrar la entrada en el historial (Destino)
                 BankTransaction.objects.create(
-                    bank_account=cuenta_destino,
-                    transaction_type='TRANSFERENCIA_IN', # Asegúrate de que tu HTML del dashboard lea esto como verde (ingreso)
+                    account=cuenta_destino,
+                    transaction_type='DEPOSIT', # Ingreso a cuenta destino
                     amount=monto,
                     reference=reference,
                     description=f"Transferencia desde: {cuenta_origen.bank_name} - {description}",
@@ -1691,8 +1691,8 @@ def pagar_tarjeta_credito(request):
 
                 # 2. Registramos la salida en el historial bancario
                 BankTransaction.objects.create(
-                    bank_account=cuenta,
-                    transaction_type='PAGO_TARJETA', # Nuevo tipo lógico
+                    account=cuenta,
+                    transaction_type='WITHDRAWAL', # Salida de banco por pago de tarjeta
                     amount=monto,
                     reference=reference,
                     description=f"Pago de Tarjeta de Crédito: {tarjeta.card_name} - {tarjeta.last_four_digits}",

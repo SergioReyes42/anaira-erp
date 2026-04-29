@@ -128,11 +128,11 @@ class BankAccount(models.Model):
     
     @property
     def saldo_actual(self):
-        from .models import BankTransaction 
+        from .models import BankTransaction
         from django.db.models import Sum
-        
-        depositos = BankTransaction.objects.filter(account=self, transaction_type='IN').aggregate(total=Sum('amount'))['total'] or 0
-        retiros = BankTransaction.objects.filter(account=self, transaction_type='OUT').aggregate(total=Sum('amount'))['total'] or 0
+
+        depositos = BankTransaction.objects.filter(account=self, transaction_type='DEPOSIT').aggregate(total=Sum('amount'))['total'] or 0
+        retiros = BankTransaction.objects.filter(account=self, transaction_type='WITHDRAWAL').aggregate(total=Sum('amount'))['total'] or 0
         return self.initial_balance + depositos - retiros
 
 class BankTransaction(models.Model):
