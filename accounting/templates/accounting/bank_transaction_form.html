@@ -23,7 +23,7 @@
                                 <select name="bank_account" class="form-select border-dark" required>
                                     <option value="">Seleccione una cuenta...</option>
                                     {% for cuenta in cuentas %}
-                                        <option value="{{ cuenta.id }}">{{ cuenta.bank_name }} - {{ cuenta.account_number }} (Q.{{ cuenta.balance }})</option>
+                                        <option value="{{ cuenta.id }}">{{ cuenta.bank_name }} - {{ cuenta.account_number }} (Q.{{ cuenta.saldo_actual }})</option>
                                     {% endfor %}
                                 </select>
                             </div>

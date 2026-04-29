@@ -423,7 +423,7 @@ def bank_transaction_create(request):
     """Registra cualquier tipo de movimiento bancario (Notas de débito, crédito, etc)"""
     if request.method == 'POST':
         account_id = request.POST.get('bank_account')
-        transaction_type = request.POST.get('transaction_type')
+        transaction_type_raw = (request.POST.get('transaction_type') or '').strip()
         amount_str = request.POST.get('amount')
         reference = request.POST.get('reference')
         description = request.POST.get('description')
@@ -432,28 +432,45 @@ def bank_transaction_create(request):
         cuenta = get_object_or_404(BankAccount, id=account_id, company=request.user.current_company)
         monto = decimal.Decimal(amount_str)
 
+        type_map = {
+            'DEPOSITO': 'DEPOSIT',
+            'NOTA_CREDITO': 'DEPOSIT',
+            'RETIRO': 'WITHDRAWAL',
+            'NOTA_DEBITO': 'WITHDRAWAL',
+            'CHEQUE': 'WITHDRAWAL',
+            'TRANSFERENCIA_OUT': 'WITHDRAWAL',
+            'DEPOSIT': 'DEPOSIT',
+            'WITHDRAWAL': 'WITHDRAWAL',
+        }
+        transaction_type = type_map.get(transaction_type_raw)
+
+        if not transaction_type:
+            messages.error(request, f"Tipo de transacción inválido: {transaction_type_raw}")
+            return redirect('accounting:bank_transaction_create')
+
         try:
             with transaction.atomic():
-                # 1. Validar fondos si es una salida de dinero
-                if transaction_type in ['RETIRO', 'NOTA_DEBITO', 'CHEQUE'] and cuenta.balance < monto:
-                    messages.error(request, f"Fondos insuficientes. La cuenta solo tiene Q. {cuenta.balance}")
+                # 1. Validar fondos si es salida
+                if transaction_type == 'WITHDRAWAL' and cuenta.saldo_actual < monto:
+                    messages.error(request, f"Fondos insuficientes. La cuenta solo tiene Q. {cuenta.saldo_actual}")
                     return redirect('accounting:bank_transaction_create')
 
-                # 2. Actualizar el saldo de la cuenta según el tipo
-                if transaction_type in ['DEPOSITO', 'NOTA_CREDITO']:
+                # 2. Actualizar saldo espejo
+                if transaction_type == 'DEPOSIT':
                     cuenta.balance += monto
-                elif transaction_type in ['RETIRO', 'NOTA_DEBITO', 'CHEQUE']:
+                elif transaction_type == 'WITHDRAWAL':
                     cuenta.balance -= monto
                 cuenta.save()
 
-                # 3. Guardar el registro en el historial
+                # 3. Guardar en historial con tipo normalizado
                 BankTransaction.objects.create(
                     account=cuenta,
                     transaction_type=transaction_type,
                     amount=monto,
                     reference=reference,
                     description=description,
-                    date=date
+                    date=date,
+                    registered_by=request.user
                 )
                 
             messages.success(request, f'Movimiento ({transaction_type}) registrado exitosamente.')
