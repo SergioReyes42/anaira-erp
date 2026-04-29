@@ -1,0 +1,3 @@
+code,name,account_type,is_transactional
+9.9.1.01,CUENTA QA ACTIVO,ASSET,true
+9.9.2.01,CUENTA QA PASIVO,LIABILITY,false

@@ -78,6 +78,37 @@
     </div>
 </div>
 
+<div class="modal fade" id="importarCuentasModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-spreadsheet me-2"></i> Importar Plan de Cuentas (CSV)</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{% url 'accounting:chart_of_accounts' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">Archivo CSV</label>
+                        <input type="file" name="csv_file" class="form-control" accept=".csv" required>
+                    </div>
+                    <div class="alert alert-light border small mb-0">
+                        <div class="fw-bold mb-1">Formato requerido (encabezados):</div>
+                        <code>code,name,account_type,is_transactional</code>
+                        <hr class="my-2">
+                        <div>Ejemplo de fila:</div>
+                        <code>1.1.1.01,CAJA GENERAL,ASSET,true</code>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success fw-bold"><i class="bi bi-upload me-1"></i> Importar CSV</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="nuevaCuentaModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content rounded-4 border-0 shadow">

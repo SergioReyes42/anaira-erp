@@ -1,6 +1,8 @@
 from django.db import transaction
 import datetime
 import decimal
+import csv
+import io
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -515,10 +517,75 @@ def chart_of_accounts(request):
     
     # Si la contadora envía el formulario para crear una nueva cuenta
     if request.method == 'POST':
-        code = request.POST.get('code').strip()
-        name = request.POST.get('name').strip().upper()
+        # 1) Flujo de importación CSV
+        if request.FILES.get('csv_file'):
+            csv_file = request.FILES.get('csv_file')
+
+            if not csv_file.name.lower().endswith('.csv'):
+                messages.error(request, "El archivo debe tener extensión .csv")
+                return redirect('accounting:chart_of_accounts')
+
+            try:
+                decoded = csv_file.read().decode('utf-8-sig')
+                reader = csv.DictReader(io.StringIO(decoded))
+
+                required_cols = {'code', 'name', 'account_type', 'is_transactional'}
+                if not reader.fieldnames or not required_cols.issubset(set(c.strip() for c in reader.fieldnames)):
+                    messages.error(request, "CSV inválido. Columnas requeridas: code,name,account_type,is_transactional")
+                    return redirect('accounting:chart_of_accounts')
+
+                created_count = 0
+                updated_count = 0
+                error_rows = 0
+                valid_types = {'ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE'}
+
+                for idx, row in enumerate(reader, start=2):  # fila 2 por encabezado
+                    try:
+                        code = (row.get('code') or '').strip()
+                        name = (row.get('name') or '').strip().upper()
+                        account_type = (row.get('account_type') or '').strip().upper()
+                        is_tx_raw = (row.get('is_transactional') or '').strip().lower()
+
+                        if not code or not name or account_type not in valid_types:
+                            error_rows += 1
+                            continue
+
+                        is_transactional = is_tx_raw in {'1', 'true', 'si', 'sí', 'yes', 'y', 'on'}
+
+                        obj, created = Account.objects.update_or_create(
+                            code=code,
+                            defaults={
+                                'name': name,
+                                'account_type': account_type,
+                                'is_transactional': is_transactional
+                            }
+                        )
+                        if created:
+                            created_count += 1
+                        else:
+                            updated_count += 1
+                    except Exception:
+                        error_rows += 1
+
+                messages.success(
+                    request,
+                    f"✅ Importación completada. Creadas: {created_count}, Actualizadas: {updated_count}, Filas con error: {error_rows}."
+                )
+                return redirect('accounting:chart_of_accounts')
+
+            except Exception as e:
+                messages.error(request, f"Error al procesar CSV: {str(e)}")
+                return redirect('accounting:chart_of_accounts')
+
+        # 2) Flujo de creación manual individual
+        code = (request.POST.get('code') or '').strip()
+        name = (request.POST.get('name') or '').strip().upper()
         account_type = request.POST.get('account_type')
         is_transactional = request.POST.get('is_transactional') == 'on'
+
+        if not code or not name or not account_type:
+            messages.error(request, "Completa los campos obligatorios para crear la cuenta.")
+            return redirect('accounting:chart_of_accounts')
 
         # Verificamos que el código no exista ya
         if Account.objects.filter(code=code).exists():
