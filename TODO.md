@@ -80,3 +80,10 @@
 - [ ] Integrar auditoría en `AIQueryLog` para todo el ciclo del draft.
 - [ ] Mejorar UI `templates/core/ai_contable_chat.html` con panel de pendientes y acciones.
 - [ ] Ejecutar pruebas exhaustivas: migrate/check + curl de todos los casos + validación UI.
+
+## TODO - Mejorar Libro Mayor (conexión Libro Diario)
+
+- [ ] Ajustar `general_ledger` en `accounting/views.py` para leer exactamente `JournalEntryLine` + `JournalEntry`.
+- [ ] Unificar filtros de empresa con compatibilidad legacy (`_current_company_key` + valor anterior).
+- [ ] Corregir cálculo de saldo acumulado y orden cronológico consistente.
+- [ ] Validar que movimientos del Libro Diario aparezcan en el Libro Mayor para la cuenta seleccionada.

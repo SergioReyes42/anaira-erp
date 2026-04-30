@@ -968,7 +968,7 @@ def general_journal(request):
 @login_required
 @group_required('Contadora', 'Gerente', 'Administrador')
 def general_ledger(request):
-    """Libro Mayor General (Movimientos por Cuenta Específica)"""
+    """Libro Mayor General conectado al Libro Diario (JournalEntry/JournalEntryLine)."""
     
     cuentas = Account.objects.filter(is_transactional=True).order_by('code')
     
@@ -979,6 +979,12 @@ def general_ledger(request):
     mes = _safe_int(request.GET.get('mes', mes_actual), mes_actual)
     anio = _safe_int(request.GET.get('anio', anio_actual), anio_actual)
     company_key = _current_company_key(request)
+
+    # Compatibilidad: algunos registros guardan company como id string, otros como texto legacy
+    company_candidates = [str(request.user.current_company)]
+    if company_key:
+        company_candidates.append(company_key)
+    company_candidates = list(dict.fromkeys(company_candidates))
     
     lineas = []
     cuenta_seleccionada = None
@@ -987,25 +993,27 @@ def general_ledger(request):
     total_haber = decimal.Decimal('0.00')
 
     if account_id:
-        cuenta_seleccionada = Account.objects.get(id=account_id)
-        
-        lineas = JournalEntryLine.objects.filter(
+        cuenta_seleccionada = get_object_or_404(Account, id=account_id)
+
+        qs_lineas = JournalEntryLine.objects.filter(
             account=cuenta_seleccionada,
-            entry__company__in=[company_key, str(request.user.current_company)],
+            entry__company__in=company_candidates,
             entry__date__year=anio,
             entry__date__month=mes
-        ).select_related('entry').order_by('entry__date', 'entry__id')
-        
+        ).select_related('entry', 'account').order_by('entry__date', 'entry__id', 'id')
+
+        lineas = list(qs_lineas)
+
         for linea in lineas:
-            total_debe += linea.debit
-            total_haber += linea.credit
-            
+            total_debe += (linea.debit or decimal.Decimal('0.00'))
+            total_haber += (linea.credit or decimal.Decimal('0.00'))
+
             if cuenta_seleccionada.account_type in ['ASSET', 'EXPENSE']:
-                saldo_acumulado += (linea.debit - linea.credit)
+                saldo_acumulado += ((linea.debit or 0) - (linea.credit or 0))
             else:
-                saldo_acumulado += (linea.credit - linea.debit)
-                
-            linea.saldo_actual = saldo_acumulado 
+                saldo_acumulado += ((linea.credit or 0) - (linea.debit or 0))
+
+            linea.saldo_actual = saldo_acumulado
 
     context = {
         'cuentas': cuentas,
@@ -1017,7 +1025,9 @@ def general_ledger(request):
         'anios': range(2025, 2030),
         'total_debe': total_debe,
         'total_haber': total_haber,
-        'saldo_final': saldo_acumulado
+        'saldo_final': saldo_acumulado,
+        'total_lineas': len(lineas),
+        'company_candidates': company_candidates,
     }
     return render(request, 'accounting/general_ledger.html', context)
 
