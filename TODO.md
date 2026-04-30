@@ -91,6 +91,14 @@
 ## TODO - Fix enrutamiento reportes contables (Libro Mayor / ER / BG)
 
 - [x] Detectar colisiones de rutas duplicadas en `accounting/urls.py` (`libro-diario`, `libro-mayor`, `balance-general`, `estado-resultados`).
-- [ ] Eliminar colisiones dejando rutas principales hacia vistas NIIF (`general_journal`, `general_ledger`, `balance_sheet`, `income_statement`).
-- [ ] Mantener rutas legacy sin colisión para compatibilidad.
+- [x] Eliminar colisiones dejando rutas principales hacia vistas NIIF (`general_journal`, `general_ledger`, `balance_sheet`, `income_statement`).
+- [x] Mantener rutas legacy sin colisión para compatibilidad.
 - [ ] Validar navegación desde menú/reporting_hub y consistencia de `name=`.
+
+## TODO - Fix IA Scanner (Gemini sin respuesta utilizable)
+
+- [x] Revisar flujo `analyze_invoice_image` en `accounting/utils.py`.
+- [x] Agregar robustez de `mime_type` real al enviar imagen a Gemini.
+- [x] Añadir segundo intento de prompt (full + short) por modelo candidato.
+- [x] Normalizar salida IA para tolerar claves alternas (`suggested_account` / `account_type`).
+- [ ] Probar endpoint `api/analizar-factura/` con casos reales (imagen válida, imagen borrosa, sin texto).

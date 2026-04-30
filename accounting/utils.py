@@ -130,6 +130,35 @@ def _extract_json_block(raw_text: str) -> str:
     return raw_text
 
 
+def _detect_mime_type(image_file):
+    content_type = (getattr(image_file, "content_type", None) or "").strip().lower()
+    if content_type in {"image/jpeg", "image/jpg", "image/png", "image/webp"}:
+        return "image/jpeg" if content_type == "image/jpg" else content_type
+    return "image/jpeg"
+
+
+def _normalize_ai_data(data):
+    account_alias = data.get("suggested_account")
+    account_type = data.get("account_type") or account_alias or "Gastos Generales"
+
+    try:
+        total = float(data.get("total") or 0.00)
+    except Exception:
+        total = 0.00
+
+    return {
+        "provider_name": data.get("provider_name") or "Proveedor no detectado",
+        "provider_nit": data.get("provider_nit") or "",
+        "invoice_series": data.get("invoice_series") or "",
+        "invoice_number": data.get("invoice_number") or "",
+        "total": total,
+        "is_fuel": bool(data.get("is_fuel")),
+        "fuel_type": data.get("fuel_type") or "",
+        "description": data.get("description") or "Factura leída por IA",
+        "account_type": account_type,
+    }
+
+
 def analyze_invoice_image(image_file, smart_input=""):
     """
     Cerebro IA Francotirador: Analiza facturas con reglas SAT Guatemala.
@@ -137,7 +166,7 @@ def analyze_invoice_image(image_file, smart_input=""):
     try:
         cfg = _configure_gemini()
 
-        prompt = f"""
+        prompt_full = f"""
         Eres un Auditor Fiscal Experto de la SAT en Guatemala.
         Tu misión es extraer los datos exactos de esta factura electrónica (FEL) o recibo.
         
@@ -160,55 +189,63 @@ def analyze_invoice_image(image_file, smart_input=""):
 
         Contexto adicional del contador: {smart_input}
 
-        Devuelve el resultado estrictamente en este esquema JSON:
+        Devuelve SOLO JSON válido con:
         {{
             "provider_name": "Nombre completo de la empresa",
             "provider_nit": "NIT del emisor",
             "invoice_series": "Serie de la factura",
             "invoice_number": "Número de factura o DTE",
             "total": 0.00,
-            "is_fuel": true o false,
-            "fuel_type": "regular, diesel, super o null",
+            "is_fuel": true,
+            "fuel_type": "regular",
             "description": "Qué se compró (máximo 5 palabras)",
             "account_type": "CUENTA_EXACTA_DEL_CATALOGO"
         }}
         """
 
+        prompt_short = """
+        Extrae datos de factura y responde SOLO JSON válido con estas llaves:
+        provider_name, provider_nit, invoice_series, invoice_number, total, is_fuel, fuel_type, description, account_type.
+        Si no ves un dato, usa null.
+        """
+
+        mime_type = _detect_mime_type(image_file)
         model_candidates = cfg.get("model_candidates") or [cfg["model"]]
         last_err = None
         raw_text = ""
 
         for model_name in model_candidates:
-            try:
-                # SDK nuevo google.genai (único)
-                image_file.seek(0)
-                image_bytes = image_file.read()
-                encoded = base64.b64encode(image_bytes).decode("utf-8")
+            for prompt in (prompt_full, prompt_short):
+                try:
+                    image_file.seek(0)
+                    image_bytes = image_file.read()
+                    encoded = base64.b64encode(image_bytes).decode("utf-8")
 
-                response = cfg["client"].models.generate_content(
-                    model=model_name,
-                    contents=[
-                        {"role": "user", "parts": [{"text": prompt}]},
-                        {
-                            "role": "user",
-                            "parts": [
-                                {
-                                    "inline_data": {
-                                        "mime_type": "image/jpeg",
-                                        "data": encoded
+                    response = cfg["client"].models.generate_content(
+                        model=model_name,
+                        contents=[
+                            {"role": "user", "parts": [{"text": prompt}]},
+                            {
+                                "role": "user",
+                                "parts": [
+                                    {
+                                        "inline_data": {
+                                            "mime_type": mime_type,
+                                            "data": encoded
+                                        }
                                     }
-                                }
-                            ],
-                        },
-                    ],
-                )
-                raw_text = _extract_text_from_genai_response(response)
-
-                if raw_text:
-                    break
-            except Exception as model_err:
-                last_err = model_err
-                continue
+                                ],
+                            },
+                        ],
+                    )
+                    raw_text = _extract_text_from_genai_response(response)
+                    if raw_text:
+                        break
+                except Exception as model_err:
+                    last_err = model_err
+                    continue
+            if raw_text:
+                break
 
         if not raw_text:
             if last_err is not None:
@@ -217,13 +254,7 @@ def analyze_invoice_image(image_file, smart_input=""):
 
         json_text = _extract_json_block(raw_text)
         data = json.loads(json_text)
-
-        data["total"] = float(data.get("total") or 0.00)
-        data["provider_name"] = data.get("provider_name") or "Proveedor no detectado"
-        data["account_type"] = data.get("account_type") or "Gastos Generales"
-        data["is_fuel"] = bool(data.get("is_fuel"))
-
-        return data
+        return _normalize_ai_data(data)
 
     except Exception as e:
         print(f"🔥 Error Crítico en IA (Smart Scanner): {e}")
