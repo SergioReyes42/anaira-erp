@@ -24,11 +24,12 @@ urlpatterns = [
     # ==========================================
     # 3. LIBROS Y ESTADOS FINANCIEROS
     # ==========================================
-    path('libro-diario/', views.libro_diario, name='libro_diario'),
-    path('libro-mayor/', views.libro_mayor, name='libro_mayor'),
+    # Rutas legacy (sin colisión con rutas NIIF nuevas)
+    path('libro-diario-legacy/', views.libro_diario, name='libro_diario'),
+    path('libro-mayor-legacy/', views.libro_mayor, name='libro_mayor'),
     path('balance-saldos/', views.balance_saldos, name='balance_saldos'),
-    path('estado-resultados/', views.estado_resultados, name='estado_resultados'),
-    path('balance-general/', views.balance_general, name='balance_general'),
+    path('estado-resultados-legacy/', views.estado_resultados, name='estado_resultados'),
+    path('balance-general-legacy/', views.balance_general, name='balance_general'),
     path('plan-cuentas/', views.chart_of_accounts, name='chart_of_accounts'),
 
     # ==========================================

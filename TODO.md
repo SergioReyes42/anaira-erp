@@ -87,3 +87,10 @@
 - [ ] Unificar filtros de empresa con compatibilidad legacy (`_current_company_key` + valor anterior).
 - [ ] Corregir cálculo de saldo acumulado y orden cronológico consistente.
 - [ ] Validar que movimientos del Libro Diario aparezcan en el Libro Mayor para la cuenta seleccionada.
+
+## TODO - Fix enrutamiento reportes contables (Libro Mayor / ER / BG)
+
+- [x] Detectar colisiones de rutas duplicadas en `accounting/urls.py` (`libro-diario`, `libro-mayor`, `balance-general`, `estado-resultados`).
+- [ ] Eliminar colisiones dejando rutas principales hacia vistas NIIF (`general_journal`, `general_ledger`, `balance_sheet`, `income_statement`).
+- [ ] Mantener rutas legacy sin colisión para compatibilidad.
+- [ ] Validar navegación desde menú/reporting_hub y consistencia de `name=`.
