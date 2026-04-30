@@ -1,0 +1,2670 @@
+[
+{
+  "model": "auth.group",
+  "fields": {
+    "name": "Administrador",
+    "permissions": []
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "1wubq8npp8cfxiiiydcpvgdqtvs8kgks",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBgMhRcuvcMZKYMUjVtUtpV490NSRe6_e-9f6hE-1bT3mRNU1ZXZdXld2MaXzJ3kJ80PxY9LvO2Tqy7ok_a9H3J8r6d7t9BpVZ7HZCRQHgw3kGmATiGGByKzWgjQQSyng2goGPPzmEBXxC8RGuoqM8X0Kc3Pw:1wG6UM:wp0hpiE64eLD4jEFGGyXk2o8LsHF8nCZOw4sqlQL4a4",
+    "expire_date": "2026-05-08T02:41:54.600Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "2svyc9ol3zmi915zy98797x39ygyb92m",
+  "fields": {
+    "session_data": ".eJxVjjsOwjAQRO_iOrJsr9aJKek5g7Ubb0j42CifAiHujoxSQDvvzWheKtK2jnFbZI5TUgdlVfObMfVXyRWkC-Vz0X3J6zyxrore6aJPJcntuLt_AyMtY213yEgg3BrvIFELHLrQORSb0AaCAGQ9G0BBx56dwwH8gOAlWEODalRf7g_Kz-9NfH8ANAs8QQ:1wHt7p:YWqEqfoJwjI0801DsdeR6cBB-LopDdKFv9g-q9Tmj0U",
+    "expire_date": "2026-05-13T00:50:01.034Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "5l9mpew8akf14bw98qslpnm2wyqcruew",
+  "fields": {
+    "session_data": ".eJxVjjsOwjAQRO_iOrJsr9aJKek5g7Ubb0j42CifAiHujoxSQDvvzWheKtK2jnFbZI5TUgdlVfObMfVXyRWkC-Vz0X3J6zyxrore6aJPJcntuLt_AyMtY213yEgg3BrvIFELHLrQORSb0AaCAGQ9G0BBx56dwwH8gOAlWEODalRf7g_Kz-9N-_4ANAM8PQ:1wHAlx:1mOGg08uYEqZ3hSIQquWnLOCiZ438E7Z8i6vecHBTos",
+    "expire_date": "2026-05-11T01:28:29.462Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "5nswn41k88abpiua6izkv6usg9vwqyze",
+  "fields": {
+    "session_data": ".eJxVjjsOwjAQRO_iOrJsr9aJKek5g7Ubb0j42CifAiHujoxSQDvvzWheKtK2jnFbZI5TUgdlVfObMfVXyRWkC-Vz0X3J6zyxrore6aJPJcntuLt_AyMtY213yEgg3BrvIFELHLrQORSb0AaCAGQ9G0BBx56dwwH8gOAlWEODalRf7g_Kz-9NfH8ANAs8QQ:1wHBsS:sVdspSNdjjoNnIwGMVx9R6EaiYd5_gr4GNiElaKM94M",
+    "expire_date": "2026-05-11T02:39:16.344Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "79hrxdox6qptw2p9eweemoew5v7qctmo",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBgMhRcuvcMZKYMUjVtUtpV490NSRe6_e-9f6hE-1bT3mRNU1ZXZdXld2MaXzJ3kJ80PxY9LvO2Tqy7ok_a9H3J8r6d7t9BpVZ7HZCRQHgw3kGmATiGGByKzWgjQQSyng2goGPPzmEBXxC8RGuoqM8X0Kc3Pw:1wG5y5:ZrtP6aCyooTgxgFo3iS0DqYasnaWnsS_LjVhojakrmA",
+    "expire_date": "2026-05-08T02:08:33.266Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "9ovrxclkh3ezpa3ye3x5qffpv319s9bu",
+  "fields": {
+    "session_data": ".eJxVjjsOwjAQRO_iOrJsr9aJKek5g7Ubb0j42CifAiHujoxSQDvvzWheKtK2jnFbZI5TUgdlVfObMfVXyRWkC-Vz0X3J6zyxrore6aJPJcntuLt_AyMtY213yEgg3BrvIFELHLrQORSb0AaCAGQ9G0BBx56dwwH8gOAlWEODalRf7g_Kz-9NfH8ANAs8QQ:1wHt9m:iTAVoQI9bLMg8apJogYjfseg4m_zk2oczHXT_cM2LPc",
+    "expire_date": "2026-05-13T00:52:02.587Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "b7nlijloq7lanzqzulj5ns3lfu06oa5w",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBgMhRcuvcMZKYMUjVtUtpV490NSRe6_e-9f6hE-1bT3mRNU1ZXZdXld2MaXzJ3kJ80PxY9LvO2Tqy7ok_a9H3J8r6d7t9BpVZ7HZCRQHgw3kGmATiGGByKzWgjQQSyng2goGPPzmEBXxC8RGuoqM8X0Kc3Pw:1wG4MF:s-k0BPAz6Dy3tbRec_tBwIAA8mCcs1RPUquZklOmrP8",
+    "expire_date": "2026-05-08T00:25:23.760Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "c924z1y4kstvcez4azw94i7urdx1v16i",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBgMhRcuvcMZKYMUjVtUtpV490NSRe6_e-9f6hE-1bT3mRNU1ZXZdXld2MaXzJ3kJ80PxY9LvO2Tqy7ok_a9H3J8r6d7t9BpVZ7HZCRQHgw3kGmATiGGByKzWgjQQSyng2goGPPzmEBXxC8RGuoqM8X0Kc3Pw:1wG6Hx:SoG4rh75-K0btUQn4SF4axRKO12E70HnEMKc6gmuEWQ",
+    "expire_date": "2026-05-08T02:29:05.750Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "e63jpobwdsz70a5ezxqtrdfrb27e8b5c",
+  "fields": {
+    "session_data": ".eJxVjjsOwjAQRO_iOrJsr9aJKek5g7Ubb0j42CifAiHujoxSQDvvzWheKtK2jnFbZI5TUgdlVfObMfVXyRWkC-Vz0X3J6zyxrore6aJPJcntuLt_AyMtY213yEgg3BrvIFELHLrQORSb0AaCAGQ9G0BBx56dwwH8gOAlWEODalRf7g_Kz-9NfH8ANAs8QQ:1wHt8H:iBoZ_D_CanX1YxOdAdvnOTvKP-KSwe1m_Nx-xgZ5HJ4",
+    "expire_date": "2026-05-13T00:50:29.254Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "gzjsiuptrlntiu2x4c7qxl7r3eh5in8o",
+  "fields": {
+    "session_data": ".eJxVjjsOwjAQRO_iOrJsr9aJKek5g7Ubb0j42CifAiHujoxSQDvvzWheKtK2jnFbZI5TUgdlVfObMfVXyRWkC-Vz0X3J6zyxrore6aJPJcntuLt_AyMtY213yEgg3BrvIFELHLrQORSb0AaCAGQ9G0BBx56dwwH8gOAlWEODalRf7g_Kz-9NfH8ANAs8QQ:1wHvbo:zEKvXbhcJFc1McqjFNNdCPTj9or1LXMOrQPbSQZ0btI",
+    "expire_date": "2026-05-13T03:29:08.997Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "hv6ybjgodmjif5v4a7wm78kvy9v879c9",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBgMhRcuvcMZKYMUjVtUtpV490NSRe6_e-9f6hE-1bT3mRNU1ZXZdXld2MaXzJ3kJ80PxY9LvO2Tqy7ok_a9H3J8r6d7t9BpVZ7HZCRQHgw3kGmATiGGByKzWgjQQSyng2goGPPzmEBXxC8RGuoqM8X0Kc3Pw:1wG5B3:9_mDL_sEsGwrN0-Wj_y3TFmXrqGGFxvubMu9Rcet-DU",
+    "expire_date": "2026-05-08T01:17:53.247Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "l7qmrctcs935mzkgkrom7pvvywxcoatr",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBgMhRcuvcMZKYMUjVtUtpV490NSRe6_e-9f6hE-1bT3mRNU1ZXZdXld2MaXzJ3kJ80PxY9LvO2Tqy7ok_a9H3J8r6d7t9BpVZ7HZCRQHgw3kGmATiGGByKzWgjQQSyng2goGPPzmEBXxC8RGuoqM8X0Kc3Pw:1wG6pL:xVi278fYjL9fNG5_zNPVN-YYOOTWgcTo-YfDfjjSD14",
+    "expire_date": "2026-05-08T03:03:35.808Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "n2258ttgediqze9j82hd8vr9pezr2jh5",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBgMhRcuvcMZKYMUjVtUtpV490NSRe6_e-9f6hE-1bT3mRNU1ZXZdXld2MaXzJ3kJ80PxY9LvO2Tqy7ok_a9H3J8r6d7t9BpVZ7HZCRQHgw3kGmATiGGByKzWgjQQSyng2goGPPzmEBXxC8RGuoqM8X0Kc3Pw:1wGthk:Y3L97nBBEOrAfGhr1IoUEaZ7HC0XZcXNZc5tDxe4KNo",
+    "expire_date": "2026-05-10T07:15:00.089Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "orjesws0lbowl5jfzsi61j4af3r1wmqx",
+  "fields": {
+    "session_data": ".eJxVjjsOwjAQRO_iOrJsr9aJKek5g7Ubb0j42CifAiHujoxSQDvvzWheKtK2jnFbZI5TUgdlVfObMfVXyRWkC-Vz0X3J6zyxrore6aJPJcntuLt_AyMtY213yEgg3BrvIFELHLrQORSb0AaCAGQ9G0BBx56dwwH8gOAlWEODalRf7g_Kz-9N9_4ANAU8Pg:1wHBH1:tFTiu3BxMMrHvgyzrXvgZByLWOa1nQk6is-sNRZ2cSQ",
+    "expire_date": "2026-05-11T02:00:35.575Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "p9qef2497oejkue67cku453zqn0gn4pk",
+  "fields": {
+    "session_data": ".eJxVjjsOwjAQRO_iOrJsr9aJKek5g7Ubb0j42CifAiHujoxSQDvvzWheKtK2jnFbZI5TUgdlVfObMfVXyRWkC-Vz0X3J6zyxrore6aJPJcntuLt_AyMtY213yEgg3BrvIFELHLrQORSb0AaCAGQ9G0BBx56dwwH8gOAlWEODalRf7g_Kz-9NeH8ANAc8Pw:1wHBJo:64JaLcy54J5Cue1H_KZVSKpnkshN45VJAUQfJ9uuWiU",
+    "expire_date": "2026-05-11T02:03:28.584Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "pktn9v2pxppuag0sw995vfenflres69d",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBgMhRcuvcMZKYMUjVtUtpV490NSRe6_e-9f6hE-1bT3mRNU1ZXZdXld2MaXzJ3kJ80PxY9LvO2Tqy7ok_a9H3J8r6d7t9BpVZ7HZCRQHgw3kGmATiGGByKzWgjQQSyng2goGPPzmEBXxC8RGuoqM8X0Kc3Pw:1wG4kj:GY7hOekzHkGgAFARAhgGoTmbjj84RK8oMQRU7innO0I",
+    "expire_date": "2026-05-08T00:50:41.507Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "pmuoifbeiqzqxdrkws11snfqa5ycjses",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBgMhRcuvcMZKYMUjVtUtpV490NSRe6_e-9f6hE-1bT3mRNU1ZXZdXld2MaXzJ3kJ80PxY9LvO2Tqy7ok_a9H3J8r6d7t9BpVZ7HZCRQHgw3kGmATiGGByKzWgjQQSyng2goGPPzmEBXxC8RGuoqM8X0Kc3Pw:1wGuF9:7TGfIq7DAmsQt-yaEJX4bHbb-KBFyP4p2CJxsS3J7Ok",
+    "expire_date": "2026-05-10T07:49:31.996Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "pnhsejkt766rz81ktb37jos02vohwtz9",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBgMhRcuvcMZKYMUjVtUtpV490NSRe6_e-9f6hE-1bT3mRNU1ZXZdXld2MaXzJ3kJ80PxY9LvO2Tqy7ok_a9H3J8r6d7t9BpVZ7HZCRQHgw3kGmATiGGByKzWgjQQSyng2goGPPzmEBXxC8RGuoqM8X0Kc3Pw:1wGuFc:h3MHHkBMj14tzJT6iKyDQMRIf0E7F3nsATrmwlbiF6E",
+    "expire_date": "2026-05-10T07:50:00.736Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "qvho0xh300gfkhtgmmzcl5mr672q9soq",
+  "fields": {
+    "session_data": ".eJxVjjsOwjAQRO_iOrJsr9aJKek5g7Ubb0j42CifAiHujoxSQDvvzWheKtK2jnFbZI5TUgdlVfObMfVXyRWkC-Vz0X3J6zyxrore6aJPJcntuLt_AyMtY213yEgg3BrvIFELHLrQORSb0AaCAGQ9G0BBx56dwwH8gOAlWEODalRf7g_Kz-9N9_4ANAU8Pg:1wHBHr:36oDwNB_gKXhnazIpLrL1vwYTQEcr5tNViSHmE0MDoc",
+    "expire_date": "2026-05-11T02:01:27.624Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "qvql2rqhl5zgrsekptywhb8m1l06jxbv",
+  "fields": {
+    "session_data": ".eJxVjjsOwjAQRO_iOrJiL-vElPScIdq1NyR87CifAiHujoxSQDvvzWheqqNtHbptkbkbozoqo6rfjCncJBUQr5QuWYec1nlkXRS900Wfc5T7aXf_BgZahtJukZFAuKmdhUgNsG99a1FMROMJPJBxXAMKWnZsLfbgegQn3tTUq0qF_JgoPb83D-8PNAk8QA:1wHBUe:B2KKNG427ia6TvBho4PI3If7-9GQqHo6ARrKx0ELwtM",
+    "expire_date": "2026-05-11T02:14:40.217Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "r67o4sc8zatt3dm0jb223w4d6qdp02mt",
+  "fields": {
+    "session_data": ".eJxVjjsOwjAQRO_iOrJsr9aJKek5g7Ubb0j42CifAiHujoxSQDvvzWheKtK2jnFbZI5TUgdlVfObMfVXyRWkC-Vz0X3J6zyxrore6aJPJcntuLt_AyMtY213yEgg3BrvIFELHLrQORSb0AaCAGQ9G0BBx56dwwH8gOAlWEODalRf7g_Kz-9NfH8ANAs8QQ:1wHvbF:AnW8aLPXCcpTAL8_E01ZNUmUZmfEoCs1nDaVStOfyq4",
+    "expire_date": "2026-05-13T03:28:33.016Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "s1mjeuo5i57d1zikzqffihjfoa4ac1bb",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBgMhRcuvcMZKYMUjVtUtpV490NSRe6_e-9f6hE-1bT3mRNU1ZXZdXld2MaXzJ3kJ80PxY9LvO2Tqy7ok_a9H3J8r6d7t9BpVZ7HZCRQHgw3kGmATiGGByKzWgjQQSyng2goGPPzmEBXxC8RGuoqM8X0Kc3Pw:1wG6Tm:AqdqyyJmlrWmMGtCUG254iFlSB52RgrfJX6vtt7xRRI",
+    "expire_date": "2026-05-08T02:41:18.440Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "wtretfg0gcvt0uvw300kypkwozg9l8yt",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBgMhRcuvcMZKYMUjVtUtpV490NSRe6_e-9f6hE-1bT3mRNU1ZXZdXld2MaXzJ3kJ80PxY9LvO2Tqy7ok_a9H3J8r6d7t9BpVZ7HZCRQHgw3kGmATiGGByKzWgjQQSyng2goGPPzmEBXxC8RGuoqM8X0Kc3Pw:1wG5bW:xbN8TTNGgc1Uv47D2tcbXrTThyhehK6HRZyKuc-0S0E",
+    "expire_date": "2026-05-08T01:45:14.230Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "zag0crky71cj5pbqwso1rwwk3rbbh7s5",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBgMhRcuvcMZKYMUjVtUtpV490NSRe6_e-9f6hE-1bT3mRNU1ZXZdXld2MaXzJ3kJ80PxY9LvO2Tqy7ok_a9H3J8r6d7t9BpVZ7HZCRQHgw3kGmATiGGByKzWgjQQSyng2goGPPzmEBXxC8RGuoqM8X0Kc3Pw:1wG43E:GdsdeaxnC8jeRVBj4FLC10mNBxO8O6oykvVxOFnaWZA",
+    "expire_date": "2026-05-08T00:05:44.514Z"
+  }
+},
+{
+  "model": "core.company",
+  "pk": 1,
+  "fields": {
+    "name": "QA Company",
+    "active": true,
+    "created_at": "2026-04-24T01:17:53.183Z"
+  }
+},
+{
+  "model": "core.company",
+  "pk": 2,
+  "fields": {
+    "name": "QA RRHH",
+    "active": true,
+    "created_at": "2026-04-27T02:00:33.762Z"
+  }
+},
+{
+  "model": "core.company",
+  "pk": 3,
+  "fields": {
+    "name": "QA RRHH B",
+    "active": true,
+    "created_at": "2026-04-27T02:03:26.508Z"
+  }
+},
+{
+  "model": "core.company",
+  "pk": 4,
+  "fields": {
+    "name": "QA RRHH UI-CURL",
+    "active": true,
+    "created_at": "2026-04-27T02:14:37.972Z"
+  }
+},
+{
+  "model": "core.company",
+  "pk": 5,
+  "fields": {
+    "name": "QA RRHH FINAL",
+    "active": true,
+    "created_at": "2026-04-27T02:39:13.921Z"
+  }
+},
+{
+  "model": "accounts.user",
+  "fields": {
+    "password": "pbkdf2_sha256$720000$Kqk5Mz8krmTMGU4PpkqGgy$SnE7sHRmOIXZgoM+Y6hlMW8cS9q2aNKN5xqFUEfiUR0=",
+    "last_login": "2026-04-29T03:29:05.956Z",
+    "is_superuser": true,
+    "username": "admin",
+    "first_name": "",
+    "last_name": "",
+    "email": "s.marroquin@corporacionsermaowrld.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-04-17T03:11:26.426Z",
+    "role": "VIEWER",
+    "avatar": "",
+    "totp_secret": null,
+    "current_company": 5,
+    "groups": [],
+    "user_permissions": [],
+    "allowed_companies": []
+  }
+},
+{
+  "model": "accounts.user",
+  "fields": {
+    "password": "pbkdf2_sha256$720000$hrX3Yx8oq5XWuQgt6fNw8O$jNUL22+KsQroSVBi8cLInuF9sP1M9FS+EHnnwgDpgt0=",
+    "last_login": "2026-04-28T17:37:03.874Z",
+    "is_superuser": false,
+    "username": "temp_admin_online",
+    "first_name": "",
+    "last_name": "",
+    "email": "temp_admin_online@local.test",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-04-28T17:36:26.936Z",
+    "role": "VIEWER",
+    "avatar": "",
+    "totp_secret": null,
+    "current_company": 1,
+    "groups": [
+      [
+        "Administrador"
+      ]
+    ],
+    "user_permissions": [],
+    "allowed_companies": []
+  }
+},
+{
+  "model": "accounting.expense",
+  "pk": 1,
+  "fields": {
+    "payment_method": "EFECTIVO",
+    "user": [
+      "admin"
+    ],
+    "company": 1,
+    "date": "2026-04-24T01:17:55.437Z",
+    "status": "PENDING",
+    "origin": "SCANNER",
+    "receipt_image": "expenses_receipts/scanner_test.jpg",
+    "pump_image": "",
+    "latitude": null,
+    "longitude": null,
+    "description": "404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
+    "provider_name": "Error de Lectura IA",
+    "provider_nit": "",
+    "invoice_series": "",
+    "invoice_number": "",
+    "vehicle": null,
+    "suggested_account": "Gastos Generales",
+    "total_amount": "0.00",
+    "tax_base": "0.00",
+    "tax_iva": "0.00",
+    "tax_idp": "0.00",
+    "supervisor_1_ok": false,
+    "supervisor_2_ok": false,
+    "assistant_ok": false
+  }
+},
+{
+  "model": "accounting.expense",
+  "pk": 2,
+  "fields": {
+    "payment_method": "EFECTIVO",
+    "user": [
+      "admin"
+    ],
+    "company": 1,
+    "date": "2026-04-24T01:45:15.345Z",
+    "status": "PENDING",
+    "origin": "SCANNER",
+    "receipt_image": "expenses_receipts/ok.jpg",
+    "pump_image": "",
+    "latitude": null,
+    "longitude": null,
+    "description": "con imagen",
+    "provider_name": "Pendiente de revisión",
+    "provider_nit": "C/F",
+    "invoice_series": "",
+    "invoice_number": "",
+    "vehicle": null,
+    "suggested_account": "Gastos Generales",
+    "total_amount": "0.00",
+    "tax_base": "0.00",
+    "tax_iva": "0.00",
+    "tax_idp": "0.00",
+    "supervisor_1_ok": false,
+    "supervisor_2_ok": false,
+    "assistant_ok": false
+  }
+},
+{
+  "model": "accounting.expense",
+  "pk": 3,
+  "fields": {
+    "payment_method": "EFECTIVO",
+    "user": [
+      "admin"
+    ],
+    "company": 1,
+    "date": "2026-04-24T02:08:33.415Z",
+    "status": "PENDING",
+    "origin": "SCANNER",
+    "receipt_image": "expenses_receipts/qa.jpg",
+    "pump_image": "",
+    "latitude": null,
+    "longitude": null,
+    "description": "qa con imagen",
+    "provider_name": "Pendiente de revisión",
+    "provider_nit": "C/F",
+    "invoice_series": "",
+    "invoice_number": "",
+    "vehicle": null,
+    "suggested_account": "Gastos Generales",
+    "total_amount": "0.00",
+    "tax_base": "0.00",
+    "tax_iva": "0.00",
+    "tax_idp": "0.00",
+    "supervisor_1_ok": false,
+    "supervisor_2_ok": false,
+    "assistant_ok": false
+  }
+},
+{
+  "model": "accounting.expense",
+  "pk": 4,
+  "fields": {
+    "payment_method": "EFECTIVO",
+    "user": [
+      "admin"
+    ],
+    "company": 1,
+    "date": "2026-04-24T02:41:19.037Z",
+    "status": "PENDING",
+    "origin": "SCANNER",
+    "receipt_image": "expenses_receipts/big.jpg",
+    "pump_image": "",
+    "latitude": null,
+    "longitude": null,
+    "description": "imagen grande",
+    "provider_name": "Pendiente de revisión",
+    "provider_nit": "C/F",
+    "invoice_series": "",
+    "invoice_number": "",
+    "vehicle": null,
+    "suggested_account": "Gastos Generales",
+    "total_amount": "0.00",
+    "tax_base": "0.00",
+    "tax_iva": "0.00",
+    "tax_idp": "0.00",
+    "supervisor_1_ok": false,
+    "supervisor_2_ok": false,
+    "assistant_ok": false
+  }
+},
+{
+  "model": "accounting.expense",
+  "pk": 5,
+  "fields": {
+    "payment_method": "EFECTIVO",
+    "user": [
+      "admin"
+    ],
+    "company": 1,
+    "date": "2026-04-24T02:41:54.925Z",
+    "status": "PENDING",
+    "origin": "SCANNER",
+    "receipt_image": "expenses_receipts/big_Llthvpv.jpg",
+    "pump_image": "",
+    "latitude": null,
+    "longitude": null,
+    "description": "imagen grande",
+    "provider_name": "Pendiente de revisión",
+    "provider_nit": "C/F",
+    "invoice_series": "",
+    "invoice_number": "",
+    "vehicle": null,
+    "suggested_account": "Gastos Generales",
+    "total_amount": "0.00",
+    "tax_base": "0.00",
+    "tax_iva": "0.00",
+    "tax_idp": "0.00",
+    "supervisor_1_ok": false,
+    "supervisor_2_ok": false,
+    "assistant_ok": false
+  }
+},
+{
+  "model": "accounting.bankaccount",
+  "pk": 1,
+  "fields": {
+    "company": 5,
+    "bank_name": "Banco Test",
+    "account_name": "Cuenta QA",
+    "account_number": "QA-001",
+    "currency": "GTQ",
+    "initial_balance": "1000.00",
+    "balance": "1000.00",
+    "active": true
+  }
+},
+{
+  "model": "accounting.bankaccount",
+  "pk": 2,
+  "fields": {
+    "company": 5,
+    "bank_name": "Banco QA",
+    "account_name": "Cuenta QA 2",
+    "account_number": "QA-002",
+    "currency": "GTQ",
+    "initial_balance": "50.00",
+    "balance": "50.00",
+    "active": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 1,
+  "fields": {
+    "code": "1",
+    "name": "ACTIVO",
+    "account_type": "ASSET",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 2,
+  "fields": {
+    "code": "1.1",
+    "name": "ACTIVO CORRIENTE",
+    "account_type": "ASSET",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 3,
+  "fields": {
+    "code": "1.1.1",
+    "name": "EFECTIVO Y EQUIVALENTES DE EFECTIVO",
+    "account_type": "ASSET",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 4,
+  "fields": {
+    "code": "1.1.1.01",
+    "name": "Caja General",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 5,
+  "fields": {
+    "code": "1.1.1.02",
+    "name": "Caja Chica",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 6,
+  "fields": {
+    "code": "1.1.1.03",
+    "name": "Bancos Moneda Nacional",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 7,
+  "fields": {
+    "code": "1.1.1.04",
+    "name": "Bancos Moneda Extranjera",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 8,
+  "fields": {
+    "code": "1.1.1.05",
+    "name": "Depósitos a la Vista",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 9,
+  "fields": {
+    "code": "1.1.1.06",
+    "name": "Inversiones de Alta Liquidez",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 10,
+  "fields": {
+    "code": "1.1.2",
+    "name": "CUENTAS Y DOCUMENTOS POR COBRAR",
+    "account_type": "ASSET",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 11,
+  "fields": {
+    "code": "1.1.2.01",
+    "name": "Clientes Nacionales",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 12,
+  "fields": {
+    "code": "1.1.2.02",
+    "name": "Clientes del Exterior",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 13,
+  "fields": {
+    "code": "1.1.2.03",
+    "name": "Documentos por Cobrar",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 14,
+  "fields": {
+    "code": "1.1.2.04",
+    "name": "Anticipos a Proveedores",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 15,
+  "fields": {
+    "code": "1.1.2.05",
+    "name": "Préstamos a Empleados",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 16,
+  "fields": {
+    "code": "1.1.2.06",
+    "name": "Intereses por Cobrar",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 17,
+  "fields": {
+    "code": "1.1.2.07",
+    "name": "Estimación Cuentas Incobrables",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 18,
+  "fields": {
+    "code": "1.1.3",
+    "name": "INVENTARIOS",
+    "account_type": "ASSET",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 19,
+  "fields": {
+    "code": "1.1.3.01",
+    "name": "Inventario de Mercaderías",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 20,
+  "fields": {
+    "code": "1.1.3.02",
+    "name": "Inventario de Materia Prima",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 21,
+  "fields": {
+    "code": "1.1.3.03",
+    "name": "Inventario de Productos en Proceso",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 22,
+  "fields": {
+    "code": "1.1.3.04",
+    "name": "Inventario de Productos Terminados",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 23,
+  "fields": {
+    "code": "1.1.3.05",
+    "name": "Inventario en Tránsito",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 24,
+  "fields": {
+    "code": "1.1.3.06",
+    "name": "Provisión por Deterioro de Inventarios",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 25,
+  "fields": {
+    "code": "1.1.4",
+    "name": "IMPUESTOS Y CRÉDITOS FISCALES",
+    "account_type": "ASSET",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 26,
+  "fields": {
+    "code": "1.1.4.01",
+    "name": "IVA Crédito Fiscal",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 27,
+  "fields": {
+    "code": "1.1.4.02",
+    "name": "ISR Pagos Trimestrales",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 28,
+  "fields": {
+    "code": "1.1.4.03",
+    "name": "Retenciones por Recuperar",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 29,
+  "fields": {
+    "code": "1.1.4.04",
+    "name": "Crédito Fiscal Importaciones",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 30,
+  "fields": {
+    "code": "1.1.5",
+    "name": "GASTOS PAGADOS POR ANTICIPADO",
+    "account_type": "ASSET",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 31,
+  "fields": {
+    "code": "1.1.5.01",
+    "name": "Seguros Pagados Anticipadamente",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 32,
+  "fields": {
+    "code": "1.1.5.02",
+    "name": "Alquileres Pagados Anticipadamente",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 33,
+  "fields": {
+    "code": "1.1.5.03",
+    "name": "Mantenimientos Pagados Anticipadamente",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 34,
+  "fields": {
+    "code": "1.2",
+    "name": "ACTIVO NO CORRIENTE",
+    "account_type": "ASSET",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 35,
+  "fields": {
+    "code": "1.2.1",
+    "name": "PROPIEDAD, PLANTA Y EQUIPO",
+    "account_type": "ASSET",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 36,
+  "fields": {
+    "code": "1.2.1.01",
+    "name": "Terrenos",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 37,
+  "fields": {
+    "code": "1.2.1.02",
+    "name": "Edificios",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 38,
+  "fields": {
+    "code": "1.2.1.03",
+    "name": "Mobiliario y Equipo",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 39,
+  "fields": {
+    "code": "1.2.1.04",
+    "name": "Equipo de Cómputo",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 40,
+  "fields": {
+    "code": "1.2.1.05",
+    "name": "Vehículos",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 41,
+  "fields": {
+    "code": "1.2.1.06",
+    "name": "Maquinaria",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 42,
+  "fields": {
+    "code": "1.2.1.07",
+    "name": "Mejoras a Propiedad Arrendada",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 43,
+  "fields": {
+    "code": "1.2.1.08",
+    "name": "Depreciación Acumulada Edificios",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 44,
+  "fields": {
+    "code": "1.2.1.09",
+    "name": "Depreciación Acumulada Mobiliario",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 45,
+  "fields": {
+    "code": "1.2.1.10",
+    "name": "Depreciación Acumulada Equipo Cómputo",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 46,
+  "fields": {
+    "code": "1.2.1.11",
+    "name": "Depreciación Acumulada Vehículos",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 47,
+  "fields": {
+    "code": "1.2.1.12",
+    "name": "Depreciación Acumulada Maquinaria",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 48,
+  "fields": {
+    "code": "1.2.2",
+    "name": "ACTIVOS INTANGIBLES",
+    "account_type": "ASSET",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 49,
+  "fields": {
+    "code": "1.2.2.01",
+    "name": "Software",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 50,
+  "fields": {
+    "code": "1.2.2.02",
+    "name": "Licencias",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 51,
+  "fields": {
+    "code": "1.2.2.03",
+    "name": "Marcas y Patentes",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 52,
+  "fields": {
+    "code": "1.2.2.04",
+    "name": "Amortización Acumulada Intangibles",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 53,
+  "fields": {
+    "code": "1.2.3",
+    "name": "OTROS ACTIVOS NO CORRIENTES",
+    "account_type": "ASSET",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 54,
+  "fields": {
+    "code": "1.2.3.01",
+    "name": "Depósitos en Garantía",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 55,
+  "fields": {
+    "code": "1.2.3.02",
+    "name": "Inversiones a Largo Plazo",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 56,
+  "fields": {
+    "code": "1.2.3.03",
+    "name": "Cuentas por Cobrar Largo Plazo",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 57,
+  "fields": {
+    "code": "2",
+    "name": "PASIVO",
+    "account_type": "LIABILITY",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 58,
+  "fields": {
+    "code": "2.1",
+    "name": "PASIVO CORRIENTE",
+    "account_type": "LIABILITY",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 59,
+  "fields": {
+    "code": "2.1.1",
+    "name": "CUENTAS POR PAGAR COMERCIALES",
+    "account_type": "LIABILITY",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 60,
+  "fields": {
+    "code": "2.1.1.01",
+    "name": "Proveedores Nacionales",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 61,
+  "fields": {
+    "code": "2.1.1.02",
+    "name": "Proveedores del Exterior",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 62,
+  "fields": {
+    "code": "2.1.1.03",
+    "name": "Documentos por Pagar",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 63,
+  "fields": {
+    "code": "2.1.1.04",
+    "name": "Anticipos de Clientes",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 64,
+  "fields": {
+    "code": "2.1.2",
+    "name": "OBLIGACIONES LABORALES",
+    "account_type": "LIABILITY",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 65,
+  "fields": {
+    "code": "2.1.2.01",
+    "name": "Sueldos por Pagar",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 66,
+  "fields": {
+    "code": "2.1.2.02",
+    "name": "Bonificaciones por Pagar",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 67,
+  "fields": {
+    "code": "2.1.2.03",
+    "name": "Prestaciones Laborales por Pagar",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 68,
+  "fields": {
+    "code": "2.1.2.04",
+    "name": "Cuotas Patronales por Pagar",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 69,
+  "fields": {
+    "code": "2.1.3",
+    "name": "OBLIGACIONES FISCALES",
+    "account_type": "LIABILITY",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 70,
+  "fields": {
+    "code": "2.1.3.01",
+    "name": "IVA Débito Fiscal",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 71,
+  "fields": {
+    "code": "2.1.3.02",
+    "name": "ISR por Pagar",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 72,
+  "fields": {
+    "code": "2.1.3.03",
+    "name": "Retenciones ISR por Pagar",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 73,
+  "fields": {
+    "code": "2.1.3.04",
+    "name": "Retenciones IVA por Pagar",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 74,
+  "fields": {
+    "code": "2.1.4",
+    "name": "PRÉSTAMOS Y OBLIGACIONES CORTO PLAZO",
+    "account_type": "LIABILITY",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 75,
+  "fields": {
+    "code": "2.1.4.01",
+    "name": "Préstamos Bancarios CP",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 76,
+  "fields": {
+    "code": "2.1.4.02",
+    "name": "Sobregiros Bancarios",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 77,
+  "fields": {
+    "code": "2.1.4.03",
+    "name": "Tarjetas de Crédito por Pagar",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 78,
+  "fields": {
+    "code": "2.2",
+    "name": "PASIVO NO CORRIENTE",
+    "account_type": "LIABILITY",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 79,
+  "fields": {
+    "code": "2.2.1",
+    "name": "PRÉSTAMOS Y OBLIGACIONES LARGO PLAZO",
+    "account_type": "LIABILITY",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 80,
+  "fields": {
+    "code": "2.2.1.01",
+    "name": "Préstamos Bancarios LP",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 81,
+  "fields": {
+    "code": "2.2.1.02",
+    "name": "Obligaciones Financieras LP",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 82,
+  "fields": {
+    "code": "2.2.1.03",
+    "name": "Arrendamientos Financieros LP",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 83,
+  "fields": {
+    "code": "2.2.2",
+    "name": "PROVISIONES LARGO PLAZO",
+    "account_type": "LIABILITY",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 84,
+  "fields": {
+    "code": "2.2.2.01",
+    "name": "Provisión Indemnizaciones",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 85,
+  "fields": {
+    "code": "2.2.2.02",
+    "name": "Provisión Demandas",
+    "account_type": "LIABILITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 86,
+  "fields": {
+    "code": "3",
+    "name": "PATRIMONIO",
+    "account_type": "EQUITY",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 87,
+  "fields": {
+    "code": "3.1",
+    "name": "CAPITAL Y APORTES",
+    "account_type": "EQUITY",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 88,
+  "fields": {
+    "code": "3.1.1.01",
+    "name": "Capital Social",
+    "account_type": "EQUITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 89,
+  "fields": {
+    "code": "3.1.1.02",
+    "name": "Aportes para Futuras Capitalizaciones",
+    "account_type": "EQUITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 90,
+  "fields": {
+    "code": "3.2",
+    "name": "RESERVAS",
+    "account_type": "EQUITY",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 91,
+  "fields": {
+    "code": "3.2.1.01",
+    "name": "Reserva Legal",
+    "account_type": "EQUITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 92,
+  "fields": {
+    "code": "3.2.1.02",
+    "name": "Reservas Voluntarias",
+    "account_type": "EQUITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 93,
+  "fields": {
+    "code": "3.3",
+    "name": "RESULTADOS ACUMULADOS",
+    "account_type": "EQUITY",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 94,
+  "fields": {
+    "code": "3.3.1.01",
+    "name": "Utilidades de Ejercicios Anteriores",
+    "account_type": "EQUITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 95,
+  "fields": {
+    "code": "3.3.1.02",
+    "name": "Pérdidas Acumuladas",
+    "account_type": "EQUITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 96,
+  "fields": {
+    "code": "3.3.1.03",
+    "name": "Resultado del Ejercicio",
+    "account_type": "EQUITY",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 97,
+  "fields": {
+    "code": "4",
+    "name": "INGRESOS",
+    "account_type": "REVENUE",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 98,
+  "fields": {
+    "code": "4.1",
+    "name": "INGRESOS OPERATIVOS",
+    "account_type": "REVENUE",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 99,
+  "fields": {
+    "code": "4.1.1.01",
+    "name": "Ventas Locales Gravadas",
+    "account_type": "REVENUE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 100,
+  "fields": {
+    "code": "4.1.1.02",
+    "name": "Ventas Locales Exentas",
+    "account_type": "REVENUE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 101,
+  "fields": {
+    "code": "4.1.1.03",
+    "name": "Ventas Exportación",
+    "account_type": "REVENUE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 102,
+  "fields": {
+    "code": "4.1.1.04",
+    "name": "Ventas de Servicios",
+    "account_type": "REVENUE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 103,
+  "fields": {
+    "code": "4.1.1.05",
+    "name": "Descuentos y Rebajas sobre Ventas",
+    "account_type": "REVENUE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 104,
+  "fields": {
+    "code": "4.2",
+    "name": "OTROS INGRESOS",
+    "account_type": "REVENUE",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 105,
+  "fields": {
+    "code": "4.2.1.01",
+    "name": "Ingresos por Intereses",
+    "account_type": "REVENUE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 106,
+  "fields": {
+    "code": "4.2.1.02",
+    "name": "Ganancia en Venta de Activos",
+    "account_type": "REVENUE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 107,
+  "fields": {
+    "code": "4.2.1.03",
+    "name": "Diferencial Cambiario Ganado",
+    "account_type": "REVENUE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 108,
+  "fields": {
+    "code": "4.2.1.04",
+    "name": "Otros Ingresos no Operativos",
+    "account_type": "REVENUE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 109,
+  "fields": {
+    "code": "5",
+    "name": "GASTOS",
+    "account_type": "EXPENSE",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 110,
+  "fields": {
+    "code": "5.1",
+    "name": "GASTOS DE ADMINISTRACIÓN",
+    "account_type": "EXPENSE",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 111,
+  "fields": {
+    "code": "5.1.1.01",
+    "name": "Sueldos Administrativos",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 112,
+  "fields": {
+    "code": "5.1.1.02",
+    "name": "Bonificaciones Administrativas",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 113,
+  "fields": {
+    "code": "5.1.1.03",
+    "name": "Prestaciones Laborales Administrativas",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 114,
+  "fields": {
+    "code": "5.1.1.04",
+    "name": "Honorarios Profesionales",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 115,
+  "fields": {
+    "code": "5.1.1.05",
+    "name": "Arrendamientos",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 116,
+  "fields": {
+    "code": "5.1.1.06",
+    "name": "Servicios Básicos",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 117,
+  "fields": {
+    "code": "5.1.1.07",
+    "name": "Papelería y Útiles",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 118,
+  "fields": {
+    "code": "5.1.1.08",
+    "name": "Mantenimiento y Reparaciones",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 119,
+  "fields": {
+    "code": "5.1.1.09",
+    "name": "Seguros",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 120,
+  "fields": {
+    "code": "5.1.1.10",
+    "name": "Depreciación del Período",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 121,
+  "fields": {
+    "code": "5.1.1.11",
+    "name": "Amortización del Período",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 122,
+  "fields": {
+    "code": "5.2",
+    "name": "GASTOS DE VENTAS Y DISTRIBUCIÓN",
+    "account_type": "EXPENSE",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 123,
+  "fields": {
+    "code": "5.2.1.01",
+    "name": "Sueldos de Ventas",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 124,
+  "fields": {
+    "code": "5.2.1.02",
+    "name": "Comisiones sobre Ventas",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 125,
+  "fields": {
+    "code": "5.2.1.03",
+    "name": "Publicidad y Promoción",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 126,
+  "fields": {
+    "code": "5.2.1.04",
+    "name": "Fletes y Acarreos Ventas",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 127,
+  "fields": {
+    "code": "5.2.1.05",
+    "name": "Viáticos de Ventas",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 128,
+  "fields": {
+    "code": "5.3",
+    "name": "GASTOS LOGÍSTICOS Y OPERATIVOS",
+    "account_type": "EXPENSE",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 129,
+  "fields": {
+    "code": "5.3.1.01",
+    "name": "Combustibles y Lubricantes",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 130,
+  "fields": {
+    "code": "5.3.1.02",
+    "name": "Mantenimiento de Flotilla",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 131,
+  "fields": {
+    "code": "5.3.1.03",
+    "name": "Repuestos y Llantas",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 132,
+  "fields": {
+    "code": "5.3.1.04",
+    "name": "Peajes y Parqueos",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 133,
+  "fields": {
+    "code": "5.3.1.05",
+    "name": "Gastos de Bodega",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 134,
+  "fields": {
+    "code": "5.4",
+    "name": "GASTOS FINANCIEROS",
+    "account_type": "EXPENSE",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 135,
+  "fields": {
+    "code": "5.4.1.01",
+    "name": "Intereses sobre Préstamos",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 136,
+  "fields": {
+    "code": "5.4.1.02",
+    "name": "Comisiones Bancarias",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 137,
+  "fields": {
+    "code": "5.4.1.03",
+    "name": "Diferencial Cambiario Perdido",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 138,
+  "fields": {
+    "code": "5.5",
+    "name": "IMPUESTOS Y TASAS",
+    "account_type": "EXPENSE",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 139,
+  "fields": {
+    "code": "5.5.1.01",
+    "name": "Impuestos Municipales",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 140,
+  "fields": {
+    "code": "5.5.1.02",
+    "name": "Impuestos no Acreditables",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 141,
+  "fields": {
+    "code": "5.5.1.03",
+    "name": "Multas y Recargos",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 142,
+  "fields": {
+    "code": "5.6",
+    "name": "OTROS GASTOS",
+    "account_type": "EXPENSE",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 143,
+  "fields": {
+    "code": "5.6.1.01",
+    "name": "Donaciones",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 144,
+  "fields": {
+    "code": "5.6.1.02",
+    "name": "Pérdida en Venta de Activos",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 145,
+  "fields": {
+    "code": "5.6.1.03",
+    "name": "Gastos Extraordinarios",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 146,
+  "fields": {
+    "code": "6",
+    "name": "COSTOS",
+    "account_type": "EXPENSE",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 147,
+  "fields": {
+    "code": "6.1",
+    "name": "COSTO DE VENTAS",
+    "account_type": "EXPENSE",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 148,
+  "fields": {
+    "code": "6.1.1.01",
+    "name": "Costo Mercadería Vendida",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 149,
+  "fields": {
+    "code": "6.1.1.02",
+    "name": "Fletes sobre Compras",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 150,
+  "fields": {
+    "code": "6.1.1.03",
+    "name": "Aranceles de Importación",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 151,
+  "fields": {
+    "code": "6.1.1.04",
+    "name": "Gastos Aduanales",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 152,
+  "fields": {
+    "code": "6.1.1.05",
+    "name": "Seguros de Importación",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 153,
+  "fields": {
+    "code": "6.2",
+    "name": "COSTOS DE PRODUCCIÓN",
+    "account_type": "EXPENSE",
+    "is_transactional": false
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 154,
+  "fields": {
+    "code": "6.2.1.01",
+    "name": "Materia Prima Consumida",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 155,
+  "fields": {
+    "code": "6.2.1.02",
+    "name": "Mano de Obra Directa",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 156,
+  "fields": {
+    "code": "6.2.1.03",
+    "name": "CIF - Costos Indirectos Fabricación",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 157,
+  "fields": {
+    "code": "5101",
+    "name": "Sueldos y Salarios",
+    "account_type": "EXPENSE",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 158,
+  "fields": {
+    "code": "1131",
+    "name": "Cuentas por Cobrar Empleados",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.account",
+  "pk": 159,
+  "fields": {
+    "code": "1101",
+    "name": "Banco General",
+    "account_type": "ASSET",
+    "is_transactional": true
+  }
+},
+{
+  "model": "accounting.journalentry",
+  "pk": 1,
+  "fields": {
+    "date": "2026-04-27",
+    "concept": "Préstamo a empleado QA Empleado",
+    "company": "2",
+    "is_opening_balance": false,
+    "created_at": "2026-04-27T02:00:35.528Z"
+  }
+},
+{
+  "model": "accounting.journalentry",
+  "pk": 2,
+  "fields": {
+    "date": "2026-04-27",
+    "concept": "Préstamo a empleado QA Empleado",
+    "company": "2",
+    "is_opening_balance": false,
+    "created_at": "2026-04-27T02:01:27.584Z"
+  }
+},
+{
+  "model": "accounting.journalentry",
+  "pk": 3,
+  "fields": {
+    "date": "2026-04-27",
+    "concept": "Nómina QA Abril",
+    "company": "2",
+    "is_opening_balance": false,
+    "created_at": "2026-04-27T02:01:27.648Z"
+  }
+},
+{
+  "model": "accounting.journalentry",
+  "pk": 4,
+  "fields": {
+    "date": "2026-04-27",
+    "concept": "Nómina QA B Mayo",
+    "company": "3",
+    "is_opening_balance": false,
+    "created_at": "2026-04-27T02:03:28.647Z"
+  }
+},
+{
+  "model": "accounting.journalentry",
+  "pk": 5,
+  "fields": {
+    "date": "2026-04-27",
+    "concept": "Préstamo a empleado UI Tester",
+    "company": "4",
+    "is_opening_balance": false,
+    "created_at": "2026-04-27T02:14:41.316Z"
+  }
+},
+{
+  "model": "accounting.journalentry",
+  "pk": 6,
+  "fields": {
+    "date": "2026-04-27",
+    "concept": "Nómina QA FULL",
+    "company": "4",
+    "is_opening_balance": false,
+    "created_at": "2026-04-27T02:14:41.337Z"
+  }
+},
+{
+  "model": "accounting.journalentryline",
+  "pk": 1,
+  "fields": {
+    "entry": 1,
+    "account": 158,
+    "debit": "1200.00",
+    "credit": "0.00"
+  }
+},
+{
+  "model": "accounting.journalentryline",
+  "pk": 2,
+  "fields": {
+    "entry": 1,
+    "account": 159,
+    "debit": "0.00",
+    "credit": "1200.00"
+  }
+},
+{
+  "model": "accounting.journalentryline",
+  "pk": 3,
+  "fields": {
+    "entry": 2,
+    "account": 158,
+    "debit": "1200.00",
+    "credit": "0.00"
+  }
+},
+{
+  "model": "accounting.journalentryline",
+  "pk": 4,
+  "fields": {
+    "entry": 2,
+    "account": 159,
+    "debit": "0.00",
+    "credit": "1200.00"
+  }
+},
+{
+  "model": "accounting.journalentryline",
+  "pk": 5,
+  "fields": {
+    "entry": 3,
+    "account": 157,
+    "debit": "3500.00",
+    "credit": "0.00"
+  }
+},
+{
+  "model": "accounting.journalentryline",
+  "pk": 6,
+  "fields": {
+    "entry": 3,
+    "account": 158,
+    "debit": "0.00",
+    "credit": "500.00"
+  }
+},
+{
+  "model": "accounting.journalentryline",
+  "pk": 7,
+  "fields": {
+    "entry": 3,
+    "account": 159,
+    "debit": "0.00",
+    "credit": "3000.00"
+  }
+},
+{
+  "model": "accounting.journalentryline",
+  "pk": 8,
+  "fields": {
+    "entry": 4,
+    "account": 157,
+    "debit": "6800.00",
+    "credit": "0.00"
+  }
+},
+{
+  "model": "accounting.journalentryline",
+  "pk": 9,
+  "fields": {
+    "entry": 4,
+    "account": 158,
+    "debit": "0.00",
+    "credit": "5550.00"
+  }
+},
+{
+  "model": "accounting.journalentryline",
+  "pk": 10,
+  "fields": {
+    "entry": 4,
+    "account": 159,
+    "debit": "0.00",
+    "credit": "2450.00"
+  }
+},
+{
+  "model": "accounting.journalentryline",
+  "pk": 11,
+  "fields": {
+    "entry": 5,
+    "account": 158,
+    "debit": "600.00",
+    "credit": "0.00"
+  }
+},
+{
+  "model": "accounting.journalentryline",
+  "pk": 12,
+  "fields": {
+    "entry": 5,
+    "account": 159,
+    "debit": "0.00",
+    "credit": "600.00"
+  }
+},
+{
+  "model": "accounting.journalentryline",
+  "pk": 13,
+  "fields": {
+    "entry": 6,
+    "account": 157,
+    "debit": "3200.00",
+    "credit": "0.00"
+  }
+},
+{
+  "model": "accounting.journalentryline",
+  "pk": 14,
+  "fields": {
+    "entry": 6,
+    "account": 158,
+    "debit": "0.00",
+    "credit": "350.00"
+  }
+},
+{
+  "model": "accounting.journalentryline",
+  "pk": 15,
+  "fields": {
+    "entry": 6,
+    "account": 159,
+    "debit": "0.00",
+    "credit": "2850.00"
+  }
+},
+{
+  "model": "hr.employee",
+  "pk": 1,
+  "fields": {
+    "company": 1,
+    "first_name": "Test",
+    "last_name": "Empleado",
+    "position": "Aux",
+    "base_salary": "1000.00",
+    "hiring_date": "2026-04-26"
+  }
+},
+{
+  "model": "hr.employee",
+  "pk": 2,
+  "fields": {
+    "company": 2,
+    "first_name": "QA",
+    "last_name": "Empleado",
+    "position": "Analista",
+    "base_salary": "3500.00",
+    "hiring_date": "2026-04-27"
+  }
+},
+{
+  "model": "hr.employee",
+  "pk": 3,
+  "fields": {
+    "company": 3,
+    "first_name": "Ana",
+    "last_name": "Uno",
+    "position": "Dev",
+    "base_salary": "4000.00",
+    "hiring_date": "2026-04-27"
+  }
+},
+{
+  "model": "hr.employee",
+  "pk": 4,
+  "fields": {
+    "company": 3,
+    "first_name": "Beto",
+    "last_name": "Dos",
+    "position": "Ops",
+    "base_salary": "2800.00",
+    "hiring_date": "2026-04-27"
+  }
+},
+{
+  "model": "hr.employee",
+  "pk": 5,
+  "fields": {
+    "company": 4,
+    "first_name": "UI",
+    "last_name": "Tester",
+    "position": "QA",
+    "base_salary": "3200.00",
+    "hiring_date": "2026-04-27"
+  }
+},
+{
+  "model": "hr.employee",
+  "pk": 6,
+  "fields": {
+    "company": 5,
+    "first_name": "Final",
+    "last_name": "Tester",
+    "position": "QA",
+    "base_salary": "3500.00",
+    "hiring_date": "2026-04-27"
+  }
+},
+{
+  "model": "hr.payrollrun",
+  "pk": 1,
+  "fields": {
+    "company": 2,
+    "period_label": "QA Abril",
+    "payment_date": "2026-04-27",
+    "description": "Planilla QA",
+    "total_gross": "3500.00",
+    "total_deductions": "500.00",
+    "total_net": "3000.00",
+    "is_posted": true
+  }
+},
+{
+  "model": "hr.payrollrun",
+  "pk": 2,
+  "fields": {
+    "company": 3,
+    "period_label": "QA B Mayo",
+    "payment_date": "2026-04-27",
+    "description": "Planilla QA B",
+    "total_gross": "6800.00",
+    "total_deductions": "5550.00",
+    "total_net": "2450.00",
+    "is_posted": true
+  }
+},
+{
+  "model": "hr.payrollrun",
+  "pk": 3,
+  "fields": {
+    "company": 4,
+    "period_label": "QA FULL",
+    "payment_date": "2026-04-27",
+    "description": "qa full run",
+    "total_gross": "3200.00",
+    "total_deductions": "350.00",
+    "total_net": "2850.00",
+    "is_posted": true
+  }
+},
+{
+  "model": "hr.employeeloanadvance",
+  "pk": 1,
+  "fields": {
+    "company": 1,
+    "employee": 1,
+    "request_date": "2026-01-15",
+    "loan_type": "ANTICIPO",
+    "amount": "1500.50",
+    "balance": "1500.50",
+    "installments": 5,
+    "status": "ACTIVO",
+    "notes": "prueba shell"
+  }
+},
+{
+  "model": "hr.employeeloanadvance",
+  "pk": 2,
+  "fields": {
+    "company": 2,
+    "employee": 2,
+    "request_date": "2026-04-27",
+    "loan_type": "PRESTAMO",
+    "amount": "1200.00",
+    "balance": "1000.00",
+    "installments": 6,
+    "status": "ACTIVO",
+    "notes": "QA loan"
+  }
+},
+{
+  "model": "hr.employeeloanadvance",
+  "pk": 3,
+  "fields": {
+    "company": 2,
+    "employee": 2,
+    "request_date": "2026-04-27",
+    "loan_type": "PRESTAMO",
+    "amount": "1200.00",
+    "balance": "1000.00",
+    "installments": 6,
+    "status": "ACTIVO",
+    "notes": "QA loan"
+  }
+},
+{
+  "model": "hr.employeeloanadvance",
+  "pk": 4,
+  "fields": {
+    "company": 3,
+    "employee": 3,
+    "request_date": "2026-04-27",
+    "loan_type": "PRESTAMO",
+    "amount": "900.00",
+    "balance": "600.00",
+    "installments": 3,
+    "status": "ACTIVO",
+    "notes": "invalid codes"
+  }
+},
+{
+  "model": "hr.employeeloanadvance",
+  "pk": 5,
+  "fields": {
+    "company": 3,
+    "employee": 4,
+    "request_date": "2026-04-27",
+    "loan_type": "ANTICIPO",
+    "amount": "500.00",
+    "balance": "250.00",
+    "installments": 2,
+    "status": "ACTIVO",
+    "notes": "no codes"
+  }
+},
+{
+  "model": "hr.employeeloanadvance",
+  "pk": 6,
+  "fields": {
+    "company": 3,
+    "employee": 3,
+    "request_date": "2026-04-26",
+    "loan_type": "PRESTAMO",
+    "amount": "1200.00",
+    "balance": "1000.00",
+    "installments": 6,
+    "status": "ACTIVO",
+    "notes": null
+  }
+},
+{
+  "model": "hr.employeeloanadvance",
+  "pk": 7,
+  "fields": {
+    "company": 3,
+    "employee": 3,
+    "request_date": "2026-04-26",
+    "loan_type": "ANTICIPO",
+    "amount": "600.00",
+    "balance": "400.00",
+    "installments": 3,
+    "status": "ACTIVO",
+    "notes": null
+  }
+},
+{
+  "model": "hr.employeeloanadvance",
+  "pk": 8,
+  "fields": {
+    "company": 4,
+    "employee": 5,
+    "request_date": "2026-04-27",
+    "loan_type": "PRESTAMO",
+    "amount": "600.00",
+    "balance": "400.00",
+    "installments": 3,
+    "status": "ACTIVO",
+    "notes": "qa full"
+  }
+},
+{
+  "model": "hr.employeepayrollline",
+  "pk": 1,
+  "fields": {
+    "payroll_run": 1,
+    "employee": 2,
+    "gross_salary": "3500.00",
+    "loan_deduction": "400.00",
+    "other_deductions": "100.00",
+    "net_pay": "3000.00",
+    "notes": ""
+  }
+},
+{
+  "model": "hr.employeepayrollline",
+  "pk": 2,
+  "fields": {
+    "payroll_run": 2,
+    "employee": 3,
+    "gross_salary": "4000.00",
+    "loan_deduction": "700.00",
+    "other_deductions": "4500.00",
+    "net_pay": "0.00",
+    "notes": ""
+  }
+},
+{
+  "model": "hr.employeepayrollline",
+  "pk": 3,
+  "fields": {
+    "payroll_run": 2,
+    "employee": 4,
+    "gross_salary": "2800.00",
+    "loan_deduction": "250.00",
+    "other_deductions": "100.00",
+    "net_pay": "2450.00",
+    "notes": ""
+  }
+},
+{
+  "model": "hr.employeepayrollline",
+  "pk": 4,
+  "fields": {
+    "payroll_run": 3,
+    "employee": 5,
+    "gross_salary": "3200.00",
+    "loan_deduction": "200.00",
+    "other_deductions": "150.00",
+    "net_pay": "2850.00",
+    "notes": ""
+  }
+},
+{
+  "model": "core.usersessionlog",
+  "pk": 1,
+  "fields": {
+    "user": [
+      "temp_admin_online"
+    ],
+    "company": 1,
+    "session_key": "rm36hgebrgoorz87tp9qw0jk20mjht6k",
+    "ip_address": "",
+    "user_agent": "",
+    "login_at": "2026-04-28T17:37:03.885Z",
+    "logout_at": "2026-04-28T17:37:12.405Z",
+    "last_seen": "2026-04-28T17:37:12.405Z"
+  }
+},
+{
+  "model": "core.usersessionlog",
+  "pk": 2,
+  "fields": {
+    "user": [
+      "admin"
+    ],
+    "company": 5,
+    "session_key": "2svyc9ol3zmi915zy98797x39ygyb92m",
+    "ip_address": "",
+    "user_agent": "",
+    "login_at": "2026-04-29T00:49:57.019Z",
+    "logout_at": null,
+    "last_seen": "2026-04-29T00:50:01.067Z"
+  }
+},
+{
+  "model": "core.usersessionlog",
+  "pk": 3,
+  "fields": {
+    "user": [
+      "admin"
+    ],
+    "company": 5,
+    "session_key": "e63jpobwdsz70a5ezxqtrdfrb27e8b5c",
+    "ip_address": "",
+    "user_agent": "",
+    "login_at": "2026-04-29T00:50:26.060Z",
+    "logout_at": null,
+    "last_seen": "2026-04-29T00:50:29.245Z"
+  }
+},
+{
+  "model": "core.usersessionlog",
+  "pk": 4,
+  "fields": {
+    "user": [
+      "admin"
+    ],
+    "company": 5,
+    "session_key": "9ovrxclkh3ezpa3ye3x5qffpv319s9bu",
+    "ip_address": "",
+    "user_agent": "",
+    "login_at": "2026-04-29T00:51:59.882Z",
+    "logout_at": null,
+    "last_seen": "2026-04-29T00:52:02.641Z"
+  }
+},
+{
+  "model": "core.usersessionlog",
+  "pk": 5,
+  "fields": {
+    "user": [
+      "admin"
+    ],
+    "company": 5,
+    "session_key": "r67o4sc8zatt3dm0jb223w4d6qdp02mt",
+    "ip_address": "",
+    "user_agent": "",
+    "login_at": "2026-04-29T03:28:28.739Z",
+    "logout_at": null,
+    "last_seen": "2026-04-29T03:28:33.129Z"
+  }
+},
+{
+  "model": "core.usersessionlog",
+  "pk": 6,
+  "fields": {
+    "user": [
+      "admin"
+    ],
+    "company": 5,
+    "session_key": "gzjsiuptrlntiu2x4c7qxl7r3eh5in8o",
+    "ip_address": "",
+    "user_agent": "",
+    "login_at": "2026-04-29T03:29:05.966Z",
+    "logout_at": null,
+    "last_seen": "2026-04-29T03:29:09.393Z"
+  }
+}
+]
