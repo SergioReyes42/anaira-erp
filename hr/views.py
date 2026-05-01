@@ -200,10 +200,15 @@ def nomina_create(request):
                 if apply_amount > 0:
                     loan_deduction += apply_amount
                     loan.balance = (loan.balance - apply_amount).quantize(Decimal('0.01'))
+
+                    if loan.paid_installments < loan.installments:
+                        loan.paid_installments += 1
+
                     if loan.balance <= 0:
                         loan.balance = Decimal('0.00')
                         loan.status = 'CANCELADO'
-                    loan.save(update_fields=['balance', 'status'])
+
+                    loan.save(update_fields=['balance', 'status', 'paid_installments'])
 
             other_deductions = Decimal(str(request.POST.get(f'other_deduction_{employee.id}', '0') or '0')).quantize(Decimal('0.01'))
             net = (gross - loan_deduction - other_deductions).quantize(Decimal('0.01'))
@@ -294,7 +299,7 @@ def prestamos_report_excel(request):
     if fecha_fin:
         prestamos = prestamos.filter(request_date__lte=fecha_fin)
 
-    headers = ["Fecha", "Empleado", "Tipo", "Monto", "Saldo", "Cuotas", "Estado"]
+    headers = ["Fecha", "Empleado", "Tipo", "Monto", "Saldo", "Cuotas Totales", "Cuotas Pagadas", "Cuotas Restantes", "Cuota Mensual", "Estado"]
     rows = [
         [
             p.request_date.strftime('%Y-%m-%d'),
@@ -303,6 +308,9 @@ def prestamos_report_excel(request):
             float(p.amount),
             float(p.balance),
             p.installments,
+            p.paid_installments,
+            p.remaining_installments,
+            float(p.installment_amount),
             p.get_status_display(),
         ]
         for p in prestamos
@@ -325,7 +333,7 @@ def prestamos_report_pdf(request):
     if fecha_fin:
         prestamos = prestamos.filter(request_date__lte=fecha_fin)
 
-    headers = ["Fecha", "Empleado", "Tipo", "Monto", "Saldo", "Estado"]
+    headers = ["Fecha", "Empleado", "Tipo", "Monto", "Saldo", "Cuotas Totales", "Cuotas Pagadas", "Cuotas Restantes", "Cuota Mensual", "Estado"]
     rows = [
         [
             p.request_date.strftime('%Y-%m-%d'),
@@ -333,6 +341,10 @@ def prestamos_report_pdf(request):
             p.get_loan_type_display(),
             f"{p.amount:.2f}",
             f"{p.balance:.2f}",
+            str(p.installments),
+            str(p.paid_installments),
+            str(p.remaining_installments),
+            f"{p.installment_amount:.2f}",
             p.get_status_display(),
         ]
         for p in prestamos

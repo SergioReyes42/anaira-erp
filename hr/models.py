@@ -55,6 +55,7 @@ class EmployeeLoanAdvance(CompanyAwareModel):
     amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Monto")
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, verbose_name="Saldo")
     installments = models.PositiveIntegerField(default=1, verbose_name="Cuotas")
+    paid_installments = models.PositiveIntegerField(default=0, verbose_name="Cuotas Pagadas")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="ACTIVO", verbose_name="Estado")
     notes = models.TextField(blank=True, null=True, verbose_name="Observaciones")
 
@@ -67,6 +68,17 @@ class EmployeeLoanAdvance(CompanyAwareModel):
         if self.balance in (None, 0):
             self.balance = self.amount
         super().save(*args, **kwargs)
+
+    @property
+    def installment_amount(self):
+        if self.installments and self.installments > 0:
+            return self.amount / self.installments
+        return self.amount
+
+    @property
+    def remaining_installments(self):
+        remaining = (self.installments or 0) - (self.paid_installments or 0)
+        return remaining if remaining > 0 else 0
 
     def __str__(self):
         return f"{self.loan_type} - {self.employee} - {self.amount}"

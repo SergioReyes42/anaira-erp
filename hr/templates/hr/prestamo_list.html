@@ -76,6 +76,9 @@
               <th>Fecha</th>
               <th>Monto Original</th>
               <th>Saldo Actual</th>
+              <th>Cuotas Totales</th>
+              <th>Cuotas Pagadas</th>
+              <th>Cuotas Restantes</th>
               <th>Cuota Mensual</th>
               <th>Estado</th>
             </tr>
@@ -87,7 +90,10 @@
               <td>{{ p.request_date|date:"d/m/Y" }}</td>
               <td>Q {{ p.amount|floatformat:2 }}</td>
               <td>Q {{ p.balance|floatformat:2 }}</td>
-              <td>Q {% if p.installments %}{{ p.amount|floatformat:2 }}{% else %}0.00{% endif %}</td>
+              <td>{{ p.installments }}</td>
+              <td>{{ p.paid_installments }}</td>
+              <td>{{ p.remaining_installments }}</td>
+              <td>Q {{ p.installment_amount|floatformat:2 }}</td>
               <td>
                 {% if p.status == 'ACTIVO' %}
                   <span class="badge bg-warning text-dark">Activo</span>

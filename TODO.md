@@ -102,3 +102,14 @@
 - [x] Añadir segundo intento de prompt (full + short) por modelo candidato.
 - [x] Normalizar salida IA para tolerar claves alternas (`suggested_account` / `account_type`).
 - [ ] Probar endpoint `api/analizar-factura/` con casos reales (imagen válida, imagen borrosa, sin texto).
+
+## TODO - Anticipos/Préstamos con control de cuotas en nómina
+
+- [x] Analizar módulo actual en `hr/models.py`, `hr/views.py` y templates.
+- [ ] Agregar seguimiento de cuotas pagadas en `EmployeeLoanAdvance`.
+- [ ] Ajustar descuento en `nomina_create` para actualizar cuotas pagadas/restantes.
+- [ ] Corregir cálculo de cuota mensual en `prestamo_list.html`.
+- [ ] Mostrar columnas: cuotas totales, pagadas y restantes.
+- [ ] Agregar ayuda visual de pagos en `prestamo_form.html`.
+- [ ] Extender reportes Excel/PDF con columnas de cuotas.
+- [ ] Crear y aplicar migración.

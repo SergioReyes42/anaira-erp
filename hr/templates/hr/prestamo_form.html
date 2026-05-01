@@ -20,7 +20,10 @@
           <div class="col-md-3">{{ form.loan_type.label_tag }} {{ form.loan_type }}</div>
           <div class="col-md-3">{{ form.request_date.label_tag }} {{ form.request_date }}</div>
           <div class="col-md-4">{{ form.amount.label_tag }} {{ form.amount }}</div>
-          <div class="col-md-4">{{ form.installments.label_tag }} {{ form.installments }}</div>
+          <div class="col-md-4">
+            {{ form.installments.label_tag }} {{ form.installments }}
+            <small class="text-muted d-block mt-1">Este monto se descontará automáticamente en la nómina según el número de cuotas.</small>
+          </div>
           <div class="col-md-4">{{ form.status.label_tag }} {{ form.status }}</div>
           <div class="col-12">{{ form.notes.label_tag }} {{ form.notes }}</div>
         </div>
