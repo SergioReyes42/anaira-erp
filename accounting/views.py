@@ -227,6 +227,7 @@ def review_expense(request, pk):
         expense.provider_nit = request.POST.get('provider_nit')
         expense.invoice_number = request.POST.get('invoice_number')
         expense.description = request.POST.get('description')
+        invoice_date_raw = (request.POST.get('invoice_date') or '').strip()
         
         total = decimal.Decimal(request.POST.get('total_amount', 0))
         idp = decimal.Decimal(request.POST.get('tax_idp', 0))
@@ -239,6 +240,13 @@ def review_expense(request, pk):
         
         expense.tax_base = decimal.Decimal(base)
         expense.tax_iva = decimal.Decimal(iva)
+
+        if invoice_date_raw:
+            try:
+                expense.invoice_date = datetime.datetime.strptime(invoice_date_raw, "%Y-%m-%d").date()
+            except ValueError:
+                messages.error(request, "La fecha de factura es inválida. Usa formato YYYY-MM-DD.")
+                return render(request, 'accounting/review_expense.html', {'expense': expense})
         
         if idp > 0:
             expense.suggested_account = "Combustibles y Lubricantes"
@@ -278,15 +286,44 @@ def approve_expense(request, pk):
             # 1. CREACIÓN DE CUENTAS DINÁMICAS (Nuevo Modelo Account)
             nombre_cuenta_gasto = expense.suggested_account or "Gastos Generales"
             cuenta_gasto, _ = Account.objects.get_or_create(
-                code=f"5.1-{nombre_cuenta_gasto[:3].upper()}", 
+                code=f"5.1-{nombre_cuenta_gasto[:3].upper()}",
                 defaults={'name': nombre_cuenta_gasto, 'account_type': 'EXPENSE'}
             )
-            cuenta_iva, _ = Account.objects.get_or_create(code="1.1.2.01", defaults={'name': 'IVA por Cobrar', 'account_type': 'ASSET'})
-            cuenta_idp, _ = Account.objects.get_or_create(code="5.1.1.02", defaults={'name': 'Impuesto IDP', 'account_type': 'EXPENSE'})
+
+            # IVA CRÉDITO FISCAL: evitar usar código ambiguo (ej: 1.1.2.01 mapeado a CLIENTES NACIONALES)
+            cuenta_iva = Account.objects.filter(
+                account_type='ASSET'
+            ).filter(
+                Q(name__iexact='IVA por Cobrar') |
+                Q(name__icontains='IVA crédito') |
+                Q(name__icontains='Crédito Fiscal IVA') |
+                Q(code__startswith='1.1.2')
+            ).order_by('code').first()
+
+            if not cuenta_iva:
+                cuenta_iva, _ = Account.objects.get_or_create(
+                    code='1.1.2.99',
+                    defaults={'name': 'IVA por Cobrar', 'account_type': 'ASSET'}
+                )
+
+            # Protección adicional: si por catálogo quedó "CLIENTES..." bajo 1.1.2, corregimos a cuenta IVA dedicada
+            if cuenta_iva and 'CLIENTE' in (cuenta_iva.name or '').upper():
+                cuenta_iva, _ = Account.objects.get_or_create(
+                    code='1.1.2.99',
+                    defaults={'name': 'IVA por Cobrar', 'account_type': 'ASSET'}
+                )
+
+            cuenta_idp, _ = Account.objects.get_or_create(
+                code="5.1.1.02",
+                defaults={'name': 'Impuesto IDP', 'account_type': 'EXPENSE'}
+            )
 
             # 2. CREACIÓN DEL ENCABEZADO DE PARTIDA (Nuevo Modelo JournalEntry)
+            # Fecha contable: prioriza fecha de factura real, fallback a fecha de creación del gasto
+            fecha_partida = expense.invoice_date if expense.invoice_date else expense.date.date()
+
             entry = JournalEntry.objects.create(
-                date=expense.date.date(),
+                date=fecha_partida,
                 company=_current_company_key(request),
                 concept=f"Prov: {expense.provider_name} - {expense.description[:30]}",
                 is_opening_balance=False

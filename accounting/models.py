@@ -76,6 +76,7 @@ class Expense(models.Model):
     provider_nit = models.CharField(max_length=20, verbose_name="NIT", null=True, blank=True)
     invoice_series = models.CharField(max_length=20, verbose_name="Serie", null=True, blank=True)
     invoice_number = models.CharField(max_length=50, verbose_name="No. Factura", null=True, blank=True)
+    invoice_date = models.DateField(null=True, blank=True, verbose_name="Fecha de Factura")
 
     # --- RELACIONES ---
     vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Vehículo Asignado")
