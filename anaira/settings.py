@@ -90,8 +90,16 @@ if not invalid_db_url:
         )
     }
 else:
-    # En Railway dejamos fallback seguro para no tumbar el deploy completo;
-    # el diagnóstico queda visible en logs y la app puede iniciar.
+    # En producción no permitimos fallback silencioso a SQLite,
+    # para evitar "arrancar vacío" y aparentar pérdida de datos.
+    is_production = os.environ.get('DJANGO_ENV', '').lower() in ['prod', 'production'] or not DEBUG
+    if is_production:
+        raise RuntimeError(
+            "DATABASE_URL inválida o ausente en producción. "
+            "Configura PostgreSQL persistente antes de desplegar."
+        )
+
+    # En local/dev sí permitimos SQLite.
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -198,6 +206,9 @@ django.core.handlers.base.BaseHandler.make_view_atomic = patched_make_view_atomi
 
 # Configuración de Inteligencia Artificial (Google Gemini)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+
+# PIN administrativo para edición de drafts IA (no hardcodear en código cliente)
+AI_DRAFT_ADMIN_EDIT_PIN = os.environ.get("AI_DRAFT_ADMIN_EDIT_PIN", "")
 
 # ==============================================================================
 # ☁️ CONFIGURACIÓN DE ARCHIVOS Y NUBE (Cloudinary y WhiteNoise)

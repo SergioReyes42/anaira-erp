@@ -12,6 +12,7 @@ from django.http import JsonResponse
 import json
 from .ai_brain import responder_chat_contable, ejecutar_tool_contable
 from django.utils import timezone
+from django.conf import settings
 import decimal
 from accounting.models import JournalEntry, JournalEntryLine, Account
 
@@ -373,6 +374,10 @@ def _ai_roles_allowed(user):
     return user.is_superuser or user.groups.filter(name__in=allowed_roles).exists()
 
 
+def _ai_admin_only(user):
+    return user.is_superuser or user.groups.filter(name='Administrador').exists()
+
+
 @login_required
 def ai_draft_create(request):
     if request.method != 'POST':
@@ -484,6 +489,80 @@ def ai_draft_reject(request, draft_id):
     draft.save(update_fields=['status', 'rejection_reason'])
 
     return JsonResponse({"ok": True, "draft_id": draft.id, "status": draft.status})
+
+
+@login_required
+def ai_draft_update(request, draft_id):
+    if request.method != 'POST':
+        return JsonResponse({"ok": False, "error": "Método no permitido."}, status=405)
+
+    if not _ai_admin_only(request.user):
+        return JsonResponse({"ok": False, "error": "Solo administradores pueden editar drafts IA."}, status=403)
+
+    admin_pin = (request.POST.get('admin_pin') or '').strip()
+    expected_pin = (getattr(settings, 'AI_DRAFT_ADMIN_EDIT_PIN', '') or '').strip()
+
+    if not expected_pin:
+        return JsonResponse({"ok": False, "error": "PIN administrativo no configurado."}, status=500)
+
+    if admin_pin != expected_pin:
+        return JsonResponse({"ok": False, "error": "PIN administrativo inválido."}, status=403)
+
+    draft = get_object_or_404(AIActionDraft, id=draft_id)
+
+    if draft.status != 'PENDING':
+        return JsonResponse({"ok": False, "error": "Solo se pueden editar drafts en estado PENDING."}, status=400)
+
+    payload_raw = (request.POST.get('payload') or '').strip()
+    if not payload_raw:
+        return JsonResponse({"ok": False, "error": "Payload requerido."}, status=400)
+
+    try:
+        payload = json.loads(payload_raw)
+    except Exception:
+        return JsonResponse({"ok": False, "error": "Payload JSON inválido."}, status=400)
+
+    concept = (payload.get('concepto') or '').strip()
+    lineas = payload.get('lineas') or []
+    if not concept or not isinstance(lineas, list) or not lineas:
+        return JsonResponse({"ok": False, "error": "Draft inválido: falta concepto o líneas."}, status=400)
+
+    total_debe = decimal.Decimal('0.00')
+    total_haber = decimal.Decimal('0.00')
+
+    for ln in lineas:
+        account_id = ln.get('account_id')
+        try:
+            Account.objects.get(id=account_id, is_transactional=True)
+            debit = decimal.Decimal(str(ln.get('debit', 0)))
+            credit = decimal.Decimal(str(ln.get('credit', 0)))
+        except Exception:
+            return JsonResponse({"ok": False, "error": "Línea inválida en draft."}, status=400)
+
+        if debit < 0 or credit < 0 or (debit > 0 and credit > 0) or (debit == 0 and credit == 0):
+            return JsonResponse({"ok": False, "error": "Línea contable inválida (Debe/Haber)."}, status=400)
+
+        total_debe += debit
+        total_haber += credit
+
+    if total_debe != total_haber:
+        return JsonResponse({"ok": False, "error": "Partida descuadrada: Debe debe ser igual a Haber."}, status=400)
+
+    draft.draft_payload = payload
+    draft.save(update_fields=['draft_payload'])
+
+    company = getattr(request.user, 'current_company', None)
+    AIQueryLog.objects.create(
+        user=request.user,
+        company=company,
+        question='Editar draft IA',
+        tool_name='draft_update',
+        request_payload={"draft_id": draft.id},
+        response_payload={"draft_id": draft.id, "status": draft.status},
+        status='OK'
+    )
+
+    return JsonResponse({"ok": True, "draft_id": draft.id, "status": draft.status, "message": "Draft actualizado correctamente."})
 
 
 @login_required
