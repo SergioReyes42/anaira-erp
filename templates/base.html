@@ -320,25 +320,7 @@
                 </div>
                 {% endif %} 
                 
-                {% if request.user|has_group:"Contadora, Gerente" %}
-                <a href="#menuRRHH" data-bs-toggle="collapse" class="list-group-item list-group-item-action dropdown-toggle fw-bold text-white">
-                    <i class="bi bi-people-fill me-2 text-danger"></i> RRHH & Nómina
-                </a>
-                <div class="collapse submenu" id="menuRRHH">
-                    <a href="{% url 'employee_list' %}" class="list-group-item list-group-item-action">
-                        <i class="bi bi-person-badge me-1"></i> Empleados
-                    </a>
-                    <a href="{% url 'nomina_create' %}" class="list-group-item list-group-item-action">
-                        <i class="bi bi-cash-coin me-1"></i> Generar Nómina
-                    </a>
-                    <a href="{% url 'vacaciones_permisos' %}" class="list-group-item list-group-item-action">
-                        <i class="bi bi-calendar-check me-1"></i> Vacaciones y Permisos
-                    </a>
-                    <a href="{% url 'prestamo_list' %}" class="list-group-item list-group-item-action">
-                        <i class="bi bi-wallet2 me-1"></i> Préstamos y Anticipos
-                    </a>
-                </div>
-                {% endif %}
+               
 
             {% endif %} 
             
