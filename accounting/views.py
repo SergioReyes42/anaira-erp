@@ -1355,6 +1355,7 @@ def sales_ledger(request):
     return render(request, 'accounting/sales_ledger.html', context)
 
 @login_required
+@group_required('Supervisor 1', 'Supervisor 2', 'Asistente', 'Contadora', 'Gerente', 'Administrador')
 def expense_pre_review_list(request): 
     # 1. ATRAPAMOS EL CLIC EN LOS BOTONES (MÉTODO POST)
     if request.method == 'POST':
@@ -1364,29 +1365,61 @@ def expense_pre_review_list(request):
         # Buscamos el gasto exacto al que le dieron clic
         gasto = get_object_or_404(GastoOperativo, id=expense_id)
         
-        # Verificamos qué botón presionaron y guardamos la firma
+        # Verificamos qué botón presionaron y guardamos la firma (con candado por rol)
+        user_groups = set(request.user.groups.values_list('name', flat=True))
+
+        allowed_sup1 = 'Supervisor 1' in user_groups or request.user.is_superuser
+        allowed_sup2 = 'Supervisor 2' in user_groups or request.user.is_superuser
+        allowed_asist = 'Asistente' in user_groups or request.user.is_superuser
+        allowed_reject = bool(
+            {'Supervisor 1', 'Supervisor 2', 'Asistente', 'Contadora', 'Gerente', 'Administrador'}.intersection(user_groups)
+            or request.user.is_superuser
+        )
+
+        authorized = True
+
         if action == 'sup1':
-            gasto.supervisor_1_ok = True
-            messages.success(request, 'Firma de Supervisor 1 registrada exitosamente.')
+            if not allowed_sup1:
+                authorized = False
+                messages.error(request, 'No tienes permiso para firmar como Supervisor 1.')
+            else:
+                gasto.supervisor_1_ok = True
+                messages.success(request, 'Firma de Supervisor 1 registrada exitosamente.')
         
         elif action == 'sup2':
-            gasto.supervisor_2_ok = True
-            messages.success(request, 'Firma de Supervisor 2 registrada exitosamente.')
+            if not allowed_sup2:
+                authorized = False
+                messages.error(request, 'No tienes permiso para firmar como Supervisor 2.')
+            else:
+                gasto.supervisor_2_ok = True
+                messages.success(request, 'Firma de Supervisor 2 registrada exitosamente.')
         
         elif action == 'asist':
-            gasto.assistant_ok = True
-            messages.success(request, 'Firma de Asistente registrada exitosamente.')
+            if not allowed_asist:
+                authorized = False
+                messages.error(request, 'No tienes permiso para firmar como Asistente.')
+            else:
+                gasto.assistant_ok = True
+                messages.success(request, 'Firma de Asistente registrada exitosamente.')
         
         elif action == 'reject':
-            gasto.estado = 'Rechazado'
-            messages.error(request, f'El gasto de {gasto.total_amount} ha sido marcado como fraude/rechazado.')
-        
-        # Guardamos los cambios en la base de datos
-        gasto.save()
-        
-        # Ejecutamos la magia: Si ya están las 3 firmas, se pasa a Contabilidad
-        if action != 'reject':
-            gasto.verificar_pase_contabilidad()
+            if not allowed_reject:
+                authorized = False
+                messages.error(request, 'No tienes permiso para rechazar este gasto.')
+            else:
+                gasto.estado = 'Rechazado'
+                messages.error(request, f'El gasto de {gasto.total_amount} ha sido marcado como fraude/rechazado.')
+        else:
+            authorized = False
+            messages.error(request, 'Acción no válida.')
+
+        # Guardamos cambios solo si la acción fue autorizada
+        if authorized:
+            gasto.save()
+
+            # Ejecutamos la magia: Si ya están las 3 firmas, se pasa a Contabilidad
+            if action != 'reject':
+                gasto.verificar_pase_contabilidad()
         
         # Recargamos la misma página para que se actualicen los semáforos
         return redirect('accounting:expense_pre_review_list')

@@ -106,10 +106,17 @@
 ## TODO - Anticipos/Préstamos con control de cuotas en nómina
 
 - [x] Analizar módulo actual en `hr/models.py`, `hr/views.py` y templates.
-- [ ] Agregar seguimiento de cuotas pagadas en `EmployeeLoanAdvance`.
-- [ ] Ajustar descuento en `nomina_create` para actualizar cuotas pagadas/restantes.
-- [ ] Corregir cálculo de cuota mensual en `prestamo_list.html`.
-- [ ] Mostrar columnas: cuotas totales, pagadas y restantes.
-- [ ] Agregar ayuda visual de pagos en `prestamo_form.html`.
-- [ ] Extender reportes Excel/PDF con columnas de cuotas.
-- [ ] Crear y aplicar migración.
+- [x] Agregar seguimiento de cuotas pagadas en `EmployeeLoanAdvance`.
+- [x] Ajustar descuento en `nomina_create` para actualizar cuotas pagadas/restantes.
+- [x] Corregir cálculo de cuota mensual en `prestamo_list.html`.
+- [x] Mostrar columnas: cuotas totales, pagadas y restantes.
+- [x] Agregar ayuda visual de pagos en `prestamo_form.html`.
+- [x] Extender reportes Excel/PDF con columnas de cuotas.
+- [x] Crear y aplicar migración.
+
+## TODO - Activar candados de roles en Supervisión de Gastos (Pendientes)
+
+- [x] Verificar que existe flujo de firmas `sup1/sup2/asist` en `expense_pre_review_list`.
+- [ ] Restringir acceso de la vista a roles de supervisión y administración.
+- [ ] Restringir cada acción POST según rol específico (`Supervisor 1`, `Supervisor 2`, `Asistente`).
+- [ ] Validar con `python manage.py check`.
