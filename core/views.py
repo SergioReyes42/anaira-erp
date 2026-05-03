@@ -183,6 +183,7 @@ def switch_company(request, company_id):
     user.current_company = company
     user.save(update_fields=['current_company'])
     request.session['company_id'] = company.id
+    request.user.refresh_from_db()
 
     messages.success(request, f"🏢 Cambio exitoso: Ahora estás operando en {company.name}")
 

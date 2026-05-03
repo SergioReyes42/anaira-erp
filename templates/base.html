@@ -389,7 +389,7 @@
                 <ul class="navbar-nav ms-3 mb-2 mb-lg-0">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle badge bg-warning text-dark border border-dark px-3 py-2" href="#" id="branchDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.9rem;">
-                            <i class="bi bi-shop-window me-1"></i> {{ request.user.current_company.name|default:"Seleccionar Sede" }}
+                            <i class="bi bi-shop-window me-1"></i> {{ GLOBAL_COMPANY|default:"Seleccionar Sede" }}
                         </a>
                         <ul class="dropdown-menu shadow border-0 mt-2" aria-labelledby="branchDropdown">
                             <li class="px-3 py-1 text-muted small fw-bold">CAMBIAR SUCURSAL:</li>
@@ -406,7 +406,7 @@
                 </ul>
                 {% else %}
                 <span class="badge bg-warning text-dark border border-dark ms-3 px-3 py-2" style="font-size: 0.9rem;">
-                    <i class="bi bi-shop-window me-1"></i> {{ request.user.current_company.name|default:"Mi Sucursal" }}
+                    <i class="bi bi-shop-window me-1"></i> {{ GLOBAL_COMPANY|default:"Mi Sucursal" }}
                 </span>
                 {% endif %}
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
