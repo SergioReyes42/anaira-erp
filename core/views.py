@@ -33,27 +33,47 @@ def home(request):
 # --- 2. GESTIÓN DE EMPRESAS ---
 @login_required
 def select_company(request):
-    """Fase 2 del Login: Selector Original (Muestra todas las empresas)"""
-    
+    """Fase 2 del Login: Selector de empresa con validación de permisos."""
+    user = request.user
+
+    # Empresas visibles según permisos
+    if user.is_superuser or user.groups.filter(name__in=['Gerente', 'Administrador']).exists():
+        companies = Company.objects.all()
+    else:
+        companies = user.allowed_companies.all()
+
     if request.method == 'POST':
         company_id = request.POST.get('company_id')
         if company_id:
             company = get_object_or_404(Company, id=company_id)
-            
-            # Asignamos la empresa a la variable de memoria del usuario
-            request.user.current_company = company
-            
-            try:
-                request.user.save()
-            except Exception:
-                pass # Ignoramos si el usuario nativo rechaza el guardado
-                
+
+            allowed = (
+                user.is_superuser
+                or user.groups.filter(name__in=['Gerente', 'Administrador']).exists()
+                or user.allowed_companies.filter(id=company.id).exists()
+            )
+
+            if not allowed:
+                messages.error(request, "⛔ No tienes permisos para acceder a esa empresa.")
+                return redirect('core:select_company')
+
+            user.current_company = company
+            user.save(update_fields=['current_company'])
+            request.session['company_id'] = company.id
+            request.session.modified = True
+            request.user.refresh_from_db()
+
+            messages.success(request, f"🏢 Empresa activa: {company.name}")
             return redirect('core:home')
 
-    # Versión estable: listamos todas las empresas para que elija
-    companies = Company.objects.all() 
-    
-    return render(request, 'core/select_company.html', {'companies': companies})
+    return render(
+        request,
+        'core/select_company.html',
+        {
+            'companies': companies,
+            'selected_company_id': getattr(user.current_company, 'id', None),
+        }
+    )
 
 @login_required
 def company_list(request):
