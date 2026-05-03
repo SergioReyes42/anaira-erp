@@ -49,10 +49,22 @@
     </div>
 
     <div class="card shadow border-0 print-section">
+        <div class="card-header bg-white border-0 pb-0">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="small text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Mostrando hoja <strong>{{ page_obj.number }}</strong> de <strong>{{ page_obj.paginator.num_pages }}</strong>
+                </div>
+                <div class="small text-muted">
+                    <i class="bi bi-journal-check me-1"></i>
+                    Total partidas filtradas: <strong>{{ total_partidas_filtradas }}</strong>
+                </div>
+            </div>
+        </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover table-borderless mb-0" style="font-family: 'Courier New', Courier, monospace; font-size: 0.95rem;">
-                    <thead class="bg-dark text-white text-center align-middle" style="letter-spacing: 1px; border-bottom: 2px solid #000;">
+                    <thead class="bg-dark text-white text-center align-middle sticky-top" style="letter-spacing: 1px; border-bottom: 2px solid #000; z-index: 2;">
                         <tr>
                             <th style="width: 12%; border-right: 1px solid #444;">FECHA</th>
                             <th style="width: 48%; border-right: 1px solid #444;">CÓDIGO / CONCEPTO DE LA CUENTA</th>
@@ -93,20 +105,10 @@
                                 <td class="border-end border-secondary border-opacity-25"></td>
                                 <td class="text-end fw-bold fst-italic py-2 pe-3">Sumas Iguales:</td>
                                 <td class="text-end fw-bold text-success py-2 border-start border-secondary border-opacity-25" style="border-top: 2px solid #000 !important;">
-                                    {% with total_debe=0 %}
-                                        {% for line in entry.lines.all %}
-                                            {% with total_debe=total_debe|add:line.debit %}{% endwith %}
-                                        {% endfor %}
-                                        {{ total_debe|floatformat:2 }}
-                                    {% endwith %}
+                                    {{ entry.total_debe|floatformat:2 }}
                                 </td>
                                 <td class="text-end fw-bold text-danger py-2 border-start border-secondary border-opacity-25" style="border-top: 2px solid #000 !important;">
-                                    {% with total_haber=0 %}
-                                        {% for line in entry.lines.all %}
-                                            {% with total_haber=total_haber|add:line.credit %}{% endwith %}
-                                        {% endfor %}
-                                        {{ total_haber|floatformat:2 }}
-                                    {% endwith %}
+                                    {{ entry.total_haber|floatformat:2 }}
                                 </td>
                             </tr>
 
@@ -129,17 +131,43 @@
         {% if page_obj.has_other_pages %}
         <div class="card-footer bg-white py-3 border-top-0">
             <nav aria-label="Navegación de hojas contables">
-                <ul class="pagination justify-content-center mb-0">
+                <ul class="pagination justify-content-center align-items-center gap-1 mb-0">
                     {% if page_obj.has_previous %}
-                        <li class="page-item"><a class="page-link" href="?page=1{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}"><i class="bi bi-chevron-double-left"></i> Inicio</a></li>
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}">Anterior</a></li>
+                        <li class="page-item">
+                            <a class="page-link rounded-pill px-3" href="?page=1{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}">
+                                <i class="bi bi-chevron-double-left"></i> Inicio
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link rounded-pill px-3" href="?page={{ page_obj.previous_page_number }}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}">
+                                <i class="bi bi-chevron-left"></i> Anterior
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link rounded-pill px-3">Inicio</span></li>
+                        <li class="page-item disabled"><span class="page-link rounded-pill px-3">Anterior</span></li>
                     {% endif %}
 
-                    <li class="page-item active"><span class="page-link">Hoja {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+                    <li class="page-item active">
+                        <span class="page-link rounded-pill px-3">
+                            Hoja {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
 
                     {% if page_obj.has_next %}
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}">Siguiente</a></li>
-                        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}">Fin <i class="bi bi-chevron-double-right"></i></a></li>
+                        <li class="page-item">
+                            <a class="page-link rounded-pill px-3" href="?page={{ page_obj.next_page_number }}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}">
+                                Siguiente <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link rounded-pill px-3" href="?page={{ page_obj.paginator.num_pages }}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}">
+                                Fin <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link rounded-pill px-3">Siguiente</span></li>
+                        <li class="page-item disabled"><span class="page-link rounded-pill px-3">Fin</span></li>
                     {% endif %}
                 </ul>
             </nav>

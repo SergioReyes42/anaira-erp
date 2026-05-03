@@ -402,14 +402,25 @@ def libro_diario(request):
         entries = entries.filter(date__lte=fecha_fin)
 
     # 2. Paginación (10 partidas por "hoja")
-    paginator = Paginator(entries, 10) 
+    paginator = Paginator(entries, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+
+    # 3. Totales por partida (evita cálculos frágiles en template)
+    for entry in page_obj.object_list:
+        total_debe = decimal.Decimal('0.00')
+        total_haber = decimal.Decimal('0.00')
+        for line in entry.lines.all():
+            total_debe += (line.debit or decimal.Decimal('0.00'))
+            total_haber += (line.credit or decimal.Decimal('0.00'))
+        entry.total_debe = total_debe
+        entry.total_haber = total_haber
 
     return render(request, 'accounting/libro_diario.html', {
         'page_obj': page_obj,
         'fecha_inicio': fecha_inicio,
-        'fecha_fin': fecha_fin
+        'fecha_fin': fecha_fin,
+        'total_partidas_filtradas': paginator.count,
     })
 
 @login_required

@@ -1,5 +1,9 @@
-- [ ] Agregar endpoint ai_draft_update en core/views.py (solo PENDING, validaciones contables, PIN admin)
-- [ ] Agregar ruta API en core/urls.py para draft update
-- [ ] Configurar lectura de PIN seguro desde settings/env en anaira/settings.py
+- [x] Agregar endpoint ai_draft_update en core/views.py (solo PENDING, validaciones contables, PIN admin)
+- [x] Agregar ruta API en core/urls.py para draft update
+- [x] Configurar lectura de PIN seguro desde settings/env en anaira/settings.py
 - [ ] Probar con curl escenarios: éxito, PIN inválido, sin permisos, estado no PENDING
 - [ ] Documentar resultado final
+- [ ] Mejorar UX Libro Diario: resumen de paginación y total filtrado
+- [ ] Corregir cálculo de sumas por partida desde backend (entry_totals)
+- [ ] Mejorar diseño visual de paginación/tabla en libro_diario.html
+- [ ] Validar render con manage.py check
