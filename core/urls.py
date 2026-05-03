@@ -48,4 +48,6 @@ urlpatterns = [
     path('api/ia-contable/draft/<int:draft_id>/update/', views.ai_draft_update, name='ai_draft_update'),
     path('api/ia-contable/draft/<int:draft_id>/apply/', views.ai_draft_apply, name='ai_draft_apply'),
     path('actividad-usuarios/', views.user_activity_dashboard, name='user_activity_dashboard'),
+
+    path('switch-company/<int:company_id>/', views.switch_company, name='switch_company')
 ]
