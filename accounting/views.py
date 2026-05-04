@@ -12,6 +12,7 @@ from django.core.files.storage import default_storage
 from django.utils import timezone
 from django.db.models import Sum, Q, F, Value, DecimalField, Case, When, CharField
 from django.core.paginator import Paginator # Agrega esto arriba si no lo tienes
+from django.conf import settings
 from core.reporting import export_to_excel, export_to_pdf
 from .decorators import group_required  # <--- Importas el candado
 from django.forms import modelformset_factory
@@ -1891,6 +1892,56 @@ def pagar_tarjeta_credito(request):
     cuentas = BankAccount.objects.filter(company=request.user.current_company, active=True)
     return render(request, 'accounting/tarjeta_pago.html', {'tarjetas': tarjetas, 'cuentas': cuentas})
 
+def _parse_journal_lines(request, cuentas):
+    account_ids = request.POST.getlist('account_id[]')
+    debits = request.POST.getlist('debit[]')
+    credits = request.POST.getlist('credit[]')
+
+    lineas = []
+    total_debe = decimal.Decimal('0.00')
+    total_haber = decimal.Decimal('0.00')
+
+    for i in range(len(account_ids)):
+        account_id = (account_ids[i] or '').strip()
+        debit_raw = (debits[i] or '0').strip()
+        credit_raw = (credits[i] or '0').strip()
+
+        if not account_id:
+            continue
+
+        try:
+            cuenta = Account.objects.get(id=account_id, is_transactional=True)
+        except Account.DoesNotExist:
+            return None, None, None, "Se seleccionó una cuenta inválida."
+
+        try:
+            debe = decimal.Decimal(debit_raw or '0')
+            haber = decimal.Decimal(credit_raw or '0')
+        except decimal.InvalidOperation:
+            return None, None, None, "Hay valores numéricos inválidos en Debe/Haber."
+
+        if debe < 0 or haber < 0:
+            return None, None, None, "Debe/Haber no permiten valores negativos."
+
+        if debe == 0 and haber == 0:
+            continue
+
+        if debe > 0 and haber > 0:
+            return None, None, None, "Cada línea debe tener valor solo en Debe o solo en Haber."
+
+        lineas.append({'cuenta': cuenta, 'debe': debe, 'haber': haber})
+        total_debe += debe
+        total_haber += haber
+
+    if not lineas:
+        return None, None, None, "Debes ingresar al menos una línea contable válida."
+
+    if total_debe != total_haber:
+        return None, None, None, f"La partida no cuadra. Debe: Q {total_debe} / Haber: Q {total_haber}"
+
+    return lineas, total_debe, total_haber, None
+
+
 @login_required
 @group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
 def manual_journal_entry_create(request):
@@ -1900,65 +1951,15 @@ def manual_journal_entry_create(request):
     if request.method == 'POST':
         fecha = request.POST.get('date')
         concepto = (request.POST.get('concept') or '').strip()
-        account_ids = request.POST.getlist('account_id[]')
-        debits = request.POST.getlist('debit[]')
-        credits = request.POST.getlist('credit[]')
 
         if not fecha or not concepto:
             messages.error(request, "La fecha y el concepto son obligatorios.")
-            return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
+            return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas, 'is_edit': False})
 
-        lineas = []
-        total_debe = decimal.Decimal('0.00')
-        total_haber = decimal.Decimal('0.00')
-
-        for i in range(len(account_ids)):
-            account_id = (account_ids[i] or '').strip()
-            debit_raw = (debits[i] or '0').strip()
-            credit_raw = (credits[i] or '0').strip()
-
-            if not account_id:
-                continue
-
-            try:
-                cuenta = Account.objects.get(id=account_id, is_transactional=True)
-            except Account.DoesNotExist:
-                messages.error(request, "Se seleccionó una cuenta inválida.")
-                return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
-
-            try:
-                debe = decimal.Decimal(debit_raw or '0')
-                haber = decimal.Decimal(credit_raw or '0')
-            except decimal.InvalidOperation:
-                messages.error(request, "Hay valores numéricos inválidos en Debe/Haber.")
-                return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
-
-            if debe < 0 or haber < 0:
-                messages.error(request, "Debe/Haber no permiten valores negativos.")
-                return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
-
-            if debe == 0 and haber == 0:
-                continue
-
-            if debe > 0 and haber > 0:
-                messages.error(request, "Cada línea debe tener valor solo en Debe o solo en Haber.")
-                return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
-
-            lineas.append({
-                'cuenta': cuenta,
-                'debe': debe,
-                'haber': haber,
-            })
-            total_debe += debe
-            total_haber += haber
-
-        if not lineas:
-            messages.error(request, "Debes ingresar al menos una línea contable válida.")
-            return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
-
-        if total_debe != total_haber:
-            messages.error(request, f"La partida no cuadra. Debe: Q {total_debe} / Haber: Q {total_haber}")
-            return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
+        lineas, _, _, error = _parse_journal_lines(request, cuentas)
+        if error:
+            messages.error(request, error)
+            return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas, 'is_edit': False})
 
         try:
             with transaction.atomic():
@@ -1983,7 +1984,103 @@ def manual_journal_entry_create(request):
         except Exception as e:
             messages.error(request, f"Error al guardar la partida manual: {str(e)}")
 
-    return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas})
+    return render(request, 'accounting/manual_journal_entry_create.html', {'cuentas': cuentas, 'is_edit': False})
+
+
+def _validate_accounting_admin_pin(request):
+    expected_pin = (getattr(settings, 'ACCOUNTING_ADMIN_EDIT_PIN', '') or '').strip()
+    provided_pin = (request.POST.get('admin_pin') or '').strip()
+
+    if not expected_pin:
+        return False, "PIN administrativo contable no configurado."
+    if not provided_pin:
+        return False, "Debes ingresar la clave admin para editar partidas."
+    if provided_pin != expected_pin:
+        return False, "Clave admin incorrecta."
+    return True, None
+
+
+@login_required
+@group_required('Contadora', 'Auxiliar Contable', 'Gerente', 'Administrador')
+def manual_journal_entry_edit(request, entry_id):
+    """Edición de partida manual existente."""
+    cuentas = Account.objects.filter(is_transactional=True).order_by('code')
+    partida = get_object_or_404(
+        JournalEntry,
+        id=entry_id,
+        company__in=[_current_company_key(request), str(request.user.current_company)]
+    )
+
+    periodo = AccountingPeriod.objects.filter(
+        company=request.user.current_company,
+        year=partida.date.year,
+        month=partida.date.month,
+        is_closed=True
+    ).first()
+    if periodo:
+        messages.error(request, f"⛔ El período {partida.date.month}/{partida.date.year} está cerrado. No se puede editar esta partida.")
+        return redirect('accounting:libro_diario')
+
+    if request.method == 'POST':
+        fecha = request.POST.get('date')
+        concepto = (request.POST.get('concept') or '').strip()
+
+        if not fecha or not concepto:
+            messages.error(request, "La fecha y el concepto son obligatorios.")
+            return render(request, 'accounting/manual_journal_entry_create.html', {
+                'cuentas': cuentas,
+                'is_edit': True,
+                'partida': partida,
+                'lineas_edit': partida.lines.all().select_related('account')
+            })
+
+        pin_ok, pin_error = _validate_accounting_admin_pin(request)
+        if not pin_ok:
+            messages.error(request, pin_error)
+            return render(request, 'accounting/manual_journal_entry_create.html', {
+                'cuentas': cuentas,
+                'is_edit': True,
+                'partida': partida,
+                'lineas_edit': partida.lines.all().select_related('account')
+            })
+
+        lineas, _, _, error = _parse_journal_lines(request, cuentas)
+        if error:
+            messages.error(request, error)
+            return render(request, 'accounting/manual_journal_entry_create.html', {
+                'cuentas': cuentas,
+                'is_edit': True,
+                'partida': partida,
+                'lineas_edit': partida.lines.all().select_related('account')
+            })
+
+        try:
+            with transaction.atomic():
+                partida.date = fecha
+                partida.concept = concepto
+                partida.save(update_fields=['date', 'concept'])
+
+                partida.lines.all().delete()
+                for linea in lineas:
+                    JournalEntryLine.objects.create(
+                        entry=partida,
+                        account=linea['cuenta'],
+                        debit=linea['debe'],
+                        credit=linea['haber']
+                    )
+
+            messages.success(request, f"✅ Partida #{partida.id} actualizada correctamente.")
+            return redirect('accounting:libro_diario')
+
+        except Exception as e:
+            messages.error(request, f"Error al editar la partida: {str(e)}")
+
+    return render(request, 'accounting/manual_journal_entry_create.html', {
+        'cuentas': cuentas,
+        'is_edit': True,
+        'partida': partida,
+        'lineas_edit': partida.lines.all().select_related('account')
+    })
 
 
 @login_required
@@ -2026,6 +2123,7 @@ def purchase_create(request):
         provider_nit_manual = (request.POST.get('provider_nit_manual') or '').strip()
         expense_category = (request.POST.get('expense_category') or 'otros').strip()
         invoice_number = (request.POST.get('invoice_number') or '').strip()
+        invoice_date_raw = (request.POST.get('invoice_date') or '').strip()
         description = (request.POST.get('description') or '').strip()
         total_amount_raw = (request.POST.get('total_amount') or '0').strip()
         payment_method = (request.POST.get('payment_method') or 'EFECTIVO').strip()
@@ -2051,6 +2149,14 @@ def purchase_create(request):
         if not provider_name or not description:
             messages.error(request, "Proveedor y descripción son obligatorios.")
             return render(request, 'accounting/purchase_create.html', {'suppliers': suppliers, 'vehicles': vehicles})
+
+        invoice_date = None
+        if invoice_date_raw:
+            try:
+                invoice_date = datetime.datetime.strptime(invoice_date_raw, "%Y-%m-%d").date()
+            except ValueError:
+                messages.error(request, "La fecha de factura es inválida. Usa formato YYYY-MM-DD.")
+                return render(request, 'accounting/purchase_create.html', {'suppliers': suppliers, 'vehicles': vehicles})
 
         try:
             total_amount = decimal.Decimal(total_amount_raw)
@@ -2109,6 +2215,7 @@ def purchase_create(request):
                     tax_iva=decimal.Decimal('0.00'),
                     tax_idp=decimal.Decimal('0.00'),
                     invoice_number=invoice_number or f"CMP-{timezone.now().strftime('%Y%m%d%H%M%S')}",
+                    invoice_date=invoice_date,
                 )
 
             if vehicle_obj:
@@ -2212,10 +2319,19 @@ def ai_expense_register(request):
         vehicle_id = (request.POST.get('vehicle') or '').strip()
         receipt_file = request.FILES.get('receipt_image')
         invoice_number = (request.POST.get('invoice_number') or '').strip()
+        invoice_date_raw = (request.POST.get('invoice_date') or '').strip()
 
         if not provider_name or not description:
             messages.error(request, "Proveedor/beneficiario y descripción son obligatorios.")
             return render(request, 'accounting/ai_expense_register.html', {'vehicles': vehicles})
+
+        invoice_date = None
+        if invoice_date_raw:
+            try:
+                invoice_date = datetime.datetime.strptime(invoice_date_raw, "%Y-%m-%d").date()
+            except ValueError:
+                messages.error(request, "La fecha de factura es inválida. Usa formato YYYY-MM-DD.")
+                return render(request, 'accounting/ai_expense_register.html', {'vehicles': vehicles})
 
         try:
             total_amount = decimal.Decimal(total_amount_raw)
@@ -2263,6 +2379,7 @@ def ai_expense_register(request):
                     tax_iva=decimal.Decimal('0.00'),
                     tax_idp=decimal.Decimal('0.00'),
                     invoice_number=invoice_number or f"MAN-{timezone.now().strftime('%Y%m%d%H%M%S')}",
+                    invoice_date=invoice_date,
                 )
 
             if vehicle_obj:

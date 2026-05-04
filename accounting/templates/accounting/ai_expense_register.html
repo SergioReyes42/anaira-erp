@@ -1,3 +1,4 @@
+
 {% extends 'base.html' %}
 {% block content %}
 <div class="container-fluid py-3">
@@ -57,6 +58,12 @@
                     <div class="col-md-4">
                         <label class="form-label fw-bold">No. Factura / Recibo (opcional)</label>
                         <input type="text" name="invoice_number" id="invoice_number" class="form-control" maxlength="50">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Fecha de factura</label>
+                        <input type="date" name="invoice_date" id="invoice_date" class="form-control">
+                        <small class="text-muted">Si la factura es de enero, colócala aquí para que la partida se registre en enero.</small>
                     </div>
 
                     <div class="col-md-4">
