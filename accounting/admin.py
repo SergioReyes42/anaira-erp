@@ -62,6 +62,40 @@ class ExpenseAdmin(admin.ModelAdmin):
         }),
     )
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        current_company = getattr(request.user, 'current_company', None)
+        if not current_company:
+            return qs.none()
+        return qs.filter(company=current_company)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if request.user.is_superuser:
+            return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+        current_company = getattr(request.user, 'current_company', None)
+
+        if db_field.name == 'company':
+            if current_company:
+                kwargs['queryset'] = db_field.remote_field.model.objects.filter(id=current_company.id)
+            else:
+                kwargs['queryset'] = db_field.remote_field.model.objects.none()
+
+        if db_field.name == 'vehicle':
+            if current_company:
+                kwargs['queryset'] = Vehicle.objects.filter(company=current_company)
+            else:
+                kwargs['queryset'] = Vehicle.objects.none()
+
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def save_model(self, request, obj, form, change):
+        if not request.user.is_superuser and not obj.company:
+            obj.company = getattr(request.user, 'current_company', None)
+        super().save_model(request, obj, form, change)
+
 # ==========================================
 # 3. CONFIGURACIÓN PARA BANCOS
 # ==========================================
@@ -103,3 +137,37 @@ class GastoOperativoAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'tipo_gasto', 'total_amount', 'estado', 'date')
     list_filter = ('estado', 'tipo_gasto')
     search_fields = ('user__username',)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        current_company = getattr(request.user, 'current_company', None)
+        if not current_company:
+            return qs.none()
+        return qs.filter(company=current_company)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if request.user.is_superuser:
+            return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+        current_company = getattr(request.user, 'current_company', None)
+
+        if db_field.name == 'company':
+            if current_company:
+                kwargs['queryset'] = db_field.remote_field.model.objects.filter(id=current_company.id)
+            else:
+                kwargs['queryset'] = db_field.remote_field.model.objects.none()
+
+        if db_field.name == 'vehicle':
+            if current_company:
+                kwargs['queryset'] = Vehicle.objects.filter(company=current_company)
+            else:
+                kwargs['queryset'] = Vehicle.objects.none()
+
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def save_model(self, request, obj, form, change):
+        if not request.user.is_superuser and not obj.company:
+            obj.company = getattr(request.user, 'current_company', None)
+        super().save_model(request, obj, form, change)
