@@ -127,6 +127,8 @@ def smart_scanner(request):
         smart_input = request.POST.get('smart_input', '')
         vehicle_id = request.POST.get('vehicle')
         vehicle_obj = Vehicle.objects.filter(id=vehicle_id).first() if vehicle_id else None
+        expense_category = (request.POST.get('expense_category') or '').strip()
+        invoice_date_raw = (request.POST.get('invoice_date') or '').strip()
 
         if not request.user.current_company:
             messages.error(request, "⛔ Tu usuario no tiene una empresa asignada. Contacta al Administrador.")
@@ -149,6 +151,15 @@ def smart_scanner(request):
                 include_storage_flag=False,
             )
 
+            category_map = {
+                'combustible': 'Combustibles y Lubricantes',
+                'repuestos': 'Mantenimiento y Reparación de Vehículos',
+                'mantenimiento': 'Mantenimiento y Reparación de Vehículos',
+                'mano_obra': 'Mantenimiento y Reparación de Vehículos',
+            }
+            if expense_category in category_map:
+                payload["suggested_account"] = category_map[expense_category]
+
             # Intento IA (no bloqueante)
             ai_ok = False
             try:
@@ -165,6 +176,13 @@ def smart_scanner(request):
                 ai_ok = True
             except Exception as ai_err:
                 print(f"[smart_scanner][IA] fallo no bloqueante: {repr(ai_err)}")
+
+            if invoice_date_raw:
+                try:
+                    payload["invoice_date"] = datetime.datetime.strptime(invoice_date_raw, "%Y-%m-%d").date()
+                except ValueError:
+                    messages.error(request, "La fecha de factura es inválida. Usa formato YYYY-MM-DD.")
+                    return redirect('accounting:smart_scanner')
 
             payload["receipt_image"] = image_file
 

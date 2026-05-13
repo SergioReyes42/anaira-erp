@@ -111,6 +111,27 @@
                             </select>
                         </div>
 
+                        <div class="mb-4 text-start">
+                            <label class="form-label fw-bold small text-uppercase text-muted">
+                                <i class="bi bi-tags me-1"></i>Tipo de Gasto (Opcional)
+                            </label>
+                            <select name="expense_category" class="form-select bg-light border-0 shadow-sm">
+                                <option value="">-- Detectar con IA --</option>
+                                <option value="combustible">⛽ Combustibles</option>
+                                <option value="repuestos">⚙️ Repuestos</option>
+                                <option value="mantenimiento">🔧 Mantenimiento</option>
+                                <option value="mano_obra">👷 Mano de obra</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4 text-start">
+                            <label class="form-label fw-bold small text-uppercase text-muted">
+                                <i class="bi bi-calendar-event me-1"></i>Fecha de Factura (Opcional)
+                            </label>
+                            <input type="date" name="invoice_date" class="form-control bg-light border-0 shadow-sm">
+                            <div class="form-text small">Se usará para registrar la partida en el período contable correcto.</div>
+                        </div>
+
                         <div class="mb-4">
                             <label class="form-label fw-bold small text-uppercase text-muted">
                                 <i class="bi bi-magic me-1"></i>Ayuda a la IA (Opcional)

@@ -16,7 +16,9 @@ def _safe_fallback(error_message="Hubo un error al leer la imagen"):
         "is_fuel": False,
         "fuel_type": "",
         "description": error_message,
-        "account_type": "Gastos Generales"
+        "account_type": "Gastos Generales",
+        "_ia_fallback": True,
+        "_ia_error": error_message,
     }
 
 
@@ -135,6 +137,24 @@ def _detect_mime_type(image_file):
     if content_type in {"image/jpeg", "image/jpg", "image/png", "image/webp"}:
         return "image/jpeg" if content_type == "image/jpg" else content_type
     return "image/jpeg"
+
+
+def _sanitize_runtime_error(msg: str) -> str:
+    text = (msg or "").strip()
+    if not text:
+        return "IA no disponible en este momento."
+    lowered = text.lower()
+    if "gemini_api_key" in lowered or "api key" in lowered:
+        return "Configuración de IA inválida o faltante (GEMINI_API_KEY)."
+    if "google.genai no disponible" in lowered or "sdk google.genai no disponible" in lowered:
+        return "Dependencia IA faltante en servidor (google-genai)."
+    if "quota" in lowered or "429" in lowered:
+        return "Cuota de IA agotada temporalmente."
+    if "403" in lowered or "permission" in lowered:
+        return "Acceso a IA denegado (revisar permisos/API key)."
+    if "timeout" in lowered:
+        return "Tiempo de espera agotado al consultar IA."
+    return text[:220]
 
 
 def _normalize_ai_data(data):
@@ -257,5 +277,6 @@ def analyze_invoice_image(image_file, smart_input=""):
         return _normalize_ai_data(data)
 
     except Exception as e:
-        print(f"🔥 Error Crítico en IA (Smart Scanner): {e}")
-        return _safe_fallback(str(e))
+        cleaned_error = _sanitize_runtime_error(str(e))
+        print(f"🔥 Error Crítico en IA (Smart Scanner): {cleaned_error}")
+        return _safe_fallback(cleaned_error)

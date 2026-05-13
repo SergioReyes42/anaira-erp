@@ -1,10 +1,6 @@
-- [x] Analizar vistas y templates contables impactados (fecha factura + edición de partida)
-- [ ] Implementar backend: guardar `invoice_date` en `ai_expense_register` y `purchase_create`
-- [ ] Implementar backend: nueva vista `manual_journal_entry_edit` con validaciones y bloqueo por período cerrado
-- [ ] Actualizar rutas en `accounting/urls.py` para edición de partida
-- [ ] Actualizar template `manual_journal_entry_create.html` para modo crear/editar
-- [ ] Actualizar `libro_diario.html` agregando acción "Editar" por partida
-- [ ] Actualizar `ai_expense_register.html` para capturar fecha de factura
-- [ ] Actualizar `purchase_create.html` con formulario real y fecha de factura
-- [ ] Ejecutar validación técnica (`py manage.py check`)
-- [ ] Ejecutar pruebas funcionales mínimas de flujo (fecha enero + edición de cuenta)
+- [x] Mejorar diagnóstico de errores IA en `accounting/utils.py` sin romper fallback.
+- [ ] Verificar configuración de DB en Railway (`anaira/settings.py`) y evitar pérdida de datos.
+- [ ] Agregar opción "Mano de obra" en formulario de reporte de gastos (UI + backend).
+- [ ] Agregar categorías en Smart Scanner (combustible, repuestos, mantenimiento, mano de obra).
+- [ ] Guardar `invoice_date` en flujo Smart Scanner.
+- [ ] Ejecutar validación técnica (`py manage.py check`) y pruebas finales.
