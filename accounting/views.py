@@ -759,18 +759,38 @@ def fleet_expense_report(request):
         qs = qs.filter(vehicle_id=vehicle_id)
 
     fuel_q = Q(description__icontains='combustible') | Q(description__icontains='diesel') | Q(description__icontains='gasolina')
-    maint_q = Q(description__icontains='mantenimiento') | Q(description__icontains='repuesto') | Q(description__icontains='taller') | Q(description__icontains='llanta')
+    labor_q = (
+        Q(description__icontains='mano de obra') |
+        Q(description__icontains='mano_obra') |
+        Q(description__icontains='mecánico') |
+        Q(description__icontains='mecanico') |
+        Q(description__icontains='taller')
+    )
+    parts_q = (
+        Q(description__icontains='repuesto') |
+        Q(description__icontains='repuestos') |
+        Q(description__icontains='llanta') |
+        Q(description__icontains='aceite') |
+        Q(description__icontains='filtro')
+    )
+    maint_q = Q(description__icontains='mantenimiento')
 
     if category == 'fuel':
         qs = qs.filter(fuel_q)
     elif category == 'maint':
-        qs = qs.filter(maint_q)
+        qs = qs.filter(maint_q | labor_q | parts_q)
+    elif category == 'labor':
+        qs = qs.filter(labor_q)
+    elif category == 'parts':
+        qs = qs.filter(parts_q)
     else:
-        qs = qs.filter(fuel_q | maint_q)
+        qs = qs.filter(fuel_q | maint_q | labor_q | parts_q)
 
     qs = qs.annotate(
         expense_type=Case(
             When(fuel_q, then=Value('Combustible')),
+            When(parts_q, then=Value('Repuestos')),
+            When(labor_q, then=Value('Mano de Obra')),
             When(maint_q, then=Value('Mantenimiento')),
             default=Value('Otro'),
             output_field=CharField()
@@ -779,7 +799,9 @@ def fleet_expense_report(request):
 
     total_fuel = qs.filter(expense_type='Combustible').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
     total_maint = qs.filter(expense_type='Mantenimiento').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
-    gran_total = total_fuel + total_maint
+    total_labor = qs.filter(expense_type='Mano de Obra').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
+    total_parts = qs.filter(expense_type='Repuestos').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
+    gran_total = total_fuel + total_maint + total_labor + total_parts
 
     selected_vehicle_obj = None
     if vehicle_id:
@@ -790,6 +812,8 @@ def fleet_expense_report(request):
         'vehicles': vehicles,
         'total_fuel': total_fuel,
         'total_maint': total_maint,
+        'total_labor': total_labor,
+        'total_parts': total_parts,
         'gran_total': gran_total,
         'selected_vehicle': vehicle_id,
         'selected_vehicle_obj': selected_vehicle_obj,
@@ -812,18 +836,38 @@ def fleet_expense_report_pdf(request):
         qs = qs.filter(vehicle_id=vehicle_id)
 
     fuel_q = Q(description__icontains='combustible') | Q(description__icontains='diesel') | Q(description__icontains='gasolina')
-    maint_q = Q(description__icontains='mantenimiento') | Q(description__icontains='repuesto') | Q(description__icontains='taller') | Q(description__icontains='llanta')
+    labor_q = (
+        Q(description__icontains='mano de obra') |
+        Q(description__icontains='mano_obra') |
+        Q(description__icontains='mecánico') |
+        Q(description__icontains='mecanico') |
+        Q(description__icontains='taller')
+    )
+    parts_q = (
+        Q(description__icontains='repuesto') |
+        Q(description__icontains='repuestos') |
+        Q(description__icontains='llanta') |
+        Q(description__icontains='aceite') |
+        Q(description__icontains='filtro')
+    )
+    maint_q = Q(description__icontains='mantenimiento')
 
     if category == 'fuel':
         qs = qs.filter(fuel_q)
     elif category == 'maint':
-        qs = qs.filter(maint_q)
+        qs = qs.filter(maint_q | labor_q | parts_q)
+    elif category == 'labor':
+        qs = qs.filter(labor_q)
+    elif category == 'parts':
+        qs = qs.filter(parts_q)
     else:
-        qs = qs.filter(fuel_q | maint_q)
+        qs = qs.filter(fuel_q | maint_q | labor_q | parts_q)
 
     qs = qs.annotate(
         expense_type=Case(
             When(fuel_q, then=Value('Combustible')),
+            When(parts_q, then=Value('Repuestos')),
+            When(labor_q, then=Value('Mano de Obra')),
             When(maint_q, then=Value('Mantenimiento')),
             default=Value('Otro'),
             output_field=CharField()
@@ -832,20 +876,25 @@ def fleet_expense_report_pdf(request):
 
     total_fuel = qs.filter(expense_type='Combustible').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
     total_maint = qs.filter(expense_type='Mantenimiento').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
-    gran_total = total_fuel + total_maint
+    total_labor = qs.filter(expense_type='Mano de Obra').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
+    total_parts = qs.filter(expense_type='Repuestos').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
+    gran_total = total_fuel + total_maint + total_labor + total_parts
 
     selected_vehicle_obj = vehicles.filter(id=vehicle_id).first() if vehicle_id else None
     vehicle_label = f"{selected_vehicle_obj.plate} - {selected_vehicle_obj.brand}" if selected_vehicle_obj else "Toda la Flotilla"
     category_label = {
-        'both': 'Combustible + Mantenimiento',
+        'both': 'Combustible + Mantenimiento + Mano de Obra + Repuestos',
         'fuel': 'Solo Combustible',
-        'maint': 'Solo Mantenimiento'
-    }.get(category, 'Combustible + Mantenimiento')
+        'maint': 'Solo Mantenimiento',
+        'labor': 'Solo Mano de Obra',
+        'parts': 'Solo Repuestos'
+    }.get(category, 'Combustible + Mantenimiento + Mano de Obra + Repuestos')
 
     headers = ["Fecha", "Vehículo", "Piloto", "Tipo", "Estado", "Monto (Q)"]
     rows = [
         ["Filtro Vehículo", vehicle_label, "", "Filtro Rubro", category_label, ""],
         ["Total Combustible", f"{float(total_fuel):.2f}", "", "Total Mantenimiento", f"{float(total_maint):.2f}", f"Total General: {float(gran_total):.2f}"],
+        ["Total Mano de Obra", f"{float(total_labor):.2f}", "", "Total Repuestos", f"{float(total_parts):.2f}", ""],
         ["", "", "", "", "", ""],
     ]
 

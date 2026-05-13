@@ -36,9 +36,11 @@
                 <div class="col-md-4">
                     <label class="form-label fw-bold text-muted small">TIPO DE GASTO</label>
                     <select name="category" class="form-select border-warning">
-                        <option value="both" {% if selected_category == 'both' %}selected{% endif %}>⛽ Combustible + 🛠️ Mantenimiento</option>
+                        <option value="both" {% if selected_category == 'both' %}selected{% endif %}>⛽ + 🛠️ + 👨‍🔧 + 🔧 Todos</option>
                         <option value="fuel" {% if selected_category == 'fuel' %}selected{% endif %}>⛽ Solo Combustible</option>
                         <option value="maint" {% if selected_category == 'maint' %}selected{% endif %}>🛠️ Solo Mantenimiento</option>
+                        <option value="labor" {% if selected_category == 'labor' %}selected{% endif %}>👨‍🔧 Solo Mano de Obra</option>
+                        <option value="parts" {% if selected_category == 'parts' %}selected{% endif %}>🔧 Solo Repuestos</option>
                     </select>
                 </div>
                 
@@ -52,7 +54,7 @@
     </div>
 
     <div class="row mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card bg-danger text-white shadow-sm border-0 h-100">
                 <div class="card-body d-flex align-items-center">
                     <i class="bi bi-fuel-pump-fill display-4 me-3 opacity-75"></i>
@@ -64,7 +66,7 @@
             </div>
         </div>
         
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card bg-warning text-dark shadow-sm border-0 h-100">
                 <div class="card-body d-flex align-items-center">
                     <i class="bi bi-tools display-4 me-3 opacity-75"></i>
@@ -75,12 +77,36 @@
                 </div>
             </div>
         </div>
-        
-        <div class="col-md-4">
-            <div class="card bg-success text-white shadow-sm border-0 h-100">
+
+        <div class="col-md-3">
+            <div class="card bg-info text-white shadow-sm border-0 h-100">
                 <div class="card-body d-flex align-items-center">
-                    <i class="bi bi-cash-stack display-4 me-3 opacity-75"></i>
+                    <i class="bi bi-person-workspace display-4 me-3 opacity-75"></i>
                     <div>
+                        <h6 class="text-uppercase mb-1 fw-bold">Total Mano de Obra</h6>
+                        <h3 class="mb-0">Q. {{ total_labor|floatformat:2 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white shadow-sm border-0 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <i class="bi bi-gear-fill display-4 me-3 opacity-75"></i>
+                    <div>
+                        <h6 class="text-uppercase mb-1 fw-bold">Total Repuestos</h6>
+                        <h3 class="mb-0">Q. {{ total_parts|floatformat:2 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-12 mt-3">
+            <div class="card bg-success text-white shadow-sm border-0 h-100">
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    <i class="bi bi-cash-stack display-5 me-3 opacity-75"></i>
+                    <div class="text-center">
                         <h6 class="text-uppercase mb-1 fw-bold">Gasto Total Vehicular</h6>
                         <h3 class="mb-0">Q. {{ gran_total|floatformat:2 }}</h3>
                     </div>
@@ -116,6 +142,10 @@
                                 <span class="badge bg-danger text-white"><i class="bi bi-fuel-pump"></i> Combustible</span>
                             {% elif expense.expense_type == 'Mantenimiento' %}
                                 <span class="badge bg-warning text-dark"><i class="bi bi-tools"></i> Mantenimiento</span>
+                            {% elif expense.expense_type == 'Mano de Obra' %}
+                                <span class="badge bg-info text-white"><i class="bi bi-person-workspace"></i> Mano de Obra</span>
+                            {% elif expense.expense_type == 'Repuestos' %}
+                                <span class="badge bg-secondary text-white"><i class="bi bi-gear-fill"></i> Repuestos</span>
                             {% else %}
                                 <span class="badge bg-secondary">{{ expense.expense_type }}</span>
                             {% endif %}

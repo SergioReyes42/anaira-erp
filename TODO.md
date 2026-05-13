@@ -4,3 +4,4 @@
 - [ ] Agregar categorías en Smart Scanner (combustible, repuestos, mantenimiento, mano de obra).
 - [ ] Guardar `invoice_date` en flujo Smart Scanner.
 - [ ] Ejecutar validación técnica (`py manage.py check`) y pruebas finales.
+- [ ] Ajustar reporte de flotilla para mostrar rubros separados de mano de obra y repuestos (vista + PDF).
