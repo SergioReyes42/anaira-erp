@@ -8,7 +8,7 @@
         </h2>
         <div class="d-flex gap-2">
             <a class="btn btn-outline-danger"
-               href="{% url 'accounting:fleet_report_pdf' %}?vehicle_id={{ selected_vehicle|default:'' }}&category={{ selected_category|default:'both' }}">
+               href="{% url 'accounting:fleet_report_pdf' %}?vehicle_id={{ selected_vehicle|default:'' }}&category={{ selected_category|default:'both' }}&invoice_date_from={{ invoice_date_from|default:'' }}&invoice_date_to={{ invoice_date_to|default:'' }}">
                 <i class="bi bi-filetype-pdf"></i> PDF Profesional
             </a>
             <button class="btn btn-outline-success" onclick="window.print()">
@@ -44,6 +44,16 @@
                     </select>
                 </div>
                 
+                <div class="col-md-2">
+                    <label class="form-label fw-bold text-muted small">FACTURA DESDE</label>
+                    <input type="date" name="invoice_date_from" class="form-control" value="{{ invoice_date_from|default:'' }}">
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label fw-bold text-muted small">FACTURA HASTA</label>
+                    <input type="date" name="invoice_date_to" class="form-control" value="{{ invoice_date_to|default:'' }}">
+                </div>
+
                 <div class="col-md-4">
                     <button type="submit" class="btn btn-primary w-100 fw-bold">
                         <i class="bi bi-funnel-fill me-1"></i> Generar Reporte
@@ -134,7 +144,13 @@
                 <tbody>
                     {% for expense in expenses %}
                     <tr>
-                        <td class="text-muted small">{{ expense.date|date:"d/m/Y H:i" }}</td>
+                        <td class="text-muted small">
+                            {% if expense.invoice_date %}
+                                {{ expense.invoice_date|date:"d/m/Y" }}
+                            {% else %}
+                                {{ expense.date|date:"d/m/Y H:i" }}
+                            {% endif %}
+                        </td>
                         <td class="fw-bold">{{ expense.vehicle.plate }} <br><small class="text-muted fw-normal">{{ expense.vehicle.brand }}</small></td>
                         <td>{{ expense.user.get_full_name|default:expense.user.username }}</td>
                         <td>

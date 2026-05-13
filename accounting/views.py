@@ -754,9 +754,16 @@ def fleet_expense_report(request):
 
     vehicle_id = request.GET.get('vehicle_id', '').strip()
     category = request.GET.get('category', 'both').strip() or 'both'
+    invoice_date_from = request.GET.get('invoice_date_from', '').strip()
+    invoice_date_to = request.GET.get('invoice_date_to', '').strip()
 
     if vehicle_id:
         qs = qs.filter(vehicle_id=vehicle_id)
+
+    if invoice_date_from:
+        qs = qs.filter(invoice_date__gte=invoice_date_from)
+    if invoice_date_to:
+        qs = qs.filter(invoice_date__lte=invoice_date_to)
 
     fuel_q = Q(description__icontains='combustible') | Q(description__icontains='diesel') | Q(description__icontains='gasolina')
     labor_q = (
@@ -795,7 +802,7 @@ def fleet_expense_report(request):
             default=Value('Otro'),
             output_field=CharField()
         )
-    ).order_by('-date')
+    ).order_by('-invoice_date', '-date')
 
     total_fuel = qs.filter(expense_type='Combustible').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
     total_maint = qs.filter(expense_type='Mantenimiento').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
@@ -818,6 +825,8 @@ def fleet_expense_report(request):
         'selected_vehicle': vehicle_id,
         'selected_vehicle_obj': selected_vehicle_obj,
         'selected_category': category,
+        'invoice_date_from': invoice_date_from,
+        'invoice_date_to': invoice_date_to,
     }
     return render(request, 'accounting/fleet_report.html', context)
 
@@ -831,9 +840,16 @@ def fleet_expense_report_pdf(request):
 
     vehicle_id = request.GET.get('vehicle_id', '').strip()
     category = request.GET.get('category', 'both').strip() or 'both'
+    invoice_date_from = request.GET.get('invoice_date_from', '').strip()
+    invoice_date_to = request.GET.get('invoice_date_to', '').strip()
 
     if vehicle_id:
         qs = qs.filter(vehicle_id=vehicle_id)
+
+    if invoice_date_from:
+        qs = qs.filter(invoice_date__gte=invoice_date_from)
+    if invoice_date_to:
+        qs = qs.filter(invoice_date__lte=invoice_date_to)
 
     fuel_q = Q(description__icontains='combustible') | Q(description__icontains='diesel') | Q(description__icontains='gasolina')
     labor_q = (
@@ -872,7 +888,7 @@ def fleet_expense_report_pdf(request):
             default=Value('Otro'),
             output_field=CharField()
         )
-    ).order_by('-date')
+    ).order_by('-invoice_date', '-date')
 
     total_fuel = qs.filter(expense_type='Combustible').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
     total_maint = qs.filter(expense_type='Mantenimiento').aggregate(t=Sum('total_amount'))['t'] or decimal.Decimal('0.00')
@@ -891,8 +907,11 @@ def fleet_expense_report_pdf(request):
     }.get(category, 'Combustible + Mantenimiento + Mano de Obra + Repuestos')
 
     headers = ["Fecha", "Vehículo", "Piloto", "Tipo", "Estado", "Monto (Q)"]
+    date_filter_label = f"{invoice_date_from or '---'} a {invoice_date_to or '---'}"
+
     rows = [
         ["Filtro Vehículo", vehicle_label, "", "Filtro Rubro", category_label, ""],
+        ["Rango Fecha Factura", date_filter_label, "", "", "", ""],
         ["Total Combustible", f"{float(total_fuel):.2f}", "", "Total Mantenimiento", f"{float(total_maint):.2f}", f"Total General: {float(gran_total):.2f}"],
         ["Total Mano de Obra", f"{float(total_labor):.2f}", "", "Total Repuestos", f"{float(total_parts):.2f}", ""],
         ["", "", "", "", "", ""],
@@ -900,7 +919,7 @@ def fleet_expense_report_pdf(request):
 
     for expense in qs:
         rows.append([
-            expense.date.strftime("%d/%m/%Y %H:%M") if expense.date else "",
+            expense.invoice_date.strftime("%d/%m/%Y") if expense.invoice_date else (expense.date.strftime("%d/%m/%Y %H:%M") if expense.date else ""),
             f"{expense.vehicle.plate} - {expense.vehicle.brand}" if expense.vehicle else "",
             expense.user.get_full_name() if expense.user and expense.user.get_full_name() else (expense.user.username if expense.user else ""),
             expense.expense_type,
